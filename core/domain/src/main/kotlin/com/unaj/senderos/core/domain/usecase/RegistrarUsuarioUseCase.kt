@@ -1,0 +1,25 @@
+package com.unaj.senderos.domain.usecase
+
+import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.domain.repository.AutenticacionRepositorio
+
+class RegistrarUsuarioUseCase(
+    private val repositorio: AutenticacionRepositorio
+) {
+    private val formatoEmail = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
+
+    // Validar los datos ingresados y crear la cuenta
+    suspend operator fun invoke(email: String, clave: String, confirmacion: String): Result<Usuario> {
+        if (email.isBlank()) return Result.failure(IllegalArgumentException("El correo es requerido"))
+        if (!formatoEmail.matches(email.trim())) {
+            return Result.failure(IllegalArgumentException("El correo no tiene un formato válido"))
+        }
+        if (clave.length < 6) {
+            return Result.failure(IllegalArgumentException("La contraseña debe tener al menos 6 caracteres"))
+        }
+        if (clave != confirmacion) {
+            return Result.failure(IllegalArgumentException("Las contraseñas no coinciden"))
+        }
+        return repositorio.registrar(email.trim(), clave)
+    }
+}

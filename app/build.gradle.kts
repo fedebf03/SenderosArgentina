@@ -62,9 +62,6 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
-    // Carga de imágenes remotas (Avatar de Google)
-    implementation("io.coil-kt:coil-compose:2.7.0")
-
     // Jetpack Compose & Ciclo de vida
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
