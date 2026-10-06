@@ -23,14 +23,17 @@ import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
-import com.unaj.senderos.presentation.explorar.ExplorarPantalla
-import com.unaj.senderos.presentation.explorar.ExplorarViewModel
+import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
+import com.unaj.senderos.presentation.inicio.InicioPantalla
 import com.unaj.senderos.presentation.login.LoginPantalla
 import com.unaj.senderos.presentation.login.LoginViewModel
+import com.unaj.senderos.presentation.registro.RegistroPantalla
+import com.unaj.senderos.presentation.registro.RegistroViewModel
 
 sealed interface DestinoPantalla {
     data object Login : DestinoPantalla
-    data object Explorar : DestinoPantalla
+    data object Registro : DestinoPantalla
+    data object Inicio : DestinoPantalla
 }
 
 class MainActivity : ComponentActivity() {
@@ -55,6 +58,7 @@ class MainActivity : ComponentActivity() {
         val repositorio = AutenticacionRepositorioImpl()
         val casoDeUsoLogin = IniciarSesionUseCase(repositorio)
         val casoDeUsoGoogle = IniciarSesionConGoogleUseCase(repositorio)
+        val casoDeUsoRegistro = RegistrarUsuarioUseCase(repositorio)
         val casoDeUsoObtenerUsuario = ObtenerUsuarioActualUseCase(repositorio)
         val casoDeUsoCerrarSesion = CerrarSesionUseCase(repositorio)
 
@@ -66,8 +70,8 @@ class MainActivity : ComponentActivity() {
                     modelClass.isAssignableFrom(LoginViewModel::class.java) -> {
                         LoginViewModel(casoDeUsoLogin, casoDeUsoGoogle) as T
                     }
-                    modelClass.isAssignableFrom(ExplorarViewModel::class.java) -> {
-                        ExplorarViewModel(casoDeUsoObtenerUsuario, casoDeUsoCerrarSesion) as T
+                    modelClass.isAssignableFrom(RegistroViewModel::class.java) -> {
+                        RegistroViewModel(casoDeUsoRegistro) as T
                     }
                     else -> throw IllegalArgumentException("Clase de ViewModel desconocida: ${modelClass.name}")
                 }
@@ -75,21 +79,23 @@ class MainActivity : ComponentActivity() {
         }
 
         val loginViewModel = ViewModelProvider(this, fabrica)[LoginViewModel::class.java]
-        val explorarViewModel = ViewModelProvider(this, fabrica)[ExplorarViewModel::class.java]
+        val registroViewModel = ViewModelProvider(this, fabrica)[RegistroViewModel::class.java]
 
         setContent {
             var pantallaActual by remember {
                 val usuarioActivo = casoDeUsoObtenerUsuario()
                 mutableStateOf<DestinoPantalla>(
-                    if (usuarioActivo != null) DestinoPantalla.Explorar else DestinoPantalla.Login
+                    if (usuarioActivo != null) DestinoPantalla.Inicio else DestinoPantalla.Login
                 )
             }
 
             MaterialTheme(
                 colorScheme = lightColorScheme(
-                    primary = Color(0xFF0D6077),
-                    background = Color.White,
-                    surface = Color.White,
+                    primary = Color(0xFF2B6CA3),
+                    primaryContainer = Color(0xFF74ACDF),
+                    onPrimaryContainer = Color(0xFF0B2A4A),
+                    background = Color(0xFFF4F9FD),
+                    surface = Color(0xFFF4F9FD),
                     onBackground = Color(0xFF1E293B),
                     onSurface = Color(0xFF1E293B)
                 )
@@ -102,16 +108,22 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.Login -> {
                             LoginPantalla(
                                 viewModel = loginViewModel,
-                                alNavegarAInicio = {
-                                    explorarViewModel.cargarDatosUsuario()
-                                    pantallaActual = DestinoPantalla.Explorar
-                                }
+                                alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                                alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
                             )
                         }
-                        is DestinoPantalla.Explorar -> {
-                            ExplorarPantalla(
-                                viewModel = explorarViewModel,
+                        is DestinoPantalla.Registro -> {
+                            RegistroPantalla(
+                                viewModel = registroViewModel,
+                                alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                                alVolverALogin = { pantallaActual = DestinoPantalla.Login }
+                            )
+                        }
+                        is DestinoPantalla.Inicio -> {
+                            InicioPantalla(
+                                email = casoDeUsoObtenerUsuario()?.email.orEmpty(),
                                 alCerrarSesion = {
+                                    casoDeUsoCerrarSesion()
                                     pantallaActual = DestinoPantalla.Login
                                 }
                             )

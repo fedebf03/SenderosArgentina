@@ -26,16 +26,6 @@ class LoginViewModel(
     private val canalEfectos = Channel<LoginEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
-    init {
-        Log.d("VIDA", "ViewModel → creado (${hashCode()})")
-    }
-
-    // Liberar los recursos al destruir el ViewModel
-    override fun onCleared() {
-        super.onCleared()
-        Log.d("VIDA", "ViewModel → destruido (${hashCode()})")
-    }
-
     // Procesar los eventos emitidos por la pantalla de inicio de sesión
     fun procesarEvento(evento: LoginEvento) {
         when (evento) {
@@ -68,7 +58,6 @@ class LoginViewModel(
     // Ejecutar el proceso de autenticación con el correo y contraseña ingresados
     private fun ejecutarInicioSesion() {
         val estadoActual = _estadoVisual.value
-        Log.d(TAG, "Intento de inicio de sesión con email: ${estadoActual.email}")
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
 
         viewModelScope.launch {
@@ -79,12 +68,9 @@ class LoginViewModel(
                     canalEfectos.send(LoginEfecto.NavegarAInicio)
                 },
                 onFailure = { error ->
-                    val mensaje = error.message ?: "Ocurrió un error al iniciar sesión"
+                    val mensaje = error.message.orEmpty()
                     Log.e(TAG, "Error en autenticación: $mensaje")
-                    _estadoVisual.update { 
-                        it.copy(estaCargando = false, mensajeError = mensaje) 
-                    }
-                    canalEfectos.send(LoginEfecto.MostrarAviso(mensaje))
+                    _estadoVisual.update { it.copy(estaCargando = false, mensajeError = mensaje) }
                 }
             )
         }
@@ -92,7 +78,6 @@ class LoginViewModel(
 
     // Solicitar el flujo de inicio de sesión con Google
     private fun solicitarGoogleSignIn() {
-        Log.d(TAG, "Solicitando inicio de sesión con Google")
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.SolicitarGoogleSignIn)
         }
@@ -100,7 +85,6 @@ class LoginViewModel(
 
     // Ejecutar el proceso de autenticación con el idToken obtenido de Google
     private fun ejecutarInicioSesionConGoogle(idToken: String) {
-        Log.d(TAG, "Intento de inicio de sesión con Google Token")
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
 
         viewModelScope.launch {
@@ -111,12 +95,9 @@ class LoginViewModel(
                     canalEfectos.send(LoginEfecto.NavegarAInicio)
                 },
                 onFailure = { error ->
-                    val mensaje = error.message ?: "Ocurrió un error al autenticar con Google"
+                    val mensaje = error.message.orEmpty()
                     Log.e(TAG, "Error en autenticación con Google: $mensaje")
-                    _estadoVisual.update { 
-                        it.copy(estaCargando = false, mensajeError = mensaje) 
-                    }
-                    canalEfectos.send(LoginEfecto.MostrarAviso(mensaje))
+                    _estadoVisual.update { it.copy(estaCargando = false, mensajeError = mensaje) }
                 }
             )
         }
@@ -124,15 +105,13 @@ class LoginViewModel(
 
     // Notificar la acción de recuperación de contraseña
     private fun manejarOlvidarClave() {
-        Log.d(TAG, "Clic en olvidar contraseña")
         viewModelScope.launch {
-            canalEfectos.send(LoginEfecto.MostrarAviso("Funcionalidad de recuperación próximamente"))
+            canalEfectos.send(LoginEfecto.MostrarAviso("Todavía no disponible"))
         }
     }
 
     // Solicitar la navegación a la pantalla de registro
     private fun manejarIrARegistro() {
-        Log.d(TAG, "Clic en ir a registro")
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.NavegarARegistro)
         }
