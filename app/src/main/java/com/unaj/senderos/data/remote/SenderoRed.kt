@@ -27,5 +27,14 @@ data class SenderoRed(
     val etapas: List<EtapaRed> = emptyList(),
     val esFavorito: Boolean = false,
     val fechaModificacion: Long = 0L,
-    val eliminado: Boolean = false
+    val eliminado: Boolean = false,
+    val recorrido: List<PuntoRecorridoRed> = emptyList()
+)
+
+// Punto del recorrido como se guarda en Firestore (valores por defecto requeridos por el deserializador)
+data class PuntoRecorridoRed(
+    val latitud: Double = 0.0,
+    val longitud: Double = 0.0,
+    val tipo: String = "PASO",
+    val nombre: String = ""
 )

@@ -47,4 +47,34 @@ class ConvertidoresSenderoTest {
 
         assertEquals(emptyList<EtapaEntidad>(), convertidores.textoAListaEtapas(texto))
     }
+
+    // Probar que una lista de puntos del recorrido sobrevive a la ida y vuelta conservando el orden
+    @Test
+    fun `lista de puntos ida y vuelta conserva el contenido y el orden`() {
+        val original = listOf(
+            PuntoRecorridoEntidad(latitud = -39.2, longitud = -71.1, tipo = "REFUGIO", nombre = "Refugio \"Norte\", cima"),
+            PuntoRecorridoEntidad(latitud = -39.3, longitud = -71.2, tipo = "PASO", nombre = ""),
+            PuntoRecorridoEntidad(latitud = -39.4, longitud = -71.3, tipo = "MIRADOR", nombre = "Mirador")
+        )
+
+        val texto = convertidores.listaPuntosATexto(original)
+        val recuperada = convertidores.textoAListaPuntos(texto)
+
+        assertEquals(original, recuperada)
+    }
+
+    // Probar que una lista de puntos vacía se serializa como arreglo JSON vacío y se recupera vacía
+    @Test
+    fun `lista de puntos vacia se serializa como arreglo vacio`() {
+        val texto = convertidores.listaPuntosATexto(emptyList())
+
+        assertEquals("[]", texto)
+        assertEquals(emptyList<PuntoRecorridoEntidad>(), convertidores.textoAListaPuntos(texto))
+    }
+
+    // Probar que el valor por defecto de la columna del esquema se lee como lista vacía
+    @Test
+    fun `valor por defecto de la columna se lee como lista vacia de puntos`() {
+        assertEquals(emptyList<PuntoRecorridoEntidad>(), convertidores.textoAListaPuntos("[]"))
+    }
 }

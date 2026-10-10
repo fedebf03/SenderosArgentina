@@ -36,5 +36,6 @@ data class Sendero(
     val servicios: List<String> = emptyList(),
     val etapas: List<Etapa> = emptyList(),
     val esFavorito: Boolean = false,
-    val estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO
+    val estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
+    val recorrido: List<PuntoRecorrido> = emptyList()
 )

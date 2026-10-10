@@ -4,7 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.model.CampoSendero
+import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.SenderoInvalidoException
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
@@ -95,6 +97,31 @@ class FormularioSenderoViewModel(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoDescartarVisible = false) }
                 emitirEfecto(FormularioSenderoEfecto.VolverAtras)
             }
+            is FormularioSenderoEvento.AlAbrirEditorMapa -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esEditorMapaVisible = true) }
+            }
+            is FormularioSenderoEvento.AlCerrarEditorMapa -> {
+                _estadoVisual.update { estadoActual ->
+                    estadoActual.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null)
+                }
+            }
+            is FormularioSenderoEvento.AlAgregarPunto -> {
+                modificarRecorrido { puntos, seleccion ->
+                    puntos + PuntoRecorrido(latitud = evento.latitud, longitud = evento.longitud) to seleccion
+                }
+            }
+            is FormularioSenderoEvento.AlMoverPunto -> moverPunto(evento)
+            is FormularioSenderoEvento.AlSeleccionarPunto -> seleccionarPunto(evento.indice)
+            is FormularioSenderoEvento.AlEliminarPunto -> eliminarPunto(evento.indice)
+            is FormularioSenderoEvento.AlInsertarPuntoAntes -> insertarPuntoAntes(evento.indice)
+            is FormularioSenderoEvento.AlCambiarTipoPunto -> {
+                reemplazarPunto(evento.indice) { punto -> punto.copy(tipo = evento.tipo) }
+            }
+            is FormularioSenderoEvento.AlCambiarNombrePunto -> {
+                reemplazarPunto(evento.indice) { punto -> punto.copy(nombre = evento.nombre) }
+            }
+            is FormularioSenderoEvento.AlInvertirSentido -> invertirSentido()
+            is FormularioSenderoEvento.AlUsarDistanciaDelMapa -> usarDistanciaDelMapa()
             is FormularioSenderoEvento.AlCancelarDescartar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoDescartarVisible = false) }
             }
@@ -146,6 +173,7 @@ class FormularioSenderoViewModel(
                     recomendaciones = senderoEncontrado.recomendaciones,
                     servicios = senderoEncontrado.servicios,
                     etapas = senderoEncontrado.etapas,
+                    recorrido = senderoEncontrado.recorrido,
                     hayCambiosSinGuardar = false
                 )
             }
@@ -156,6 +184,95 @@ class FormularioSenderoViewModel(
     private fun mostrarErrorDeCarga(mensajeOriginal: String?) {
         val mensaje = mensajeOriginal?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaCargando = false, mensajeError = mensaje) }
+    }
+
+    // Aplicar una transformación al recorrido, marcar cambios y reemplazar la selección (nulo la limpia)
+    private fun modificarRecorrido(
+        transformar: (List<PuntoRecorrido>, Int?) -> Pair<List<PuntoRecorrido>, Int?>
+    ) {
+        _estadoVisual.update { estadoActual ->
+            val (nuevoRecorrido, nuevaSeleccion) = transformar(estadoActual.recorrido, estadoActual.indicePuntoSeleccionado)
+            estadoActual.copy(
+                recorrido = nuevoRecorrido,
+                indicePuntoSeleccionado = nuevaSeleccion,
+                hayCambiosSinGuardar = true
+            )
+        }
+    }
+
+    // Reemplazar un punto del recorrido conservando la selección; los índices fuera de rango se ignoran
+    private fun reemplazarPunto(indice: Int, transformar: (PuntoRecorrido) -> PuntoRecorrido) {
+        if (indice !in _estadoVisual.value.recorrido.indices) return
+        modificarRecorrido { puntos, seleccion ->
+            puntos.mapIndexed { posicion, punto -> if (posicion == indice) transformar(punto) else punto } to seleccion
+        }
+    }
+
+    // Mover un punto a nuevas coordenadas conservando su tipo y su nombre
+    private fun moverPunto(evento: FormularioSenderoEvento.AlMoverPunto) {
+        reemplazarPunto(evento.indice) { punto ->
+            punto.copy(latitud = evento.latitud, longitud = evento.longitud)
+        }
+    }
+
+    // Seleccionar un punto existente o limpiar la selección con nulo; un índice fuera de rango se ignora
+    private fun seleccionarPunto(indice: Int?) {
+        if (indice != null && indice !in _estadoVisual.value.recorrido.indices) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(indicePuntoSeleccionado = indice) }
+    }
+
+    // Eliminar un punto: limpia la selección si era ese punto y la corre una posición si era posterior
+    private fun eliminarPunto(indice: Int) {
+        if (indice !in _estadoVisual.value.recorrido.indices) return
+        modificarRecorrido { puntos, seleccion ->
+            val seleccionNueva = when {
+                seleccion == null -> null
+                seleccion == indice -> null
+                seleccion > indice -> seleccion - 1
+                else -> seleccion
+            }
+            puntos.filterIndexed { posicion, _ -> posicion != indice } to seleccionNueva
+        }
+    }
+
+    // Insertar un punto medio entre el anterior y el indicado; la selección posterior se corre una posición
+    private fun insertarPuntoAntes(indice: Int) {
+        _estadoVisual.update { estadoActual ->
+            val anterior = estadoActual.recorrido.getOrNull(indice - 1)
+            val siguiente = estadoActual.recorrido.getOrNull(indice)
+            if (indice < 1 || anterior == null || siguiente == null) return@update estadoActual
+            val puntoMedio = PuntoRecorrido(
+                latitud = (anterior.latitud + siguiente.latitud) / 2,
+                longitud = (anterior.longitud + siguiente.longitud) / 2
+            )
+            val seleccion = estadoActual.indicePuntoSeleccionado
+            val seleccionNueva = if (seleccion != null && seleccion >= indice) seleccion + 1 else seleccion
+            estadoActual.copy(
+                recorrido = estadoActual.recorrido.take(indice) + puntoMedio + estadoActual.recorrido.drop(indice),
+                indicePuntoSeleccionado = seleccionNueva,
+                hayCambiosSinGuardar = true
+            )
+        }
+    }
+
+    // Invertir el sentido del recorrido; la selección pasa al índice espejo para seguir sobre el mismo punto
+    private fun invertirSentido() {
+        if (_estadoVisual.value.recorrido.size < 2) return
+        modificarRecorrido { puntos, seleccion ->
+            CalculadoraRecorrido.invertirSentido(puntos) to seleccion?.let { posicion -> puntos.size - 1 - posicion }
+        }
+    }
+
+    // Copiar la distancia calculada del mapa, redondeada a un decimal, al campo de distancia
+    private fun usarDistanciaDelMapa() {
+        val distanciaRedondeada = Math.round(_estadoVisual.value.distanciaCalculadaKilometros * 10) / 10.0
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(
+                distancia = formatearDecimal(distanciaRedondeada),
+                camposConError = estadoActual.camposConError - CampoSendero.DISTANCIA,
+                hayCambiosSinGuardar = true
+            )
+        }
     }
 
     // Convertir un número decimal a texto sin decimales innecesarios
@@ -324,7 +441,8 @@ class FormularioSenderoViewModel(
             tipoRecorrido = estadoActual.tipoRecorrido,
             recomendaciones = estadoActual.recomendaciones,
             servicios = estadoActual.servicios,
-            etapas = estadoActual.etapas
+            etapas = estadoActual.etapas,
+            recorrido = estadoActual.recorrido
         )
 
         _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(estaGuardando = true, camposConError = emptySet()) }

@@ -4,6 +4,8 @@ import app.cash.turbine.test
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
@@ -584,5 +586,351 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esDialogoDescartarVisible)
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
         assertEquals("Algo", viewModel.estadoVisual.value.nombre)
+    }
+
+    // Crear un ViewModel de creación con los puntos indicados ya agregados al recorrido
+    private fun crearViewModelConPuntos(vararg puntos: PuntoRecorrido): FormularioSenderoViewModel {
+        val viewModel = crearViewModel()
+        for (punto in puntos) {
+            enviar(viewModel, FormularioSenderoEvento.AlAgregarPunto(punto.latitud, punto.longitud))
+        }
+        return viewModel
+    }
+
+    // Probar que el recorrido y el editor del mapa arrancan vacíos y ocultos
+    @Test
+    fun `el recorrido y el editor del mapa arrancan vacios y ocultos`() = runTest {
+        val viewModel = crearViewModel()
+        avanzar()
+
+        val estado = viewModel.estadoVisual.value
+        assertTrue(estado.recorrido.isEmpty())
+        assertFalse(estado.esEditorMapaVisible)
+        assertNull(estado.indicePuntoSeleccionado)
+        assertEquals(0.0, estado.distanciaCalculadaKilometros, 0.0)
+    }
+
+    // Probar que abrir y cerrar el editor del mapa alterna su visibilidad sin marcar cambios
+    @Test
+    fun `abrir y cerrar el editor del mapa alterna la visibilidad sin marcar cambios`() = runTest {
+        val viewModel = crearViewModel()
+
+        enviar(viewModel, FormularioSenderoEvento.AlAbrirEditorMapa)
+        assertTrue(viewModel.estadoVisual.value.esEditorMapaVisible)
+
+        enviar(viewModel, FormularioSenderoEvento.AlCerrarEditorMapa)
+        assertFalse(viewModel.estadoVisual.value.esEditorMapaVisible)
+        assertFalse(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que agregar un punto lo añade al final como PASO sin nombre y marca cambios
+    @Test
+    fun `agregar punto lo anade al final como PASO y marca cambios`() = runTest {
+        val viewModel = crearViewModel()
+
+        enviar(viewModel, FormularioSenderoEvento.AlAgregarPunto(-40.5, -71.3))
+        enviar(viewModel, FormularioSenderoEvento.AlAgregarPunto(-40.6, -71.4))
+
+        val estado = viewModel.estadoVisual.value
+        assertEquals(
+            listOf(
+                PuntoRecorrido(-40.5, -71.3, TipoPunto.PASO, ""),
+                PuntoRecorrido(-40.6, -71.4, TipoPunto.PASO, "")
+            ),
+            estado.recorrido
+        )
+        assertTrue(estado.hayCambiosSinGuardar)
+    }
+
+    // Probar que mover un punto cambia solo sus coordenadas y conserva tipo y nombre
+    @Test
+    fun `mover punto cambia solo las coordenadas y marca cambios`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4))
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarTipoPunto(1, TipoPunto.AGUA))
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarNombrePunto(1, "Arroyo"))
+
+        enviar(viewModel, FormularioSenderoEvento.AlMoverPunto(1, -41.0, -72.0))
+
+        assertEquals(
+            listOf(
+                PuntoRecorrido(-40.5, -71.3, TipoPunto.PASO, ""),
+                PuntoRecorrido(-41.0, -72.0, TipoPunto.AGUA, "Arroyo")
+            ),
+            viewModel.estadoVisual.value.recorrido
+        )
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que seleccionar un punto guarda su índice y que seleccionar nulo limpia la selección
+    @Test
+    fun `seleccionar punto guarda el indice y nulo limpia la seleccion`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4))
+
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarPunto(1))
+        assertEquals(1, viewModel.estadoVisual.value.indicePuntoSeleccionado)
+
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarPunto(null))
+        assertNull(viewModel.estadoVisual.value.indicePuntoSeleccionado)
+    }
+
+    // Probar que eliminar un punto lo quita de la lista y marca cambios
+    @Test
+    fun `eliminar punto lo quita del recorrido y marca cambios`() = runTest {
+        val viewModel = crearViewModelConPuntos(
+            PuntoRecorrido(1.0, 1.0),
+            PuntoRecorrido(2.0, 2.0),
+            PuntoRecorrido(3.0, 3.0)
+        )
+
+        enviar(viewModel, FormularioSenderoEvento.AlEliminarPunto(1))
+
+        assertEquals(
+            listOf(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(3.0, 3.0)),
+            viewModel.estadoVisual.value.recorrido
+        )
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que eliminar el punto seleccionado limpia la selección
+    @Test
+    fun `eliminar el punto seleccionado limpia la seleccion`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarPunto(1))
+
+        enviar(viewModel, FormularioSenderoEvento.AlEliminarPunto(1))
+
+        assertNull(viewModel.estadoVisual.value.indicePuntoSeleccionado)
+    }
+
+    // Probar que eliminar un punto anterior al seleccionado desplaza la selección una posición
+    @Test
+    fun `eliminar un punto anterior al seleccionado ajusta el indice`() = runTest {
+        val viewModel = crearViewModelConPuntos(
+            PuntoRecorrido(1.0, 1.0),
+            PuntoRecorrido(2.0, 2.0),
+            PuntoRecorrido(3.0, 3.0)
+        )
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarPunto(2))
+
+        enviar(viewModel, FormularioSenderoEvento.AlEliminarPunto(0))
+
+        assertEquals(1, viewModel.estadoVisual.value.indicePuntoSeleccionado)
+    }
+
+    // Probar que eliminar un punto posterior al seleccionado conserva la selección
+    @Test
+    fun `eliminar un punto posterior al seleccionado conserva el indice`() = runTest {
+        val viewModel = crearViewModelConPuntos(
+            PuntoRecorrido(1.0, 1.0),
+            PuntoRecorrido(2.0, 2.0),
+            PuntoRecorrido(3.0, 3.0)
+        )
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarPunto(0))
+
+        enviar(viewModel, FormularioSenderoEvento.AlEliminarPunto(2))
+
+        assertEquals(0, viewModel.estadoVisual.value.indicePuntoSeleccionado)
+    }
+
+    // Probar que insertar antes agrega el punto medio entre el anterior y el indicado
+    @Test
+    fun `insertar punto antes agrega el punto medio con el anterior`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.0, -70.0), PuntoRecorrido(-42.0, -72.0))
+
+        enviar(viewModel, FormularioSenderoEvento.AlInsertarPuntoAntes(1))
+
+        val recorrido = viewModel.estadoVisual.value.recorrido
+        assertEquals(3, recorrido.size)
+        assertEquals(PuntoRecorrido(-40.0, -70.0), recorrido[0])
+        assertEquals(-41.0, recorrido[1].latitud, 1e-9)
+        assertEquals(-71.0, recorrido[1].longitud, 1e-9)
+        assertEquals(TipoPunto.PASO, recorrido[1].tipo)
+        assertEquals(PuntoRecorrido(-42.0, -72.0), recorrido[2])
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que insertar antes del índice cero no hace nada porque no hay punto anterior
+    @Test
+    fun `insertar punto antes en el indice cero no hace nada`() = runTest {
+        val viewModel = crearViewModel()
+        enviar(viewModel, FormularioSenderoEvento.AlAgregarPunto(1.0, 1.0))
+        enviar(viewModel, FormularioSenderoEvento.AlAgregarPunto(2.0, 2.0))
+        val recorridoAntes = viewModel.estadoVisual.value.recorrido
+
+        enviar(viewModel, FormularioSenderoEvento.AlInsertarPuntoAntes(0))
+
+        assertEquals(recorridoAntes, viewModel.estadoVisual.value.recorrido)
+    }
+
+    // Probar que cambiar el tipo de un punto lo actualiza y marca cambios
+    @Test
+    fun `cambiar tipo de punto lo actualiza y marca cambios`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
+
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarTipoPunto(0, TipoPunto.MIRADOR))
+
+        assertEquals(2, viewModel.estadoVisual.value.recorrido.size)
+        assertEquals(TipoPunto.MIRADOR, viewModel.estadoVisual.value.recorrido[0].tipo)
+        assertEquals(TipoPunto.PASO, viewModel.estadoVisual.value.recorrido[1].tipo)
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que cambiar el nombre de un punto lo actualiza y marca cambios
+    @Test
+    fun `cambiar nombre de punto lo actualiza y marca cambios`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
+
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarNombrePunto(1, "Refugio Sur"))
+
+        assertEquals(2, viewModel.estadoVisual.value.recorrido.size)
+        assertEquals("Refugio Sur", viewModel.estadoVisual.value.recorrido[1].nombre)
+        assertEquals("", viewModel.estadoVisual.value.recorrido[0].nombre)
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que invertir el sentido invierte el orden de los puntos y marca cambios
+    @Test
+    fun `invertir sentido invierte el orden de los puntos y marca cambios`() = runTest {
+        val viewModel = crearViewModelConPuntos(
+            PuntoRecorrido(1.0, 1.0),
+            PuntoRecorrido(2.0, 2.0),
+            PuntoRecorrido(3.0, 3.0)
+        )
+
+        enviar(viewModel, FormularioSenderoEvento.AlInvertirSentido)
+
+        assertEquals(
+            listOf(PuntoRecorrido(3.0, 3.0), PuntoRecorrido(2.0, 2.0), PuntoRecorrido(1.0, 1.0)),
+            viewModel.estadoVisual.value.recorrido
+        )
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que la distancia calculada usa el recorrido y el tipo de recorrido actual
+    @Test
+    fun `distancia calculada usa el recorrido y el tipo de recorrido actual`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(0.0, 0.0), PuntoRecorrido(0.0, 1.0))
+
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarTipoRecorrido(TipoRecorrido.LINEAL))
+        assertEquals(111.195, viewModel.estadoVisual.value.distanciaCalculadaKilometros, 0.05)
+
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarTipoRecorrido(TipoRecorrido.IDA_Y_VUELTA))
+        assertEquals(222.39, viewModel.estadoVisual.value.distanciaCalculadaKilometros, 0.1)
+    }
+
+    // Probar que usar la distancia del mapa copia la distancia con un decimal al campo distancia
+    @Test
+    fun `usar distancia del mapa copia la distancia redondeada a un decimal`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(0.0, 0.0), PuntoRecorrido(0.0, 1.0))
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarTipoRecorrido(TipoRecorrido.LINEAL))
+
+        enviar(viewModel, FormularioSenderoEvento.AlUsarDistanciaDelMapa)
+
+        assertEquals("111.2", viewModel.estadoVisual.value.distancia)
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que el modo edición carga el recorrido del sendero sin marcar cambios
+    @Test
+    fun `modo edicion carga el recorrido del sendero sin marcar cambios`() = runTest {
+        val recorrido = listOf(
+            PuntoRecorrido(-40.5, -71.3, TipoPunto.REFUGIO, "Refugio"),
+            PuntoRecorrido(-40.6, -71.4, TipoPunto.PASO, "")
+        )
+        falsoSendero.senderos.value = listOf(senderoOriginal.copy(recorrido = recorrido))
+        val viewModel = crearViewModel(idSendero = "sendero-1")
+        avanzar()
+
+        assertEquals(recorrido, viewModel.estadoVisual.value.recorrido)
+        assertFalse(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    // Probar que guardar en creación envía el recorrido armado al caso de uso
+    @Test
+    fun `guardar en creacion envia el recorrido`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4))
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarTipoPunto(0, TipoPunto.CAMPING))
+        completarFormularioValido(viewModel)
+
+        enviar(viewModel, FormularioSenderoEvento.AlGuardar)
+
+        val guardado = falsoSendero.llamadasGuardarSendero.single().second
+        assertEquals(
+            listOf(
+                PuntoRecorrido(-40.5, -71.3, TipoPunto.CAMPING, ""),
+                PuntoRecorrido(-40.6, -71.4, TipoPunto.PASO, "")
+            ),
+            guardado.recorrido
+        )
+    }
+
+    // Probar que guardar en edición reemplaza el recorrido original por el editado
+    @Test
+    fun `guardar en edicion envia el recorrido editado`() = runTest {
+        falsoSendero.senderos.value = listOf(
+            senderoOriginal.copy(recorrido = listOf(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4)))
+        )
+        val viewModel = crearViewModel(idSendero = "sendero-1")
+        avanzar()
+        enviar(viewModel, FormularioSenderoEvento.AlInvertirSentido)
+        enviar(viewModel, FormularioSenderoEvento.AlAgregarPunto(-41.0, -72.0))
+
+        enviar(viewModel, FormularioSenderoEvento.AlGuardar)
+
+        assertEquals(
+            listOf(PuntoRecorrido(-40.6, -71.4), PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-41.0, -72.0)),
+            falsoSendero.llamadasGuardarSendero.single().second.recorrido
+        )
+    }
+
+    // Probar que los eventos con índice fuera de rango se ignoran sin lanzar excepción
+    @Test
+    fun `indices fuera de rango se ignoran sin excepcion`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
+        val estadoAntes = viewModel.estadoVisual.value
+
+        enviar(viewModel, FormularioSenderoEvento.AlMoverPunto(5, 9.0, 9.0))
+        enviar(viewModel, FormularioSenderoEvento.AlMoverPunto(-1, 9.0, 9.0))
+        enviar(viewModel, FormularioSenderoEvento.AlEliminarPunto(2))
+        enviar(viewModel, FormularioSenderoEvento.AlEliminarPunto(-1))
+        enviar(viewModel, FormularioSenderoEvento.AlInsertarPuntoAntes(7))
+        enviar(viewModel, FormularioSenderoEvento.AlInsertarPuntoAntes(-3))
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarTipoPunto(2, TipoPunto.PELIGRO))
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarNombrePunto(-1, "Nada"))
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarPunto(9))
+
+        val estadoDespues = viewModel.estadoVisual.value
+        assertEquals(estadoAntes.recorrido, estadoDespues.recorrido)
+        assertNull(estadoDespues.indicePuntoSeleccionado)
+    }
+
+    // Probar que usar la distancia del mapa quita la marca de error del campo distancia
+    @Test
+    fun `usar distancia del mapa quita el error del campo distancia`() = runTest {
+        val viewModel = crearViewModelConPuntos(PuntoRecorrido(0.0, 0.0), PuntoRecorrido(0.0, 1.0))
+        completarFormularioValido(viewModel)
+        enviar(viewModel, FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "abc"))
+        enviar(viewModel, FormularioSenderoEvento.AlGuardar)
+        assertTrue(CampoSendero.DISTANCIA in viewModel.estadoVisual.value.camposConError)
+
+        enviar(viewModel, FormularioSenderoEvento.AlUsarDistanciaDelMapa)
+
+        assertFalse(CampoSendero.DISTANCIA in viewModel.estadoVisual.value.camposConError)
+    }
+
+    // Probar que invertir el sentido con menos de dos puntos no hace nada ni marca cambios
+    @Test
+    fun `invertir sentido con menos de dos puntos no hace nada`() = runTest {
+        val sinPuntos = crearViewModel()
+        enviar(sinPuntos, FormularioSenderoEvento.AlInvertirSentido)
+        assertFalse(sinPuntos.estadoVisual.value.hayCambiosSinGuardar)
+
+        val conUnPunto = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0))
+        enviar(conUnPunto, FormularioSenderoEvento.AlSeleccionarPunto(0))
+        val estadoAntes = conUnPunto.estadoVisual.value
+
+        enviar(conUnPunto, FormularioSenderoEvento.AlInvertirSentido)
+
+        assertEquals(estadoAntes, conUnPunto.estadoVisual.value)
     }
 }

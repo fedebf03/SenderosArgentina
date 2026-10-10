@@ -1,5 +1,6 @@
 package com.unaj.senderos.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 
 // Fila de Room que representa un sendero de un usuario (fuente única de verdad)
@@ -25,5 +26,7 @@ data class SenderoEntidad(
     val esFavorito: Boolean,
     val fechaModificacion: Long,
     val estadoSincronizacion: String,
-    val estaEliminado: Boolean
+    val estaEliminado: Boolean,
+    @ColumnInfo(defaultValue = "[]")
+    val recorrido: List<PuntoRecorridoEntidad> = emptyList()
 )

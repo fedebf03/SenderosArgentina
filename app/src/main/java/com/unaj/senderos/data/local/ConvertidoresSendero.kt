@@ -33,4 +33,16 @@ class ConvertidoresSendero {
     fun textoAListaEtapas(texto: String): List<EtapaEntidad> {
         return json.decodeFromString(ListSerializer(EtapaEntidad.serializer()), texto)
     }
+
+    // Convertir una lista de puntos del recorrido a JSON
+    @TypeConverter
+    fun listaPuntosATexto(lista: List<PuntoRecorridoEntidad>): String {
+        return json.encodeToString(ListSerializer(PuntoRecorridoEntidad.serializer()), lista)
+    }
+
+    // Convertir un JSON a lista de puntos del recorrido
+    @TypeConverter
+    fun textoAListaPuntos(texto: String): List<PuntoRecorridoEntidad> {
+        return json.decodeFromString(ListSerializer(PuntoRecorridoEntidad.serializer()), texto)
+    }
 }

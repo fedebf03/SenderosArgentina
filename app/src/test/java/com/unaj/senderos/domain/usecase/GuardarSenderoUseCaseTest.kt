@@ -2,6 +2,8 @@ package com.unaj.senderos.domain.usecase
 
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.SenderoInvalidoException
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
@@ -241,5 +243,96 @@ class GuardarSenderoUseCaseTest {
         crearCasoDeUso()(crearSenderoDePrueba(nombre = ""))
 
         assertTrue(falsoSendero.llamadasGuardarSendero.isEmpty())
+    }
+
+    // Probar que una latitud fuera del rango de -90 a 90 marca el campo RECORRIDO
+    @Test
+    fun `latitud fuera de rango marca el campo RECORRIDO`() = runTest {
+        val resultadoNorte = crearCasoDeUso()(
+            crearSenderoDePrueba(recorrido = listOf(PuntoRecorrido(latitud = 90.1, longitud = 0.0)))
+        )
+        val resultadoSur = crearCasoDeUso()(
+            crearSenderoDePrueba(recorrido = listOf(PuntoRecorrido(latitud = -90.1, longitud = 0.0)))
+        )
+
+        assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultadoNorte))
+        assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultadoSur))
+        assertTrue(falsoSendero.llamadasGuardarSendero.isEmpty())
+    }
+
+    // Probar que una longitud fuera del rango de -180 a 180 marca el campo RECORRIDO
+    @Test
+    fun `longitud fuera de rango marca el campo RECORRIDO`() = runTest {
+        val resultadoEste = crearCasoDeUso()(
+            crearSenderoDePrueba(recorrido = listOf(PuntoRecorrido(latitud = 0.0, longitud = 180.1)))
+        )
+        val resultadoOeste = crearCasoDeUso()(
+            crearSenderoDePrueba(recorrido = listOf(PuntoRecorrido(latitud = 0.0, longitud = -180.1)))
+        )
+
+        assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultadoEste))
+        assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultadoOeste))
+    }
+
+    // Probar que un solo punto inválido entre varios válidos invalida el recorrido completo
+    @Test
+    fun `un punto invalido entre puntos validos marca el campo RECORRIDO`() = runTest {
+        val resultado = crearCasoDeUso()(
+            crearSenderoDePrueba(
+                recorrido = listOf(
+                    PuntoRecorrido(latitud = -40.5, longitud = -71.3),
+                    PuntoRecorrido(latitud = 95.0, longitud = -71.3),
+                    PuntoRecorrido(latitud = -40.6, longitud = -71.4)
+                )
+            )
+        )
+
+        assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultado))
+    }
+
+    // Probar que las coordenadas en los límites exactos son válidas
+    @Test
+    fun `coordenadas en los limites exactos son validas`() = runTest {
+        val resultado = crearCasoDeUso()(
+            crearSenderoDePrueba(
+                recorrido = listOf(
+                    PuntoRecorrido(latitud = 90.0, longitud = 180.0),
+                    PuntoRecorrido(latitud = -90.0, longitud = -180.0)
+                )
+            )
+        )
+
+        assertTrue(resultado.isSuccess)
+    }
+
+    // Probar que un recorrido vacío es válido porque el recorrido es opcional
+    @Test
+    fun `recorrido vacio es valido`() = runTest {
+        val resultado = crearCasoDeUso()(crearSenderoDePrueba(recorrido = emptyList()))
+
+        assertTrue(resultado.isSuccess)
+        assertTrue(falsoSendero.llamadasGuardarSendero.single().second.recorrido.isEmpty())
+    }
+
+    // Probar que se recorta el nombre de cada punto y se conservan sus coordenadas y tipos
+    @Test
+    fun `recorta el nombre de cada punto del recorrido`() = runTest {
+        val guardado = crearCasoDeUso()(
+            crearSenderoDePrueba(
+                recorrido = listOf(
+                    PuntoRecorrido(latitud = -40.5, longitud = -71.3, tipo = TipoPunto.REFUGIO, nombre = "  Refugio Norte "),
+                    PuntoRecorrido(latitud = -40.6, longitud = -71.4, tipo = TipoPunto.PASO, nombre = "   ")
+                )
+            )
+        ).getOrThrow()
+
+        assertEquals(
+            listOf(
+                PuntoRecorrido(latitud = -40.5, longitud = -71.3, tipo = TipoPunto.REFUGIO, nombre = "Refugio Norte"),
+                PuntoRecorrido(latitud = -40.6, longitud = -71.4, tipo = TipoPunto.PASO, nombre = "")
+            ),
+            guardado.recorrido
+        )
+        assertEquals(guardado.recorrido, falsoSendero.llamadasGuardarSendero.single().second.recorrido)
     }
 }

@@ -1,13 +1,17 @@
 package com.unaj.senderos.data.mapeo
 
 import com.unaj.senderos.data.local.EtapaEntidad
+import com.unaj.senderos.data.local.PuntoRecorridoEntidad
 import com.unaj.senderos.data.local.SenderoEntidad
 import com.unaj.senderos.data.remote.EtapaRed
+import com.unaj.senderos.data.remote.PuntoRecorridoRed
 import com.unaj.senderos.data.remote.SenderoRed
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
 
 // Resolver una dificultad por nombre con valor por defecto MEDIA
@@ -18,6 +22,11 @@ private fun resolverDificultad(nombre: String): Dificultad {
 // Resolver un tipo de recorrido por nombre con valor por defecto LINEAL
 private fun resolverTipoRecorrido(nombre: String): TipoRecorrido {
     return TipoRecorrido.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoRecorrido.LINEAL
+}
+
+// Resolver un tipo de punto por nombre con valor por defecto PASO
+private fun resolverTipoPunto(nombre: String): TipoPunto {
+    return TipoPunto.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoPunto.PASO
 }
 
 // Resolver un estado de sincronización por nombre con valor por defecto SINCRONIZADO
@@ -47,7 +56,10 @@ fun SenderoEntidad.aDominio(): Sendero {
         servicios = servicios,
         etapas = etapas.map { etapa -> Etapa(etapa.numero, etapa.nombre, etapa.distanciaKilometros) },
         esFavorito = esFavorito,
-        estadoSincronizacion = resolverEstadoSincronizacion(estadoSincronizacion)
+        estadoSincronizacion = resolverEstadoSincronizacion(estadoSincronizacion),
+        recorrido = recorrido.map { punto ->
+            PuntoRecorrido(punto.latitud, punto.longitud, resolverTipoPunto(punto.tipo), punto.nombre)
+        }
     )
 }
 
@@ -78,7 +90,10 @@ fun Sendero.aEntidad(
         esFavorito = esFavorito,
         fechaModificacion = fechaModificacion,
         estadoSincronizacion = estadoSincronizacion.name,
-        estaEliminado = estaEliminado
+        estaEliminado = estaEliminado,
+        recorrido = recorrido.map { punto ->
+            PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo.name, punto.nombre)
+        }
     )
 }
 
@@ -103,7 +118,8 @@ fun SenderoEntidad.aRed(): SenderoRed {
         etapas = etapas.map { etapa -> EtapaRed(etapa.numero, etapa.nombre, etapa.distanciaKilometros) },
         esFavorito = esFavorito,
         fechaModificacion = fechaModificacion,
-        eliminado = estaEliminado
+        eliminado = estaEliminado,
+        recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre) }
     )
 }
 
@@ -130,6 +146,9 @@ fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
         esFavorito = esFavorito,
         fechaModificacion = fechaModificacion,
         estadoSincronizacion = EstadoSincronizacion.SINCRONIZADO.name,
-        estaEliminado = eliminado
+        estaEliminado = eliminado,
+        recorrido = recorrido.map { punto ->
+            PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo, punto.nombre)
+        }
     )
 }
