@@ -40,5 +40,6 @@ sealed interface SenderosEvento {
 sealed interface SenderosEfecto {
     data object NavegarALogin : SenderosEfecto
     data class NavegarADetalle(val idSendero: String) : SenderosEfecto
+    data object NavegarACreacion : SenderosEfecto
     data class MostrarAviso(val mensaje: String) : SenderosEfecto
 }

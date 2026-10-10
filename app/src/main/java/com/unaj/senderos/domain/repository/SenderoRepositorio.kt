@@ -15,4 +15,10 @@ interface SenderoRepositorio {
 
     // Eliminar un sendero del usuario
     suspend fun eliminarSendero(idUsuario: String, idSendero: String): Result<Unit>
+
+    // Crear o actualizar un sendero del usuario (escritura diferida: local primero, luego sincronización)
+    suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit>
+
+    // Detener la sincronización pendiente o en curso del usuario (por ejemplo al cerrar sesión)
+    fun detenerSincronizacion(idUsuario: String)
 }

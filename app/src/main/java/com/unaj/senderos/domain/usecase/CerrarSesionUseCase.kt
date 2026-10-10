@@ -1,12 +1,17 @@
 package com.unaj.senderos.domain.usecase
 
 import com.unaj.senderos.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.domain.repository.SenderoRepositorio
 
 class CerrarSesionUseCase(
-    private val repositorio: AutenticacionRepositorio
+    private val autenticacionRepositorio: AutenticacionRepositorio,
+    private val senderoRepositorio: SenderoRepositorio
 ) {
-    // Cerrar la sesión del usuario actual en el repositorio
+    // Detener la sincronización del usuario actual, si existe, y cerrar su sesión
     operator fun invoke() {
-        repositorio.cerrarSesion()
+        autenticacionRepositorio.obtenerUsuarioActual()?.let { usuario ->
+            senderoRepositorio.detenerSincronizacion(usuario.id)
+        }
+        autenticacionRepositorio.cerrarSesion()
     }
 }

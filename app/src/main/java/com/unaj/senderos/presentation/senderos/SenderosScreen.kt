@@ -23,6 +23,8 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Map
@@ -66,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.unaj.senderos.domain.model.Dificultad
+import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.Usuario
 
@@ -76,12 +79,14 @@ private const val TAG = "SENDEROS_PANTALLA"
 fun SenderosPantalla(
     viewModel: SenderosViewModel,
     alNavegarALogin: () -> Unit = {},
-    alNavegarADetalle: (String) -> Unit = {}
+    alNavegarADetalle: (String) -> Unit = {},
+    alNavegarACreacion: () -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val navegarALoginActual by rememberUpdatedState(alNavegarALogin)
     val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
+    val navegarACreacionActual by rememberUpdatedState(alNavegarACreacion)
 
     LaunchedEffect(Unit) {
         viewModel.efectoVisual.collect { efecto ->
@@ -89,6 +94,7 @@ fun SenderosPantalla(
             when (efecto) {
                 is SenderosEfecto.NavegarALogin -> navegarALoginActual()
                 is SenderosEfecto.NavegarADetalle -> navegarADetalleActual(efecto.idSendero)
+                is SenderosEfecto.NavegarACreacion -> navegarACreacionActual()
                 is SenderosEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
         }
@@ -286,6 +292,21 @@ private fun TarjetaSendero(sendero: Sendero, alSeleccionar: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
+                when (sendero.estadoSincronizacion) {
+                    EstadoSincronizacion.PENDIENTE -> Icon(
+                        imageVector = Icons.Outlined.CloudUpload,
+                        contentDescription = "Pendiente de sincronizar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    EstadoSincronizacion.CON_ERROR -> Icon(
+                        imageVector = Icons.Outlined.CloudOff,
+                        contentDescription = "Error al sincronizar",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    EstadoSincronizacion.SINCRONIZADO -> Unit
+                }
                 if (sendero.esFavorito) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,

@@ -56,7 +56,11 @@ class SenderosViewModel(
             }
             is SenderosEvento.AlCerrarSesion -> cerrarSesion()
             is SenderosEvento.AlTocarNotificaciones -> emitirAvisoNoDisponible()
-            is SenderosEvento.AlTocarCrearSendero -> emitirAvisoNoDisponible()
+            is SenderosEvento.AlTocarCrearSendero -> {
+                viewModelScope.launch {
+                    canalEfectos.send(SenderosEfecto.NavegarACreacion)
+                }
+            }
             is SenderosEvento.AlSeleccionarSendero -> {
                 Log.d(TAG, "Sendero seleccionado: ${evento.idSendero}")
                 viewModelScope.launch {

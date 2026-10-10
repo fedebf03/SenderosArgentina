@@ -6,6 +6,9 @@ enum class Dificultad { BAJA, MEDIA, ALTA }
 // Forma en que se recorre un sendero
 enum class TipoRecorrido { CIRCULAR, IDA_Y_VUELTA, LINEAL }
 
+// Estado de sincronización de un sendero entre la base local y el servidor
+enum class EstadoSincronizacion { PENDIENTE, SINCRONIZADO, CON_ERROR }
+
 // Tramo de un sendero con su número de orden, nombre y distancia
 data class Etapa(
     val numero: Int,
@@ -32,5 +35,6 @@ data class Sendero(
     val recomendaciones: List<String> = emptyList(),
     val servicios: List<String> = emptyList(),
     val etapas: List<Etapa> = emptyList(),
-    val esFavorito: Boolean = false
+    val esFavorito: Boolean = false,
+    val estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO
 )
