@@ -2,6 +2,7 @@ package com.unaj.senderos.presentation.formulario
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -36,6 +38,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -50,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,6 +65,7 @@ import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.presentation.mapa.MapaRecorrido
 
 private const val TAG = "FORMULARIO_SENDERO_PANTALLA"
 
@@ -104,40 +109,46 @@ fun FormularioSenderoContenido(
     modifier: Modifier = Modifier,
     estadoAvisos: SnackbarHostState = remember { SnackbarHostState() }
 ) {
-    Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = { BarraSuperiorFormulario(estadoVisual.esEdicion, alProcesarEvento) },
-        bottomBar = { BotonGuardar(estadoVisual.estaGuardando, alProcesarEvento) },
-        snackbarHost = { SnackbarHost(hostState = estadoAvisos) }
-    ) { espaciadoInterno ->
-        when {
-            estadoVisual.estaCargando -> Box(
-                modifier = Modifier.fillMaxSize().padding(espaciadoInterno),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-            estadoVisual.mensajeError != null -> Column(
-                modifier = Modifier.fillMaxSize().padding(espaciadoInterno).padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = estadoVisual.mensajeError,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
-                TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlVolver) }) {
-                    Text("Volver")
+    Box(modifier = modifier) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = { BarraSuperiorFormulario(estadoVisual.esEdicion, alProcesarEvento) },
+            bottomBar = { BotonGuardar(estadoVisual.estaGuardando, alProcesarEvento) },
+            snackbarHost = { SnackbarHost(hostState = estadoAvisos) }
+        ) { espaciadoInterno ->
+            when {
+                estadoVisual.estaCargando -> Box(
+                    modifier = Modifier.fillMaxSize().padding(espaciadoInterno),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
+                estadoVisual.mensajeError != null -> Column(
+                    modifier = Modifier.fillMaxSize().padding(espaciadoInterno).padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = estadoVisual.mensajeError,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlVolver) }) {
+                        Text("Volver")
+                    }
+                }
+                else -> CuerpoFormulario(
+                    estadoVisual = estadoVisual,
+                    alProcesarEvento = alProcesarEvento,
+                    modifier = Modifier.padding(espaciadoInterno)
+                )
             }
-            else -> CuerpoFormulario(
-                estadoVisual = estadoVisual,
-                alProcesarEvento = alProcesarEvento,
-                modifier = Modifier.padding(espaciadoInterno)
-            )
+        }
+
+        if (estadoVisual.esEditorMapaVisible) {
+            EditorRecorridoMapa(estadoVisual = estadoVisual, alProcesarEvento = alProcesarEvento)
         }
     }
 
@@ -243,6 +254,8 @@ private fun CuerpoFormulario(
         SeccionDatosGenerales(estadoVisual, alProcesarEvento)
         Spacer(Modifier.height(4.dp))
         SeccionDatosTecnicos(estadoVisual, alProcesarEvento)
+        Spacer(Modifier.height(4.dp))
+        SeccionRecorrido(estadoVisual, alProcesarEvento)
         Spacer(Modifier.height(4.dp))
         SeccionPlanificacion(estadoVisual, alProcesarEvento)
         Spacer(Modifier.height(4.dp))
@@ -408,6 +421,61 @@ private fun SeccionDatosTecnicos(
                 }
             )
         }
+    }
+}
+
+@Composable
+// Dibujar la sección del recorrido con una vista previa del mapa, la distancia calculada y el acceso al editor
+private fun SeccionRecorrido(
+    estadoVisual: FormularioSenderoEstadoVisual,
+    alProcesarEvento: (FormularioSenderoEvento) -> Unit
+) {
+    TituloDeSeccion("Recorrido")
+    if (estadoVisual.recorrido.isEmpty()) {
+        Text(
+            text = "Todavía no marcaste el recorrido en el mapa.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+        ) {
+            // Con el editor abierto se evita tener dos mapas a la vez
+            if (!estadoVisual.esEditorMapaVisible) {
+                MapaRecorrido(
+                    puntos = estadoVisual.recorrido,
+                    tipoRecorrido = estadoVisual.tipoRecorrido,
+                    modifier = Modifier.fillMaxSize(),
+                    sonGestosHabilitados = false,
+                    usarModoTextura = true
+                )
+            }
+        }
+        Text(
+            text = "${estadoVisual.recorrido.size} puntos · ${formatearKilometros(estadoVisual.distanciaCalculadaKilometros)} km " +
+                "según el mapa",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+    if (CampoSendero.RECORRIDO in estadoVisual.camposConError) {
+        Text(
+            text = "El recorrido tiene puntos con coordenadas inválidas",
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    OutlinedButton(
+        onClick = { alProcesarEvento(FormularioSenderoEvento.AlAbrirEditorMapa) },
+        modifier = Modifier.fillMaxWidth().height(50.dp)
+    ) {
+        Icon(imageVector = Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(if (estadoVisual.recorrido.isEmpty()) "Marcar recorrido en el mapa" else "Editar en el mapa")
     }
 }
 

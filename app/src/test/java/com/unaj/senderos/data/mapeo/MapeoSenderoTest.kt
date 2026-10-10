@@ -1,7 +1,11 @@
 package com.unaj.senderos.data.mapeo
 
+import com.unaj.senderos.data.local.PuntoRecorridoEntidad
+import com.unaj.senderos.data.remote.PuntoRecorridoRed
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoSincronizacion
+import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.falsos.crearEntidadDePrueba
 import com.unaj.senderos.falsos.crearRedDePrueba
@@ -127,5 +131,80 @@ class MapeoSenderoTest {
 
         assertEquals(Dificultad.MEDIA, sendero.dificultad)
         assertEquals(TipoRecorrido.LINEAL, sendero.tipoRecorrido)
+    }
+
+    // Probar que el recorrido sobrevive a la ida y vuelta dominio entidad dominio con su orden
+    @Test
+    fun `ida y vuelta dominio entidad dominio conserva el recorrido y su orden`() {
+        val recorrido = listOf(
+            PuntoRecorrido(-40.5, -71.3, TipoPunto.REFUGIO, "Refugio Norte"),
+            PuntoRecorrido(-40.6, -71.4, TipoPunto.PASO, ""),
+            PuntoRecorrido(-40.7, -71.2, TipoPunto.PELIGRO, "Cornisa")
+        )
+        val original = crearSenderoDePrueba(recorrido = recorrido)
+
+        val entidad = original.aEntidad(
+            fechaModificacion = 5_000L,
+            estadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
+            estaEliminado = false
+        )
+
+        assertEquals(
+            listOf("REFUGIO", "PASO", "PELIGRO"),
+            entidad.recorrido.map { punto -> punto.tipo }
+        )
+        assertEquals(recorrido, entidad.aDominio().recorrido)
+    }
+
+    // Probar que el recorrido sobrevive a la ida y vuelta entidad red entidad con su orden
+    @Test
+    fun `ida y vuelta entidad red entidad conserva el recorrido y su orden`() {
+        val entidadOriginal = crearEntidadDePrueba(
+            recorrido = listOf(
+                PuntoRecorridoEntidad(-40.5, -71.3, "AGUA", "Arroyo"),
+                PuntoRecorridoEntidad(-40.6, -71.4, "CAMPING", "Zona de acampe")
+            )
+        )
+
+        val red = entidadOriginal.aRed()
+        val recuperada = red.aEntidad(idUsuario = entidadOriginal.idUsuario)
+
+        assertEquals(
+            listOf(PuntoRecorridoRed(-40.5, -71.3, "AGUA", "Arroyo"), PuntoRecorridoRed(-40.6, -71.4, "CAMPING", "Zona de acampe")),
+            red.recorrido
+        )
+        assertEquals(entidadOriginal.recorrido, recuperada.recorrido)
+    }
+
+    // Probar que un tipo de punto desconocido en la entidad cae en PASO
+    @Test
+    fun `tipo de punto desconocido en la entidad cae en PASO`() {
+        val entidad = crearEntidadDePrueba(
+            recorrido = listOf(PuntoRecorridoEntidad(-40.5, -71.3, "VOLCAN", "Lanin"))
+        )
+
+        val sendero = entidad.aDominio()
+
+        assertEquals(listOf(PuntoRecorrido(-40.5, -71.3, TipoPunto.PASO, "Lanin")), sendero.recorrido)
+    }
+
+    // Probar que un tipo de punto desconocido en el documento remoto cae en PASO
+    @Test
+    fun `tipo de punto desconocido en el documento remoto cae en PASO`() {
+        val red = crearRedDePrueba(
+            recorrido = listOf(PuntoRecorridoRed(-40.5, -71.3, "VOLCAN", "Lanin"))
+        )
+
+        val sendero = red.aEntidad("usuario-1").aDominio()
+
+        assertEquals(listOf(PuntoRecorrido(-40.5, -71.3, TipoPunto.PASO, "Lanin")), sendero.recorrido)
+    }
+
+    // Probar que un documento remoto sin recorrido produce un sendero con recorrido vacío
+    @Test
+    fun `documento remoto sin recorrido produce recorrido vacio`() {
+        val sendero = crearRedDePrueba().aEntidad("usuario-1").aDominio()
+
+        assertTrue(sendero.recorrido.isEmpty())
     }
 }

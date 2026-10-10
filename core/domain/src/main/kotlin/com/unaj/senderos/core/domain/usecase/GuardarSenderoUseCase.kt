@@ -42,7 +42,8 @@ class GuardarSenderoUseCase(
             mejorEpoca = sendero.mejorEpoca.trim(),
             recomendaciones = sendero.recomendaciones.map { texto -> texto.trim() }.filter { texto -> texto.isNotEmpty() },
             servicios = sendero.servicios.map { texto -> texto.trim() }.filter { texto -> texto.isNotEmpty() },
-            etapas = sendero.etapas.mapIndexed { indice, etapa -> etapa.copy(numero = indice + 1) }
+            etapas = sendero.etapas.mapIndexed { indice, etapa -> etapa.copy(numero = indice + 1) },
+            recorrido = sendero.recorrido.map { punto -> punto.copy(nombre = punto.nombre.trim()) }
         )
     }
 
@@ -58,6 +59,10 @@ class GuardarSenderoUseCase(
         if (sendero.alturaMaximaMetros < 0 || sendero.alturaMaximaMetros < sendero.alturaMinimaMetros) {
             camposInvalidos.add(CampoSendero.ALTURA_MAXIMA)
         }
+        val hayPuntoFueraDeRango = sendero.recorrido.any { punto ->
+            punto.latitud !in -90.0..90.0 || punto.longitud !in -180.0..180.0
+        }
+        if (hayPuntoFueraDeRango) camposInvalidos.add(CampoSendero.RECORRIDO)
         return camposInvalidos
     }
 }

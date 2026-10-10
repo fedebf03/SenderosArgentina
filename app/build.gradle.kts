@@ -85,6 +85,9 @@ dependencies {
     // Carga de imágenes remotas (foto de perfil)
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // Mapa del recorrido (MapLibre Native con OpenGL ES, sin plugin de anotaciones; el artefacto android-sdk usa Vulkan desde la 13.0.0)
+    implementation("org.maplibre.gl:android-sdk-opengl:13.6.1")
+
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("app.cash.turbine:turbine:1.2.1")

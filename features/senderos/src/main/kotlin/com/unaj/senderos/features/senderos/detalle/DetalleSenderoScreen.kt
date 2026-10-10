@@ -80,6 +80,7 @@ import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.presentation.mapa.MapaRecorrido
 import kotlin.math.roundToInt
 
 private const val TAG = "DETALLE_SENDERO_PANTALLA"
@@ -223,7 +224,7 @@ private fun BotonIniciarRecorrido(alProcesarEvento: (DetalleSenderoEvento) -> Un
 }
 
 @Composable
-// Dibujar el contenido desplazable: cabecera, datos, mapa reservado, descripción y secciones
+// Dibujar el contenido desplazable: cabecera, datos, mapa del recorrido, descripción y secciones
 private fun CuerpoDetalle(
     estadoVisual: DetalleSenderoEstadoVisual,
     sendero: Sendero,
@@ -238,7 +239,7 @@ private fun CuerpoDetalle(
         item {
             DatosDelRecorrido(sendero, modifier = Modifier.padding(horizontal = 24.dp))
         }
-        item { RecuadroMapa(modifier = Modifier.padding(horizontal = 24.dp)) }
+        item { RecuadroMapa(sendero = sendero, modifier = Modifier.padding(horizontal = 24.dp)) }
         item {
             Column(
                 modifier = Modifier.padding(horizontal = 24.dp),
@@ -582,29 +583,38 @@ private fun FilaConIcono(icono: ImageVector, texto: String) {
 }
 
 @Composable
-// Dibujar el recuadro reservado donde se mostrará el mapa del sendero
-private fun RecuadroMapa(modifier: Modifier = Modifier) {
+// Dibujar el mapa del recorrido del sendero, o un aviso si todavía no tiene recorrido
+private fun RecuadroMapa(sendero: Sendero, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(160.dp),
+            .height(240.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
         )
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Map,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
+        if (sendero.recorrido.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Map,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(text = "Este sendero todavía no tiene recorrido", style = MaterialTheme.typography.bodyMedium)
+            }
+        } else {
+            MapaRecorrido(
+                puntos = sendero.recorrido,
+                tipoRecorrido = sendero.tipoRecorrido,
+                modifier = Modifier.fillMaxSize(),
+                usarModoTextura = true
             )
-            Spacer(Modifier.height(8.dp))
-            Text(text = "Mapa disponible próximamente", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

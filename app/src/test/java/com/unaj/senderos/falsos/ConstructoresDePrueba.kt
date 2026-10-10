@@ -2,12 +2,15 @@ package com.unaj.senderos.falsos
 
 import com.unaj.senderos.data.local.EtapaEntidad
 import com.unaj.senderos.data.local.SenderoEntidad
+import com.unaj.senderos.data.local.PuntoRecorridoEntidad
 import com.unaj.senderos.data.remote.EtapaRed
 import com.unaj.senderos.data.remote.SenderoRed
+import com.unaj.senderos.data.remote.PuntoRecorridoRed
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
 
 // Construir un sendero de dominio válido con valores por defecto sobreescribibles
@@ -23,7 +26,8 @@ fun crearSenderoDePrueba(
     alturaMaximaMetros: Int = 2000,
     alturaMinimaMetros: Int = 1400,
     esFavorito: Boolean = false,
-    estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO
+    estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
+    recorrido: List<PuntoRecorrido> = emptyList()
 ): Sendero {
     return Sendero(
         id = id,
@@ -44,7 +48,8 @@ fun crearSenderoDePrueba(
         servicios = listOf("Refugio"),
         etapas = listOf(Etapa(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
         esFavorito = esFavorito,
-        estadoSincronizacion = estadoSincronizacion
+        estadoSincronizacion = estadoSincronizacion,
+        recorrido = recorrido
     )
 }
 
@@ -56,7 +61,8 @@ fun crearEntidadDePrueba(
     esFavorito: Boolean = false,
     fechaModificacion: Long = 1_000L,
     estadoSincronizacion: String = "SINCRONIZADO",
-    estaEliminado: Boolean = false
+    estaEliminado: Boolean = false,
+    recorrido: List<PuntoRecorridoEntidad> = emptyList()
 ): SenderoEntidad {
     return SenderoEntidad(
         id = id,
@@ -79,7 +85,8 @@ fun crearEntidadDePrueba(
         esFavorito = esFavorito,
         fechaModificacion = fechaModificacion,
         estadoSincronizacion = estadoSincronizacion,
-        estaEliminado = estaEliminado
+        estaEliminado = estaEliminado,
+        recorrido = recorrido
     )
 }
 
@@ -88,7 +95,8 @@ fun crearRedDePrueba(
     id: String = "sendero-1",
     nombre: String = "Cerro Catedral",
     fechaModificacion: Long = 1_000L,
-    eliminado: Boolean = false
+    eliminado: Boolean = false,
+    recorrido: List<PuntoRecorridoRed> = emptyList()
 ): SenderoRed {
     return SenderoRed(
         id = id,
@@ -109,6 +117,7 @@ fun crearRedDePrueba(
         etapas = listOf(EtapaRed(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
         esFavorito = false,
         fechaModificacion = fechaModificacion,
-        eliminado = eliminado
+        eliminado = eliminado,
+        recorrido = recorrido
     )
 }

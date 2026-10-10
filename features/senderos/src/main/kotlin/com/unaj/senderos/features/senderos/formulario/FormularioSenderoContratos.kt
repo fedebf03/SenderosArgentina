@@ -1,8 +1,11 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
 
 enum class CampoFormulario {
@@ -48,8 +51,15 @@ data class FormularioSenderoEstadoVisual(
     val camposConError: Set<CampoSendero> = emptySet(),
     val hayCambiosSinGuardar: Boolean = false,
     val esDialogoDescartarVisible: Boolean = false,
-    val mensajeError: String? = null
-)
+    val mensajeError: String? = null,
+    val recorrido: List<PuntoRecorrido> = emptyList(),
+    val esEditorMapaVisible: Boolean = false,
+    val indicePuntoSeleccionado: Int? = null
+) {
+    // Distancia en kilómetros calculada a partir del recorrido y el tipo de recorrido actual
+    val distanciaCalculadaKilometros: Double
+        get() = CalculadoraRecorrido.distanciaKilometros(recorrido, tipoRecorrido)
+}
 
 sealed interface FormularioSenderoEvento {
     data class AlCambiarTexto(val campo: CampoFormulario, val texto: String) : FormularioSenderoEvento
@@ -65,6 +75,17 @@ sealed interface FormularioSenderoEvento {
     data object AlVolver : FormularioSenderoEvento
     data object AlConfirmarDescartar : FormularioSenderoEvento
     data object AlCancelarDescartar : FormularioSenderoEvento
+    data object AlAbrirEditorMapa : FormularioSenderoEvento
+    data object AlCerrarEditorMapa : FormularioSenderoEvento
+    data class AlAgregarPunto(val latitud: Double, val longitud: Double) : FormularioSenderoEvento
+    data class AlMoverPunto(val indice: Int, val latitud: Double, val longitud: Double) : FormularioSenderoEvento
+    data class AlSeleccionarPunto(val indice: Int?) : FormularioSenderoEvento
+    data class AlEliminarPunto(val indice: Int) : FormularioSenderoEvento
+    data class AlInsertarPuntoAntes(val indice: Int) : FormularioSenderoEvento
+    data class AlCambiarTipoPunto(val indice: Int, val tipo: TipoPunto) : FormularioSenderoEvento
+    data class AlCambiarNombrePunto(val indice: Int, val nombre: String) : FormularioSenderoEvento
+    data object AlInvertirSentido : FormularioSenderoEvento
+    data object AlUsarDistanciaDelMapa : FormularioSenderoEvento
 }
 
 sealed interface FormularioSenderoEfecto {

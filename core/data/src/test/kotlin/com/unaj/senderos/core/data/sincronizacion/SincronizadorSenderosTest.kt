@@ -1,5 +1,7 @@
 package com.unaj.senderos.data.sincronizacion
 
+import com.unaj.senderos.data.local.PuntoRecorridoEntidad
+import com.unaj.senderos.data.remote.PuntoRecorridoRed
 import com.unaj.senderos.falsos.FalsoEjecutorTransacciones
 import com.unaj.senderos.falsos.FalsoSenderoDao
 import com.unaj.senderos.falsos.FalsoSenderoFuenteRemota
@@ -509,5 +511,55 @@ class SincronizadorSenderosTest {
         val resultado = runCatching { crearSincronizador().sincronizar(idUsuario) }
 
         assertTrue(resultado.exceptionOrNull() is CancellationException)
+    }
+
+    // Probar que un sendero pendiente con recorrido sube todos sus puntos en el mismo orden
+    @Test
+    fun `sendero pendiente con recorrido sube los puntos sin perderlos`() = runTest {
+        falsaFuenteRemota.usuariosConMarcaEjemplos.add(idUsuario)
+        falsoDao.entidades.value = listOf(
+            crearEntidadDePrueba(
+                id = "a",
+                estadoSincronizacion = "PENDIENTE",
+                recorrido = listOf(
+                    PuntoRecorridoEntidad(-39.2, -71.1, "REFUGIO", "Refugio"),
+                    PuntoRecorridoEntidad(-39.3, -71.2, "PASO", "")
+                )
+            )
+        )
+
+        crearSincronizador().sincronizar(idUsuario).getOrThrow()
+
+        val subido = falsaFuenteRemota.senderosGuardados.single().second
+        assertEquals(
+            listOf(PuntoRecorridoRed(-39.2, -71.1, "REFUGIO", "Refugio"), PuntoRecorridoRed(-39.3, -71.2, "PASO", "")),
+            subido.recorrido
+        )
+    }
+
+    // Probar que un documento remoto con recorrido baja a la base local con todos sus puntos
+    @Test
+    fun `documento remoto con recorrido baja los puntos sin perderlos`() = runTest {
+        falsaFuenteRemota.usuariosConMarcaEjemplos.add(idUsuario)
+        falsaFuenteRemota.precargar(
+            idUsuario,
+            crearRedDePrueba(
+                id = "a",
+                recorrido = listOf(
+                    PuntoRecorridoRed(-39.2, -71.1, "MIRADOR", "Cumbre"),
+                    PuntoRecorridoRed(-39.3, -71.2, "AGUA", "Arroyo")
+                )
+            )
+        )
+
+        crearSincronizador().sincronizar(idUsuario).getOrThrow()
+
+        assertEquals(
+            listOf(
+                PuntoRecorridoEntidad(-39.2, -71.1, "MIRADOR", "Cumbre"),
+                PuntoRecorridoEntidad(-39.3, -71.2, "AGUA", "Arroyo")
+            ),
+            falsoDao.obtenerPorId(idUsuario, "a")?.recorrido
+        )
     }
 }
