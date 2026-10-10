@@ -35,6 +35,10 @@ android {
     buildFeatures {
         compose = true
     }
+    // Permitir llamadas a android.util.Log en pruebas unitarias de JVM
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -67,7 +71,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
+    // Carga de imágenes remotas (foto de perfil)
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("app.cash.turbine:turbine:1.2.1")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
