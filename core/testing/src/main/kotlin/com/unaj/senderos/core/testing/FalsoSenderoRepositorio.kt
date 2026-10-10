@@ -18,11 +18,22 @@ class FalsoSenderoRepositorio(
     var errorEnFlujo: Throwable? = null
     var resultadoAlternarFavorito: Result<Unit> = Result.success(Unit)
     var resultadoEliminarSendero: Result<Unit> = Result.success(Unit)
+    var resultadoGuardarSendero: Result<Unit> = Result.success(Unit)
 
     val idsUsuarioConsultados: MutableList<String> = mutableListOf()
     val consultasSendero: MutableList<Pair<String, String>> = mutableListOf()
     val llamadasAlternarFavorito: MutableList<Pair<String, String>> = mutableListOf()
     val llamadasEliminarSendero: MutableList<Pair<String, String>> = mutableListOf()
+    val llamadasGuardarSendero: MutableList<Pair<String, Sendero>> = mutableListOf()
+
+    val idsUsuarioDetenidos: MutableList<String> = mutableListOf()
+    var alDetenerSincronizacion: ((String) -> Unit)? = null
+
+    // Registrar el usuario cuya sincronización se detuvo y avisar al observador de pruebas
+    override fun detenerSincronizacion(idUsuario: String) {
+        idsUsuarioDetenidos.add(idUsuario)
+        alDetenerSincronizacion?.invoke(idUsuario)
+    }
 
     // Registrar el usuario consultado y emitir la lista vigente de la fuente falsa
     override fun observarSenderosDelUsuario(idUsuario: String): Flow<List<Sendero>> {
@@ -64,5 +75,20 @@ class FalsoSenderoRepositorio(
             senderos.update { listaActual -> listaActual.filter { sendero -> sendero.id != idSendero } }
         }
         return resultadoEliminarSendero
+    }
+
+    // Registrar la llamada y crear o reemplazar el sendero en la fuente falsa si el resultado configurado es exitoso
+    override suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit> {
+        llamadasGuardarSendero.add(idUsuario to sendero)
+        if (resultadoGuardarSendero.isSuccess) {
+            senderos.update { listaActual ->
+                if (listaActual.any { existente -> existente.id == sendero.id }) {
+                    listaActual.map { existente -> if (existente.id == sendero.id) sendero else existente }
+                } else {
+                    listaActual + sendero
+                }
+            }
+        }
+        return resultadoGuardarSendero
     }
 }

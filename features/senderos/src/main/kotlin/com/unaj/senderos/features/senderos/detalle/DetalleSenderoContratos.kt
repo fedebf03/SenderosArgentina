@@ -31,4 +31,5 @@ sealed interface DetalleSenderoEfecto {
     data object VolverAlListado : DetalleSenderoEfecto
     data class MostrarAviso(val mensaje: String) : DetalleSenderoEfecto
     data class CompartirSendero(val texto: String) : DetalleSenderoEfecto
+    data class NavegarAEdicion(val idSendero: String) : DetalleSenderoEfecto
 }

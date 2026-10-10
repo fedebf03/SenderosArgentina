@@ -54,7 +54,7 @@ class SenderosViewModelTest {
     private fun crearViewModel(): SenderosViewModel {
         return SenderosViewModel(
             observarSenderosDelUsuarioUseCase = ObservarSenderosDelUsuarioUseCase(falsoSendero, falsoAutenticacion),
-            cerrarSesionUseCase = CerrarSesionUseCase(falsoAutenticacion)
+            cerrarSesionUseCase = CerrarSesionUseCase(falsoAutenticacion, falsoSendero)
         )
     }
 
@@ -222,9 +222,9 @@ class SenderosViewModelTest {
         }
     }
 
-    // Probar que tocar crear sendero emite el aviso de funcionalidad no disponible
+    // Probar que tocar crear sendero emite el efecto de navegación a la pantalla de creación
     @Test
-    fun `AlTocarCrearSendero emite MostrarAviso no disponible`() = runTest {
+    fun `AlTocarCrearSendero emite NavegarACreacion`() = runTest {
         val viewModel = crearViewModel()
         advanceUntilIdle()
 
@@ -232,7 +232,7 @@ class SenderosViewModelTest {
             viewModel.procesarEvento(SenderosEvento.AlTocarCrearSendero)
             advanceUntilIdle()
 
-            assertEquals(SenderosEfecto.MostrarAviso("Todavía no disponible"), awaitItem())
+            assertEquals(SenderosEfecto.NavegarACreacion, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }

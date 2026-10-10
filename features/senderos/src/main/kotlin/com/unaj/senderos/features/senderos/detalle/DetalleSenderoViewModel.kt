@@ -71,7 +71,7 @@ class DetalleSenderoViewModel(
             }
             is DetalleSenderoEvento.AlTocarEditar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esMenuOpcionesVisible = false) }
-                emitirAvisoNoDisponible()
+                emitirEfecto(DetalleSenderoEfecto.NavegarAEdicion(idSendero))
             }
             is DetalleSenderoEvento.AlTocarEliminar -> {
                 _estadoVisual.update { estadoActual ->

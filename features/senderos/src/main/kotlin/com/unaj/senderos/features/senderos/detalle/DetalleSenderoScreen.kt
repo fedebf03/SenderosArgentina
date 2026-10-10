@@ -88,11 +88,13 @@ private const val TAG = "DETALLE_SENDERO_PANTALLA"
 // Coordinar el estado y los efectos de la pantalla de detalle de un sendero
 fun DetalleSenderoPantalla(
     viewModel: DetalleSenderoViewModel,
-    alVolverAlListado: () -> Unit
+    alVolverAlListado: () -> Unit,
+    alNavegarAEdicion: (String) -> Unit
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val volverAlListadoActual by rememberUpdatedState(alVolverAlListado)
+    val navegarAEdicionActual by rememberUpdatedState(alNavegarAEdicion)
     val contextoActual by rememberUpdatedState(LocalContext.current)
 
     LaunchedEffect(Unit) {
@@ -100,6 +102,7 @@ fun DetalleSenderoPantalla(
             Log.d(TAG, "Efecto recibido: $efecto")
             when (efecto) {
                 is DetalleSenderoEfecto.VolverAlListado -> volverAlListadoActual()
+                is DetalleSenderoEfecto.NavegarAEdicion -> navegarAEdicionActual(efecto.idSendero)
                 is DetalleSenderoEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
                 is DetalleSenderoEfecto.CompartirSendero -> {
                     val intencionCompartir = Intent(Intent.ACTION_SEND).apply {

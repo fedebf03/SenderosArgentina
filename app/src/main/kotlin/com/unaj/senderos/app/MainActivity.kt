@@ -24,6 +24,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.unaj.senderos.presentation.detalle.DetalleSenderoPantalla
 import com.unaj.senderos.presentation.detalle.DetalleSenderoViewModel
+import com.unaj.senderos.presentation.formulario.FormularioSenderoPantalla
+import com.unaj.senderos.presentation.formulario.FormularioSenderoViewModel
 import com.unaj.senderos.presentation.login.LoginPantalla
 import com.unaj.senderos.presentation.login.LoginViewModel
 import com.unaj.senderos.presentation.registro.RegistroPantalla
@@ -36,6 +38,7 @@ sealed interface DestinoPantalla {
     data object Registro : DestinoPantalla
     data object Inicio : DestinoPantalla
     data class Detalle(val idSendero: String) : DestinoPantalla
+    data class Formulario(val idSendero: String?) : DestinoPantalla
 }
 
 class MainActivity : ComponentActivity() {
@@ -148,6 +151,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 alNavegarADetalle = { idSendero ->
                                     pantallaActual = DestinoPantalla.Detalle(idSendero)
+                                },
+                                alNavegarACreacion = {
+                                    pantallaActual = DestinoPantalla.Formulario(null)
                                 }
                             )
                         }
@@ -172,6 +178,45 @@ class MainActivity : ComponentActivity() {
                                 alVolverAlListado = {
                                     pantallaActual = DestinoPantalla.Inicio
                                     almacenDestinos.liberarDestino(claveDetalle)
+                                },
+                                alNavegarAEdicion = { idSendero ->
+                                    pantallaActual = DestinoPantalla.Formulario(idSendero)
+                                }
+                            )
+                        }
+                        is DestinoPantalla.Formulario -> {
+                            val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
+                            val idSenderoEditado = destinoActual.idSendero
+                            val claveFormulario = "formulario-$idUsuario-${idSenderoEditado ?: "nuevo"}"
+                            val formularioViewModel: FormularioSenderoViewModel = viewModel(
+                                viewModelStoreOwner = almacenDestinos.obtenerPropietario(claveFormulario),
+                                factory = viewModelFactory {
+                                    initializer {
+                                        FormularioSenderoViewModel(
+                                            idSenderoEditado,
+                                            dependencias.observarDetalleSenderoUseCase,
+                                            dependencias.guardarSenderoUseCase
+                                        )
+                                    }
+                                }
+                            )
+                            FormularioSenderoPantalla(
+                                viewModel = formularioViewModel,
+                                alVolver = {
+                                    pantallaActual = if (idSenderoEditado != null) {
+                                        DestinoPantalla.Detalle(idSenderoEditado)
+                                    } else {
+                                        DestinoPantalla.Inicio
+                                    }
+                                    almacenDestinos.liberarDestino(claveFormulario)
+                                },
+                                alGuardar = { idSenderoGuardado ->
+                                    pantallaActual = if (idSenderoEditado != null) {
+                                        DestinoPantalla.Detalle(idSenderoGuardado)
+                                    } else {
+                                        DestinoPantalla.Inicio
+                                    }
+                                    almacenDestinos.liberarDestino(claveFormulario)
                                 }
                             )
                         }
@@ -190,6 +235,7 @@ private val guardadorDeDestino = Saver<DestinoPantalla, String>(
             is DestinoPantalla.Registro -> "registro"
             is DestinoPantalla.Inicio -> "inicio"
             is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
+            is DestinoPantalla.Formulario -> "formulario:${destino.idSendero.orEmpty()}"
         }
     },
     restore = { texto ->
@@ -198,6 +244,9 @@ private val guardadorDeDestino = Saver<DestinoPantalla, String>(
             texto == "registro" -> DestinoPantalla.Registro
             texto == "inicio" -> DestinoPantalla.Inicio
             texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
+            texto.startsWith("formulario:") -> {
+                DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
+            }
             else -> null
         }
     }

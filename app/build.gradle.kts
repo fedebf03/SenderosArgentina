@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.gms.google-services")
+    id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -60,6 +62,15 @@ dependencies {
     // Firebase (BOM recomendado)
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+
+    // Persistencia local offline-first (Room), sincronización diferida (WorkManager) y serialización
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+    ksp("androidx.room:room-compiler:2.8.5")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     // Credential Manager y Google Sign-In
     implementation("androidx.credentials:credentials:1.3.0")
@@ -79,4 +90,9 @@ dependencies {
     testImplementation("app.cash.turbine:turbine:1.2.1")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+}
+
+// Exportar el esquema de Room a app/schemas para versionarlo y verificar migraciones
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }

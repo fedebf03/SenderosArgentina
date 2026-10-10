@@ -205,9 +205,9 @@ class DetalleSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esMenuOpcionesVisible)
     }
 
-    // Probar que tocar editar cierra el menú y emite el aviso de funcionalidad no disponible
+    // Probar que tocar editar cierra el menú y emite la navegación a la edición con el id del sendero
     @Test
-    fun `AlTocarEditar cierra el menu y emite MostrarAviso no disponible`() = runTest {
+    fun `AlTocarEditar cierra el menu y emite NavegarAEdicion con el id`() = runTest {
         val viewModel = crearViewModel()
         advanceUntilIdle()
         viewModel.procesarEvento(DetalleSenderoEvento.AlAbrirMenuOpciones)
@@ -217,7 +217,7 @@ class DetalleSenderoViewModelTest {
             viewModel.procesarEvento(DetalleSenderoEvento.AlTocarEditar)
             advanceUntilIdle()
 
-            assertEquals(DetalleSenderoEfecto.MostrarAviso("Todavía no disponible"), awaitItem())
+            assertEquals(DetalleSenderoEfecto.NavegarAEdicion("huella-andina"), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
         assertFalse(viewModel.estadoVisual.value.esMenuOpcionesVisible)
