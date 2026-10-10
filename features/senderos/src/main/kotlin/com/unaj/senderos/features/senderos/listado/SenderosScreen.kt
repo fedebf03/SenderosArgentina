@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
@@ -74,17 +75,20 @@ private const val TAG = "SENDEROS_PANTALLA"
 // Coordinar el estado y los efectos de la pantalla de senderos del usuario
 fun SenderosPantalla(
     viewModel: SenderosViewModel,
-    alNavegarALogin: () -> Unit = {}
+    alNavegarALogin: () -> Unit = {},
+    alNavegarADetalle: (String) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val navegarALoginActual by rememberUpdatedState(alNavegarALogin)
+    val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
 
     LaunchedEffect(Unit) {
         viewModel.efectoVisual.collect { efecto ->
             Log.d(TAG, "Efecto recibido: $efecto")
             when (efecto) {
                 is SenderosEfecto.NavegarALogin -> navegarALoginActual()
+                is SenderosEfecto.NavegarADetalle -> navegarADetalleActual(efecto.idSendero)
                 is SenderosEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
         }
@@ -120,7 +124,11 @@ fun SenderosContenido(
         },
         snackbarHost = { SnackbarHost(hostState = estadoAvisos) }
     ) { espaciadoInterno ->
-        CuerpoSenderos(estadoVisual = estadoVisual, modifier = Modifier.padding(espaciadoInterno))
+        CuerpoSenderos(
+            estadoVisual = estadoVisual,
+            alProcesarEvento = alProcesarEvento,
+            modifier = Modifier.padding(espaciadoInterno)
+        )
     }
 }
 
@@ -218,6 +226,7 @@ private fun obtenerInicial(usuario: Usuario?): String {
 // Dibujar el cuerpo según esté cargando, haya error, no haya resultados o haya senderos
 private fun CuerpoSenderos(
     estadoVisual: SenderosEstadoVisual,
+    alProcesarEvento: (SenderosEvento) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val senderosFiltrados = estadoVisual.senderosFiltrados
@@ -250,27 +259,42 @@ private fun CuerpoSenderos(
                 )
             }
             items(senderosFiltrados, key = { sendero -> sendero.id }) { sendero ->
-                TarjetaSendero(sendero)
+                TarjetaSendero(
+                    sendero = sendero,
+                    alSeleccionar = { alProcesarEvento(SenderosEvento.AlSeleccionarSendero(sendero.id)) }
+                )
             }
         }
     }
 }
 
 @Composable
-// Dibujar la tarjeta con los datos de un sendero
-private fun TarjetaSendero(sendero: Sendero) {
+// Dibujar la tarjeta clickeable con los datos de un sendero
+private fun TarjetaSendero(sendero: Sendero, alSeleccionar: () -> Unit) {
     Card(
+        onClick = alSeleccionar,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = sendero.nombre,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = sendero.nombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+                if (sendero.esFavorito) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Favorito",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(
                     imageVector = Icons.Outlined.Place,

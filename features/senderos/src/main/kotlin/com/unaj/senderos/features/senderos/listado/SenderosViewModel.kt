@@ -4,11 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
-import com.unaj.senderos.domain.usecase.ObtenerSenderosDelUsuarioUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -17,7 +18,7 @@ private const val TAG = "SENDEROS"
 private const val TAG_VIDA = "VIDA"
 
 class SenderosViewModel(
-    private val obtenerSenderosDelUsuarioUseCase: ObtenerSenderosDelUsuarioUseCase,
+    private val observarSenderosDelUsuarioUseCase: ObservarSenderosDelUsuarioUseCase,
     private val cerrarSesionUseCase: CerrarSesionUseCase
 ) : ViewModel() {
 
@@ -56,32 +57,45 @@ class SenderosViewModel(
             is SenderosEvento.AlCerrarSesion -> cerrarSesion()
             is SenderosEvento.AlTocarNotificaciones -> emitirAvisoNoDisponible()
             is SenderosEvento.AlTocarCrearSendero -> emitirAvisoNoDisponible()
+            is SenderosEvento.AlSeleccionarSendero -> {
+                Log.d(TAG, "Sendero seleccionado: ${evento.idSendero}")
+                viewModelScope.launch {
+                    canalEfectos.send(SenderosEfecto.NavegarADetalle(evento.idSendero))
+                }
+            }
         }
     }
 
-    // Cargar los senderos del usuario y reflejar el resultado en el estado visual
+    // Observar los senderos del usuario y reflejar cada emisión o fallo en el estado visual
     private fun cargarSenderos() {
-        viewModelScope.launch {
-            obtenerSenderosDelUsuarioUseCase().fold(
-                onSuccess = { senderosDelUsuario ->
-                    Log.d(TAG, "Senderos cargados: ${senderosDelUsuario.senderos.size}")
-                    _estadoVisual.update { estadoActual ->
-                        estadoActual.copy(
-                            usuario = senderosDelUsuario.usuario,
-                            senderos = senderosDelUsuario.senderos,
-                            estaCargando = false
-                        )
-                    }
-                },
-                onFailure = { error ->
-                    val mensaje = error.message?.takeIf { mensajeOriginal -> mensajeOriginal.isNotBlank() }
-                        ?: "No se pudieron cargar los senderos"
-                    Log.e(TAG, "Error al cargar senderos: $mensaje", error)
-                    _estadoVisual.update { estadoActual ->
-                        estadoActual.copy(estaCargando = false, mensajeError = mensaje)
-                    }
+        observarSenderosDelUsuarioUseCase().fold(
+            onSuccess = { flujoSenderos ->
+                viewModelScope.launch {
+                    flujoSenderos
+                        .catch { error -> mostrarErrorDeCarga(error) }
+                        .collect { senderosDelUsuario ->
+                            Log.d(TAG, "Senderos cargados: ${senderosDelUsuario.senderos.size}")
+                            _estadoVisual.update { estadoActual ->
+                                estadoActual.copy(
+                                    usuario = senderosDelUsuario.usuario,
+                                    senderos = senderosDelUsuario.senderos,
+                                    estaCargando = false
+                                )
+                            }
+                        }
                 }
-            )
+            },
+            onFailure = { error -> mostrarErrorDeCarga(error) }
+        )
+    }
+
+    // Registrar el error en Logcat y exponerlo en el estado visual terminando la carga
+    private fun mostrarErrorDeCarga(error: Throwable) {
+        val mensaje = error.message?.takeIf { mensajeOriginal -> mensajeOriginal.isNotBlank() }
+            ?: "No se pudieron cargar los senderos"
+        Log.e(TAG, "Error al cargar senderos: $mensaje", error)
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(estaCargando = false, mensajeError = mensaje)
         }
     }
 

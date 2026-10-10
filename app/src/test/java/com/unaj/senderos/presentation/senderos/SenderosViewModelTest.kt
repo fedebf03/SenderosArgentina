@@ -5,7 +5,7 @@ import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
-import com.unaj.senderos.domain.usecase.ObtenerSenderosDelUsuarioUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +41,7 @@ class SenderosViewModelTest {
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
         falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
-        falsoSendero = FalsoSenderoRepositorio(Result.success(listaSenderos))
+        falsoSendero = FalsoSenderoRepositorio(listaSenderos)
     }
 
     // Restaurar el despachador principal original después de cada caso
@@ -53,7 +53,7 @@ class SenderosViewModelTest {
     // Crear el ViewModel con los casos de uso armados sobre los repositorios falsos
     private fun crearViewModel(): SenderosViewModel {
         return SenderosViewModel(
-            obtenerSenderosDelUsuarioUseCase = ObtenerSenderosDelUsuarioUseCase(falsoSendero, falsoAutenticacion),
+            observarSenderosDelUsuarioUseCase = ObservarSenderosDelUsuarioUseCase(falsoSendero, falsoAutenticacion),
             cerrarSesionUseCase = CerrarSesionUseCase(falsoAutenticacion)
         )
     }
@@ -77,10 +77,10 @@ class SenderosViewModelTest {
         }
     }
 
-    // Probar que ante un fallo del repositorio se expone el mensaje de error y termina la carga
+    // Probar que ante un fallo del flujo se expone el mensaje de error y termina la carga
     @Test
-    fun `ante un fallo expone mensajeError y deja de cargar`() = runTest {
-        falsoSendero.resultado = Result.failure(IllegalStateException("Fallo de red"))
+    fun `ante un fallo del flujo expone mensajeError y deja de cargar`() = runTest {
+        falsoSendero.errorEnFlujo = IllegalStateException("Fallo de red")
         val viewModel = crearViewModel()
 
         advanceUntilIdle()
@@ -94,12 +94,58 @@ class SenderosViewModelTest {
     // Probar que un fallo sin mensaje expone el mensaje de error por defecto
     @Test
     fun `ante un fallo sin mensaje expone el mensaje por defecto`() = runTest {
-        falsoSendero.resultado = Result.failure(IllegalStateException())
+        falsoSendero.errorEnFlujo = IllegalStateException()
         val viewModel = crearViewModel()
 
         advanceUntilIdle()
 
         assertEquals("No se pudieron cargar los senderos", viewModel.estadoVisual.value.mensajeError)
+    }
+
+    // Probar que sin sesión activa se expone el mensaje de error y termina la carga
+    @Test
+    fun `sin sesion activa expone mensajeError y deja de cargar`() = runTest {
+        falsoAutenticacion.usuarioActual = null
+        val viewModel = crearViewModel()
+
+        advanceUntilIdle()
+
+        val estado = viewModel.estadoVisual.value
+        assertFalse(estado.estaCargando)
+        assertEquals("No hay una sesión activa", estado.mensajeError)
+        assertTrue(estado.senderos.isEmpty())
+    }
+
+    // Probar que la lista se actualiza sola cuando la fuente falsa emite una nueva lista
+    @Test
+    fun `la lista se actualiza sola cuando la fuente emite una nueva lista`() = runTest {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+        assertEquals(listaSenderos, viewModel.estadoVisual.value.senderos)
+        val senderoNuevo = Sendero("3", usuario.id, "Sendero Nuevo", "Salta", 5.0, Dificultad.MEDIA)
+
+        viewModel.estadoVisual.test {
+            assertEquals(listaSenderos, awaitItem().senderos)
+            falsoSendero.senderos.value = listaSenderos + senderoNuevo
+            advanceUntilIdle()
+            assertEquals(listaSenderos + senderoNuevo, awaitItem().senderos)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // Probar que seleccionar un sendero emite la navegación al detalle con su identificador
+    @Test
+    fun `AlSeleccionarSendero emite NavegarADetalle con el id`() = runTest {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        viewModel.efectoVisual.test {
+            viewModel.procesarEvento(SenderosEvento.AlSeleccionarSendero("2"))
+            advanceUntilIdle()
+
+            assertEquals(SenderosEfecto.NavegarADetalle("2"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     // Probar que cambiar la búsqueda actualiza el texto de búsqueda

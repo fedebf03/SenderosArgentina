@@ -11,9 +11,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -21,14 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
-import com.unaj.senderos.data.repository.SenderoRepositorioMock
-import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
-import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
-import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
-import com.unaj.senderos.domain.usecase.ObtenerSenderosDelUsuarioUseCase
-import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
-import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.unaj.senderos.presentation.detalle.DetalleSenderoPantalla
+import com.unaj.senderos.presentation.detalle.DetalleSenderoViewModel
 import com.unaj.senderos.presentation.login.LoginPantalla
 import com.unaj.senderos.presentation.login.LoginViewModel
 import com.unaj.senderos.presentation.registro.RegistroPantalla
@@ -40,6 +35,7 @@ sealed interface DestinoPantalla {
     data object Login : DestinoPantalla
     data object Registro : DestinoPantalla
     data object Inicio : DestinoPantalla
+    data class Detalle(val idSendero: String) : DestinoPantalla
 }
 
 class MainActivity : ComponentActivity() {
@@ -61,31 +57,23 @@ class MainActivity : ComponentActivity() {
             )
         )
 
-        val repositorio = AutenticacionRepositorioImpl()
-        val repositorioSenderos = SenderoRepositorioMock()
-        val casoDeUsoLogin = IniciarSesionUseCase(repositorio)
-        val casoDeUsoGoogle = IniciarSesionConGoogleUseCase(repositorio)
-        val casoDeUsoRegistro = RegistrarUsuarioUseCase(repositorio)
-        val casoDeUsoObtenerUsuario = ObtenerUsuarioActualUseCase(repositorio)
-        val casoDeUsoCerrarSesion = CerrarSesionUseCase(repositorio)
-        val casoDeUsoObtenerSenderos = ObtenerSenderosDelUsuarioUseCase(repositorioSenderos, repositorio)
+        val dependencias = (application as SenderosAplicacion).contenedorDependencias
+        val almacenDestinos = ViewModelProvider(this)[AlmacenDestinosViewModel::class.java]
+        val casoDeUsoObtenerUsuario = dependencias.obtenerUsuarioActualUseCase
 
         val fabrica = object : ViewModelProvider.Factory {
-            // Crear las instancias de los ViewModels requeridos por la arquitectura
+            // Crear las instancias de los ViewModels de alcance Activity (Login y Registro)
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
                 return when {
                     modelClass.isAssignableFrom(LoginViewModel::class.java) -> {
-                        LoginViewModel(casoDeUsoLogin, casoDeUsoGoogle) as T
+                        LoginViewModel(
+                            dependencias.iniciarSesionUseCase,
+                            dependencias.iniciarSesionConGoogleUseCase
+                        ) as T
                     }
                     modelClass.isAssignableFrom(RegistroViewModel::class.java) -> {
-                        RegistroViewModel(casoDeUsoRegistro) as T
-                    }
-                    modelClass.isAssignableFrom(SenderosViewModel::class.java) -> {
-                        SenderosViewModel(
-                            casoDeUsoObtenerSenderos,
-                            casoDeUsoCerrarSesion
-                        ) as T
+                        RegistroViewModel(dependencias.registrarUsuarioUseCase) as T
                     }
                     else -> throw IllegalArgumentException("Clase de ViewModel desconocida: ${modelClass.name}")
                 }
@@ -96,16 +84,13 @@ class MainActivity : ComponentActivity() {
         val registroViewModel = ViewModelProvider(this, fabrica)[RegistroViewModel::class.java]
 
         setContent {
-            var pantallaActual by remember {
+            // El destino se guarda como texto con rememberSaveable para que sobreviva al giro de pantalla
+            var pantallaActual by rememberSaveable(stateSaver = guardadorDeDestino) {
                 val usuarioActivo = casoDeUsoObtenerUsuario()
                 mutableStateOf<DestinoPantalla>(
                     if (usuarioActivo != null) DestinoPantalla.Inicio else DestinoPantalla.Login
                 )
             }
-
-            // Cada inicio de sesión crea un SenderosViewModel nuevo al incrementar este número;
-            // rememberSaveable lo conserva al girar la pantalla para reutilizar el mismo ViewModel
-            var numeroSesion by rememberSaveable { mutableIntStateOf(0) }
 
             MaterialTheme(
                 colorScheme = lightColorScheme(
@@ -122,12 +107,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    when (pantallaActual) {
+                    val destinoActual = pantallaActual
+                    when (destinoActual) {
                         is DestinoPantalla.Login -> {
                             LoginPantalla(
                                 viewModel = loginViewModel,
                                 alNavegarAInicio = {
-                                    numeroSesion++
                                     pantallaActual = DestinoPantalla.Inicio
                                 },
                                 alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
@@ -137,7 +122,6 @@ class MainActivity : ComponentActivity() {
                             RegistroPantalla(
                                 viewModel = registroViewModel,
                                 alNavegarAInicio = {
-                                    numeroSesion++
                                     pantallaActual = DestinoPantalla.Inicio
                                 },
                                 alVolverALogin = { pantallaActual = DestinoPantalla.Login }
@@ -146,12 +130,49 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.Inicio -> {
                             val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
                             val senderosViewModel: SenderosViewModel = viewModel(
-                                key = "senderos-$idUsuario-$numeroSesion",
-                                factory = fabrica
+                                viewModelStoreOwner = almacenDestinos.obtenerPropietario("inicio-$idUsuario"),
+                                factory = viewModelFactory {
+                                    initializer {
+                                        SenderosViewModel(
+                                            dependencias.observarSenderosDelUsuarioUseCase,
+                                            dependencias.cerrarSesionUseCase
+                                        )
+                                    }
+                                }
                             )
                             SenderosPantalla(
                                 viewModel = senderosViewModel,
-                                alNavegarALogin = { pantallaActual = DestinoPantalla.Login }
+                                alNavegarALogin = {
+                                    pantallaActual = DestinoPantalla.Login
+                                    almacenDestinos.liberarDestino("inicio-$idUsuario")
+                                },
+                                alNavegarADetalle = { idSendero ->
+                                    pantallaActual = DestinoPantalla.Detalle(idSendero)
+                                }
+                            )
+                        }
+                        is DestinoPantalla.Detalle -> {
+                            val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
+                            val claveDetalle = "detalle-$idUsuario-${destinoActual.idSendero}"
+                            val detalleViewModel: DetalleSenderoViewModel = viewModel(
+                                viewModelStoreOwner = almacenDestinos.obtenerPropietario(claveDetalle),
+                                factory = viewModelFactory {
+                                    initializer {
+                                        DetalleSenderoViewModel(
+                                            idSendero = destinoActual.idSendero,
+                                            observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
+                                            alternarFavoritoUseCase = dependencias.alternarFavoritoUseCase,
+                                            eliminarSenderoUseCase = dependencias.eliminarSenderoUseCase
+                                        )
+                                    }
+                                }
+                            )
+                            DetalleSenderoPantalla(
+                                viewModel = detalleViewModel,
+                                alVolverAlListado = {
+                                    pantallaActual = DestinoPantalla.Inicio
+                                    almacenDestinos.liberarDestino(claveDetalle)
+                                }
                             )
                         }
                     }
@@ -160,3 +181,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+// Convertir el destino a texto y de vuelta para conservarlo al girar la pantalla
+private val guardadorDeDestino = Saver<DestinoPantalla, String>(
+    save = { destino ->
+        when (destino) {
+            is DestinoPantalla.Login -> "login"
+            is DestinoPantalla.Registro -> "registro"
+            is DestinoPantalla.Inicio -> "inicio"
+            is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
+        }
+    },
+    restore = { texto ->
+        when {
+            texto == "login" -> DestinoPantalla.Login
+            texto == "registro" -> DestinoPantalla.Registro
+            texto == "inicio" -> DestinoPantalla.Inicio
+            texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
+            else -> null
+        }
+    }
+)
