@@ -64,7 +64,7 @@ class LoginViewModel(
             val resultado = iniciarSesionUseCase(estadoActual.email, estadoActual.clave)
             resultado.fold(
                 onSuccess = {
-                    _estadoVisual.update { it.copy(estaCargando = false) }
+                    _estadoVisual.value = LoginEstadoVisual()
                     canalEfectos.send(LoginEfecto.NavegarAInicio)
                 },
                 onFailure = { error ->
@@ -91,7 +91,7 @@ class LoginViewModel(
             val resultado = iniciarSesionConGoogleUseCase(idToken)
             resultado.fold(
                 onSuccess = {
-                    _estadoVisual.update { it.copy(estaCargando = false) }
+                    _estadoVisual.value = LoginEstadoVisual()
                     canalEfectos.send(LoginEfecto.NavegarAInicio)
                 },
                 onFailure = { error ->

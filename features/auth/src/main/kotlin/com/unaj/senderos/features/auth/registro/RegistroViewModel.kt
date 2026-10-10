@@ -49,7 +49,7 @@ class RegistroViewModel(
             )
             resultado.fold(
                 onSuccess = {
-                    _estadoVisual.update { it.copy(estaCargando = false) }
+                    _estadoVisual.value = RegistroEstadoVisual()
                     canalEfectos.send(RegistroEfecto.NavegarAInicio)
                 },
                 onFailure = { error ->
