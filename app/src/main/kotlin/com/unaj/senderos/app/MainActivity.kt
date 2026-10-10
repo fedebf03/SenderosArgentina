@@ -11,24 +11,30 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
+import com.unaj.senderos.data.repository.SenderoRepositorioMock
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
+import com.unaj.senderos.domain.usecase.ObtenerSenderosDelUsuarioUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
-import com.unaj.senderos.presentation.inicio.InicioPantalla
 import com.unaj.senderos.presentation.login.LoginPantalla
 import com.unaj.senderos.presentation.login.LoginViewModel
 import com.unaj.senderos.presentation.registro.RegistroPantalla
 import com.unaj.senderos.presentation.registro.RegistroViewModel
+import com.unaj.senderos.presentation.senderos.SenderosPantalla
+import com.unaj.senderos.presentation.senderos.SenderosViewModel
 
 sealed interface DestinoPantalla {
     data object Login : DestinoPantalla
@@ -56,11 +62,13 @@ class MainActivity : ComponentActivity() {
         )
 
         val repositorio = AutenticacionRepositorioImpl()
+        val repositorioSenderos = SenderoRepositorioMock()
         val casoDeUsoLogin = IniciarSesionUseCase(repositorio)
         val casoDeUsoGoogle = IniciarSesionConGoogleUseCase(repositorio)
         val casoDeUsoRegistro = RegistrarUsuarioUseCase(repositorio)
         val casoDeUsoObtenerUsuario = ObtenerUsuarioActualUseCase(repositorio)
         val casoDeUsoCerrarSesion = CerrarSesionUseCase(repositorio)
+        val casoDeUsoObtenerSenderos = ObtenerSenderosDelUsuarioUseCase(repositorioSenderos, repositorio)
 
         val fabrica = object : ViewModelProvider.Factory {
             // Crear las instancias de los ViewModels requeridos por la arquitectura
@@ -72,6 +80,12 @@ class MainActivity : ComponentActivity() {
                     }
                     modelClass.isAssignableFrom(RegistroViewModel::class.java) -> {
                         RegistroViewModel(casoDeUsoRegistro) as T
+                    }
+                    modelClass.isAssignableFrom(SenderosViewModel::class.java) -> {
+                        SenderosViewModel(
+                            casoDeUsoObtenerSenderos,
+                            casoDeUsoCerrarSesion
+                        ) as T
                     }
                     else -> throw IllegalArgumentException("Clase de ViewModel desconocida: ${modelClass.name}")
                 }
@@ -88,6 +102,10 @@ class MainActivity : ComponentActivity() {
                     if (usuarioActivo != null) DestinoPantalla.Inicio else DestinoPantalla.Login
                 )
             }
+
+            // Cada inicio de sesión crea un SenderosViewModel nuevo al incrementar este número;
+            // rememberSaveable lo conserva al girar la pantalla para reutilizar el mismo ViewModel
+            var numeroSesion by rememberSaveable { mutableIntStateOf(0) }
 
             MaterialTheme(
                 colorScheme = lightColorScheme(
@@ -108,24 +126,32 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.Login -> {
                             LoginPantalla(
                                 viewModel = loginViewModel,
-                                alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                                alNavegarAInicio = {
+                                    numeroSesion++
+                                    pantallaActual = DestinoPantalla.Inicio
+                                },
                                 alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
                             )
                         }
                         is DestinoPantalla.Registro -> {
                             RegistroPantalla(
                                 viewModel = registroViewModel,
-                                alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                                alNavegarAInicio = {
+                                    numeroSesion++
+                                    pantallaActual = DestinoPantalla.Inicio
+                                },
                                 alVolverALogin = { pantallaActual = DestinoPantalla.Login }
                             )
                         }
                         is DestinoPantalla.Inicio -> {
-                            InicioPantalla(
-                                email = casoDeUsoObtenerUsuario()?.email.orEmpty(),
-                                alCerrarSesion = {
-                                    casoDeUsoCerrarSesion()
-                                    pantallaActual = DestinoPantalla.Login
-                                }
+                            val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
+                            val senderosViewModel: SenderosViewModel = viewModel(
+                                key = "senderos-$idUsuario-$numeroSesion",
+                                factory = fabrica
+                            )
+                            SenderosPantalla(
+                                viewModel = senderosViewModel,
+                                alNavegarALogin = { pantallaActual = DestinoPantalla.Login }
                             )
                         }
                     }
