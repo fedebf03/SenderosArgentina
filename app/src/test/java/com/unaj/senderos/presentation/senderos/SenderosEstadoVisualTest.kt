@@ -17,7 +17,6 @@ class SenderosEstadoVisualTest {
         region = "Neuquén", distanciaKilometros = 8.0, dificultad = Dificultad.BAJA
     )
 
-    // Crear un estado visual con los dos senderos y el texto de búsqueda indicado
     private fun crearEstado(textoBusqueda: String): SenderosEstadoVisual {
         return SenderosEstadoVisual(
             senderos = listOf(huellaAndina, huellaNeuquina),
@@ -25,7 +24,6 @@ class SenderosEstadoVisualTest {
         )
     }
 
-    // Probar que filtra los senderos por coincidencia en el nombre
     @Test
     fun `filtra los senderos por nombre`() {
         val estado = crearEstado("Andina")
@@ -33,7 +31,6 @@ class SenderosEstadoVisualTest {
         assertEquals(listOf(huellaAndina), estado.senderosFiltrados)
     }
 
-    // Probar que filtra los senderos por coincidencia en la región
     @Test
     fun `filtra los senderos por region`() {
         val estado = crearEstado("Neuqu")
@@ -41,7 +38,6 @@ class SenderosEstadoVisualTest {
         assertEquals(listOf(huellaNeuquina), estado.senderosFiltrados)
     }
 
-    // Probar que el filtro ignora mayúsculas y espacios al inicio y al final
     @Test
     fun `el filtro ignora mayusculas y espacios en los extremos`() {
         val estado = crearEstado("  hUeLLa aNdInA  ")
@@ -49,7 +45,6 @@ class SenderosEstadoVisualTest {
         assertEquals(listOf(huellaAndina), estado.senderosFiltrados)
     }
 
-    // Probar que un texto vacío devuelve todos los senderos
     @Test
     fun `texto vacio devuelve todos los senderos`() {
         val estado = crearEstado("")
@@ -57,7 +52,6 @@ class SenderosEstadoVisualTest {
         assertEquals(listOf(huellaAndina, huellaNeuquina), estado.senderosFiltrados)
     }
 
-    // Probar que un texto sin coincidencias devuelve una lista vacía
     @Test
     fun `sin coincidencias devuelve lista vacia`() {
         val estado = crearEstado("Inexistente")

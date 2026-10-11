@@ -4,7 +4,6 @@ import app.cash.turbine.test
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
@@ -36,7 +35,6 @@ class SenderosViewModelTest {
     private lateinit var falsoAutenticacion: FalsoAutenticacionRepositorio
     private lateinit var falsoSendero: FalsoSenderoRepositorio
 
-    // Configurar el despachador principal de prueba y los falsos antes de cada caso
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
@@ -44,21 +42,17 @@ class SenderosViewModelTest {
         falsoSendero = FalsoSenderoRepositorio(listaSenderos)
     }
 
-    // Restaurar el despachador principal original después de cada caso
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel con los casos de uso armados sobre los repositorios falsos
     private fun crearViewModel(): SenderosViewModel {
         return SenderosViewModel(
-            observarSenderosDelUsuarioUseCase = ObservarSenderosDelUsuarioUseCase(falsoSendero, falsoAutenticacion),
-            cerrarSesionUseCase = CerrarSesionUseCase(falsoAutenticacion, falsoSendero)
+            observarSenderosDelUsuarioUseCase = ObservarSenderosDelUsuarioUseCase(falsoSendero, falsoAutenticacion)
         )
     }
 
-    // Probar que el estado transiciona de cargando a éxito con usuario y senderos
     @Test
     fun `al inicializar transiciona de cargando a exito con usuario y senderos`() = runTest {
         val viewModel = crearViewModel()
@@ -77,7 +71,6 @@ class SenderosViewModelTest {
         }
     }
 
-    // Probar que ante un fallo del flujo se expone el mensaje de error y termina la carga
     @Test
     fun `ante un fallo del flujo expone mensajeError y deja de cargar`() = runTest {
         falsoSendero.errorEnFlujo = IllegalStateException("Fallo de red")
@@ -91,7 +84,6 @@ class SenderosViewModelTest {
         assertTrue(estado.senderos.isEmpty())
     }
 
-    // Probar que un fallo sin mensaje expone el mensaje de error por defecto
     @Test
     fun `ante un fallo sin mensaje expone el mensaje por defecto`() = runTest {
         falsoSendero.errorEnFlujo = IllegalStateException()
@@ -102,7 +94,6 @@ class SenderosViewModelTest {
         assertEquals("No se pudieron cargar los senderos", viewModel.estadoVisual.value.mensajeError)
     }
 
-    // Probar que sin sesión activa se expone el mensaje de error y termina la carga
     @Test
     fun `sin sesion activa expone mensajeError y deja de cargar`() = runTest {
         falsoAutenticacion.usuarioActual = null
@@ -116,7 +107,6 @@ class SenderosViewModelTest {
         assertTrue(estado.senderos.isEmpty())
     }
 
-    // Probar que la lista se actualiza sola cuando la fuente falsa emite una nueva lista
     @Test
     fun `la lista se actualiza sola cuando la fuente emite una nueva lista`() = runTest {
         val viewModel = crearViewModel()
@@ -133,7 +123,6 @@ class SenderosViewModelTest {
         }
     }
 
-    // Probar que seleccionar un sendero emite la navegación al detalle con su identificador
     @Test
     fun `AlSeleccionarSendero emite NavegarADetalle con el id`() = runTest {
         val viewModel = crearViewModel()
@@ -148,7 +137,6 @@ class SenderosViewModelTest {
         }
     }
 
-    // Probar que cambiar la búsqueda actualiza el texto de búsqueda
     @Test
     fun `AlCambiarBusqueda actualiza textoBusqueda`() = runTest {
         val viewModel = crearViewModel()
@@ -160,69 +148,6 @@ class SenderosViewModelTest {
         assertEquals("Andina", viewModel.estadoVisual.value.textoBusqueda)
     }
 
-    // Probar que seleccionar una sección actualiza la sección seleccionada
-    @Test
-    fun `AlSeleccionarSeccion cambia la seccion seleccionada`() = runTest {
-        val viewModel = crearViewModel()
-        advanceUntilIdle()
-
-        viewModel.procesarEvento(SenderosEvento.AlSeleccionarSeccion(SeccionNavegacion.MAPA))
-        advanceUntilIdle()
-
-        assertEquals(SeccionNavegacion.MAPA, viewModel.estadoVisual.value.seccionSeleccionada)
-    }
-
-    // Probar que tocar el avatar muestra el menú y cerrarlo lo oculta
-    @Test
-    fun `AlTocarAvatar muestra el menu y AlCerrarMenuPerfil lo oculta`() = runTest {
-        val viewModel = crearViewModel()
-        advanceUntilIdle()
-
-        viewModel.procesarEvento(SenderosEvento.AlTocarAvatar)
-        advanceUntilIdle()
-        assertTrue(viewModel.estadoVisual.value.esMenuPerfilVisible)
-
-        viewModel.procesarEvento(SenderosEvento.AlCerrarMenuPerfil)
-        advanceUntilIdle()
-        assertFalse(viewModel.estadoVisual.value.esMenuPerfilVisible)
-    }
-
-    // Probar que cerrar sesión invoca el caso de uso, oculta el menú y emite la navegación al login
-    @Test
-    fun `AlCerrarSesion cierra la sesion oculta el menu y emite NavegarALogin`() = runTest {
-        val viewModel = crearViewModel()
-        advanceUntilIdle()
-        viewModel.procesarEvento(SenderosEvento.AlTocarAvatar)
-        advanceUntilIdle()
-
-        viewModel.efectoVisual.test {
-            viewModel.procesarEvento(SenderosEvento.AlCerrarSesion)
-            advanceUntilIdle()
-
-            assertEquals(SenderosEfecto.NavegarALogin, awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        assertEquals(1, falsoAutenticacion.cantidadCierresSesion)
-        assertFalse(viewModel.estadoVisual.value.esMenuPerfilVisible)
-    }
-
-    // Probar que tocar notificaciones emite el aviso de funcionalidad no disponible
-    @Test
-    fun `AlTocarNotificaciones emite MostrarAviso no disponible`() = runTest {
-        val viewModel = crearViewModel()
-        advanceUntilIdle()
-
-        viewModel.efectoVisual.test {
-            viewModel.procesarEvento(SenderosEvento.AlTocarNotificaciones)
-            advanceUntilIdle()
-
-            assertEquals(SenderosEfecto.MostrarAviso("Todavía no disponible"), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    // Probar que tocar crear sendero emite el efecto de navegación a la pantalla de creación
     @Test
     fun `AlTocarCrearSendero emite NavegarACreacion`() = runTest {
         val viewModel = crearViewModel()

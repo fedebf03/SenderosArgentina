@@ -7,7 +7,6 @@ import android.graphics.Path
 import android.graphics.RectF
 import com.unaj.senderos.domain.model.TipoPunto
 
-// Colores del mapa ya resueltos desde el tema de Material (ARGB), para usarlos en capas e íconos
 data class PaletaMapa(
     val primario: Int,
     val sobrePrimario: Int,
@@ -17,19 +16,16 @@ data class PaletaMapa(
     val sobreError: Int
 )
 
-// Nombres de las imágenes registradas en el estilo del mapa
 object NombresImagenMapa {
     const val FLECHA = "imagen-flecha"
     const val PREFIJO_TIPO = "imagen-tipo-"
     const val PREFIJO_ROL = "imagen-rol-"
 }
 
-// Generación de los íconos del mapa dibujados con Canvas (sin recursos de imagen externos)
 object IconosMapa {
     private const val TAMANO_INSIGNIA_DP = 22f
     private const val TAMANO_FLECHA_DP = 14f
 
-    // Crear el mapa de nombre a imagen con la flecha de sentido y los íconos de tipo y de rol
     fun crearTodos(paleta: PaletaMapa, densidad: Float): Map<String, Bitmap> {
         val imagenes = mutableMapOf<String, Bitmap>()
         imagenes[NombresImagenMapa.FLECHA] = crearFlecha(paleta, densidad)
@@ -42,7 +38,6 @@ object IconosMapa {
         return imagenes
     }
 
-    // Crear un lienzo cuadrado transparente con la densidad de pantalla para que el mapa lo escale bien
     private fun crearLienzo(tamanoDp: Float, densidad: Float): Pair<Bitmap, Canvas> {
         val lado = (tamanoDp * densidad).toInt().coerceAtLeast(1)
         val mapaDeBits = Bitmap.createBitmap(lado, lado, Bitmap.Config.ARGB_8888)
@@ -50,7 +45,6 @@ object IconosMapa {
         return mapaDeBits to Canvas(mapaDeBits)
     }
 
-    // Crear un pincel de relleno o de trazo con el color indicado
     private fun crearPincel(color: Int, esRelleno: Boolean = true, grosor: Float = 0f): Paint {
         return Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.color = color
@@ -61,7 +55,6 @@ object IconosMapa {
         }
     }
 
-    // Dibujar la flecha de sentido apuntando hacia la derecha (el mapa la rota según la línea)
     private fun crearFlecha(paleta: PaletaMapa, densidad: Float): Bitmap {
         val (mapaDeBits, lienzo) = crearLienzo(TAMANO_FLECHA_DP, densidad)
         val ancho = lienzo.width.toFloat()
@@ -75,7 +68,6 @@ object IconosMapa {
         return mapaDeBits
     }
 
-    // Dibujar una insignia circular con un símbolo propio de cada tipo de punto
     private fun crearInsigniaDeTipo(tipo: TipoPunto, paleta: PaletaMapa, densidad: Float): Bitmap {
         val (mapaDeBits, lienzo) = crearLienzo(TAMANO_INSIGNIA_DP, densidad)
         val lado = lienzo.width.toFloat()
@@ -101,7 +93,6 @@ object IconosMapa {
         return mapaDeBits
     }
 
-    // Dibujar dos picos de montaña para el tipo mirador
     private fun dibujarMontana(lienzo: Canvas, lado: Float, pincel: Paint) {
         val contorno = Path().apply {
             moveTo(lado * 0.2f, lado * 0.72f)
@@ -114,7 +105,6 @@ object IconosMapa {
         lienzo.drawPath(contorno, pincel)
     }
 
-    // Dibujar una gota de agua
     private fun dibujarGota(lienzo: Canvas, lado: Float, pincel: Paint) {
         val contorno = Path().apply {
             moveTo(lado * 0.5f, lado * 0.2f)
@@ -125,7 +115,6 @@ object IconosMapa {
         lienzo.drawPath(contorno, pincel)
     }
 
-    // Dibujar una casa simple para el refugio
     private fun dibujarCasa(lienzo: Canvas, lado: Float, pincel: Paint) {
         val techo = Path().apply {
             moveTo(lado * 0.2f, lado * 0.5f)
@@ -137,7 +126,6 @@ object IconosMapa {
         lienzo.drawRect(lado * 0.3f, lado * 0.5f, lado * 0.7f, lado * 0.76f, pincel)
     }
 
-    // Dibujar una carpa triangular con la entrada marcada para el camping
     private fun dibujarCarpa(lienzo: Canvas, lado: Float, relleno: Paint, entrada: Paint) {
         val carpa = Path().apply {
             moveTo(lado * 0.5f, lado * 0.24f)
@@ -149,7 +137,6 @@ object IconosMapa {
         lienzo.drawLine(lado * 0.5f, lado * 0.42f, lado * 0.5f, lado * 0.76f, entrada)
     }
 
-    // Dibujar un signo de exclamación para el tipo peligro
     private fun dibujarAdmiracion(lienzo: Canvas, lado: Float, pincel: Paint) {
         lienzo.drawRoundRect(
             RectF(lado * 0.45f, lado * 0.2f, lado * 0.55f, lado * 0.58f),
@@ -160,7 +147,6 @@ object IconosMapa {
         lienzo.drawCircle(lado * 0.5f, lado * 0.72f, lado * 0.07f, pincel)
     }
 
-    // Dibujar la insignia de inicio (reproducir), fin (cuadrado) o inicio y fin (reproducir con anillo)
     private fun crearInsigniaDeRol(rol: String, paleta: PaletaMapa, densidad: Float): Bitmap {
         val (mapaDeBits, lienzo) = crearLienzo(TAMANO_INSIGNIA_DP, densidad)
         val lado = lienzo.width.toFloat()
