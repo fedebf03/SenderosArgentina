@@ -1,11 +1,5 @@
 package com.unaj.senderos.falsos
 
-import com.unaj.senderos.data.local.EtapaEntidad
-import com.unaj.senderos.data.local.SenderoEntidad
-import com.unaj.senderos.data.local.PuntoRecorridoEntidad
-import com.unaj.senderos.data.remote.EtapaRed
-import com.unaj.senderos.data.remote.SenderoRed
-import com.unaj.senderos.data.remote.PuntoRecorridoRed
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Etapa
@@ -48,73 +42,6 @@ fun crearSenderoDePrueba(
         etapas = listOf(Etapa(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
         esFavorito = esFavorito,
         estadoSincronizacion = estadoSincronizacion,
-        recorrido = recorrido
-    )
-}
-
-fun crearEntidadDePrueba(
-    id: String = "sendero-1",
-    idUsuario: String = "usuario-1",
-    nombre: String = "Cerro Catedral",
-    esFavorito: Boolean = false,
-    fechaModificacion: Long = 1_000L,
-    estadoSincronizacion: String = "SINCRONIZADO",
-    estaEliminado: Boolean = false,
-    recorrido: List<PuntoRecorridoEntidad> = emptyList()
-): SenderoEntidad {
-    return SenderoEntidad(
-        id = id,
-        idUsuario = idUsuario,
-        nombre = nombre,
-        region = "Bariloche",
-        distanciaKilometros = 12.0,
-        dificultad = "MEDIA",
-        descripcion = "Ascenso con vistas al lago",
-        desnivelMetros = 600,
-        duracionEstimada = "5 horas",
-        alturaMaximaMetros = 2000,
-        alturaMinimaMetros = 1400,
-        tipoRecorrido = "CIRCULAR",
-        puntoInicio = "Base del cerro",
-        mejorEpoca = "Verano",
-        recomendaciones = listOf("Llevar agua"),
-        servicios = listOf("Refugio"),
-        etapas = listOf(EtapaEntidad(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
-        esFavorito = esFavorito,
-        fechaModificacion = fechaModificacion,
-        estadoSincronizacion = estadoSincronizacion,
-        estaEliminado = estaEliminado,
-        recorrido = recorrido
-    )
-}
-
-fun crearRedDePrueba(
-    id: String = "sendero-1",
-    nombre: String = "Cerro Catedral",
-    fechaModificacion: Long = 1_000L,
-    eliminado: Boolean = false,
-    recorrido: List<PuntoRecorridoRed> = emptyList()
-): SenderoRed {
-    return SenderoRed(
-        id = id,
-        nombre = nombre,
-        region = "Bariloche",
-        distanciaKilometros = 12.0,
-        dificultad = "MEDIA",
-        descripcion = "Ascenso con vistas al lago",
-        desnivelMetros = 600,
-        duracionEstimada = "5 horas",
-        alturaMaximaMetros = 2000,
-        alturaMinimaMetros = 1400,
-        tipoRecorrido = "CIRCULAR",
-        puntoInicio = "Base del cerro",
-        mejorEpoca = "Verano",
-        recomendaciones = listOf("Llevar agua"),
-        servicios = listOf("Refugio"),
-        etapas = listOf(EtapaRed(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
-        esFavorito = false,
-        fechaModificacion = fechaModificacion,
-        eliminado = eliminado,
         recorrido = recorrido
     )
 }
