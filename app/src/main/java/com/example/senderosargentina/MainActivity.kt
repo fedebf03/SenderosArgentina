@@ -195,7 +195,8 @@ class MainActivity : ComponentActivity() {
                                         FormularioSenderoViewModel(
                                             idSenderoEditado,
                                             dependencias.observarDetalleSenderoUseCase,
-                                            dependencias.guardarSenderoUseCase
+                                            dependencias.guardarSenderoUseCase,
+                                            dependencias.almacenFotos
                                         )
                                     }
                                 }

@@ -54,9 +54,10 @@ data class FormularioSenderoEstadoVisual(
     val mensajeError: String? = null,
     val recorrido: List<PuntoRecorrido> = emptyList(),
     val esEditorMapaVisible: Boolean = false,
-    val indicePuntoSeleccionado: Int? = null
+    val indicePuntoSeleccionado: Int? = null,
+    val foto: String = "",
+    val estaProcesandoFoto: Boolean = false
 ) {
-    // Distancia en kilómetros calculada a partir del recorrido y el tipo de recorrido actual
     val distanciaCalculadaKilometros: Double
         get() = CalculadoraRecorrido.distanciaKilometros(recorrido, tipoRecorrido)
 }
@@ -86,6 +87,8 @@ sealed interface FormularioSenderoEvento {
     data class AlCambiarNombrePunto(val indice: Int, val nombre: String) : FormularioSenderoEvento
     data object AlInvertirSentido : FormularioSenderoEvento
     data object AlUsarDistanciaDelMapa : FormularioSenderoEvento
+    data class AlSeleccionarFoto(val uri: String) : FormularioSenderoEvento
+    data object AlQuitarFoto : FormularioSenderoEvento
 }
 
 sealed interface FormularioSenderoEfecto {
