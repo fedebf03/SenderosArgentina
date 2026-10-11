@@ -41,10 +41,10 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
+import com.unaj.senderos.presentation.tema.TemaSenderos
 import java.util.Locale
 
 @Composable
-// Dibujar el editor del recorrido a pantalla completa con el mapa, el panel del punto elegido y la barra de acciones
 fun EditorRecorridoMapa(
     estadoVisual: FormularioSenderoEstadoVisual,
     alProcesarEvento: (FormularioSenderoEvento) -> Unit,
@@ -87,7 +87,6 @@ fun EditorRecorridoMapa(
 }
 
 @Composable
-// Dibujar la barra superior del editor con el botón para volver al formulario y el título
 private fun BarraSuperiorEditor(alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
     Row(
         modifier = Modifier
@@ -116,7 +115,6 @@ private fun BarraSuperiorEditor(alProcesarEvento: (FormularioSenderoEvento) -> U
 }
 
 @Composable
-// Dibujar la barra inferior con la distancia calculada y las acciones de invertir sentido y usar la distancia
 private fun BarraInferiorEditor(
     estadoVisual: FormularioSenderoEstadoVisual,
     alProcesarEvento: (FormularioSenderoEvento) -> Unit
@@ -159,7 +157,6 @@ private fun BarraInferiorEditor(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-// Dibujar el panel del punto elegido con nombre, tipo y las acciones de insertar antes y eliminar
 private fun PanelPuntoSeleccionado(
     indice: Int,
     punto: PuntoRecorrido,
@@ -220,7 +217,6 @@ private fun PanelPuntoSeleccionado(
     }
 }
 
-// Obtener el texto visible de un tipo de punto
 internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
     return when (tipo) {
         TipoPunto.PASO -> "Paso"
@@ -232,16 +228,14 @@ internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
     }
 }
 
-// Dar formato a una cantidad de kilómetros con un decimal y punto decimal fijo
 internal fun formatearKilometros(kilometros: Double): String {
     return String.format(Locale.US, "%.1f", kilometros)
 }
 
 @Preview(showBackground = true)
 @Composable
-// Previsualizar el panel del punto elegido con datos de ejemplo
 private fun PrevisualizacionPanelPuntoSeleccionado() {
-    MaterialTheme {
+    TemaSenderos {
         PanelPuntoSeleccionado(
             indice = 1,
             punto = PuntoRecorrido(-40.5, -71.3, TipoPunto.AGUA, "Arroyo"),

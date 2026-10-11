@@ -10,6 +10,7 @@ import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.falsos.FalsoAlmacenFotos
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
 import com.unaj.senderos.falsos.crearSenderoDePrueba
@@ -45,22 +46,21 @@ class FormularioSenderoViewModelTest {
 
     private lateinit var falsoAutenticacion: FalsoAutenticacionRepositorio
     private lateinit var falsoSendero: FalsoSenderoRepositorio
+    private lateinit var falsoAlmacenFotos: FalsoAlmacenFotos
 
-    // Configurar el despachador principal de prueba y los falsos antes de cada caso
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
         falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
         falsoSendero = FalsoSenderoRepositorio(listOf(senderoOriginal))
+        falsoAlmacenFotos = FalsoAlmacenFotos()
     }
 
-    // Restaurar el despachador principal original después de cada caso
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel con los casos de uso armados sobre los repositorios falsos
     private fun crearViewModel(idSendero: String? = null): FormularioSenderoViewModel {
         return FormularioSenderoViewModel(
             idSendero = idSendero,
@@ -69,22 +69,20 @@ class FormularioSenderoViewModelTest {
                 senderoRepositorio = falsoSendero,
                 autenticacionRepositorio = falsoAutenticacion,
                 generarIdentificador = { "id-generado" }
-            )
+            ),
+            almacenFotos = falsoAlmacenFotos
         )
     }
 
-    // Avanzar las corrutinas pendientes hasta que el despachador quede inactivo
     private fun avanzar() {
         despachadorPrueba.scheduler.advanceUntilIdle()
     }
 
-    // Procesar un evento y avanzar las corrutinas pendientes
     private fun enviar(viewModel: FormularioSenderoViewModel, evento: FormularioSenderoEvento) {
         viewModel.procesarEvento(evento)
         avanzar()
     }
 
-    // Completar los campos obligatorios del formulario con valores válidos
     private fun completarFormularioValido(viewModel: FormularioSenderoViewModel) {
         enviar(viewModel, FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "  Cerro Tronador "))
         enviar(viewModel, FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, "Río Negro"))
@@ -95,7 +93,6 @@ class FormularioSenderoViewModelTest {
         enviar(viewModel, FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MINIMA, "1500"))
     }
 
-    // Probar que el modo creación arranca con el formulario vacío y sin cargar
     @Test
     fun `modo creacion arranca con el formulario vacio`() = runTest {
         val viewModel = crearViewModel()
@@ -111,7 +108,6 @@ class FormularioSenderoViewModelTest {
         assertNull(estado.mensajeError)
     }
 
-    // Probar que el modo edición carga los campos del sendero y no marca cambios
     @Test
     fun `modo edicion carga los campos y no marca cambios`() = runTest {
         val viewModel = crearViewModel(idSendero = "sendero-1")
@@ -139,7 +135,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(estado.hayCambiosSinGuardar)
     }
 
-    // Probar que una distancia con decimales se muestra sin ceros de más
     @Test
     fun `modo edicion muestra la distancia decimal con su fraccion`() = runTest {
         falsoSendero.senderos.value = listOf(senderoOriginal.copy(distanciaKilometros = 12.5))
@@ -149,7 +144,6 @@ class FormularioSenderoViewModelTest {
         assertEquals("12.5", viewModel.estadoVisual.value.distancia)
     }
 
-    // Probar que editar un sendero inexistente informa el error y deja de cargar
     @Test
     fun `modo edicion con sendero inexistente informa mensajeError`() = runTest {
         val viewModel = crearViewModel(idSendero = "no-existe")
@@ -160,7 +154,6 @@ class FormularioSenderoViewModelTest {
         assertEquals("No se encontró el sendero", estado.mensajeError)
     }
 
-    // Probar que editar sin sesión activa informa el error del caso de uso
     @Test
     fun `modo edicion sin sesion activa informa el mensaje del error`() = runTest {
         falsoAutenticacion.usuarioActual = null
@@ -172,7 +165,6 @@ class FormularioSenderoViewModelTest {
         assertEquals("No hay una sesión activa", estado.mensajeError)
     }
 
-    // Probar que cambiar un texto actualiza el campo y marca cambios sin guardar
     @Test
     fun `cambiar texto actualiza el campo y marca cambios`() = runTest {
         val viewModel = crearViewModel()
@@ -183,7 +175,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que cambiar un campo con error le quita la marca de error
     @Test
     fun `cambiar un campo con error le quita la marca de error`() = runTest {
         val viewModel = crearViewModel()
@@ -197,7 +188,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(CampoSendero.DESNIVEL in viewModel.estadoVisual.value.camposConError)
     }
 
-    // Probar que los campos de elementos nuevos no marcan cambios sin guardar
     @Test
     fun `campos de elementos nuevos no marcan cambios`() = runTest {
         val viewModel = crearViewModel()
@@ -215,7 +205,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(estado.hayCambiosSinGuardar)
     }
 
-    // Probar que seleccionar dificultad y tipo de recorrido actualiza el estado y marca cambios
     @Test
     fun `seleccionar dificultad y tipo de recorrido marca cambios`() = runTest {
         val viewModel = crearViewModel()
@@ -229,7 +218,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(estado.hayCambiosSinGuardar)
     }
 
-    // Probar que agregar una recomendación la guarda recortada, limpia el campo y marca cambios
     @Test
     fun `agregar recomendacion la recorta limpia el campo y marca cambios`() = runTest {
         val viewModel = crearViewModel()
@@ -243,7 +231,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(estado.hayCambiosSinGuardar)
     }
 
-    // Probar que agregar una recomendación en blanco no agrega nada ni marca cambios
     @Test
     fun `agregar recomendacion en blanco no agrega nada`() = runTest {
         val viewModel = crearViewModel()
@@ -255,7 +242,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que quitar una recomendación elimina la del índice indicado
     @Test
     fun `quitar recomendacion elimina la del indice indicado`() = runTest {
         val viewModel = crearViewModel()
@@ -269,7 +255,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(listOf("Uno", "Tres"), viewModel.estadoVisual.value.recomendaciones)
     }
 
-    // Probar que agregar un servicio lo guarda recortado y limpia el campo
     @Test
     fun `agregar servicio lo recorta y limpia el campo`() = runTest {
         val viewModel = crearViewModel()
@@ -282,7 +267,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que agregar un servicio en blanco no agrega nada
     @Test
     fun `agregar servicio en blanco no agrega nada`() = runTest {
         val viewModel = crearViewModel()
@@ -293,7 +277,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.servicios.isEmpty())
     }
 
-    // Probar que quitar un servicio elimina el del índice indicado
     @Test
     fun `quitar servicio elimina el del indice indicado`() = runTest {
         val viewModel = crearViewModel()
@@ -307,7 +290,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(listOf("Refugio"), viewModel.estadoVisual.value.servicios)
     }
 
-    // Probar que agregar una etapa válida acepta coma decimal, la numera y limpia los campos
     @Test
     fun `agregar etapa valida acepta coma decimal y limpia los campos`() = runTest {
         val viewModel = crearViewModel()
@@ -323,7 +305,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(estado.hayCambiosSinGuardar)
     }
 
-    // Probar que agregar una etapa inválida emite el aviso y no agrega nada
     @Test
     fun `agregar etapa invalida emite aviso y no agrega nada`() = runTest {
         val viewModel = crearViewModel()
@@ -340,7 +321,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.etapas.isEmpty())
     }
 
-    // Probar que una etapa con distancia cero o sin nombre también es inválida
     @Test
     fun `agregar etapa con distancia cero o sin nombre emite aviso`() = runTest {
         val viewModel = crearViewModel()
@@ -360,7 +340,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.etapas.isEmpty())
     }
 
-    // Probar que quitar una etapa renumera las restantes de 1 a n
     @Test
     fun `quitar etapa renumera las restantes`() = runTest {
         val viewModel = crearViewModel()
@@ -381,7 +360,6 @@ class FormularioSenderoViewModelTest {
         )
     }
 
-    // Probar que guardar con números inválidos marca los campos y avisa sin llamar al caso de uso
     @Test
     fun `guardar con numero invalido marca campos y avisa sin llamar al caso de uso`() = runTest {
         val viewModel = crearViewModel()
@@ -405,7 +383,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.estaGuardando)
     }
 
-    // Probar que guardar un formulario válido en creación emite SenderoGuardado con el id generado
     @Test
     fun `guardar valido en creacion emite SenderoGuardado con el id generado`() = runTest {
         val viewModel = crearViewModel()
@@ -430,7 +407,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.estaGuardando)
     }
 
-    // Probar que guardar en edición conserva el id y el estado de favorito del original
     @Test
     fun `guardar en edicion conserva el id y esFavorito`() = runTest {
         val viewModel = crearViewModel(idSendero = "sendero-1")
@@ -451,7 +427,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(12.0, guardado.distanciaKilometros, 0.0)
     }
 
-    // Probar que una excepción de validación del caso de uso marca sus campos y avisa
     @Test
     fun `SenderoInvalidoException marca camposConError y avisa`() = runTest {
         val viewModel = crearViewModel()
@@ -474,7 +449,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(falsoSendero.llamadasGuardarSendero.isEmpty())
     }
 
-    // Probar que otro fallo del guardado avisa con el mensaje del error
     @Test
     fun `fallo del repositorio al guardar avisa con el mensaje del error`() = runTest {
         falsoSendero.resultadoGuardarSendero = Result.failure(IllegalStateException("Disco lleno"))
@@ -492,7 +466,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que un fallo sin mensaje avisa con el texto genérico
     @Test
     fun `fallo sin mensaje avisa con el texto generico`() = runTest {
         falsoSendero.resultadoGuardarSendero = Result.failure(IllegalStateException())
@@ -508,7 +481,6 @@ class FormularioSenderoViewModelTest {
         }
     }
 
-    // Probar que guardar repetido mientras se guarda produce una sola llamada
     @Test
     fun `AlGuardar repetido mientras guarda produce una sola llamada`() = runTest {
         val viewModel = crearViewModel()
@@ -521,7 +493,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(1, falsoSendero.llamadasGuardarSendero.size)
     }
 
-    // Probar que volver sin cambios emite VolverAtras directamente
     @Test
     fun `AlVolver sin cambios emite VolverAtras`() = runTest {
         val viewModel = crearViewModel()
@@ -536,7 +507,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esDialogoDescartarVisible)
     }
 
-    // Probar que volver con cambios muestra el diálogo de descartar y no navega
     @Test
     fun `AlVolver con cambios muestra el dialogo de descartar`() = runTest {
         val viewModel = crearViewModel()
@@ -552,7 +522,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.esDialogoDescartarVisible)
     }
 
-    // Probar que confirmar el descarte oculta el diálogo y emite VolverAtras
     @Test
     fun `AlConfirmarDescartar oculta el dialogo y emite VolverAtras`() = runTest {
         val viewModel = crearViewModel()
@@ -569,7 +538,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esDialogoDescartarVisible)
     }
 
-    // Probar que cancelar el descarte oculta el diálogo sin navegar y conserva los cambios
     @Test
     fun `AlCancelarDescartar oculta el dialogo sin navegar`() = runTest {
         val viewModel = crearViewModel()
@@ -588,7 +556,6 @@ class FormularioSenderoViewModelTest {
         assertEquals("Algo", viewModel.estadoVisual.value.nombre)
     }
 
-    // Crear un ViewModel de creación con los puntos indicados ya agregados al recorrido
     private fun crearViewModelConPuntos(vararg puntos: PuntoRecorrido): FormularioSenderoViewModel {
         val viewModel = crearViewModel()
         for (punto in puntos) {
@@ -597,7 +564,6 @@ class FormularioSenderoViewModelTest {
         return viewModel
     }
 
-    // Probar que el recorrido y el editor del mapa arrancan vacíos y ocultos
     @Test
     fun `el recorrido y el editor del mapa arrancan vacios y ocultos`() = runTest {
         val viewModel = crearViewModel()
@@ -610,7 +576,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(0.0, estado.distanciaCalculadaKilometros, 0.0)
     }
 
-    // Probar que abrir y cerrar el editor del mapa alterna su visibilidad sin marcar cambios
     @Test
     fun `abrir y cerrar el editor del mapa alterna la visibilidad sin marcar cambios`() = runTest {
         val viewModel = crearViewModel()
@@ -623,7 +588,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que agregar un punto lo añade al final como PASO sin nombre y marca cambios
     @Test
     fun `agregar punto lo anade al final como PASO y marca cambios`() = runTest {
         val viewModel = crearViewModel()
@@ -642,7 +606,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(estado.hayCambiosSinGuardar)
     }
 
-    // Probar que mover un punto cambia solo sus coordenadas y conserva tipo y nombre
     @Test
     fun `mover punto cambia solo las coordenadas y marca cambios`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4))
@@ -661,7 +624,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que seleccionar un punto guarda su índice y que seleccionar nulo limpia la selección
     @Test
     fun `seleccionar punto guarda el indice y nulo limpia la seleccion`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4))
@@ -673,7 +635,6 @@ class FormularioSenderoViewModelTest {
         assertNull(viewModel.estadoVisual.value.indicePuntoSeleccionado)
     }
 
-    // Probar que eliminar un punto lo quita de la lista y marca cambios
     @Test
     fun `eliminar punto lo quita del recorrido y marca cambios`() = runTest {
         val viewModel = crearViewModelConPuntos(
@@ -691,7 +652,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que eliminar el punto seleccionado limpia la selección
     @Test
     fun `eliminar el punto seleccionado limpia la seleccion`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
@@ -702,7 +662,6 @@ class FormularioSenderoViewModelTest {
         assertNull(viewModel.estadoVisual.value.indicePuntoSeleccionado)
     }
 
-    // Probar que eliminar un punto anterior al seleccionado desplaza la selección una posición
     @Test
     fun `eliminar un punto anterior al seleccionado ajusta el indice`() = runTest {
         val viewModel = crearViewModelConPuntos(
@@ -717,7 +676,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(1, viewModel.estadoVisual.value.indicePuntoSeleccionado)
     }
 
-    // Probar que eliminar un punto posterior al seleccionado conserva la selección
     @Test
     fun `eliminar un punto posterior al seleccionado conserva el indice`() = runTest {
         val viewModel = crearViewModelConPuntos(
@@ -732,7 +690,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(0, viewModel.estadoVisual.value.indicePuntoSeleccionado)
     }
 
-    // Probar que insertar antes agrega el punto medio entre el anterior y el indicado
     @Test
     fun `insertar punto antes agrega el punto medio con el anterior`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.0, -70.0), PuntoRecorrido(-42.0, -72.0))
@@ -749,7 +706,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que insertar antes del índice cero no hace nada porque no hay punto anterior
     @Test
     fun `insertar punto antes en el indice cero no hace nada`() = runTest {
         val viewModel = crearViewModel()
@@ -762,7 +718,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(recorridoAntes, viewModel.estadoVisual.value.recorrido)
     }
 
-    // Probar que cambiar el tipo de un punto lo actualiza y marca cambios
     @Test
     fun `cambiar tipo de punto lo actualiza y marca cambios`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
@@ -775,7 +730,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que cambiar el nombre de un punto lo actualiza y marca cambios
     @Test
     fun `cambiar nombre de punto lo actualiza y marca cambios`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
@@ -788,7 +742,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que invertir el sentido invierte el orden de los puntos y marca cambios
     @Test
     fun `invertir sentido invierte el orden de los puntos y marca cambios`() = runTest {
         val viewModel = crearViewModelConPuntos(
@@ -806,7 +759,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que la distancia calculada usa el recorrido y el tipo de recorrido actual
     @Test
     fun `distancia calculada usa el recorrido y el tipo de recorrido actual`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(0.0, 0.0), PuntoRecorrido(0.0, 1.0))
@@ -818,7 +770,6 @@ class FormularioSenderoViewModelTest {
         assertEquals(222.39, viewModel.estadoVisual.value.distanciaCalculadaKilometros, 0.1)
     }
 
-    // Probar que usar la distancia del mapa copia la distancia con un decimal al campo distancia
     @Test
     fun `usar distancia del mapa copia la distancia redondeada a un decimal`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(0.0, 0.0), PuntoRecorrido(0.0, 1.0))
@@ -830,7 +781,6 @@ class FormularioSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que el modo edición carga el recorrido del sendero sin marcar cambios
     @Test
     fun `modo edicion carga el recorrido del sendero sin marcar cambios`() = runTest {
         val recorrido = listOf(
@@ -845,7 +795,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
-    // Probar que guardar en creación envía el recorrido armado al caso de uso
     @Test
     fun `guardar en creacion envia el recorrido`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(-40.5, -71.3), PuntoRecorrido(-40.6, -71.4))
@@ -864,7 +813,6 @@ class FormularioSenderoViewModelTest {
         )
     }
 
-    // Probar que guardar en edición reemplaza el recorrido original por el editado
     @Test
     fun `guardar en edicion envia el recorrido editado`() = runTest {
         falsoSendero.senderos.value = listOf(
@@ -883,7 +831,6 @@ class FormularioSenderoViewModelTest {
         )
     }
 
-    // Probar que los eventos con índice fuera de rango se ignoran sin lanzar excepción
     @Test
     fun `indices fuera de rango se ignoran sin excepcion`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(1.0, 1.0), PuntoRecorrido(2.0, 2.0))
@@ -904,7 +851,6 @@ class FormularioSenderoViewModelTest {
         assertNull(estadoDespues.indicePuntoSeleccionado)
     }
 
-    // Probar que usar la distancia del mapa quita la marca de error del campo distancia
     @Test
     fun `usar distancia del mapa quita el error del campo distancia`() = runTest {
         val viewModel = crearViewModelConPuntos(PuntoRecorrido(0.0, 0.0), PuntoRecorrido(0.0, 1.0))
@@ -918,7 +864,6 @@ class FormularioSenderoViewModelTest {
         assertFalse(CampoSendero.DISTANCIA in viewModel.estadoVisual.value.camposConError)
     }
 
-    // Probar que invertir el sentido con menos de dos puntos no hace nada ni marca cambios
     @Test
     fun `invertir sentido con menos de dos puntos no hace nada`() = runTest {
         val sinPuntos = crearViewModel()
@@ -932,5 +877,69 @@ class FormularioSenderoViewModelTest {
         enviar(conUnPunto, FormularioSenderoEvento.AlInvertirSentido)
 
         assertEquals(estadoAntes, conUnPunto.estadoVisual.value)
+    }
+
+    @Test
+    fun `seleccionar foto guarda la ruta de la copia local y marca cambios`() = runTest {
+        val viewModel = crearViewModel()
+
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarFoto("content://media/picker/1"))
+
+        val estado = viewModel.estadoVisual.value
+        assertEquals(listOf("content://media/picker/1"), falsoAlmacenFotos.urisRecibidas)
+        assertEquals("/data/fotos_senderos/copia-1.jpg", estado.foto)
+        assertFalse(estado.estaProcesandoFoto)
+        assertTrue(estado.hayCambiosSinGuardar)
+    }
+
+    @Test
+    fun `fallo al copiar la foto avisa y no cambia la foto`() = runTest {
+        falsoAlmacenFotos.errorAlGuardar = IllegalStateException("Archivo corrupto")
+        val viewModel = crearViewModel()
+
+        viewModel.efectoVisual.test {
+            enviar(viewModel, FormularioSenderoEvento.AlSeleccionarFoto("content://media/picker/1"))
+
+            assertEquals(FormularioSenderoEfecto.MostrarAviso("No se pudo usar esa foto"), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals("", viewModel.estadoVisual.value.foto)
+        assertFalse(viewModel.estadoVisual.value.estaProcesandoFoto)
+    }
+
+    @Test
+    fun `quitar foto la deja vacia y marca cambios`() = runTest {
+        val viewModel = crearViewModel()
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarFoto("content://media/picker/1"))
+
+        enviar(viewModel, FormularioSenderoEvento.AlQuitarFoto)
+
+        assertEquals("", viewModel.estadoVisual.value.foto)
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    @Test
+    fun `guardar en creacion envia la foto elegida`() = runTest {
+        val viewModel = crearViewModel()
+        completarFormularioValido(viewModel)
+        enviar(viewModel, FormularioSenderoEvento.AlSeleccionarFoto("content://media/picker/1"))
+
+        enviar(viewModel, FormularioSenderoEvento.AlGuardar)
+
+        assertEquals("/data/fotos_senderos/copia-1.jpg", falsoSendero.llamadasGuardarSendero.single().second.foto)
+    }
+
+    @Test
+    fun `modo edicion carga la foto del sendero y la conserva al guardar`() = runTest {
+        falsoSendero.senderos.value = listOf(senderoOriginal.copy(foto = "https://res.cloudinary.com/prueba/cerro.jpg"))
+        val viewModel = crearViewModel(idSendero = "sendero-1")
+        avanzar()
+
+        assertEquals("https://res.cloudinary.com/prueba/cerro.jpg", viewModel.estadoVisual.value.foto)
+        enviar(viewModel, FormularioSenderoEvento.AlGuardar)
+        assertEquals(
+            "https://res.cloudinary.com/prueba/cerro.jpg",
+            falsoSendero.llamadasGuardarSendero.single().second.foto
+        )
     }
 }

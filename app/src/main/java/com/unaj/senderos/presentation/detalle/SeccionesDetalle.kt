@@ -1,0 +1,230 @@
+package com.unaj.senderos.presentation.detalle
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Loop
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.unaj.senderos.domain.model.Dificultad
+import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.presentation.componentes.ChipDificultad
+import com.unaj.senderos.presentation.componentes.TituloDeSeccion
+import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
+import com.unaj.senderos.presentation.mapa.MapaRecorrido
+import kotlin.math.roundToInt
+
+internal data class DatoRecorrido(
+    val icono: ImageVector,
+    val valor: String,
+    val etiqueta: String
+)
+
+@Composable
+internal fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) {
+    val datos = listOf(
+        DatoRecorrido(Icons.Outlined.Straighten, "${sendero.distanciaKilometros.roundToInt()} km", "Distancia"),
+        DatoRecorrido(Icons.AutoMirrored.Filled.TrendingUp, "${sendero.desnivelMetros} m", "Desnivel"),
+        DatoRecorrido(Icons.Outlined.Schedule, sendero.duracionEstimada, "Duración"),
+        DatoRecorrido(Icons.Filled.ArrowUpward, "${sendero.alturaMaximaMetros} m", "Altura máx."),
+        DatoRecorrido(Icons.Filled.ArrowDownward, "${sendero.alturaMinimaMetros} m", "Altura mín."),
+        DatoRecorrido(Icons.Outlined.Loop, obtenerTextoTipoRecorrido(sendero.tipoRecorrido), "Tipo")
+    )
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        TituloDeSeccion("Datos del recorrido")
+
+        OutlinedCard(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+            datos.chunked(3).forEachIndexed { indiceFila, filaDeDatos ->
+                if (indiceFila > 0) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+                Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                    filaDeDatos.forEachIndexed { indiceDato, dato ->
+                        if (indiceDato > 0) {
+                            VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                        CeldaDato(dato, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = "Dificultad", style = MaterialTheme.typography.bodyMedium)
+            ChipDificultad(sendero.dificultad)
+        }
+
+        FilaConIcono(Icons.Outlined.Flag, "Punto de inicio: ${sendero.puntoInicio}")
+        FilaConIcono(Icons.Outlined.CalendarMonth, "Mejor época: ${sendero.mejorEpoca}")
+    }
+}
+
+@Composable
+internal fun CeldaDato(dato: DatoRecorrido, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(vertical = 14.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = dato.icono,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = dato.valor,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = dato.etiqueta,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+internal fun FilaConIcono(icono: ImageVector, texto: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(
+            imageVector = icono,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(text = texto, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+internal fun RecuadroMapa(sendero: Sendero, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(240.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        if (sendero.recorrido.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Map,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(text = "Este sendero todavía no tiene recorrido", style = MaterialTheme.typography.bodyMedium)
+            }
+        } else {
+            MapaRecorrido(
+                puntos = sendero.recorrido,
+                tipoRecorrido = sendero.tipoRecorrido,
+                modifier = Modifier.fillMaxSize(),
+                usarModoTextura = true
+            )
+        }
+    }
+}
+
+@Composable
+internal fun SeccionDesplegable(
+    titulo: String,
+    estaExpandida: Boolean,
+    alAlternar: () -> Unit,
+    contenido: @Composable () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = alAlternar)
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = titulo,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = if (estaExpandida) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = if (estaExpandida) "Contraer $titulo" else "Expandir $titulo",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        AnimatedVisibility(visible = estaExpandida) {
+            Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                contenido()
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ListaConVinietas(elementos: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        elementos.forEach { elemento ->
+            Text(text = "• $elemento", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+internal fun ListaDeEtapas(etapas: List<Etapa>) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        etapas.forEach { etapa ->
+            Text(
+                text = "Etapa ${etapa.numero}: ${etapa.nombre} — ${etapa.distanciaKilometros.roundToInt()} km",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}

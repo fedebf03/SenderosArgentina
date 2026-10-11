@@ -3,14 +3,15 @@ package com.unaj.senderos.presentation.formulario
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.domain.EdicionRecorrido
 import com.unaj.senderos.domain.model.CampoSendero
-import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.SenderoInvalidoException
+import com.unaj.senderos.domain.repository.AlmacenFotos
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,19 +20,19 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "FORMULARIO_SENDERO"
-private const val TAG_VIDA = "VIDA"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
 private const val MENSAJE_SENDERO_NO_ENCONTRADO = "No se encontró el sendero"
 private const val MENSAJE_REVISAR_CAMPOS = "Revisá los campos marcados"
 private const val MENSAJE_ETAPA_INVALIDA = "Completá el nombre y los km de la etapa"
+private const val MENSAJE_FOTO_INVALIDA = "No se pudo usar esa foto"
 
 class FormularioSenderoViewModel(
     private val idSendero: String?,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
-    private val guardarSenderoUseCase: GuardarSenderoUseCase
+    private val guardarSenderoUseCase: GuardarSenderoUseCase,
+    private val almacenFotos: AlmacenFotos
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(
@@ -46,19 +47,10 @@ class FormularioSenderoViewModel(
     private var senderoOriginal: Sendero? = null
 
     init {
-        Log.d(TAG_VIDA, "ViewModel → creado (${hashCode()})")
         if (idSendero != null) cargarSendero(idSendero)
     }
 
-    // Registrar la destrucción del ViewModel en el Logcat
-    override fun onCleared() {
-        super.onCleared()
-        Log.d(TAG_VIDA, "ViewModel → onCleared")
-    }
-
-    // Procesar los eventos emitidos por la pantalla del formulario
     fun procesarEvento(evento: FormularioSenderoEvento) {
-        Log.d(TAG, "Evento recibido: $evento")
         when (evento) {
             is FormularioSenderoEvento.AlCambiarTexto -> cambiarTexto(evento.campo, evento.texto)
             is FormularioSenderoEvento.AlSeleccionarDificultad -> {
@@ -105,30 +97,31 @@ class FormularioSenderoViewModel(
                     estadoActual.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null)
                 }
             }
-            is FormularioSenderoEvento.AlAgregarPunto -> {
-                modificarRecorrido { puntos, seleccion ->
-                    puntos + PuntoRecorrido(latitud = evento.latitud, longitud = evento.longitud) to seleccion
-                }
+            is FormularioSenderoEvento.AlAgregarPunto -> editarRecorrido { it.agregar(evento.latitud, evento.longitud) }
+            is FormularioSenderoEvento.AlMoverPunto -> {
+                editarRecorrido { it.mover(evento.indice, evento.latitud, evento.longitud) }
             }
-            is FormularioSenderoEvento.AlMoverPunto -> moverPunto(evento)
             is FormularioSenderoEvento.AlSeleccionarPunto -> seleccionarPunto(evento.indice)
-            is FormularioSenderoEvento.AlEliminarPunto -> eliminarPunto(evento.indice)
-            is FormularioSenderoEvento.AlInsertarPuntoAntes -> insertarPuntoAntes(evento.indice)
+            is FormularioSenderoEvento.AlEliminarPunto -> editarRecorrido { it.eliminar(evento.indice) }
+            is FormularioSenderoEvento.AlInsertarPuntoAntes -> editarRecorrido { it.insertarAntes(evento.indice) }
             is FormularioSenderoEvento.AlCambiarTipoPunto -> {
-                reemplazarPunto(evento.indice) { punto -> punto.copy(tipo = evento.tipo) }
+                editarRecorrido { it.reemplazar(evento.indice) { punto -> punto.copy(tipo = evento.tipo) } }
             }
             is FormularioSenderoEvento.AlCambiarNombrePunto -> {
-                reemplazarPunto(evento.indice) { punto -> punto.copy(nombre = evento.nombre) }
+                editarRecorrido { it.reemplazar(evento.indice) { punto -> punto.copy(nombre = evento.nombre) } }
             }
-            is FormularioSenderoEvento.AlInvertirSentido -> invertirSentido()
+            is FormularioSenderoEvento.AlInvertirSentido -> editarRecorrido { it.invertir() }
             is FormularioSenderoEvento.AlUsarDistanciaDelMapa -> usarDistanciaDelMapa()
+            is FormularioSenderoEvento.AlSeleccionarFoto -> seleccionarFoto(evento.uri)
+            is FormularioSenderoEvento.AlQuitarFoto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(foto = "", hayCambiosSinGuardar = true) }
+            }
             is FormularioSenderoEvento.AlCancelarDescartar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoDescartarVisible = false) }
             }
         }
     }
 
-    // Cargar el primer valor del sendero a editar y volcarlo en los campos del formulario
     private fun cargarSendero(idSenderoEditado: String) {
         viewModelScope.launch {
             val resultado = observarDetalleSenderoUseCase(idSenderoEditado)
@@ -152,7 +145,6 @@ class FormularioSenderoViewModel(
                 mostrarErrorDeCarga(MENSAJE_SENDERO_NO_ENCONTRADO)
                 return@launch
             }
-            Log.d(TAG, "Sendero cargado para edición: ${senderoEncontrado.id}")
             senderoOriginal = senderoEncontrado
             _estadoVisual.update { estadoActual ->
                 estadoActual.copy(
@@ -174,96 +166,36 @@ class FormularioSenderoViewModel(
                     servicios = senderoEncontrado.servicios,
                     etapas = senderoEncontrado.etapas,
                     recorrido = senderoEncontrado.recorrido,
+                    foto = senderoEncontrado.foto,
                     hayCambiosSinGuardar = false
                 )
             }
         }
     }
 
-    // Exponer un error de carga terminando la espera; los mensajes vacíos usan el valor por defecto
     private fun mostrarErrorDeCarga(mensajeOriginal: String?) {
         val mensaje = mensajeOriginal?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaCargando = false, mensajeError = mensaje) }
     }
 
-    // Aplicar una transformación al recorrido, marcar cambios y reemplazar la selección (nulo la limpia)
-    private fun modificarRecorrido(
-        transformar: (List<PuntoRecorrido>, Int?) -> Pair<List<PuntoRecorrido>, Int?>
-    ) {
-        _estadoVisual.update { estadoActual ->
-            val (nuevoRecorrido, nuevaSeleccion) = transformar(estadoActual.recorrido, estadoActual.indicePuntoSeleccionado)
-            estadoActual.copy(
-                recorrido = nuevoRecorrido,
-                indicePuntoSeleccionado = nuevaSeleccion,
-                hayCambiosSinGuardar = true
-            )
+    // Una operación que no cambia nada (índice fuera de rango, invertir un solo punto) no cuenta como cambio
+    private fun editarRecorrido(operacion: (EdicionRecorrido) -> EdicionRecorrido) {
+        _estadoVisual.update { estado ->
+            val actual = EdicionRecorrido(estado.recorrido, estado.indicePuntoSeleccionado)
+            val editado = operacion(actual)
+            if (editado == actual) {
+                estado
+            } else {
+                estado.copy(recorrido = editado.puntos, indicePuntoSeleccionado = editado.seleccion, hayCambiosSinGuardar = true)
+            }
         }
     }
 
-    // Reemplazar un punto del recorrido conservando la selección; los índices fuera de rango se ignoran
-    private fun reemplazarPunto(indice: Int, transformar: (PuntoRecorrido) -> PuntoRecorrido) {
-        if (indice !in _estadoVisual.value.recorrido.indices) return
-        modificarRecorrido { puntos, seleccion ->
-            puntos.mapIndexed { posicion, punto -> if (posicion == indice) transformar(punto) else punto } to seleccion
-        }
-    }
-
-    // Mover un punto a nuevas coordenadas conservando su tipo y su nombre
-    private fun moverPunto(evento: FormularioSenderoEvento.AlMoverPunto) {
-        reemplazarPunto(evento.indice) { punto ->
-            punto.copy(latitud = evento.latitud, longitud = evento.longitud)
-        }
-    }
-
-    // Seleccionar un punto existente o limpiar la selección con nulo; un índice fuera de rango se ignora
     private fun seleccionarPunto(indice: Int?) {
         if (indice != null && indice !in _estadoVisual.value.recorrido.indices) return
-        _estadoVisual.update { estadoActual -> estadoActual.copy(indicePuntoSeleccionado = indice) }
+        _estadoVisual.update { estado -> estado.copy(indicePuntoSeleccionado = indice) }
     }
 
-    // Eliminar un punto: limpia la selección si era ese punto y la corre una posición si era posterior
-    private fun eliminarPunto(indice: Int) {
-        if (indice !in _estadoVisual.value.recorrido.indices) return
-        modificarRecorrido { puntos, seleccion ->
-            val seleccionNueva = when {
-                seleccion == null -> null
-                seleccion == indice -> null
-                seleccion > indice -> seleccion - 1
-                else -> seleccion
-            }
-            puntos.filterIndexed { posicion, _ -> posicion != indice } to seleccionNueva
-        }
-    }
-
-    // Insertar un punto medio entre el anterior y el indicado; la selección posterior se corre una posición
-    private fun insertarPuntoAntes(indice: Int) {
-        _estadoVisual.update { estadoActual ->
-            val anterior = estadoActual.recorrido.getOrNull(indice - 1)
-            val siguiente = estadoActual.recorrido.getOrNull(indice)
-            if (indice < 1 || anterior == null || siguiente == null) return@update estadoActual
-            val puntoMedio = PuntoRecorrido(
-                latitud = (anterior.latitud + siguiente.latitud) / 2,
-                longitud = (anterior.longitud + siguiente.longitud) / 2
-            )
-            val seleccion = estadoActual.indicePuntoSeleccionado
-            val seleccionNueva = if (seleccion != null && seleccion >= indice) seleccion + 1 else seleccion
-            estadoActual.copy(
-                recorrido = estadoActual.recorrido.take(indice) + puntoMedio + estadoActual.recorrido.drop(indice),
-                indicePuntoSeleccionado = seleccionNueva,
-                hayCambiosSinGuardar = true
-            )
-        }
-    }
-
-    // Invertir el sentido del recorrido; la selección pasa al índice espejo para seguir sobre el mismo punto
-    private fun invertirSentido() {
-        if (_estadoVisual.value.recorrido.size < 2) return
-        modificarRecorrido { puntos, seleccion ->
-            CalculadoraRecorrido.invertirSentido(puntos) to seleccion?.let { posicion -> puntos.size - 1 - posicion }
-        }
-    }
-
-    // Copiar la distancia calculada del mapa, redondeada a un decimal, al campo de distancia
     private fun usarDistanciaDelMapa() {
         val distanciaRedondeada = Math.round(_estadoVisual.value.distanciaCalculadaKilometros * 10) / 10.0
         _estadoVisual.update { estadoActual ->
@@ -275,12 +207,10 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Convertir un número decimal a texto sin decimales innecesarios
     private fun formatearDecimal(valor: Double): String {
         return if (valor % 1.0 == 0.0) valor.toLong().toString() else valor.toString()
     }
 
-    // Actualizar el texto de un campo, quitarle la marca de error y registrar el cambio si aplica
     private fun cambiarTexto(campo: CampoFormulario, texto: String) {
         _estadoVisual.update { estadoActual ->
             val estadoConTexto = when (campo) {
@@ -316,7 +246,6 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Obtener el campo de validación del dominio que corresponde a un campo del formulario
     private fun obtenerCampoDelSendero(campo: CampoFormulario): CampoSendero? {
         return when (campo) {
             CampoFormulario.NOMBRE -> CampoSendero.NOMBRE
@@ -330,7 +259,6 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Agregar la recomendación escrita si no está en blanco y limpiar el campo
     private fun agregarRecomendacion() {
         val texto = _estadoVisual.value.textoNuevaRecomendacion.trim()
         if (texto.isEmpty()) return
@@ -343,7 +271,6 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Agregar el servicio escrito si no está en blanco y limpiar el campo
     private fun agregarServicio() {
         val texto = _estadoVisual.value.textoNuevoServicio.trim()
         if (texto.isEmpty()) return
@@ -356,7 +283,6 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Agregar la etapa escrita si su nombre y sus kilómetros son válidos; si no, avisar
     private fun agregarEtapa() {
         val estadoActual = _estadoVisual.value
         val nombre = estadoActual.nombreNuevaEtapa.trim()
@@ -379,7 +305,6 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Quitar la etapa del índice indicado y renumerar las restantes de 1 a n
     private fun quitarEtapa(indice: Int) {
         _estadoVisual.update { estadoActual ->
             val etapasRestantes = estadoActual.etapas
@@ -389,16 +314,15 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Interpretar un texto como decimal finito aceptando coma o punto
     private fun interpretarDecimal(texto: String): Double? {
         val valor = texto.trim().replace(',', '.').toDoubleOrNull() ?: return null
         return valor.takeIf { numero -> numero.isFinite() }
     }
 
-    // Validar los números del formulario y guardar el sendero mediante el caso de uso
     private fun guardar() {
         val estadoActual = _estadoVisual.value
         if (estadoActual.estaGuardando || estadoActual.estaCargando || estadoActual.mensajeError != null) return
+        if (estadoActual.estaProcesandoFoto) return
 
         val distancia = interpretarDecimal(estadoActual.distancia)
         val desnivel = estadoActual.desnivel.trim().toIntOrNull()
@@ -412,7 +336,6 @@ class FormularioSenderoViewModel(
                 if (alturaMaxima == null) add(CampoSendero.ALTURA_MAXIMA)
                 if (alturaMinima == null) add(CampoSendero.ALTURA_MINIMA)
             }
-            Log.d(TAG, "Guardado rechazado por campos numéricos inválidos: $camposNumericosInvalidos")
             _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(camposConError = camposNumericosInvalidos) }
             emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_REVISAR_CAMPOS))
             return
@@ -442,14 +365,14 @@ class FormularioSenderoViewModel(
             recomendaciones = estadoActual.recomendaciones,
             servicios = estadoActual.servicios,
             etapas = estadoActual.etapas,
-            recorrido = estadoActual.recorrido
+            recorrido = estadoActual.recorrido,
+            foto = estadoActual.foto
         )
 
         _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(estaGuardando = true, camposConError = emptySet()) }
         viewModelScope.launch {
             guardarSenderoUseCase(senderoArmado).fold(
                 onSuccess = { senderoGuardado ->
-                    Log.d(TAG, "Sendero guardado: ${senderoGuardado.id}")
                     _estadoVisual.update { estadoPrevio ->
                         estadoPrevio.copy(estaGuardando = false, hayCambiosSinGuardar = false)
                     }
@@ -460,11 +383,9 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Reflejar un fallo de guardado marcando campos inválidos o avisando el mensaje del error
     private suspend fun manejarFalloDeGuardado(error: Throwable) {
         if (error is CancellationException) throw error
         if (error is SenderoInvalidoException) {
-            Log.d(TAG, "Sendero inválido: ${error.camposInvalidos}")
             _estadoVisual.update { estadoPrevio ->
                 estadoPrevio.copy(estaGuardando = false, camposConError = error.camposInvalidos)
             }
@@ -477,7 +398,25 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Volver atrás directamente o pedir confirmación si hay cambios sin guardar
+    // Copiar la foto elegida al almacenamiento de la app para que siga disponible aunque el usuario la borre de la galería
+    private fun seleccionarFoto(uri: String) {
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoFoto = true) }
+        viewModelScope.launch {
+            almacenFotos.guardarCopia(uri).fold(
+                onSuccess = { rutaLocal ->
+                    _estadoVisual.update { estadoActual ->
+                        estadoActual.copy(foto = rutaLocal, estaProcesandoFoto = false, hayCambiosSinGuardar = true)
+                    }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo copiar la foto elegida", error)
+                    _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoFoto = false) }
+                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(MENSAJE_FOTO_INVALIDA))
+                }
+            )
+        }
+    }
+
     private fun volver() {
         if (_estadoVisual.value.hayCambiosSinGuardar) {
             _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoDescartarVisible = true) }
@@ -486,7 +425,6 @@ class FormularioSenderoViewModel(
         }
     }
 
-    // Enviar un efecto único a la pantalla
     private fun emitirEfecto(efecto: FormularioSenderoEfecto) {
         viewModelScope.launch {
             canalEfectos.send(efecto)
