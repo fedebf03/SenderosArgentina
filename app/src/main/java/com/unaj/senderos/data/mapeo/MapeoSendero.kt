@@ -14,28 +14,23 @@ import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
 
-// Resolver una dificultad por nombre con valor por defecto MEDIA
 private fun resolverDificultad(nombre: String): Dificultad {
     return Dificultad.entries.firstOrNull { valor -> valor.name == nombre } ?: Dificultad.MEDIA
 }
 
-// Resolver un tipo de recorrido por nombre con valor por defecto LINEAL
 private fun resolverTipoRecorrido(nombre: String): TipoRecorrido {
     return TipoRecorrido.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoRecorrido.LINEAL
 }
 
-// Resolver un tipo de punto por nombre con valor por defecto PASO
 private fun resolverTipoPunto(nombre: String): TipoPunto {
     return TipoPunto.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoPunto.PASO
 }
 
-// Resolver un estado de sincronización por nombre con valor por defecto SINCRONIZADO
 private fun resolverEstadoSincronizacion(nombre: String): EstadoSincronizacion {
     return EstadoSincronizacion.entries.firstOrNull { valor -> valor.name == nombre }
         ?: EstadoSincronizacion.SINCRONIZADO
 }
 
-// Mapear la entidad local al modelo de dominio
 fun SenderoEntidad.aDominio(): Sendero {
     return Sendero(
         id = id,
@@ -59,11 +54,11 @@ fun SenderoEntidad.aDominio(): Sendero {
         estadoSincronizacion = resolverEstadoSincronizacion(estadoSincronizacion),
         recorrido = recorrido.map { punto ->
             PuntoRecorrido(punto.latitud, punto.longitud, resolverTipoPunto(punto.tipo), punto.nombre)
-        }
+        },
+        foto = foto
     )
 }
 
-// Mapear el modelo de dominio a la entidad local con los metadatos de sincronización indicados
 fun Sendero.aEntidad(
     fechaModificacion: Long,
     estadoSincronizacion: EstadoSincronizacion,
@@ -93,11 +88,11 @@ fun Sendero.aEntidad(
         estaEliminado = estaEliminado,
         recorrido = recorrido.map { punto ->
             PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo.name, punto.nombre)
-        }
+        },
+        foto = foto
     )
 }
 
-// Mapear la entidad local al documento remoto
 fun SenderoEntidad.aRed(): SenderoRed {
     return SenderoRed(
         id = id,
@@ -119,11 +114,11 @@ fun SenderoEntidad.aRed(): SenderoRed {
         esFavorito = esFavorito,
         fechaModificacion = fechaModificacion,
         eliminado = estaEliminado,
-        recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre) }
+        recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre) },
+        foto = foto
     )
 }
 
-// Mapear el documento remoto a una entidad local ya sincronizada del usuario indicado
 fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
     return SenderoEntidad(
         id = id,
@@ -149,6 +144,7 @@ fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
         estaEliminado = eliminado,
         recorrido = recorrido.map { punto ->
             PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo, punto.nombre)
-        }
+        },
+        foto = foto
     )
 }

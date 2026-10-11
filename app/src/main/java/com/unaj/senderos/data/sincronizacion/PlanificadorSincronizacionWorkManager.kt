@@ -12,12 +12,10 @@ import java.util.concurrent.TimeUnit
 
 private const val TAG = "SINCRONIZACION"
 
-// Planificador que encola un trabajo único por usuario en WorkManager, exigiendo conexión
 class PlanificadorSincronizacionWorkManager(
     private val workManager: WorkManager
 ) : PlanificadorSincronizacion {
 
-    // Encolar el trabajo de sincronización conservando el ya encolado si existe
     override fun solicitarSincronizacion(idUsuario: String) {
         val restricciones = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -31,7 +29,6 @@ class PlanificadorSincronizacionWorkManager(
         workManager.enqueueUniqueWork("sincronizar-senderos-$idUsuario", ExistingWorkPolicy.KEEP, pedido)
     }
 
-    // Cancelar el trabajo único de sincronización del usuario
     override fun cancelarSincronizacion(idUsuario: String) {
         Log.d(TAG, "Cancelando sincronización de senderos para el usuario $idUsuario")
         workManager.cancelUniqueWork("sincronizar-senderos-$idUsuario")

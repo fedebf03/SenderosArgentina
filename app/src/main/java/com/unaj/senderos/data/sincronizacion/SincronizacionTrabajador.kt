@@ -17,18 +17,15 @@ private val CODIGOS_REINTENTABLES = setOf(
     FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED
 )
 
-// Determinar si un fallo es transitorio: Firestore con código permanente no se reintenta, el resto sí
 fun esErrorReintentable(error: Throwable?): Boolean {
     return if (error is FirebaseFirestoreException) error.code in CODIGOS_REINTENTABLES else true
 }
 
-// Trabajo de WorkManager que sincroniza los senderos del usuario recibido por inputData
 class SincronizacionTrabajador(
     contexto: Context,
     parametros: WorkerParameters
 ) : CoroutineWorker(contexto, parametros) {
 
-    // Ejecutar la sincronización: éxito termina; fallo transitorio reintenta hasta un máximo, el permanente falla
     override suspend fun doWork(): Result {
         val idUsuario = inputData.getString(CLAVE_ID_USUARIO).orEmpty()
         if (idUsuario.isBlank()) {

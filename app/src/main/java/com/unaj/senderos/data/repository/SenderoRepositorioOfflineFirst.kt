@@ -25,20 +25,17 @@ class SenderoRepositorioOfflineFirst(
     private val reloj: () -> Long = System::currentTimeMillis
 ) : SenderoRepositorio {
 
-    // Observar los senderos locales del usuario y pedir una sincronización al empezar a recolectar
     override fun observarSenderosDelUsuario(idUsuario: String): Flow<List<Sendero>> {
         return senderoDao.observarPorUsuario(idUsuario)
             .map { entidades -> entidades.map { entidad -> entidad.aDominio() } }
             .onStart { planificadorSincronizacion.solicitarSincronizacion(idUsuario) }
     }
 
-    // Observar un sendero local del usuario; emite null si no existe o fue eliminado
     override fun observarSendero(idUsuario: String, idSendero: String): Flow<Sendero?> {
         return senderoDao.observarPorId(idUsuario, idSendero)
             .map { entidad -> entidad?.aDominio() }
     }
 
-    // Guardar el sendero en Room como pendiente y solicitar la sincronización
     override suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit> {
         return ejecutarEscritura(idUsuario) {
             senderoDao.guardar(
@@ -51,27 +48,23 @@ class SenderoRepositorioOfflineFirst(
         }
     }
 
-    // Invertir la marca de favorito en Room como pendiente y solicitar la sincronización
     override suspend fun alternarFavorito(idUsuario: String, idSendero: String): Result<Unit> {
         return modificarExistente(idUsuario, idSendero) { entidad ->
             entidad.copy(esFavorito = !entidad.esFavorito)
         }
     }
 
-    // Marcar el sendero como eliminado en Room y solicitar la sincronización
     override suspend fun eliminarSendero(idUsuario: String, idSendero: String): Result<Unit> {
         return modificarExistente(idUsuario, idSendero) { entidad ->
             entidad.copy(estaEliminado = true)
         }
     }
 
-    // Detener la sincronización del usuario cancelando el trabajo planificado
     override fun detenerSincronizacion(idUsuario: String) {
         Log.d(TAG, "Deteniendo la sincronización del usuario $idUsuario")
         planificadorSincronizacion.cancelarSincronizacion(idUsuario)
     }
 
-    // Aplicar una modificación a un sendero vigente dejándolo pendiente con la fecha actual
     private suspend fun modificarExistente(
         idUsuario: String,
         idSendero: String,
@@ -93,7 +86,6 @@ class SenderoRepositorioOfflineFirst(
         }
     }
 
-    // Ejecutar una escritura local y, si sale bien, solicitar la sincronización del usuario
     private suspend fun ejecutarEscritura(idUsuario: String, escribir: suspend () -> Unit): Result<Unit> {
         return try {
             escribir()

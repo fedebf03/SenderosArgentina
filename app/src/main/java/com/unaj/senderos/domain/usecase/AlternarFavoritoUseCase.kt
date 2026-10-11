@@ -7,7 +7,6 @@ class AlternarFavoritoUseCase(
     private val senderoRepositorio: SenderoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Alternar la marca de favorito de un sendero del usuario autenticado
     suspend operator fun invoke(idSendero: String): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))

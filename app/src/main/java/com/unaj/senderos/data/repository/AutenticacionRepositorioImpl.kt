@@ -18,33 +18,27 @@ import kotlin.coroutines.resume
 
 class AutenticacionRepositorioImpl : AutenticacionRepositorio {
 
-    // Autenticar al usuario mediante Firebase Auth con correo y contraseña
     override suspend fun iniciarSesion(email: String, clave: String): Result<Usuario> {
         return esperarResultado { FirebaseAuth.getInstance().signInWithEmailAndPassword(email, clave) }
     }
 
-    // Crear la cuenta en Firebase Auth; si sale bien, el usuario queda con la sesión iniciada
     override suspend fun registrar(email: String, clave: String): Result<Usuario> {
         return esperarResultado { FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, clave) }
     }
 
-    // Autenticar al usuario mediante Firebase Auth utilizando el credencial de Google
     override suspend fun iniciarSesionConGoogle(idToken: String): Result<Usuario> {
         val credencialGoogle = GoogleAuthProvider.getCredential(idToken, null)
         return esperarResultado { FirebaseAuth.getInstance().signInWithCredential(credencialGoogle) }
     }
 
-    // Obtener la información del usuario con sesión activa en Firebase
     override fun obtenerUsuarioActual(): Usuario? {
         return FirebaseAuth.getInstance().currentUser?.aUsuario()
     }
 
-    // Finalizar la sesión actual del usuario autenticado
     override fun cerrarSesion() {
         FirebaseAuth.getInstance().signOut()
     }
 
-    // Convertir la tarea de Firebase en un Result, traduciendo los errores al español
     private suspend fun esperarResultado(operacion: () -> Task<AuthResult>): Result<Usuario> {
         return suspendCancellableCoroutine { continuacion ->
             operacion()
@@ -64,7 +58,6 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         }
     }
 
-    // Pasar los datos del usuario de Firebase al modelo de dominio
     private fun FirebaseUser.aUsuario() = Usuario(
         id = uid,
         email = email ?: "",
@@ -72,7 +65,6 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         fotoUrl = photoUrl?.toString() ?: ""
     )
 
-    // Reemplazar los mensajes en inglés de Firebase por mensajes para el usuario
     private fun traducirError(error: Exception): Exception {
         Log.e("AUTH", "Error de Firebase Auth", error)
         val mensaje = when (error) {

@@ -28,5 +28,7 @@ data class SenderoEntidad(
     val estadoSincronizacion: String,
     val estaEliminado: Boolean,
     @ColumnInfo(defaultValue = "[]")
-    val recorrido: List<PuntoRecorridoEntidad> = emptyList()
+    val recorrido: List<PuntoRecorridoEntidad> = emptyList(),
+    @ColumnInfo(defaultValue = "")
+    val foto: String = ""
 )

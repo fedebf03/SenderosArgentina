@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.google.firebase.firestore.FirebaseFirestore
+import com.unaj.senderos.data.local.AlmacenFotosLocal
 import com.unaj.senderos.data.local.BaseDatosSenderos
 import com.unaj.senderos.data.local.EjecutorTransaccionesRoom
 import com.unaj.senderos.data.remote.FirestoreSenderoFuenteRemota
+import com.unaj.senderos.data.remote.SubidorFotosCloudinary
 import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
 import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
@@ -22,7 +24,6 @@ import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
 
-// Construir una sola vez los repositorios y casos de uso que comparte toda la aplicación
 class ContenedorDependencias(contexto: Context) {
     private val autenticacionRepositorio = AutenticacionRepositorioImpl()
     private val baseDatosSenderos = Room.databaseBuilder(
@@ -41,7 +42,14 @@ class ContenedorDependencias(contexto: Context) {
             ejecutorTransacciones
         )
 
-    val sincronizadorSenderos = SincronizadorSenderos(baseDatosSenderos.senderoDao(), fuenteRemota, ejecutorTransacciones)
+    private val subidorFotos = SubidorFotosCloudinary(
+        nombreNube = BuildConfig.CLOUDINARY_NOMBRE_NUBE,
+        presetSubida = BuildConfig.CLOUDINARY_PRESET_SUBIDA
+    )
+
+    val sincronizadorSenderos =
+        SincronizadorSenderos(baseDatosSenderos.senderoDao(), fuenteRemota, ejecutorTransacciones, subidorFotos)
+    val almacenFotos = AlmacenFotosLocal(contexto)
 
     val iniciarSesionUseCase = IniciarSesionUseCase(autenticacionRepositorio)
     val iniciarSesionConGoogleUseCase = IniciarSesionConGoogleUseCase(autenticacionRepositorio)

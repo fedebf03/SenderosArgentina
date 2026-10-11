@@ -13,7 +13,6 @@ import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
 
-// Construir un sendero de dominio válido con valores por defecto sobreescribibles
 fun crearSenderoDePrueba(
     id: String = "sendero-1",
     idUsuario: String = "usuario-1",
@@ -53,7 +52,6 @@ fun crearSenderoDePrueba(
     )
 }
 
-// Construir una entidad local con valores por defecto sobreescribibles
 fun crearEntidadDePrueba(
     id: String = "sendero-1",
     idUsuario: String = "usuario-1",
@@ -90,7 +88,6 @@ fun crearEntidadDePrueba(
     )
 }
 
-// Construir un documento remoto con valores por defecto sobreescribibles
 fun crearRedDePrueba(
     id: String = "sendero-1",
     nombre: String = "Cerro Catedral",

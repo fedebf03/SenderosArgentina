@@ -12,7 +12,6 @@ class AlternarFavoritoUseCaseTest {
 
     private val usuario = Usuario(id = "usuario-1", email = "ana@correo.com")
 
-    // Probar que sin sesión activa falla con mensaje y no toca el repositorio
     @Test
     fun `sin sesion activa falla con mensaje y no toca el repositorio`() = runTest {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = null)
@@ -26,7 +25,6 @@ class AlternarFavoritoUseCaseTest {
         assertTrue(falsoSendero.llamadasAlternarFavorito.isEmpty())
     }
 
-    // Probar que con sesión activa delega en el repositorio con el id del usuario
     @Test
     fun `con sesion activa delega con el id del usuario`() = runTest {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
@@ -39,7 +37,6 @@ class AlternarFavoritoUseCaseTest {
         assertEquals(listOf(usuario.id to "sendero-9"), falsoSendero.llamadasAlternarFavorito)
     }
 
-    // Probar que propaga el fallo del repositorio sin modificarlo
     @Test
     fun `propaga el fallo del repositorio`() = runTest {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)

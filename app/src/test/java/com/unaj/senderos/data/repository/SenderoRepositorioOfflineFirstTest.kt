@@ -23,7 +23,6 @@ class SenderoRepositorioOfflineFirstTest {
     private val falsoPlanificador = FalsoPlanificadorSincronizacion()
     private val falsoEjecutor = FalsoEjecutorTransacciones()
 
-    // Crear el repositorio con el reloj fijo y los falsos de fuente local y planificador
     private fun crearRepositorio(): SenderoRepositorioOfflineFirst {
         return SenderoRepositorioOfflineFirst(
             senderoDao = falsoDao,
@@ -33,7 +32,6 @@ class SenderoRepositorioOfflineFirstTest {
         )
     }
 
-    // Probar que observar emite desde el DAO y solicita sincronización al empezar a recolectar
     @Test
     fun `observar emite desde el DAO y solicita sincronizacion al empezar`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a", nombre = "Alfa"))
@@ -48,7 +46,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals(listOf("usuario-1"), falsoPlanificador.idsUsuarioSolicitados)
     }
 
-    // Probar que observar sin red devuelve los datos locales sin involucrar ninguna fuente remota
     @Test
     fun `observar sin red devuelve los datos locales`() = runTest {
         falsoDao.entidades.value = listOf(
@@ -61,7 +58,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals(listOf("Alfa", "Beta"), lista.map { sendero -> sendero.nombre })
     }
 
-    // Probar que observar excluye los senderos eliminados lógicamente y los de otros usuarios
     @Test
     fun `observar excluye eliminados y senderos de otros usuarios`() = runTest {
         falsoDao.entidades.value = listOf(
@@ -76,7 +72,6 @@ class SenderoRepositorioOfflineFirstTest {
         }
     }
 
-    // Probar que la lista observada se actualiza sola cuando cambia el DAO
     @Test
     fun `la lista observada se actualiza sola al cambiar el DAO`() = runTest {
         val repositorio = crearRepositorio()
@@ -91,7 +86,6 @@ class SenderoRepositorioOfflineFirstTest {
         }
     }
 
-    // Probar que observarSendero emite el sendero y luego null cuando se elimina
     @Test
     fun `observarSendero emite el sendero o null si no existe`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a"))
@@ -101,7 +95,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertNull(repositorio.observarSendero("usuario-1", "inexistente").first())
     }
 
-    // Probar que guardarSendero deja la entidad PENDIENTE con la fecha del reloj y pide sincronizar
     @Test
     fun `guardarSendero guarda PENDIENTE con la fecha del reloj y solicita sincronizacion`() = runTest {
         val repositorio = crearRepositorio()
@@ -121,7 +114,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals(listOf("usuario-1"), falsoPlanificador.idsUsuarioSolicitados)
     }
 
-    // Probar que guardar sin red funciona porque solo se involucran el DAO y el planificador
     @Test
     fun `guardarSendero funciona sin red y el sendero queda visible al observar`() = runTest {
         val repositorio = crearRepositorio()
@@ -134,7 +126,6 @@ class SenderoRepositorioOfflineFirstTest {
         }
     }
 
-    // Probar que guardar sobre un sendero existente lo reemplaza y lo marca PENDIENTE de nuevo
     @Test
     fun `guardarSendero sobre uno existente lo reemplaza y lo marca PENDIENTE`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a", nombre = "Viejo"))
@@ -146,7 +137,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals("PENDIENTE", guardada.estadoSincronizacion)
     }
 
-    // Probar que alternarFavorito invierte el valor, marca PENDIENTE y solicita sincronización
     @Test
     fun `alternarFavorito invierte esFavorito y marca PENDIENTE`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a", esFavorito = false))
@@ -165,7 +155,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertFalse(falsoDao.entidades.value.single().esFavorito)
     }
 
-    // Probar que alternarFavorito con id inexistente falla con mensaje y no solicita sincronización
     @Test
     fun `alternarFavorito con id inexistente falla con mensaje`() = runTest {
         val resultado = crearRepositorio().alternarFavorito("usuario-1", "no-existe")
@@ -175,7 +164,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertTrue(falsoPlanificador.idsUsuarioSolicitados.isEmpty())
     }
 
-    // Probar que alternarFavorito sobre un sendero eliminado falla como si no existiera
     @Test
     fun `alternarFavorito sobre un eliminado falla con mensaje`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a", estaEliminado = true))
@@ -185,7 +173,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals("No se encontró el sendero", resultado.exceptionOrNull()?.message)
     }
 
-    // Probar que eliminarSendero marca estaEliminado PENDIENTE y desaparece de la observación
     @Test
     fun `eliminarSendero marca eliminado PENDIENTE y desaparece de observar`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a", nombre = "Alfa"))
@@ -207,7 +194,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertTrue(falsoPlanificador.idsUsuarioSolicitados.contains("usuario-1"))
     }
 
-    // Probar que eliminarSendero con id inexistente falla con mensaje
     @Test
     fun `eliminarSendero con id inexistente falla con mensaje`() = runTest {
         val resultado = crearRepositorio().eliminarSendero("usuario-1", "no-existe")
@@ -216,7 +202,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals("No se encontró el sendero", resultado.exceptionOrNull()?.message)
     }
 
-    // Probar que alternarFavorito lee y escribe dentro del ejecutor de transacciones
     @Test
     fun `alternarFavorito pasa por el ejecutor de transacciones`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a"))
@@ -226,7 +211,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals(1, falsoEjecutor.cantidadLlamadas)
     }
 
-    // Probar que eliminarSendero lee y escribe dentro del ejecutor de transacciones
     @Test
     fun `eliminarSendero pasa por el ejecutor de transacciones`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a"))
@@ -236,7 +220,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals(1, falsoEjecutor.cantidadLlamadas)
     }
 
-    // Probar que detenerSincronizacion cancela el trabajo del usuario en el planificador
     @Test
     fun `detenerSincronizacion cancela el trabajo del usuario`() {
         crearRepositorio().detenerSincronizacion("usuario-1")
@@ -244,7 +227,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertEquals(listOf("usuario-1"), falsoPlanificador.idsUsuarioCancelados)
     }
 
-    // Probar que la cancelación al guardar se propaga y no se convierte en failure
     @Test
     fun `la cancelacion al guardar se propaga`() = runTest {
         falsoDao.errorAlGuardar = CancellationException("cancelado")
@@ -257,7 +239,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertTrue(falsoPlanificador.idsUsuarioSolicitados.isEmpty())
     }
 
-    // Probar que la cancelación al alternar favorito se propaga y no se convierte en failure
     @Test
     fun `la cancelacion al alternar favorito se propaga`() = runTest {
         falsoDao.entidades.value = listOf(crearEntidadDePrueba(id = "a"))
@@ -268,7 +249,6 @@ class SenderoRepositorioOfflineFirstTest {
         assertTrue(resultado.exceptionOrNull() is CancellationException)
     }
 
-    // Probar que un fallo común al guardar se devuelve como failure
     @Test
     fun `un fallo comun al guardar se devuelve como failure`() = runTest {
         falsoDao.errorAlGuardar = IllegalStateException("disco lleno")

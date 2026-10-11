@@ -11,7 +11,6 @@ class CerrarSesionUseCaseTest {
 
     private val usuario = Usuario(id = "usuario-1", email = "a@b.com")
 
-    // Probar que con usuario activo se detiene la sincronización antes de cerrar la sesión
     @Test
     fun `con usuario detiene la sincronizacion antes de cerrar la sesion`() {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
@@ -26,7 +25,6 @@ class CerrarSesionUseCaseTest {
         assertEquals(1, falsoAutenticacion.cantidadCierresSesion)
     }
 
-    // Probar que sin usuario activo no se llama a detener pero igual se cierra la sesión
     @Test
     fun `sin usuario no detiene la sincronizacion`() {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = null)
