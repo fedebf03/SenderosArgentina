@@ -17,7 +17,6 @@ import org.junit.Test
 
 class MapeoSenderoTest {
 
-    // Probar que dominio a entidad y de vuelta a dominio conserva todos los datos
     @Test
     fun `ida y vuelta dominio entidad dominio conserva los datos`() {
         val original = crearSenderoDePrueba(
@@ -35,7 +34,6 @@ class MapeoSenderoTest {
         assertEquals(original, recuperado)
     }
 
-    // Probar que dominio a entidad copia los metadatos de sincronización recibidos
     @Test
     fun `dominio a entidad aplica fecha estado y marca de eliminado recibidos`() {
         val entidad = crearSenderoDePrueba().aEntidad(
@@ -51,7 +49,6 @@ class MapeoSenderoTest {
         assertEquals("CIRCULAR", entidad.tipoRecorrido)
     }
 
-    // Probar que entidad a red y de vuelta a entidad conserva los datos y marca SINCRONIZADO
     @Test
     fun `ida y vuelta entidad red entidad conserva los datos y queda SINCRONIZADO`() {
         val entidadOriginal = crearEntidadDePrueba(
@@ -65,7 +62,6 @@ class MapeoSenderoTest {
         assertEquals(entidadOriginal.copy(estadoSincronizacion = "SINCRONIZADO"), recuperada)
     }
 
-    // Probar que la entidad eliminada se transforma en red con eliminado verdadero y viceversa
     @Test
     fun `estaEliminado y eliminado se corresponden en ambos sentidos`() {
         val redEliminada = crearEntidadDePrueba(estaEliminado = true).aRed()
@@ -79,7 +75,6 @@ class MapeoSenderoTest {
         assertFalse(entidadDesdeVigente.estaEliminado)
     }
 
-    // Probar que red a entidad usa el idUsuario recibido y deja el estado SINCRONIZADO
     @Test
     fun `red a entidad asigna el idUsuario recibido y estado SINCRONIZADO`() {
         val entidad = crearRedDePrueba(id = "remoto-1", fechaModificacion = 4_321L).aEntidad("usuario-9")
@@ -90,7 +85,6 @@ class MapeoSenderoTest {
         assertEquals("SINCRONIZADO", entidad.estadoSincronizacion)
     }
 
-    // Probar que un enum desconocido al leer la entidad cae en los valores por defecto
     @Test
     fun `enums desconocidos en la entidad caen en el valor por defecto`() {
         val entidad = crearEntidadDePrueba().copy(
@@ -106,7 +100,6 @@ class MapeoSenderoTest {
         assertEquals(EstadoSincronizacion.SINCRONIZADO, sendero.estadoSincronizacion)
     }
 
-    // Probar que los enums válidos de la entidad se resuelven por nombre
     @Test
     fun `enums validos de la entidad se resuelven por nombre`() {
         val entidad = crearEntidadDePrueba().copy(
@@ -122,7 +115,6 @@ class MapeoSenderoTest {
         assertEquals(EstadoSincronizacion.CON_ERROR, sendero.estadoSincronizacion)
     }
 
-    // Probar que un enum desconocido en el documento remoto también cae en el valor por defecto
     @Test
     fun `enums desconocidos en el documento remoto caen en el valor por defecto`() {
         val red = crearRedDePrueba().copy(dificultad = "EXTREMA", tipoRecorrido = "ESPIRAL")
@@ -133,7 +125,6 @@ class MapeoSenderoTest {
         assertEquals(TipoRecorrido.LINEAL, sendero.tipoRecorrido)
     }
 
-    // Probar que el recorrido sobrevive a la ida y vuelta dominio entidad dominio con su orden
     @Test
     fun `ida y vuelta dominio entidad dominio conserva el recorrido y su orden`() {
         val recorrido = listOf(
@@ -156,7 +147,6 @@ class MapeoSenderoTest {
         assertEquals(recorrido, entidad.aDominio().recorrido)
     }
 
-    // Probar que el recorrido sobrevive a la ida y vuelta entidad red entidad con su orden
     @Test
     fun `ida y vuelta entidad red entidad conserva el recorrido y su orden`() {
         val entidadOriginal = crearEntidadDePrueba(
@@ -176,7 +166,6 @@ class MapeoSenderoTest {
         assertEquals(entidadOriginal.recorrido, recuperada.recorrido)
     }
 
-    // Probar que un tipo de punto desconocido en la entidad cae en PASO
     @Test
     fun `tipo de punto desconocido en la entidad cae en PASO`() {
         val entidad = crearEntidadDePrueba(
@@ -188,7 +177,6 @@ class MapeoSenderoTest {
         assertEquals(listOf(PuntoRecorrido(-40.5, -71.3, TipoPunto.PASO, "Lanin")), sendero.recorrido)
     }
 
-    // Probar que un tipo de punto desconocido en el documento remoto cae en PASO
     @Test
     fun `tipo de punto desconocido en el documento remoto cae en PASO`() {
         val red = crearRedDePrueba(
@@ -200,7 +188,6 @@ class MapeoSenderoTest {
         assertEquals(listOf(PuntoRecorrido(-40.5, -71.3, TipoPunto.PASO, "Lanin")), sendero.recorrido)
     }
 
-    // Probar que un documento remoto sin recorrido produce un sendero con recorrido vacío
     @Test
     fun `documento remoto sin recorrido produce recorrido vacio`() {
         val sendero = crearRedDePrueba().aEntidad("usuario-1").aDominio()

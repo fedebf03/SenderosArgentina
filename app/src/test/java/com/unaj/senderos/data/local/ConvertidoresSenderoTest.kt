@@ -7,7 +7,6 @@ class ConvertidoresSenderoTest {
 
     private val convertidores = ConvertidoresSendero()
 
-    // Probar que una lista de textos con comas y comillas sobrevive a la ida y vuelta
     @Test
     fun `lista de textos ida y vuelta conserva el contenido`() {
         val original = listOf("Llevar agua", "Abrigo, impermeable", "Usar \"bastones\"")
@@ -18,7 +17,6 @@ class ConvertidoresSenderoTest {
         assertEquals(original, recuperada)
     }
 
-    // Probar que una lista de textos vacía sobrevive a la ida y vuelta
     @Test
     fun `lista de textos vacia ida y vuelta devuelve lista vacia`() {
         val texto = convertidores.listaTextosATexto(emptyList())
@@ -26,7 +24,6 @@ class ConvertidoresSenderoTest {
         assertEquals(emptyList<String>(), convertidores.textoAListaTextos(texto))
     }
 
-    // Probar que una lista de etapas sobrevive a la ida y vuelta
     @Test
     fun `lista de etapas ida y vuelta conserva el contenido`() {
         val original = listOf(
@@ -40,7 +37,6 @@ class ConvertidoresSenderoTest {
         assertEquals(original, recuperada)
     }
 
-    // Probar que una lista de etapas vacía sobrevive a la ida y vuelta
     @Test
     fun `lista de etapas vacia ida y vuelta devuelve lista vacia`() {
         val texto = convertidores.listaEtapasATexto(emptyList())
@@ -48,7 +44,6 @@ class ConvertidoresSenderoTest {
         assertEquals(emptyList<EtapaEntidad>(), convertidores.textoAListaEtapas(texto))
     }
 
-    // Probar que una lista de puntos del recorrido sobrevive a la ida y vuelta conservando el orden
     @Test
     fun `lista de puntos ida y vuelta conserva el contenido y el orden`() {
         val original = listOf(
@@ -63,7 +58,6 @@ class ConvertidoresSenderoTest {
         assertEquals(original, recuperada)
     }
 
-    // Probar que una lista de puntos vacía se serializa como arreglo JSON vacío y se recupera vacía
     @Test
     fun `lista de puntos vacia se serializa como arreglo vacio`() {
         val texto = convertidores.listaPuntosATexto(emptyList())
@@ -72,7 +66,6 @@ class ConvertidoresSenderoTest {
         assertEquals(emptyList<PuntoRecorridoEntidad>(), convertidores.textoAListaPuntos(texto))
     }
 
-    // Probar que el valor por defecto de la columna del esquema se lee como lista vacía
     @Test
     fun `valor por defecto de la columna se lee como lista vacia de puntos`() {
         assertEquals(emptyList<PuntoRecorridoEntidad>(), convertidores.textoAListaPuntos("[]"))

@@ -16,7 +16,6 @@ class ObservarDetalleSenderoUseCaseTest {
 
     private val usuario = Usuario(id = "usuario-1", email = "ana@correo.com")
 
-    // Crear un sendero de prueba perteneciente al usuario indicado
     private fun crearSendero(id: String, idUsuario: String): Sendero {
         return Sendero(
             id = id,
@@ -28,7 +27,6 @@ class ObservarDetalleSenderoUseCaseTest {
         )
     }
 
-    // Probar que sin sesión activa falla con mensaje y no consulta el repositorio
     @Test
     fun `sin sesion activa falla con mensaje y no consulta el repositorio`() = runTest {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = null)
@@ -42,7 +40,6 @@ class ObservarDetalleSenderoUseCaseTest {
         assertTrue(falsoSendero.consultasSendero.isEmpty())
     }
 
-    // Probar que con sesión activa delega en el repositorio con el id del usuario y emite el sendero
     @Test
     fun `con sesion activa delega con el id del usuario y emite el sendero`() = runTest {
         val sendero = crearSendero("1", usuario.id)
@@ -58,7 +55,6 @@ class ObservarDetalleSenderoUseCaseTest {
         assertEquals(listOf(usuario.id to "1"), falsoSendero.consultasSendero)
     }
 
-    // Probar que devuelve null cuando el sendero pertenece a otro usuario
     @Test
     fun `emite null para un sendero de otro usuario`() = runTest {
         val senderoAjeno = crearSendero("1", "usuario-2")
@@ -72,7 +68,6 @@ class ObservarDetalleSenderoUseCaseTest {
         }
     }
 
-    // Probar que el flujo emite null cuando el sendero se elimina de la fuente falsa
     @Test
     fun `emite null cuando el sendero es eliminado de la fuente`() = runTest {
         val sendero = crearSendero("1", usuario.id)

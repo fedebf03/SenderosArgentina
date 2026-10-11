@@ -16,7 +16,6 @@ class ObservarSenderosDelUsuarioUseCaseTest {
 
     private val usuario = Usuario(id = "usuario-1", email = "ana@correo.com")
 
-    // Crear un sendero de prueba perteneciente al usuario indicado
     private fun crearSendero(id: String, idUsuario: String): Sendero {
         return Sendero(
             id = id,
@@ -28,7 +27,6 @@ class ObservarSenderosDelUsuarioUseCaseTest {
         )
     }
 
-    // Probar que sin sesión activa falla con mensaje y no consulta el repositorio
     @Test
     fun `sin sesion activa falla con mensaje y no consulta el repositorio`() = runTest {
         val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = null)
@@ -42,7 +40,6 @@ class ObservarSenderosDelUsuarioUseCaseTest {
         assertTrue(falsoSendero.idsUsuarioConsultados.isEmpty())
     }
 
-    // Probar que con sesión activa emite los senderos del usuario consultando por su id
     @Test
     fun `con sesion activa emite los senderos del usuario`() = runTest {
         val senderosEsperados = listOf(
@@ -63,7 +60,6 @@ class ObservarSenderosDelUsuarioUseCaseTest {
         assertEquals(listOf(usuario.id), falsoSendero.idsUsuarioConsultados)
     }
 
-    // Probar que descarta los senderos que pertenecen a otro usuario
     @Test
     fun `descarta los senderos de otro usuario`() = runTest {
         val senderoPropio = crearSendero("1", usuario.id)
@@ -78,7 +74,6 @@ class ObservarSenderosDelUsuarioUseCaseTest {
         }
     }
 
-    // Probar que el flujo emite de nuevo cuando la fuente falsa cambia la lista de senderos
     @Test
     fun `emite una nueva lista cuando cambia la fuente de datos`() = runTest {
         val primerSendero = crearSendero("1", usuario.id)
@@ -95,7 +90,6 @@ class ObservarSenderosDelUsuarioUseCaseTest {
         }
     }
 
-    // Probar que la sesión se lee una sola vez al invocar y no al recolectar el flujo
     @Test
     fun `lee la sesion una sola vez al invocar`() = runTest {
         val senderoPropio = crearSendero("1", usuario.id)

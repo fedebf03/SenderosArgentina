@@ -7,7 +7,6 @@ class CerrarSesionUseCase(
     private val autenticacionRepositorio: AutenticacionRepositorio,
     private val senderoRepositorio: SenderoRepositorio
 ) {
-    // Detener la sincronización del usuario actual, si existe, y cerrar su sesión
     operator fun invoke() {
         autenticacionRepositorio.obtenerUsuarioActual()?.let { usuario ->
             senderoRepositorio.detenerSincronizacion(usuario.id)

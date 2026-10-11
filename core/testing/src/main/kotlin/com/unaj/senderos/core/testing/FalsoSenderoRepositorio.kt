@@ -29,13 +29,11 @@ class FalsoSenderoRepositorio(
     val idsUsuarioDetenidos: MutableList<String> = mutableListOf()
     var alDetenerSincronizacion: ((String) -> Unit)? = null
 
-    // Registrar el usuario cuya sincronización se detuvo y avisar al observador de pruebas
     override fun detenerSincronizacion(idUsuario: String) {
         idsUsuarioDetenidos.add(idUsuario)
         alDetenerSincronizacion?.invoke(idUsuario)
     }
 
-    // Registrar el usuario consultado y emitir la lista vigente de la fuente falsa
     override fun observarSenderosDelUsuario(idUsuario: String): Flow<List<Sendero>> {
         idsUsuarioConsultados.add(idUsuario)
         return flow {
@@ -44,7 +42,6 @@ class FalsoSenderoRepositorio(
         }
     }
 
-    // Registrar la consulta y emitir el sendero con el identificador pedido o null si no existe
     override fun observarSendero(idUsuario: String, idSendero: String): Flow<Sendero?> {
         consultasSendero.add(idUsuario to idSendero)
         return flow {
@@ -55,7 +52,6 @@ class FalsoSenderoRepositorio(
         }
     }
 
-    // Registrar la llamada e invertir esFavorito en la fuente falsa si el resultado configurado es exitoso
     override suspend fun alternarFavorito(idUsuario: String, idSendero: String): Result<Unit> {
         llamadasAlternarFavorito.add(idUsuario to idSendero)
         if (resultadoAlternarFavorito.isSuccess) {
@@ -68,7 +64,6 @@ class FalsoSenderoRepositorio(
         return resultadoAlternarFavorito
     }
 
-    // Registrar la llamada y quitar el sendero de la fuente falsa si el resultado configurado es exitoso
     override suspend fun eliminarSendero(idUsuario: String, idSendero: String): Result<Unit> {
         llamadasEliminarSendero.add(idUsuario to idSendero)
         if (resultadoEliminarSendero.isSuccess) {
@@ -77,7 +72,6 @@ class FalsoSenderoRepositorio(
         return resultadoEliminarSendero
     }
 
-    // Registrar la llamada y crear o reemplazar el sendero en la fuente falsa si el resultado configurado es exitoso
     override suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit> {
         llamadasGuardarSendero.add(idUsuario to sendero)
         if (resultadoGuardarSendero.isSuccess) {

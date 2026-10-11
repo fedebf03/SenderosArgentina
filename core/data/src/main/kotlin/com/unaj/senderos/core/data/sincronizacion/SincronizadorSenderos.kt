@@ -1,7 +1,6 @@
 package com.unaj.senderos.data.sincronizacion
 
 import android.util.Log
-import com.unaj.senderos.data.ejemplos.crearSenderosDeEjemplo
 import com.unaj.senderos.data.local.EjecutorTransacciones
 import com.unaj.senderos.data.local.SenderoDao
 import com.unaj.senderos.data.local.SenderoEntidad
@@ -9,7 +8,9 @@ import com.unaj.senderos.data.mapeo.aEntidad
 import com.unaj.senderos.data.mapeo.aRed
 import com.unaj.senderos.data.remote.SenderoFuenteRemota
 import com.unaj.senderos.data.remote.SenderoRed
+import com.unaj.senderos.data.remote.SubidorFotos
 import com.unaj.senderos.domain.model.EstadoSincronizacion
+import com.unaj.senderos.domain.model.esFotoLocal
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SINCRONIZACION"
@@ -20,9 +21,8 @@ class SincronizadorSenderos(
     private val senderoDao: SenderoDao,
     private val fuenteRemota: SenderoFuenteRemota,
     private val ejecutorTransacciones: EjecutorTransacciones,
-    private val reloj: () -> Long = System::currentTimeMillis
+    private val subidorFotos: SubidorFotos
 ) {
-    // Ejecutar el ciclo completo de sincronización de un usuario devolviendo el resultado
     suspend fun sincronizar(idUsuario: String): Result<Unit> {
         Log.d(TAG, "Comienza la sincronización del usuario $idUsuario")
         return try {
@@ -41,39 +41,10 @@ class SincronizadorSenderos(
         }
     }
 
-    // Recorrer los cinco pasos de la sincronización dejando propagar las excepciones
     private suspend fun sincronizarSinCapturar(idUsuario: String): Result<Unit> {
-        val remotos = fuenteRemota.obtenerSenderos(idUsuario)
-        val marcaEjemplosCargados = fuenteRemota.obtenerMarcaEjemplosCargados(idUsuario)
-
-        if (!marcaEjemplosCargados && remotos.isEmpty() && senderoDao.obtenerTodosDelUsuario(idUsuario).isEmpty()) {
-            sembrarEjemplos(idUsuario)
-        }
-
-        fusionarRemotos(idUsuario, remotos)
-
+        fusionarRemotos(idUsuario, fuenteRemota.obtenerSenderos(idUsuario))
         val primerErrorDeSubida = subirPendientes(idUsuario)
-        if (primerErrorDeSubida != null) {
-            return Result.failure(primerErrorDeSubida)
-        }
-
-        if (!marcaEjemplosCargados) {
-            fuenteRemota.registrarMarcaEjemplosCargados(idUsuario)
-        }
-        return Result.success(Unit)
-    }
-
-    // Guardar los senderos de ejemplo como pendientes para que se suban en este mismo ciclo
-    private suspend fun sembrarEjemplos(idUsuario: String) {
-        crearSenderosDeEjemplo(idUsuario).forEach { sendero ->
-            senderoDao.guardar(
-                sendero.aEntidad(
-                    fechaModificacion = reloj(),
-                    estadoSincronizacion = EstadoSincronizacion.PENDIENTE,
-                    estaEliminado = false
-                )
-            )
-        }
+        return if (primerErrorDeSubida == null) Result.success(Unit) else Result.failure(primerErrorDeSubida)
     }
 
     // Fusionar los documentos remotos con los locales aplicando que la última escritura prevalece
@@ -113,7 +84,8 @@ class SincronizadorSenderos(
     // Subir una entidad y transicionar su estado solo si no cambió durante la subida; devolver el error o null
     private suspend fun subirEntidad(idUsuario: String, entidad: SenderoEntidad): Throwable? {
         return try {
-            fuenteRemota.guardarSendero(idUsuario, entidad.aRed())
+            val entidadConFotoRemota = subirFotoSiEsLocal(idUsuario, entidad)
+            fuenteRemota.guardarSendero(idUsuario, entidadConFotoRemota.aRed())
             if (entidad.estaEliminado) {
                 senderoDao.borrarEliminadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion)
             } else {
@@ -137,5 +109,14 @@ class SincronizadorSenderos(
             )
             error
         }
+    }
+
+    // Subir la foto local antes que el documento, porque Firestore solo debe guardar URLs que otros dispositivos puedan abrir
+    private suspend fun subirFotoSiEsLocal(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
+        if (entidad.estaEliminado || !esFotoLocal(entidad.foto)) return entidad
+        val urlRemota = subidorFotos.subir(entidad.foto)
+        Log.d(TAG, "Foto del sendero ${entidad.id} subida a $urlRemota")
+        senderoDao.actualizarFotoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, urlRemota)
+        return entidad.copy(foto = urlRemota)
     }
 }

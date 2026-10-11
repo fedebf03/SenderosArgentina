@@ -1,22 +1,17 @@
 package com.unaj.senderos.domain.model
 
-// Nivel de exigencia física de un sendero
 enum class Dificultad { BAJA, MEDIA, ALTA }
 
-// Forma en que se recorre un sendero
 enum class TipoRecorrido { CIRCULAR, IDA_Y_VUELTA, LINEAL }
 
-// Estado de sincronización de un sendero entre la base local y el servidor
 enum class EstadoSincronizacion { PENDIENTE, SINCRONIZADO, CON_ERROR }
 
-// Tramo de un sendero con su número de orden, nombre y distancia
 data class Etapa(
     val numero: Int,
     val nombre: String,
     val distanciaKilometros: Double
 )
 
-// Modelo de datos inmutable que representa un sendero perteneciente a un usuario
 data class Sendero(
     val id: String,
     val idUsuario: String,
@@ -37,5 +32,6 @@ data class Sendero(
     val etapas: List<Etapa> = emptyList(),
     val esFavorito: Boolean = false,
     val estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
-    val recorrido: List<PuntoRecorrido> = emptyList()
+    val recorrido: List<PuntoRecorrido> = emptyList(),
+    val foto: String = ""
 )

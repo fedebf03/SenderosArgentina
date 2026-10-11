@@ -10,7 +10,6 @@ class ObservarSenderosDelUsuarioUseCase(
     private val senderoRepositorio: SenderoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Observar al usuario autenticado junto con sus senderos, descartando los de otros usuarios
     operator fun invoke(): Result<Flow<SenderosDelUsuario>> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
