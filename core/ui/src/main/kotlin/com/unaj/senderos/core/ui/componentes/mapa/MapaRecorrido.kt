@@ -1,8 +1,6 @@
 package com.unaj.senderos.presentation.mapa
 
 import android.annotation.SuppressLint
-import android.content.ComponentCallbacks2
-import android.content.res.Configuration
 import android.graphics.PointF
 import android.util.Log
 import android.view.MotionEvent
@@ -14,12 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -28,11 +25,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.presentation.tema.CelesteArgentino
+import kotlin.math.abs
+import kotlin.math.hypot
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -48,8 +46,6 @@ import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
-import kotlin.math.abs
-import kotlin.math.hypot
 
 private const val TAG = "MAPA"
 
@@ -63,7 +59,6 @@ private const val ID_CAPA_TIPOS = "capa-tipos-recorrido"
 private const val ID_CAPA_ROLES = "capa-roles-recorrido"
 
 @Composable
-// Dibujar el recorrido de un sendero sobre un mapa de MapLibre; con esEditable permite agregar, tocar y arrastrar puntos
 fun MapaRecorrido(
     puntos: List<PuntoRecorrido>,
     tipoRecorrido: TipoRecorrido,
@@ -91,7 +86,7 @@ fun MapaRecorrido(
         val paleta = PaletaMapa(
             primario = esquemaDeColores.primary.toArgb(),
             sobrePrimario = esquemaDeColores.onPrimary.toArgb(),
-            contenedorPrimario = esquemaDeColores.primaryContainer.toArgb(),
+            contenedorPrimario = CelesteArgentino.toArgb(),
             sobreContenedorPrimario = esquemaDeColores.onPrimaryContainer.toArgb(),
             error = esquemaDeColores.error.toArgb(),
             sobreError = esquemaDeColores.onError.toArgb()
@@ -114,67 +109,7 @@ fun MapaRecorrido(
         )
     }
 
-    // Reenviar el ciclo de vida al MapView y liberarlo sin fugas al salir de la composición
-    DisposableEffect(propietarioDelCiclo, vistaMapa) {
-        val ciclo = propietarioDelCiclo.lifecycle
-        var estaCreado = false
-        var estaIniciado = false
-        var estaReanudado = false
-        var estaDestruido = false
-        val observador = LifecycleEventObserver { _, evento ->
-            when (evento) {
-                Lifecycle.Event.ON_CREATE -> {
-                    vistaMapa.onCreate(null)
-                    estaCreado = true
-                }
-                Lifecycle.Event.ON_START -> {
-                    vistaMapa.onStart()
-                    estaIniciado = true
-                }
-                Lifecycle.Event.ON_RESUME -> {
-                    vistaMapa.onResume()
-                    estaReanudado = true
-                }
-                Lifecycle.Event.ON_PAUSE -> {
-                    vistaMapa.onPause()
-                    estaReanudado = false
-                }
-                Lifecycle.Event.ON_STOP -> {
-                    vistaMapa.onStop()
-                    estaIniciado = false
-                }
-                Lifecycle.Event.ON_DESTROY -> {
-                    vistaMapa.onDestroy()
-                    estaDestruido = true
-                }
-                else -> Unit
-            }
-        }
-        val llamadasDeMemoria = object : ComponentCallbacks2 {
-            // Ignorar los recortes de memoria graduales; solo se atiende la memoria baja
-            override fun onTrimMemory(nivel: Int) = Unit
-
-            // Ignorar los cambios de configuración, que el MapView resuelve solo
-            override fun onConfigurationChanged(configuracion: Configuration) = Unit
-
-            // Reenviar la alerta de memoria baja al MapView
-            override fun onLowMemory() {
-                vistaMapa.onLowMemory()
-            }
-        }
-        val contextoDeAplicacion = contexto.applicationContext
-        contextoDeAplicacion.registerComponentCallbacks(llamadasDeMemoria)
-        ciclo.addObserver(observador)
-        controlador.iniciar()
-        onDispose {
-            contextoDeAplicacion.unregisterComponentCallbacks(llamadasDeMemoria)
-            ciclo.removeObserver(observador)
-            controlador.liberar()
-            if (estaReanudado) vistaMapa.onPause()
-            if (estaIniciado) vistaMapa.onStop()
-            if (estaCreado && !estaDestruido) vistaMapa.onDestroy()
-        }
-    }
+    VincularCicloDeVidaMapa(vistaMapa, alIniciar = controlador::iniciar, alLiberar = controlador::liberar)
 
     Box(modifier = modifier) {
         AndroidView(factory = { vistaMapa }, modifier = Modifier.fillMaxSize())
@@ -194,7 +129,6 @@ fun MapaRecorrido(
     }
 }
 
-// Datos que el composable entrega al controlador en cada recomposición
 private data class DatosMapa(
     val puntos: List<PuntoRecorrido> = emptyList(),
     val tipoRecorrido: TipoRecorrido = TipoRecorrido.LINEAL,
@@ -206,13 +140,11 @@ private data class DatosMapa(
     val alSeleccionarPunto: (Int?) -> Unit = {}
 )
 
-// Controlador que mantiene el estilo, las capas y los gestos del mapa sincronizados con los datos recibidos
 private class ControladorMapaRecorrido(
     private val vistaMapa: MapView,
     private val paleta: PaletaMapa,
     private val densidad: Float
 ) {
-    // Indica que el mapa no pudo cargar su estilo; la pantalla muestra un texto de reemplazo
     var haFalladoLaCarga by mutableStateOf(false)
         private set
 
@@ -222,7 +154,6 @@ private class ControladorMapaRecorrido(
     private var fueEncuadrado = false
     private var puntosEncuadrados: List<PuntoRecorrido>? = null
 
-    // Estado del arrastre de un marcador
     private var indiceArrastrado: Int? = null
     private var puntosEnArrastre: List<PuntoRecorrido>? = null
     private var posicionInicialToque = PointF()
@@ -235,7 +166,6 @@ private class ControladorMapaRecorrido(
 
     private val escuchaClicEnMapa = MapLibreMap.OnMapClickListener { posicion ->
         if (datos.esEditable) {
-            Log.d(TAG, "Toque en el mapa: ${posicion.latitude}, ${posicion.longitude}")
             datos.alAgregarPunto(posicion.latitude, posicion.longitude)
             true
         } else {
@@ -243,7 +173,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Pedir el mapa a la vista e instalar el detector de toques
     @SuppressLint("ClickableViewAccessibility")
     fun iniciar() {
         vistaMapa.setOnTouchListener { _, evento -> manejarToque(evento) }
@@ -260,7 +189,6 @@ private class ControladorMapaRecorrido(
         estilo = null
     }
 
-    // Recibir los datos más recientes y reflejarlos en el mapa si el estilo ya está cargado
     fun actualizar(nuevosDatos: DatosMapa) {
         val hayCambios = nuevosDatos.puntos != datos.puntos ||
             nuevosDatos.tipoRecorrido != datos.tipoRecorrido ||
@@ -272,13 +200,11 @@ private class ControladorMapaRecorrido(
         if (hayCambios && estilo != null) refrescar()
     }
 
-    // Cargar el estilo del mapa cuando el mapa está listo
     private fun alEstarListoElMapa(mapaListo: MapLibreMap) {
         mapa = mapaListo
         aplicarGestos()
         mapaListo.addOnMapClickListener(escuchaClicEnMapa)
         mapaListo.setStyle(Style.Builder().fromUri(ConfiguracionMapa.URL_ESTILO)) { estiloCargado ->
-            Log.d(TAG, "Estilo del mapa cargado")
             estilo = estiloCargado
             haFalladoLaCarga = false
             agregarImagenesFuentesYCapas(estiloCargado)
@@ -286,7 +212,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Registrar las imágenes, las fuentes GeoJSON y las capas del recorrido sobre el estilo base
     private fun agregarImagenesFuentesYCapas(estiloBase: Style) {
         IconosMapa.crearTodos(paleta, densidad).forEach { (nombre, imagen) -> estiloBase.addImage(nombre, imagen) }
 
@@ -373,7 +298,6 @@ private class ControladorMapaRecorrido(
         )
     }
 
-    // Volcar los datos actuales en las fuentes, aplicar los gestos y encuadrar la cámara cuando corresponde
     private fun refrescar() {
         val estiloActual = estilo ?: return
         val puntosVisibles = puntosEnArrastre ?: datos.puntos
@@ -392,7 +316,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Habilitar o deshabilitar los gestos del mapa; la rotación y la inclinación quedan siempre apagadas
     private fun aplicarGestos() {
         val ajustes = mapa?.uiSettings ?: return
         ajustes.setAllGesturesEnabled(datos.sonGestosHabilitados)
@@ -400,7 +323,6 @@ private class ControladorMapaRecorrido(
         ajustes.setTiltGesturesEnabled(false)
     }
 
-    // Encuadrar la cámara en los puntos; sin puntos usa la Patagonia andina y con uno, un zoom fijo
     private fun encuadrar(todosLosPuntos: List<PuntoRecorrido>) {
         val mapaActual = mapa ?: return
         val puntos = todosLosPuntos.filter { punto -> punto.tieneCoordenadasValidas() }
@@ -430,7 +352,6 @@ private class ControladorMapaRecorrido(
         mapaActual.moveCamera(CameraUpdateFactory.newLatLngBounds(limites, margen))
     }
 
-    // Procesar los toques: en modo editable captura el arrastre o la selección de un marcador cercano
     private fun manejarToque(evento: MotionEvent): Boolean {
         if (evento.actionMasked == MotionEvent.ACTION_DOWN && datos.sonGestosHabilitados) {
             // Evitar que un contenedor con desplazamiento vertical robe los gestos del mapa
@@ -460,7 +381,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Seguir el dedo con el marcador arrastrado una vez superado el umbral de desplazamiento
     private fun arrastrar(indice: Int, evento: MotionEvent) {
         val proyeccion = mapa?.projection ?: return
         if (!haySuperadoUmbral) {
@@ -477,16 +397,13 @@ private class ControladorMapaRecorrido(
         refrescar()
     }
 
-    // Cerrar el toque sobre un marcador: soltar emite el movimiento o la selección; cancelar restituye el punto
     private fun terminarToque(fueCancelado: Boolean): Boolean {
         val indice = indiceArrastrado ?: return false
         if (!fueCancelado) {
             val destino = puntosEnArrastre?.getOrNull(indice)
             if (haySuperadoUmbral && destino != null) {
-                Log.d(TAG, "Punto $indice movido a ${destino.latitud}, ${destino.longitud}")
                 datos.alMoverPunto(indice, destino.latitud, destino.longitud)
             } else {
-                Log.d(TAG, "Punto $indice seleccionado")
                 datos.alSeleccionarPunto(indice)
             }
         } else {
@@ -499,7 +416,6 @@ private class ControladorMapaRecorrido(
         return true
     }
 
-    // Buscar el marcador más cercano al toque dentro del radio de captura, medido en píxeles de pantalla
     private fun buscarMarcadorCercano(x: Float, y: Float): Int? {
         val proyeccion = mapa?.projection ?: return null
         val radioMaximo = ConfiguracionMapa.RADIO_CAPTURA_MARCADOR_DP * densidad

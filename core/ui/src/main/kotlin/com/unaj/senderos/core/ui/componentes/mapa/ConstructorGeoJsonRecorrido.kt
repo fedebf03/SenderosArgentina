@@ -7,12 +7,10 @@ import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
-// Indicar si un punto tiene coordenadas finitas y dentro de los rangos geográficos válidos
 fun PuntoRecorrido.tieneCoordenadasValidas(): Boolean {
     return latitud.isFinite() && longitud.isFinite() && latitud in -90.0..90.0 && longitud in -180.0..180.0
 }
 
-// Propiedades de los puntos GeoJSON que leen las capas del mapa
 object PropiedadesPunto {
     const val INDICE = "indice"
     const val ETIQUETA = "etiqueta"
@@ -21,7 +19,6 @@ object PropiedadesPunto {
     const val SELECCIONADO = "seleccionado"
 }
 
-// Roles de un punto dentro del recorrido, usados para elegir el ícono de inicio y fin
 object RolesPunto {
     const val INTERMEDIO = "intermedio"
     const val INICIO = "inicio"
@@ -29,10 +26,8 @@ object RolesPunto {
     const val INICIO_Y_FIN = "inicioFin"
 }
 
-// Construcción de las colecciones GeoJSON que alimentan las capas del mapa
 object ConstructorGeoJsonRecorrido {
 
-    // Construir la línea del recorrido; si es circular se agrega el tramo de cierre último → primero
     fun crearLinea(puntos: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): FeatureCollection {
         val puntosValidos = puntos.filter { punto -> punto.tieneCoordenadasValidas() }
         if (puntosValidos.size < 2) return FeatureCollection.fromFeatures(emptyList<Feature>())
@@ -45,7 +40,6 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(coordenadasConCierre)))
     }
 
-    // Construir un punto GeoJSON por cada punto del recorrido con su número, tipo, rol y selección
     fun crearPuntos(
         puntos: List<PuntoRecorrido>,
         tipoRecorrido: TipoRecorrido,
@@ -64,7 +58,6 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeatures(elementos)
     }
 
-    // Determinar el rol de un punto: en un circular el primero es inicio y fin a la vez
     fun obtenerRol(indice: Int, cantidad: Int, tipoRecorrido: TipoRecorrido): String {
         return when {
             cantidad >= 2 && tipoRecorrido == TipoRecorrido.CIRCULAR && indice == 0 -> RolesPunto.INICIO_Y_FIN

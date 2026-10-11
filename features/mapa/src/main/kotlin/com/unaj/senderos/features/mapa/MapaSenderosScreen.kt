@@ -1,0 +1,153 @@
+package com.unaj.senderos.presentation.mapasenderos
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unaj.senderos.presentation.componentes.BotoneraInferior
+import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
+import com.unaj.senderos.presentation.componentes.CargandoCentrado
+import com.unaj.senderos.presentation.componentes.MensajeCentrado
+import com.unaj.senderos.presentation.componentes.SeccionPrincipal
+import com.unaj.senderos.presentation.componentes.TarjetaSendero
+import com.unaj.senderos.presentation.mapa.MapaDeSenderos
+
+@Composable
+fun MapaSenderosPantalla(
+    viewModel: MapaSenderosViewModel,
+    alNavegarADetalle: (String) -> Unit = {},
+    alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
+) {
+    val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
+    val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
+    val contexto = LocalContext.current
+    var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
+    val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
+        tienePermisoUbicacion = respuesta.values.any { otorgado -> otorgado }
+        if (!tienePermisoUbicacion) {
+            Toast.makeText(contexto, "Sin permiso de ubicación no podemos mostrar dónde estás", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val solicitarUbicacion = {
+        viewModel.procesarEvento(MapaSenderosEvento.AlSolicitarUbicacion)
+        pedirPermiso.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
+    // Se pregunta una sola vez por sesión al entrar; después el botón de ubicación permite volver a pedirlo
+    LaunchedEffect(Unit) {
+        if (!tienePermisoUbicacion && !estadoVisual.seSolicitoUbicacion) solicitarUbicacion()
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.efectoVisual.collect { efecto ->
+            when (efecto) {
+                is MapaSenderosEfecto.NavegarADetalle -> navegarADetalleActual(efecto.idSendero)
+            }
+        }
+    }
+
+    BackHandler {
+        if (estadoVisual.senderoSeleccionado != null) {
+            viewModel.procesarEvento(MapaSenderosEvento.AlSeleccionarSendero(null))
+        } else {
+            alNavegarASeccion(SeccionPrincipal.INICIO)
+        }
+    }
+
+    MapaSenderosContenido(
+        estadoVisual = estadoVisual,
+        alProcesarEvento = viewModel::procesarEvento,
+        alNavegarASeccion = alNavegarASeccion,
+        tienePermisoUbicacion = tienePermisoUbicacion,
+        alPedirUbicacion = solicitarUbicacion
+    )
+}
+
+private fun tienePermisoDeUbicacion(contexto: Context): Boolean {
+    return listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION).any { permiso ->
+        ContextCompat.checkSelfPermission(contexto, permiso) == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+@Composable
+fun MapaSenderosContenido(
+    estadoVisual: MapaSenderosEstadoVisual,
+    alProcesarEvento: (MapaSenderosEvento) -> Unit,
+    modifier: Modifier = Modifier,
+    alNavegarASeccion: (SeccionPrincipal) -> Unit = {},
+    tienePermisoUbicacion: Boolean = false,
+    alPedirUbicacion: () -> Unit = {}
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            CabeceraPrincipal(
+                usuario = estadoVisual.usuario,
+                alTocarAvatar = { alNavegarASeccion(SeccionPrincipal.PERFIL) }
+            )
+        },
+        bottomBar = { BotoneraInferior(SeccionPrincipal.MAPA, alNavegarASeccion) }
+    ) { espaciadoInterno ->
+        val modificadorCuerpo = Modifier.padding(espaciadoInterno)
+        when {
+            estadoVisual.estaCargando -> CargandoCentrado(modificadorCuerpo)
+            estadoVisual.mensajeError != null -> MensajeCentrado(estadoVisual.mensajeError, modificadorCuerpo, esError = true)
+            else -> Box(modifier = modificadorCuerpo.fillMaxSize()) {
+                MapaDeSenderos(
+                    senderos = estadoVisual.senderosEnMapa,
+                    idSeleccionado = estadoVisual.idSeleccionado,
+                    alSeleccionarSendero = { idSendero ->
+                        alProcesarEvento(MapaSenderosEvento.AlSeleccionarSendero(idSendero))
+                    },
+                    mostrarUbicacion = tienePermisoUbicacion,
+                    alPedirUbicacion = alPedirUbicacion,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                val senderoSeleccionado = estadoVisual.senderoSeleccionado
+                AnimatedVisibility(
+                    visible = senderoSeleccionado != null,
+                    enter = slideInVertically { altura -> altura } + fadeIn(),
+                    exit = slideOutVertically { altura -> altura } + fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                ) {
+                    if (senderoSeleccionado != null) {
+                        TarjetaSendero(
+                            sendero = senderoSeleccionado,
+                            alSeleccionar = {
+                                alProcesarEvento(MapaSenderosEvento.AlAbrirDetalle(senderoSeleccionado.id))
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

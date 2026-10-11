@@ -1,224 +1,197 @@
 package com.example.senderosargentina
 
-import android.R
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.detalle.DetalleSenderoPantalla
 import com.unaj.senderos.presentation.detalle.DetalleSenderoViewModel
+import com.unaj.senderos.presentation.favoritos.FavoritosPantalla
+import com.unaj.senderos.presentation.favoritos.FavoritosViewModel
 import com.unaj.senderos.presentation.formulario.FormularioSenderoPantalla
 import com.unaj.senderos.presentation.formulario.FormularioSenderoViewModel
 import com.unaj.senderos.presentation.login.LoginPantalla
 import com.unaj.senderos.presentation.login.LoginViewModel
+import com.unaj.senderos.presentation.mapasenderos.MapaSenderosPantalla
+import com.unaj.senderos.presentation.mapasenderos.MapaSenderosViewModel
+import com.unaj.senderos.presentation.perfil.PerfilPantalla
+import com.unaj.senderos.presentation.perfil.PerfilViewModel
 import com.unaj.senderos.presentation.registro.RegistroPantalla
 import com.unaj.senderos.presentation.registro.RegistroViewModel
 import com.unaj.senderos.presentation.senderos.SenderosPantalla
 import com.unaj.senderos.presentation.senderos.SenderosViewModel
+import com.unaj.senderos.presentation.tema.TemaSenderos
 
 sealed interface DestinoPantalla {
     data object Login : DestinoPantalla
     data object Registro : DestinoPantalla
     data object Inicio : DestinoPantalla
+    data object Mapa : DestinoPantalla
+    data object Favoritos : DestinoPantalla
+    data object Perfil : DestinoPantalla
     data class Detalle(val idSendero: String) : DestinoPantalla
     data class Formulario(val idSendero: String?) : DestinoPantalla
 }
 
 class MainActivity : ComponentActivity() {
-    // Inicializar la actividad principal de la aplicación y configurar la navegación
+
+    private val dependencias by lazy { (application as SenderosAplicacion).contenedorDependencias }
+
+    // Cada destino guarda sus ViewModels aparte para poder descartarlos al salir de él
+    private val almacenDestinos: AlmacenDestinosViewModel by viewModels()
+
+    // Login y Registro viven mientras viva la Activity: así se conserva lo escrito al ir y volver entre ambas
+    private val loginViewModel: LoginViewModel by viewModels {
+        viewModelFactory {
+            initializer { LoginViewModel(dependencias.iniciarSesionUseCase, dependencias.iniciarSesionConGoogleUseCase) }
+        }
+    }
+    private val registroViewModel: RegistroViewModel by viewModels {
+        viewModelFactory { initializer { RegistroViewModel(dependencias.registrarUsuarioUseCase) } }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Configurar el fondo blanco a nivel de Window antes de renderizar la vista
-        window.setBackgroundDrawableResource(R.color.white)
-
+        window.setBackgroundDrawableResource(android.R.color.white)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            ),
-            navigationBarStyle = SystemBarStyle.light(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            )
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
         )
 
-        val dependencias = (application as SenderosAplicacion).contenedorDependencias
-        val almacenDestinos = ViewModelProvider(this)[AlmacenDestinosViewModel::class.java]
-        val casoDeUsoObtenerUsuario = dependencias.obtenerUsuarioActualUseCase
-
-        val fabrica = object : ViewModelProvider.Factory {
-            // Crear las instancias de los ViewModels de alcance Activity (Login y Registro)
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return when {
-                    modelClass.isAssignableFrom(LoginViewModel::class.java) -> {
-                        LoginViewModel(
-                            dependencias.iniciarSesionUseCase,
-                            dependencias.iniciarSesionConGoogleUseCase
-                        ) as T
-                    }
-                    modelClass.isAssignableFrom(RegistroViewModel::class.java) -> {
-                        RegistroViewModel(dependencias.registrarUsuarioUseCase) as T
-                    }
-                    else -> throw IllegalArgumentException("Clase de ViewModel desconocida: ${modelClass.name}")
+        setContent {
+            var pantallaActual by rememberSaveable(stateSaver = guardadorDeDestino) {
+                val hayUsuario = dependencias.obtenerUsuarioActualUseCase() != null
+                mutableStateOf(if (hayUsuario) DestinoPantalla.Inicio else DestinoPantalla.Login)
+            }
+            // Para volver del detalle (o de crear un sendero) al mismo listado desde el que se entró
+            var listadoDeOrigen by rememberSaveable(stateSaver = guardadorDeDestino) {
+                mutableStateOf<DestinoPantalla>(DestinoPantalla.Inicio)
+            }
+            val navegarASeccion: (SeccionPrincipal) -> Unit = { seccion ->
+                pantallaActual = when (seccion) {
+                    SeccionPrincipal.INICIO -> DestinoPantalla.Inicio
+                    SeccionPrincipal.MAPA -> DestinoPantalla.Mapa
+                    SeccionPrincipal.FAVORITOS -> DestinoPantalla.Favoritos
+                    SeccionPrincipal.PERFIL -> DestinoPantalla.Perfil
                 }
             }
-        }
-
-        val loginViewModel = ViewModelProvider(this, fabrica)[LoginViewModel::class.java]
-        val registroViewModel = ViewModelProvider(this, fabrica)[RegistroViewModel::class.java]
-
-        setContent {
-            // El destino se guarda como texto con rememberSaveable para que sobreviva al giro de pantalla
-            var pantallaActual by rememberSaveable(stateSaver = guardadorDeDestino) {
-                val usuarioActivo = casoDeUsoObtenerUsuario()
-                mutableStateOf<DestinoPantalla>(
-                    if (usuarioActivo != null) DestinoPantalla.Inicio else DestinoPantalla.Login
-                )
+            val abrirDetalleDesde: (DestinoPantalla) -> (String) -> Unit = { origen ->
+                { idSendero ->
+                    listadoDeOrigen = origen
+                    pantallaActual = DestinoPantalla.Detalle(idSendero)
+                }
             }
+            val idUsuario = dependencias.obtenerUsuarioActualUseCase()?.id.orEmpty()
 
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Color(0xFF2B6CA3),
-                    primaryContainer = Color(0xFF74ACDF),
-                    onPrimaryContainer = Color(0xFF0B2A4A),
-                    background = Color(0xFFF4F9FD),
-                    surface = Color(0xFFF4F9FD),
-                    onBackground = Color(0xFF1E293B),
-                    onSurface = Color(0xFF1E293B)
-                )
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val destinoActual = pantallaActual
-                    when (destinoActual) {
-                        is DestinoPantalla.Login -> {
-                            LoginPantalla(
-                                viewModel = loginViewModel,
-                                alNavegarAInicio = {
-                                    pantallaActual = DestinoPantalla.Inicio
-                                },
-                                alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
-                            )
-                        }
-                        is DestinoPantalla.Registro -> {
-                            RegistroPantalla(
-                                viewModel = registroViewModel,
-                                alNavegarAInicio = {
-                                    pantallaActual = DestinoPantalla.Inicio
-                                },
-                                alVolverALogin = { pantallaActual = DestinoPantalla.Login }
-                            )
-                        }
-                        is DestinoPantalla.Inicio -> {
-                            val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
-                            val senderosViewModel: SenderosViewModel = viewModel(
-                                viewModelStoreOwner = almacenDestinos.obtenerPropietario("inicio-$idUsuario"),
-                                factory = viewModelFactory {
-                                    initializer {
-                                        SenderosViewModel(
-                                            dependencias.observarSenderosDelUsuarioUseCase,
-                                            dependencias.cerrarSesionUseCase
-                                        )
-                                    }
+            TemaSenderos {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    when (val destino = pantallaActual) {
+                        is DestinoPantalla.Login -> LoginPantalla(
+                            viewModel = loginViewModel,
+                            alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                            alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
+                        )
+                        is DestinoPantalla.Registro -> RegistroPantalla(
+                            viewModel = registroViewModel,
+                            alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                            alVolverALogin = { pantallaActual = DestinoPantalla.Login }
+                        )
+                        is DestinoPantalla.Inicio -> SenderosPantalla(
+                            viewModel = viewModelDeDestino("inicio-$idUsuario") {
+                                SenderosViewModel(dependencias.observarSenderosDelUsuarioUseCase)
+                            },
+                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Inicio),
+                            alNavegarACreacion = {
+                                listadoDeOrigen = DestinoPantalla.Inicio
+                                pantallaActual = DestinoPantalla.Formulario(null)
+                            },
+                            alNavegarASeccion = navegarASeccion
+                        )
+                        is DestinoPantalla.Mapa -> MapaSenderosPantalla(
+                            viewModel = viewModelDeDestino("mapa-$idUsuario") {
+                                MapaSenderosViewModel(dependencias.observarSenderosDelUsuarioUseCase)
+                            },
+                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Mapa),
+                            alNavegarASeccion = navegarASeccion
+                        )
+                        is DestinoPantalla.Favoritos -> FavoritosPantalla(
+                            viewModel = viewModelDeDestino("favoritos-$idUsuario") {
+                                FavoritosViewModel(dependencias.observarSenderosDelUsuarioUseCase)
+                            },
+                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Favoritos),
+                            alNavegarASeccion = navegarASeccion
+                        )
+                        is DestinoPantalla.Perfil -> PerfilPantalla(
+                            viewModel = viewModelDeDestino("perfil-$idUsuario") {
+                                PerfilViewModel(dependencias.obtenerUsuarioActualUseCase, dependencias.cerrarSesionUseCase)
+                            },
+                            alNavegarALogin = {
+                                pantallaActual = DestinoPantalla.Login
+                                listOf("inicio", "mapa", "favoritos", "perfil").forEach { seccion ->
+                                    almacenDestinos.liberarDestino("$seccion-$idUsuario")
                                 }
-                            )
-                            SenderosPantalla(
-                                viewModel = senderosViewModel,
-                                alNavegarALogin = {
-                                    pantallaActual = DestinoPantalla.Login
-                                    almacenDestinos.liberarDestino("inicio-$idUsuario")
-                                },
-                                alNavegarADetalle = { idSendero ->
-                                    pantallaActual = DestinoPantalla.Detalle(idSendero)
-                                },
-                                alNavegarACreacion = {
-                                    pantallaActual = DestinoPantalla.Formulario(null)
-                                }
-                            )
-                        }
+                            },
+                            alNavegarASeccion = navegarASeccion
+                        )
                         is DestinoPantalla.Detalle -> {
-                            val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
-                            val claveDetalle = "detalle-$idUsuario-${destinoActual.idSendero}"
-                            val detalleViewModel: DetalleSenderoViewModel = viewModel(
-                                viewModelStoreOwner = almacenDestinos.obtenerPropietario(claveDetalle),
-                                factory = viewModelFactory {
-                                    initializer {
-                                        DetalleSenderoViewModel(
-                                            idSendero = destinoActual.idSendero,
-                                            observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
-                                            alternarFavoritoUseCase = dependencias.alternarFavoritoUseCase,
-                                            eliminarSenderoUseCase = dependencias.eliminarSenderoUseCase
-                                        )
-                                    }
-                                }
-                            )
+                            val clave = "detalle-$idUsuario-${destino.idSendero}"
                             DetalleSenderoPantalla(
-                                viewModel = detalleViewModel,
-                                alVolverAlListado = {
-                                    pantallaActual = DestinoPantalla.Inicio
-                                    almacenDestinos.liberarDestino(claveDetalle)
+                                viewModel = viewModelDeDestino(clave) {
+                                    DetalleSenderoViewModel(
+                                        idSendero = destino.idSendero,
+                                        observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
+                                        alternarFavoritoUseCase = dependencias.alternarFavoritoUseCase,
+                                        eliminarSenderoUseCase = dependencias.eliminarSenderoUseCase
+                                    )
                                 },
-                                alNavegarAEdicion = { idSendero ->
-                                    pantallaActual = DestinoPantalla.Formulario(idSendero)
-                                }
+                                alVolverAlListado = {
+                                    pantallaActual = listadoDeOrigen
+                                    almacenDestinos.liberarDestino(clave)
+                                },
+                                alNavegarAEdicion = { idSendero -> pantallaActual = DestinoPantalla.Formulario(idSendero) }
                             )
                         }
                         is DestinoPantalla.Formulario -> {
-                            val idUsuario = casoDeUsoObtenerUsuario()?.id.orEmpty()
-                            val idSenderoEditado = destinoActual.idSendero
-                            val claveFormulario = "formulario-$idUsuario-${idSenderoEditado ?: "nuevo"}"
-                            val formularioViewModel: FormularioSenderoViewModel = viewModel(
-                                viewModelStoreOwner = almacenDestinos.obtenerPropietario(claveFormulario),
-                                factory = viewModelFactory {
-                                    initializer {
-                                        FormularioSenderoViewModel(
-                                            idSenderoEditado,
-                                            dependencias.observarDetalleSenderoUseCase,
-                                            dependencias.guardarSenderoUseCase,
-                                            dependencias.almacenFotos
-                                        )
-                                    }
+                            val idEditado = destino.idSendero
+                            val clave = "formulario-$idUsuario-${idEditado ?: "nuevo"}"
+                            // Al editar se vuelve al detalle del sendero; al crear, al listado de origen
+                            val salir = { idSendero: String? ->
+                                pantallaActual = if (idEditado != null && idSendero != null) {
+                                    DestinoPantalla.Detalle(idSendero)
+                                } else {
+                                    listadoDeOrigen
                                 }
-                            )
+                                almacenDestinos.liberarDestino(clave)
+                            }
                             FormularioSenderoPantalla(
-                                viewModel = formularioViewModel,
-                                alVolver = {
-                                    pantallaActual = if (idSenderoEditado != null) {
-                                        DestinoPantalla.Detalle(idSenderoEditado)
-                                    } else {
-                                        DestinoPantalla.Inicio
-                                    }
-                                    almacenDestinos.liberarDestino(claveFormulario)
+                                viewModel = viewModelDeDestino(clave) {
+                                    FormularioSenderoViewModel(
+                                        idEditado,
+                                        dependencias.observarDetalleSenderoUseCase,
+                                        dependencias.guardarSenderoUseCase,
+                                        dependencias.almacenFotos
+                                    )
                                 },
-                                alGuardar = { idSenderoGuardado ->
-                                    pantallaActual = if (idSenderoEditado != null) {
-                                        DestinoPantalla.Detalle(idSenderoGuardado)
-                                    } else {
-                                        DestinoPantalla.Inicio
-                                    }
-                                    almacenDestinos.liberarDestino(claveFormulario)
-                                }
+                                alVolver = { salir(idEditado) },
+                                alGuardar = { idGuardado -> salir(idGuardado) }
                             )
                         }
                     }
@@ -226,15 +199,26 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    @Composable
+    private inline fun <reified VM : ViewModel> viewModelDeDestino(clave: String, crossinline crear: () -> VM): VM {
+        return viewModel(
+            viewModelStoreOwner = almacenDestinos.obtenerPropietario(clave),
+            factory = viewModelFactory { initializer { crear() } }
+        )
+    }
 }
 
-// Convertir el destino a texto y de vuelta para conservarlo al girar la pantalla
+// rememberSaveable solo sabe guardar tipos simples, así que el destino viaja como texto al girar la pantalla
 private val guardadorDeDestino = Saver<DestinoPantalla, String>(
     save = { destino ->
         when (destino) {
             is DestinoPantalla.Login -> "login"
             is DestinoPantalla.Registro -> "registro"
             is DestinoPantalla.Inicio -> "inicio"
+            is DestinoPantalla.Mapa -> "mapa"
+            is DestinoPantalla.Favoritos -> "favoritos"
+            is DestinoPantalla.Perfil -> "perfil"
             is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
             is DestinoPantalla.Formulario -> "formulario:${destino.idSendero.orEmpty()}"
         }
@@ -244,10 +228,11 @@ private val guardadorDeDestino = Saver<DestinoPantalla, String>(
             texto == "login" -> DestinoPantalla.Login
             texto == "registro" -> DestinoPantalla.Registro
             texto == "inicio" -> DestinoPantalla.Inicio
+            texto == "mapa" -> DestinoPantalla.Mapa
+            texto == "favoritos" -> DestinoPantalla.Favoritos
+            texto == "perfil" -> DestinoPantalla.Perfil
             texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
-            texto.startsWith("formulario:") -> {
-                DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
-            }
+            texto.startsWith("formulario:") -> DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
             else -> null
         }
     }
