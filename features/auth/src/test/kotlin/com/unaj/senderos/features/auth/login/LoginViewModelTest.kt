@@ -25,20 +25,17 @@ class LoginViewModelTest {
 
     private lateinit var falsoAutenticacion: FalsoAutenticacionRepositorio
 
-    // Configurar el despachador principal de prueba y el falso antes de cada caso
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
         falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
     }
 
-    // Restaurar el despachador principal original después de cada caso
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel con los casos de uso armados sobre el repositorio falso
     private fun crearViewModel(): LoginViewModel {
         return LoginViewModel(
             iniciarSesionUseCase = IniciarSesionUseCase(falsoAutenticacion),
@@ -46,7 +43,6 @@ class LoginViewModelTest {
         )
     }
 
-    // Probar que un inicio de sesión exitoso limpia el formulario y emite la navegación
     @Test
     fun `exito con correo limpia el formulario y emite NavegarAInicio`() = runTest {
         val viewModel = crearViewModel()
@@ -65,7 +61,6 @@ class LoginViewModelTest {
         assertEquals(LoginEstadoVisual(), viewModel.estadoVisual.value)
     }
 
-    // Probar que un inicio de sesión con Google exitoso limpia el formulario
     @Test
     fun `exito con Google limpia el formulario y emite NavegarAInicio`() = runTest {
         val viewModel = crearViewModel()
@@ -83,7 +78,6 @@ class LoginViewModelTest {
         assertEquals(LoginEstadoVisual(), viewModel.estadoVisual.value)
     }
 
-    // Probar que un fallo conserva lo escrito y expone el mensaje de error
     @Test
     fun `fallo conserva correo y clave y muestra mensajeError`() = runTest {
         falsoAutenticacion.usuarioActual = null

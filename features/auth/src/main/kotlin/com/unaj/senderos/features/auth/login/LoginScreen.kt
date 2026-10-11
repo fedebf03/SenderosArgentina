@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -49,9 +48,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.senderosargentina.R
+import com.unaj.senderos.presentation.tema.TemaSenderos
 
 @Composable
-// Coordinar el estado y los efectos de la pantalla de inicio de sesión
 fun LoginPantalla(
     viewModel: LoginViewModel,
     alNavegarAInicio: () -> Unit = {},
@@ -90,7 +89,6 @@ fun LoginPantalla(
 }
 
 @Composable
-// Dibujar el formulario de inicio de sesión
 fun LoginContenido(
     estadoVisual: LoginEstadoVisual,
     alProcesarEvento: (LoginEvento) -> Unit,
@@ -193,10 +191,6 @@ fun LoginContenido(
         Button(
             onClick = { alProcesarEvento(LoginEvento.AlIniciarSesion) },
             enabled = !estadoVisual.estaCargando,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
@@ -204,7 +198,7 @@ fun LoginContenido(
             if (estadoVisual.estaCargando) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     strokeWidth = 2.dp
                 )
             } else {
@@ -258,7 +252,7 @@ fun LoginContenido(
 @Preview(showBackground = true)
 @Composable
 fun PrevisualizacionLogin() {
-    MaterialTheme {
+    TemaSenderos {
         LoginContenido(
             estadoVisual = LoginEstadoVisual(email = "usuario@unaj.edu.ar"),
             alProcesarEvento = {}

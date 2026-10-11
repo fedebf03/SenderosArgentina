@@ -26,7 +26,6 @@ class LoginViewModel(
     private val canalEfectos = Channel<LoginEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
-    // Procesar los eventos emitidos por la pantalla de inicio de sesión
     fun procesarEvento(evento: LoginEvento) {
         when (evento) {
             is LoginEvento.AlCambiarEmail -> actualizarEmail(evento.email)
@@ -40,22 +39,18 @@ class LoginViewModel(
         }
     }
 
-    // Actualizar la dirección de correo electrónico en el estado visual
     private fun actualizarEmail(nuevoEmail: String) {
         _estadoVisual.update { it.copy(email = nuevoEmail, mensajeError = null) }
     }
 
-    // Actualizar la contraseña en el estado visual
     private fun actualizarClave(nuevaClave: String) {
         _estadoVisual.update { it.copy(clave = nuevaClave, mensajeError = null) }
     }
 
-    // Alternar la visibilidad de la contraseña en el estado visual
     private fun alternarVisibilidadClave() {
         _estadoVisual.update { it.copy(esClaveVisible = !it.esClaveVisible) }
     }
 
-    // Ejecutar el proceso de autenticación con el correo y contraseña ingresados
     private fun ejecutarInicioSesion() {
         val estadoActual = _estadoVisual.value
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
@@ -76,14 +71,12 @@ class LoginViewModel(
         }
     }
 
-    // Solicitar el flujo de inicio de sesión con Google
     private fun solicitarGoogleSignIn() {
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.SolicitarGoogleSignIn)
         }
     }
 
-    // Ejecutar el proceso de autenticación con el idToken obtenido de Google
     private fun ejecutarInicioSesionConGoogle(idToken: String) {
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
 
@@ -103,14 +96,12 @@ class LoginViewModel(
         }
     }
 
-    // Notificar la acción de recuperación de contraseña
     private fun manejarOlvidarClave() {
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.MostrarAviso("Todavía no disponible"))
         }
     }
 
-    // Solicitar la navegación a la pantalla de registro
     private fun manejarIrARegistro() {
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.NavegarARegistro)

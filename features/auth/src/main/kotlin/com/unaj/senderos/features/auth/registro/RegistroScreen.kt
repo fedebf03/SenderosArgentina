@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,9 +42,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.senderosargentina.R
+import com.unaj.senderos.presentation.tema.TemaSenderos
 
 @Composable
-// Coordinar el estado y los efectos de la pantalla de registro
 fun RegistroPantalla(
     viewModel: RegistroViewModel,
     alNavegarAInicio: () -> Unit,
@@ -74,7 +73,6 @@ fun RegistroPantalla(
 }
 
 @Composable
-// Dibujar el formulario de registro
 fun RegistroContenido(
     estadoVisual: RegistroEstadoVisual,
     alProcesarEvento: (RegistroEvento) -> Unit,
@@ -192,10 +190,6 @@ fun RegistroContenido(
         Button(
             onClick = { alProcesarEvento(RegistroEvento.AlRegistrarse) },
             enabled = !estadoVisual.estaCargando,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
@@ -203,7 +197,7 @@ fun RegistroContenido(
             if (estadoVisual.estaCargando) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     strokeWidth = 2.dp
                 )
             } else {
@@ -226,7 +220,7 @@ fun RegistroContenido(
 @Preview(showBackground = true)
 @Composable
 fun PrevisualizacionRegistro() {
-    MaterialTheme {
+    TemaSenderos {
         RegistroContenido(
             estadoVisual = RegistroEstadoVisual(email = "usuario@unaj.edu.ar"),
             alProcesarEvento = {},

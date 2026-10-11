@@ -24,25 +24,21 @@ class RegistroViewModelTest {
 
     private lateinit var falsoAutenticacion: FalsoAutenticacionRepositorio
 
-    // Configurar el despachador principal de prueba y el falso antes de cada caso
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
         falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
     }
 
-    // Restaurar el despachador principal original después de cada caso
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel con el caso de uso armado sobre el repositorio falso
     private fun crearViewModel(): RegistroViewModel {
         return RegistroViewModel(RegistrarUsuarioUseCase(falsoAutenticacion))
     }
 
-    // Completar el formulario con datos válidos y visibilidad de clave activada
     private fun completarFormulario(viewModel: RegistroViewModel) {
         viewModel.procesarEvento(RegistroEvento.AlCambiarEmail("ana@correo.com"))
         viewModel.procesarEvento(RegistroEvento.AlCambiarClave("secreta123"))
@@ -50,7 +46,6 @@ class RegistroViewModelTest {
         viewModel.procesarEvento(RegistroEvento.AlAlternarVisibilidadClave)
     }
 
-    // Probar que un registro exitoso limpia el formulario y emite la navegación
     @Test
     fun `exito limpia todos los campos y emite NavegarAInicio`() = runTest {
         val viewModel = crearViewModel()
@@ -67,7 +62,6 @@ class RegistroViewModelTest {
         assertEquals(RegistroEstadoVisual(), viewModel.estadoVisual.value)
     }
 
-    // Probar que un fallo conserva lo escrito y expone el mensaje de error
     @Test
     fun `fallo conserva los campos y muestra mensajeError`() = runTest {
         falsoAutenticacion.usuarioActual = null
