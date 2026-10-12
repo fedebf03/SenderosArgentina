@@ -13,6 +13,10 @@ import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
 import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
 import com.unaj.senderos.data.sincronizacion.SincronizadorSenderos
+import com.unaj.senderos.data.notificaciones.NotificadorAndroid
+import com.unaj.senderos.data.ubicacion.ProveedorUbicacionCombinada
+import com.unaj.senderos.domain.repository.Notificador
+import com.unaj.senderos.domain.repository.ProveedorUbicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
@@ -49,7 +53,11 @@ class ContenedorDependencias(contexto: Context) {
 
     val sincronizadorSenderos =
         SincronizadorSenderos(baseDatosSenderos.senderoDao(), fuenteRemota, ejecutorTransacciones, subidorFotos)
+    val senderoDao = baseDatosSenderos.senderoDao()
     val almacenFotos = AlmacenFotosLocal(contexto)
+
+    val proveedorUbicacion: ProveedorUbicacion = ProveedorUbicacionCombinada(contexto.applicationContext)
+    val notificador: Notificador = NotificadorAndroid(contexto.applicationContext)
 
     val iniciarSesionUseCase = IniciarSesionUseCase(autenticacionRepositorio)
     val iniciarSesionConGoogleUseCase = IniciarSesionConGoogleUseCase(autenticacionRepositorio)

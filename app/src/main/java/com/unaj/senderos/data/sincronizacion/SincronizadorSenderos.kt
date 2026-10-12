@@ -10,6 +10,8 @@ import com.unaj.senderos.data.remote.SenderoFuenteRemota
 import com.unaj.senderos.data.remote.SenderoRed
 import com.unaj.senderos.data.remote.SubidorFotos
 import com.unaj.senderos.domain.model.EstadoSincronizacion
+import com.unaj.senderos.domain.model.ResumenSincronizacion
+import com.unaj.senderos.domain.model.UMBRAL_DEMORA_MILISEGUNDOS
 import com.unaj.senderos.domain.model.esFotoLocal
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -21,9 +23,11 @@ class SincronizadorSenderos(
     private val senderoDao: SenderoDao,
     private val fuenteRemota: SenderoFuenteRemota,
     private val ejecutorTransacciones: EjecutorTransacciones,
-    private val subidorFotos: SubidorFotos
+    private val subidorFotos: SubidorFotos,
+    private val reloj: () -> Long = System::currentTimeMillis
 ) {
-    suspend fun sincronizar(idUsuario: String): Result<Unit> {
+    // Sincronizar al usuario con Firestore y devolver el resumen de lo subido, o failure si falla la lectura remota
+    suspend fun sincronizar(idUsuario: String): Result<ResumenSincronizacion> {
         Log.d(TAG, "Comienza la sincronización del usuario $idUsuario")
         return try {
             val resultado = sincronizarSinCapturar(idUsuario)
@@ -41,10 +45,10 @@ class SincronizadorSenderos(
         }
     }
 
-    private suspend fun sincronizarSinCapturar(idUsuario: String): Result<Unit> {
+    // Ejecutar la fusión y la subida sin capturar excepciones, que captura el llamador
+    private suspend fun sincronizarSinCapturar(idUsuario: String): Result<ResumenSincronizacion> {
         fusionarRemotos(idUsuario, fuenteRemota.obtenerSenderos(idUsuario))
-        val primerErrorDeSubida = subirPendientes(idUsuario)
-        return if (primerErrorDeSubida == null) Result.success(Unit) else Result.failure(primerErrorDeSubida)
+        return Result.success(subirPendientes(idUsuario))
     }
 
     // Fusionar los documentos remotos con los locales aplicando que la última escritura prevalece
@@ -63,22 +67,34 @@ class SincronizadorSenderos(
         }
     }
 
-    // Subir los pendientes en hasta tres pasadas sin reintentar los fallidos; devolver el primer error o null
-    private suspend fun subirPendientes(idUsuario: String): Throwable? {
+    // Subir los pendientes en hasta tres pasadas sin reintentar los fallidos; devolver el resumen de la subida
+    private suspend fun subirPendientes(idUsuario: String): ResumenSincronizacion {
+        val instanteInicio = reloj()
         val idsFallidos = mutableSetOf<String>()
         var primerError: Throwable? = null
+        var senderosSubidos = 0
+        var senderosGuardadosSinConexion = 0
         repeat(MAXIMO_PASADAS_SUBIDA) {
             val pendientes = senderoDao.obtenerPendientes(idUsuario).filter { entidad -> entidad.id !in idsFallidos }
-            if (pendientes.isEmpty()) return primerError
+            if (pendientes.isEmpty()) {
+                return ResumenSincronizacion(
+                    senderosSubidos, senderosGuardadosSinConexion, idsFallidos.size, primerError
+                )
+            }
             pendientes.forEach { entidad ->
                 val error = subirEntidad(idUsuario, entidad)
                 if (error != null) {
                     idsFallidos.add(entidad.id)
                     if (primerError == null) primerError = error
+                } else if (!entidad.estaEliminado) {
+                    senderosSubidos++
+                    if (instanteInicio - entidad.fechaModificacion >= UMBRAL_DEMORA_MILISEGUNDOS) {
+                        senderosGuardadosSinConexion++
+                    }
                 }
             }
         }
-        return primerError
+        return ResumenSincronizacion(senderosSubidos, senderosGuardadosSinConexion, idsFallidos.size, primerError)
     }
 
     // Subir una entidad y transicionar su estado solo si no cambió durante la subida; devolver el error o null

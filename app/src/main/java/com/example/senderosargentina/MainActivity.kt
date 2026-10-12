@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
                         )
                         is DestinoPantalla.Inicio -> SenderosPantalla(
                             viewModel = viewModelDeDestino("inicio-$idUsuario") {
-                                SenderosViewModel(dependencias.observarSenderosDelUsuarioUseCase)
+                                SenderosViewModel(dependencias.observarSenderosDelUsuarioUseCase, dependencias.proveedorUbicacion)
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Inicio),
                             alNavegarACreacion = {
