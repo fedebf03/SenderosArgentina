@@ -30,7 +30,11 @@ data class RecorridoEstadoVisual(
     val proximoPunto: PuntoRecorrido? = null,
     val estaDesviado: Boolean = false,
     val esDialogoFinalizarVisible: Boolean = false,
-    val resumen: ResumenRecorrido? = null
+    val resumen: ResumenRecorrido? = null,
+    val nombreSendero: String = "",
+    val llegoAlFinal: Boolean = false,
+    val seDescartoLlegada: Boolean = false,
+    val esDialogoLlegadaVisible: Boolean = false
 )
 
 sealed interface RecorridoEvento {
@@ -39,6 +43,7 @@ sealed interface RecorridoEvento {
     data object AlCancelarFinalizar : RecorridoEvento
     data object AlConfirmarFinalizar : RecorridoEvento
     data object AlCerrarResumen : RecorridoEvento
+    data object AlSeguirCaminando : RecorridoEvento
     data object AlMoverMapaConGesto : RecorridoEvento
     data object AlTocarCentrar : RecorridoEvento
     data class AlSeleccionarMultiplicador(val valor: Int) : RecorridoEvento

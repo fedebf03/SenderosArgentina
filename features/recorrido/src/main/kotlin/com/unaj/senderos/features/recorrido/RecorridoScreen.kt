@@ -179,6 +179,12 @@ fun RecorridoContenido(
     if (estadoVisual.esDialogoFinalizarVisible) {
         DialogoConfirmarFinalizar(alProcesarEvento)
     }
+    if (estadoVisual.esDialogoLlegadaVisible) {
+        DialogoLlegadaAlFinal(
+            nombreSendero = estadoVisual.nombreSendero.ifBlank { estadoVisual.sendero?.nombre.orEmpty() },
+            alProcesarEvento = alProcesarEvento
+        )
+    }
     estadoVisual.resumen?.let { resumen -> DialogoResumen(resumen, alProcesarEvento) }
 }
 
@@ -251,10 +257,14 @@ private fun PanelRecorrido(
             Button(
                 onClick = { alProcesarEvento(RecorridoEvento.AlTocarFinalizar) },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                colors = if (estadoVisual.llegoAlFinal) {
+                    ButtonDefaults.buttonColors()
+                } else {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             ) {
                 Text("Finalizar")
             }
@@ -304,6 +314,26 @@ private fun DatoDelPanel(titulo: String, valor: String, modifier: Modifier = Mod
         )
         Text(text = valor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
+}
+
+// Avisar la llegada al final del sendero y ofrecer finalizar el recorrido o seguir caminando
+@Composable
+private fun DialogoLlegadaAlFinal(nombreSendero: String, alProcesarEvento: (RecorridoEvento) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { alProcesarEvento(RecorridoEvento.AlSeguirCaminando) },
+        title = { Text("¡Llegaste al final!") },
+        text = { Text("Terminaste $nombreSendero.") },
+        confirmButton = {
+            TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlConfirmarFinalizar) }) {
+                Text("Finalizar recorrido")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlSeguirCaminando) }) {
+                Text("Seguir caminando")
+            }
+        }
+    )
 }
 
 // Pedir confirmación antes de finalizar el recorrido

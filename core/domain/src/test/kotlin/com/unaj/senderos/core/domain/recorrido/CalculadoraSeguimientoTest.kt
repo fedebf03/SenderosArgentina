@@ -192,7 +192,7 @@ class CalculadoraSeguimientoTest {
             resultado.avisos
         }
 
-        assertTrue(avisos.isEmpty())
+        assertTrue(avisos.filter { aviso -> aviso != AvisoRecorrido.LlegadaAlFinal }.isEmpty())
     }
 
     // Verificar que el aviso de desvío se emite al superar 100 metros y no se repite mientras siga desviado
@@ -332,7 +332,10 @@ class CalculadoraSeguimientoTest {
             resultado.avisos
         }
 
-        assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.CercaDePunto(indice = 1, punto = mirador)), avisos)
+        assertEquals(
+            listOf<AvisoRecorrido>(AvisoRecorrido.CercaDePunto(indice = 1, punto = mirador)),
+            avisos.filter { aviso -> aviso != AvisoRecorrido.LlegadaAlFinal }
+        )
     }
 
     // Verificar que un camino lento con pasos de 3 metros suma distancia acumulada
@@ -547,5 +550,140 @@ class CalculadoraSeguimientoTest {
         val estado = CalculadoraSeguimiento.actualizar(inicial, lectura(posicionAlSur(0.0), 45f, null), 6_000L).estado
 
         assertEquals(45f, estado.rumboGrados)
+    }
+
+    // Aplicar posiciones al sur y devolver, por cada una, los avisos generados
+    private fun avisosPorPosicion(estadoInicial: EstadoSeguimiento, posiciones: List<Coordenada>): Pair<List<List<AvisoRecorrido>>, EstadoSeguimiento> {
+        var estado = estadoInicial
+        val avisos = posiciones.mapIndexed { indice, posicion ->
+            val resultado = actualizarConPosicion(estado, posicion, INSTANTE_INICIAL + (indice + 1) * 5_000L)
+            estado = resultado.estado
+            resultado.avisos
+        }
+        return avisos to estado
+    }
+
+    // Verificar que en un lineal se avisa la llegada una sola vez al estar a menos de 20 metros del final
+    @Test
+    fun `en un lineal avisa la llegada al final una sola vez`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+
+        val (avisos, estado) = avisosPorPosicion(
+            inicial,
+            listOf(posicionAlSur(0.0), posicionAlSur(0.0015), posicionAlSur(0.0018), posicionAlSur(0.0019), posicionAlSur(0.002))
+        )
+
+        assertTrue(avisos.take(3).all { lista -> lista.isEmpty() })
+        assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.LlegadaAlFinal), avisos[3])
+        assertTrue(avisos[4].isEmpty())
+        assertTrue(estado.llegoAlFinal)
+    }
+
+    // Verificar que en ida y vuelta no se avisa en el punto de giro y sí al volver al inicio
+    @Test
+    fun `en ida y vuelta no avisa en el giro y si al volver`() {
+        val sendero = construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.002)), TipoRecorrido.IDA_Y_VUELTA)
+        val inicial = CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)
+
+        val (avisos, estado) = avisosPorPosicion(
+            inicial,
+            listOf(posicionAlSur(0.0), posicionAlSur(0.001), posicionAlSur(0.002), posicionAlSur(0.001), posicionAlSur(0.0001))
+        )
+
+        assertTrue(avisos.take(4).all { lista -> lista.isEmpty() })
+        assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.LlegadaAlFinal), avisos[4])
+        assertTrue(estado.llegoAlFinal)
+    }
+
+    // Verificar que en un circular no se avisa al arrancar cerca del inicio y sí al cerrar la vuelta
+    @Test
+    fun `en un circular no avisa al arrancar y si al cerrar la vuelta`() {
+        val triangulo = listOf(
+            PuntoRecorrido(LATITUD_BASE, LONGITUD_BASE),
+            PuntoRecorrido(LATITUD_BASE - 0.0015, LONGITUD_BASE),
+            PuntoRecorrido(LATITUD_BASE - 0.0015, LONGITUD_BASE + 0.0015)
+        )
+        val inicial = CalculadoraSeguimiento.iniciar(construirSendero(triangulo, TipoRecorrido.CIRCULAR), INSTANTE_INICIAL)
+
+        val (avisos, estado) = avisosPorPosicion(
+            inicial,
+            listOf(
+                posicionAlSur(0.00001, 0.00001),
+                posicionAlSur(0.0015),
+                posicionAlSur(0.0015, 0.0015),
+                posicionAlSur(0.00075, 0.00075),
+                posicionAlSur(0.00005, 0.00005)
+            )
+        )
+
+        assertTrue(avisos.take(4).all { lista -> lista.isEmpty() })
+        assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.LlegadaAlFinal), avisos[4])
+        assertTrue(estado.llegoAlFinal)
+    }
+
+    // Verificar que en un circular chico (lados de 111 m y 85 m) arrancar cerca del inicio no salta al tramo de cierre
+    @Test
+    fun `en un circular chico arrancar cerca del inicio sigue en el primer tramo sin avisar llegada`() {
+        val triangulo = listOf(
+            PuntoRecorrido(LATITUD_BASE, LONGITUD_BASE),
+            PuntoRecorrido(LATITUD_BASE - 0.001, LONGITUD_BASE),
+            PuntoRecorrido(LATITUD_BASE - 0.001, LONGITUD_BASE + 0.001)
+        )
+        val inicial = CalculadoraSeguimiento.iniciar(construirSendero(triangulo, TipoRecorrido.CIRCULAR), INSTANTE_INICIAL)
+
+        val resultado = actualizarConPosicion(inicial, posicionAlSur(0.00001, 0.00001), INSTANTE_INICIAL + 5_000L)
+
+        assertEquals(0, resultado.estado.indiceTramoActual)
+        assertEquals(inicial.distanciaRestanteKilometros, resultado.estado.distanciaRestanteKilometros, 0.01)
+        assertTrue(resultado.avisos.isEmpty())
+        assertFalse(resultado.estado.llegoAlFinal)
+    }
+
+    // Generar posiciones caminando por los vértices, una cada pasoMetros aproximadamente
+    private fun caminar(vertices: List<Coordenada>, pasoMetros: Double): List<Coordenada> {
+        val posiciones = mutableListOf(vertices.first())
+        vertices.zipWithNext().forEach { (origen, destino) ->
+            val largoMetros = CalculadoraRecorrido.distanciaEntre(origen, PuntoRecorrido(destino.latitud, destino.longitud)) * 1000.0
+            val pasos = Math.ceil(largoMetros / pasoMetros).toInt()
+            (1..pasos).forEach { paso ->
+                val fraccion = paso.toDouble() / pasos
+                posiciones.add(
+                    Coordenada(
+                        origen.latitud + (destino.latitud - origen.latitud) * fraccion,
+                        origen.longitud + (destino.longitud - origen.longitud) * fraccion
+                    )
+                )
+            }
+        }
+        return posiciones
+    }
+
+    // Verificar que un circular de unos 365 m recorrido completo avisa la llegada una sola vez, al cerrar la vuelta
+    @Test
+    fun `un circular de 365 metros recorrido completo avisa la llegada una vez al cerrar`() {
+        val esquinas = listOf(
+            Coordenada(LATITUD_BASE, LONGITUD_BASE),
+            Coordenada(LATITUD_BASE - 0.0008, LONGITUD_BASE),
+            Coordenada(LATITUD_BASE - 0.0008, LONGITUD_BASE + 0.0011),
+            Coordenada(LATITUD_BASE, LONGITUD_BASE + 0.0011)
+        )
+        val sendero = construirSendero(esquinas.map { esquina -> PuntoRecorrido(esquina.latitud, esquina.longitud) }, TipoRecorrido.CIRCULAR)
+        val posiciones = caminar(esquinas + esquinas.first(), 8.0)
+        var estado = CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)
+        var indiceTramoAnterior = 0
+        val indicesConLlegada = mutableListOf<Int>()
+
+        posiciones.forEachIndexed { indice, posicion ->
+            val resultado = actualizarConPosicion(estado, posicion, INSTANTE_INICIAL + (indice + 1) * 5_000L)
+            estado = resultado.estado
+            assertTrue(estado.indiceTramoActual >= indiceTramoAnterior)
+            indiceTramoAnterior = estado.indiceTramoActual
+            if (AvisoRecorrido.LlegadaAlFinal in resultado.avisos) indicesConLlegada.add(indice)
+        }
+
+        assertEquals(1, indicesConLlegada.size)
+        assertTrue(indicesConLlegada.first() >= posiciones.size - 4)
+        assertTrue(estado.llegoAlFinal)
+        assertTrue(estado.distanciaRecorridaKilometros > 0.3)
     }
 }

@@ -84,7 +84,8 @@ class RecorridoViewModelTest {
         estaDesviado: Boolean = false,
         rumboGrados: Float? = null,
         esSimulado: Boolean = false,
-        multiplicadorSimulacion: Int = 1
+        multiplicadorSimulacion: Int = 1,
+        llegoAlFinal: Boolean = false
     ): EstadoSeguimiento {
         return EstadoSeguimiento(
             idSendero = idSendero,
@@ -97,7 +98,9 @@ class RecorridoViewModelTest {
             rumboGrados = rumboGrados,
             esSimulado = esSimulado,
             multiplicadorSimulacion = multiplicadorSimulacion,
-            instanteInicioMilisegundos = 1_000L
+            instanteInicioMilisegundos = 1_000L,
+            nombreSendero = "Cerro Catedral",
+            llegoAlFinal = llegoAlFinal
         )
     }
 
@@ -470,5 +473,65 @@ class RecorridoViewModelTest {
     fun `la etiqueta usa el nombre o el tipo del punto`() {
         assertEquals("Mirador del lago", obtenerEtiquetaPunto(mirador))
         assertEquals("Refugio", obtenerEtiquetaPunto(PuntoRecorrido(0.0, 0.0, TipoPunto.REFUGIO)))
+    }
+
+    // Verificar que la llegada al final abre el diálogo y no muestra el aviso en el Snackbar
+    @Test
+    fun `la llegada al final muestra el dialogo sin snackbar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+
+        control.avisosEmitidos.tryEmit(AvisoRecorrido.LlegadaAlFinal)
+        control.estadoEmitido.value = crearEstado(llegoAlFinal = true)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.esDialogoLlegadaVisible)
+        assertEquals("Cerro Catedral", viewModel.estadoVisual.value.nombreSendero)
+        assertTrue(efectosRecibidos.isEmpty())
+    }
+
+    // Verificar que "Seguir caminando" cierra el diálogo y no reaparece en este recorrido
+    @Test
+    fun `seguir caminando cierra el dialogo y no reaparece`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(llegoAlFinal = true)
+        advanceUntilIdle()
+        assertTrue(viewModel.estadoVisual.value.esDialogoLlegadaVisible)
+
+        viewModel.procesarEvento(RecorridoEvento.AlSeguirCaminando)
+        control.estadoEmitido.value = crearEstado(llegoAlFinal = true, esSimulado = true)
+        control.avisosEmitidos.tryEmit(AvisoRecorrido.LlegadaAlFinal)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoLlegadaVisible)
+        assertTrue(viewModel.estadoVisual.value.llegoAlFinal)
+    }
+
+    // Verificar que "Finalizar recorrido" desde el diálogo detiene el seguimiento y muestra el resumen
+    @Test
+    fun `finalizar desde el dialogo de llegada muestra el resumen y detiene`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(llegoAlFinal = true)
+        advanceUntilIdle()
+        relojActual = 61_000L
+
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarFinalizar)
+        advanceUntilIdle()
+
+        val estadoVisual = viewModel.estadoVisual.value
+        assertEquals(1, lanzador.cantidadDetenciones)
+        assertFalse(estadoVisual.esDialogoLlegadaVisible)
+        assertNotNull(estadoVisual.resumen)
+    }
+
+    // Verificar que al recrear el ViewModel con la llegada ya registrada se muestra el diálogo
+    @Test
+    fun `al abrir con llegada registrada se muestra el dialogo`() = runTest(despachadorPrueba) {
+        control.estadoEmitido.value = crearEstado(llegoAlFinal = true)
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.esDialogoLlegadaVisible)
     }
 }

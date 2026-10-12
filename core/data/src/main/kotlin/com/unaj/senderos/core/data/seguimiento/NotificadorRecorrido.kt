@@ -26,6 +26,7 @@ private const val ID_CANAL_AVISOS = "recorrido"
 private const val NOMBRE_CANAL_AVISOS = "Recorrido"
 private const val ID_NOTIFICACION_EN_CURSO = 2000
 private const val ID_NOTIFICACION_DESVIO = 2001
+private const val ID_NOTIFICACION_LLEGADA = 2002
 private const val BASE_ID_NOTIFICACION_PUNTO = 2100
 private const val CODIGO_PEDIDO_ABRIR = 20
 private const val CODIGO_PEDIDO_FINALIZAR = 21
@@ -70,7 +71,7 @@ class NotificadorRecorrido(private val contexto: Context) {
     fun identificadorNotificacionEnCurso(): Int = ID_NOTIFICACION_EN_CURSO
 
     // Mostrar un aviso de proximidad o de desvío por el canal de importancia alta
-    fun notificarAviso(idSendero: String, aviso: AvisoRecorrido) {
+    fun notificarAviso(idSendero: String, aviso: AvisoRecorrido, nombreSendero: String) {
         if (!tienePermisoDeNotificaciones()) {
             Log.d(TAG, "Aviso omitido: falta el permiso POST_NOTIFICATIONS")
             return
@@ -87,8 +88,13 @@ class NotificadorRecorrido(private val contexto: Context) {
                 "Te alejaste del sendero",
                 "Estás a más de 100 metros del trazado"
             )
+            AvisoRecorrido.LlegadaAlFinal -> Triple(
+                ID_NOTIFICACION_LLEGADA,
+                "¡Llegaste al final!",
+                "Terminaste ${nombreSendero.ifBlank { "el sendero" }}. Tocá Finalizar para guardar el recorrido"
+            )
         }
-        val notificacion = NotificationCompat.Builder(contexto, ID_CANAL_AVISOS)
+        val constructor = NotificationCompat.Builder(contexto, ID_CANAL_AVISOS)
             .setSmallIcon(R.drawable.ic_notificacion)
             .setContentTitle(titulo)
             .setContentText(cuerpo)
@@ -96,7 +102,10 @@ class NotificadorRecorrido(private val contexto: Context) {
             .setCategory(NotificationCompat.CATEGORY_NAVIGATION)
             .setContentIntent(crearAccionAbrirRecorrido(idSendero))
             .setAutoCancel(true)
-            .build()
+        if (aviso == AvisoRecorrido.LlegadaAlFinal) {
+            constructor.addAction(0, "Finalizar", crearAccionFinalizar())
+        }
+        val notificacion = constructor.build()
         try {
             administrador.notify(identificador, notificacion)
             Log.d(TAG, "Aviso mostrado: $titulo")
@@ -108,6 +117,7 @@ class NotificadorRecorrido(private val contexto: Context) {
     // Cancelar los avisos que el recorrido dejó visibles al finalizar
     fun cancelarAvisos() {
         administrador.cancel(ID_NOTIFICACION_DESVIO)
+        administrador.cancel(ID_NOTIFICACION_LLEGADA)
         administrador.activeNotifications
             .filter { notificacion -> notificacion.id >= BASE_ID_NOTIFICACION_PUNTO }
             .forEach { notificacion -> administrador.cancel(notificacion.id) }
