@@ -16,10 +16,15 @@ import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.domain.model.PuntoCapturado
+import com.unaj.senderos.domain.model.ResultadoCaptura
 import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.TipoPunto
+import com.unaj.senderos.domain.repository.AlmacenFotos
 import com.unaj.senderos.domain.repository.ControlSeguimiento
 import com.unaj.senderos.domain.repository.ProveedorUbicacion
+import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
 import com.unaj.senderos.domain.repository.RecorridoRepositorio
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -41,10 +46,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SEGUIMIENTO"
 private const val CAPACIDAD_AVISOS = 16
+private const val PRECISION_MAXIMA_CON_GPS_METROS = 30f
+private const val PRECISION_MAXIMA_SIN_GPS_METROS = 100f
 private const val INTERVALO_REEVALUACION_MILISEGUNDOS = 5_000L
 private const val MILISEGUNDOS_POR_HORA = 3_600_000.0
 private const val KILOMETROS_POR_HORA_POR_METRO_POR_SEGUNDO = 3.6
@@ -60,11 +68,14 @@ class ControlSeguimientoEnMemoria(
     private val proveedorUbicacion: ProveedorUbicacion,
     private val observarDetalleSendero: ObservarDetalleSenderoUseCase,
     private val recorridoRepositorio: RecorridoRepositorio,
+    private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
+    private val almacenFotos: AlmacenFotos,
     private val alcance: CoroutineScope,
     private val capacidades: CapacidadesDispositivo = CapacidadesDispositivo.SIN_FUNCIONES,
     private val fuenteAcelerometro: FuenteAcelerometro? = null,
     private val fuenteBrujula: FuenteBrujula? = null,
     private val proveedorDeclinacion: ProveedorDeclinacion? = null,
+    private val generarIdentificador: () -> String = { UUID.randomUUID().toString() },
     private val reloj: () -> Long = System::currentTimeMillis
 ) : ControlSeguimiento {
 
@@ -88,6 +99,7 @@ class ControlSeguimientoEnMemoria(
     private var proveedorSimulado: ProveedorUbicacionSimulada? = null
     private var nombreSenderoActivo: String = ""
     private var idUsuarioActivo: String = ""
+    private val precisionMaximaMetros = if (capacidades.tieneGps) PRECISION_MAXIMA_CON_GPS_METROS else PRECISION_MAXIMA_SIN_GPS_METROS
 
     override val estado: StateFlow<EstadoSeguimiento?> = estadoInterno
     override val motivoFin: StateFlow<MotivoFinSeguimiento?> = motivoFinInterno
@@ -168,6 +180,63 @@ class ControlSeguimientoEnMemoria(
         finalizarSeguimiento(guardar = false)
     }
 
+    // Capturar un punto de interés en la última posición válida: copiar la foto si viene y guardar el punto al instante en la base local.
+    // Con la señal débil informa la antigüedad de la posición usada para que la UI la muestre, sin bloquear la captura.
+    // Los fallos devueltos llevan mensajes propios en español; el detalle técnico queda solo en el registro
+    override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?): Result<ResultadoCaptura> {
+        val estadoActual = estadoInterno.value
+            ?: return Result.failure(IllegalStateException("No hay un recorrido en curso para agregar un punto"))
+        val posicion = estadoActual.posicionActual
+            ?: return Result.failure(IllegalStateException("Todavía no hay una posición válida del GPS; esperá a tener señal"))
+        val idUsuario = idUsuarioActivo
+        val instante = reloj()
+        val antiguedad = calcularAntiguedadSiLaSenalEsDebil(estadoActual, instante)
+        var rutaFoto = ""
+        return try {
+            if (!uriFoto.isNullOrBlank()) {
+                rutaFoto = almacenFotos.guardarCopia(uriFoto).getOrElse { error ->
+                    Log.e(TAG, "No se pudo copiar la foto del punto", error)
+                    return Result.failure(IllegalStateException("No se pudo guardar la foto del punto"))
+                }
+            }
+            val punto = PuntoCapturado(
+                id = generarIdentificador(),
+                idUsuario = idUsuario,
+                idSendero = estadoActual.idSendero,
+                latitud = posicion.latitud,
+                longitud = posicion.longitud,
+                tipo = tipo,
+                nota = nota,
+                foto = rutaFoto,
+                instanteMilisegundos = instante
+            )
+            val resultadoGuardado = puntosCapturadosRepositorio.guardar(punto)
+            if (resultadoGuardado.isFailure) {
+                borrarCopiaDeFoto(rutaFoto)
+                return Result.failure(resultadoGuardado.exceptionOrNull() ?: IllegalStateException("No se pudo guardar el punto"))
+            }
+            Log.d(TAG, "Punto ${punto.id} capturado en ${estadoActual.idSendero}")
+            Result.success(ResultadoCaptura(punto, antiguedad))
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "Fallo inesperado al capturar el punto", error)
+            borrarCopiaDeFoto(rutaFoto)
+            Result.failure(IllegalStateException("No se pudo guardar el punto"))
+        }
+    }
+
+    // Calcular la antigüedad de la última lectura válida solo si la señal está débil; null si la señal es buena o no hay lectura
+    private fun calcularAntiguedadSiLaSenalEsDebil(estadoActual: EstadoSeguimiento, instante: Long): Long? {
+        if (estadoActual.calidadSenal != CalidadSenal.DEBIL) return null
+        return estadoActual.instanteUltimaLecturaValidaMilisegundos?.let { instanteLectura -> (instante - instanteLectura).coerceAtLeast(0L) }
+    }
+
+    // Borrar la copia de la foto que quedó huérfana porque el punto no se guardó
+    private suspend fun borrarCopiaDeFoto(rutaFoto: String) {
+        if (rutaFoto.isNotEmpty()) almacenFotos.borrar(rutaFoto)
+    }
+
     // Terminar el seguimiento: invalida inicios en curso, guarda o descarta lo recorrido y libera ubicación y sensores
     private fun finalizarSeguimiento(guardar: Boolean) {
         generacion++
@@ -190,7 +259,7 @@ class ControlSeguimientoEnMemoria(
             delay(INTERVALO_REEVALUACION_MILISEGUNDOS)
             val ahora = reloj()
             actualizarConSensores(ahora) { estadoActual ->
-                estadoActual.copy(calidadSenal = CalculadoraSeguimiento.evaluarCalidad(estadoActual, ahora))
+                CalculadoraSeguimiento.reevaluarSenal(estadoActual, ahora)
             }
         }
     }
@@ -294,7 +363,8 @@ class ControlSeguimientoEnMemoria(
             instanteUltimoPaso = ultimoPaso,
             instanteReferencia = estado.instanteInicioMilisegundos,
             ahora = ahora,
-            midePasos = estado.esSimulado || pasosRealesActivos
+            midePasos = estado.esSimulado || pasosRealesActivos,
+            senalDebil = estado.calidadSenal == CalidadSenal.DEBIL
         )
         return estado.copy(
             pasos = pasos,
@@ -337,7 +407,7 @@ class ControlSeguimientoEnMemoria(
                 val estadoActual = estadoInterno.value
                 if (estadoActual != null) {
                     val ahora = reloj()
-                    val resultado = CalculadoraSeguimiento.actualizar(estadoActual, lectura, ahora)
+                    val resultado = CalculadoraSeguimiento.actualizar(estadoActual, lectura, ahora, precisionMaximaMetros)
                     actualizarConSensores(ahora) { anterior ->
                         resultado.estado.copy(multiplicadorSimulacion = anterior.multiplicadorSimulacion)
                     }

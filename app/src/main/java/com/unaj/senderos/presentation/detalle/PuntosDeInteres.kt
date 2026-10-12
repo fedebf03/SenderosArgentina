@@ -15,7 +15,8 @@ data class PuntoDeInteres(
     val indice: Int,
     val tipo: TipoPunto,
     val nombre: String,
-    val distanciaDesdeInicioKilometros: Double
+    val distanciaDesdeInicioKilometros: Double,
+    val foto: String = ""
 ) {
     // Armar el texto "Tipo · Nombre", o solo el tipo cuando el punto no tiene nombre
     fun texto(): String {
@@ -32,7 +33,7 @@ internal fun obtenerPuntosDeInteres(sendero: Sendero?): List<PuntoDeInteres> {
         if (punto.tipo == TipoPunto.PASO) {
             null
         } else {
-            PuntoDeInteres(indice, punto.tipo, punto.nombre, distancias[posicion])
+            PuntoDeInteres(indice, punto.tipo, punto.nombre, distancias[posicion], punto.foto)
         }
     }
 }

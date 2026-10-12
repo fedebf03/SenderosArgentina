@@ -35,7 +35,7 @@ private const val VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO = 3.0
 private const val DISTANCIA_MAXIMA_PRIMER_TRAMO_CIRCULAR_METROS = 30.0
 
 // Proyección de una posición sobre un tramo: distancia perpendicular y fracción recorrida del tramo (0 a 1)
-private data class Proyeccion(val distanciaMetros: Double, val fraccion: Double)
+internal data class Proyeccion(val distanciaMetros: Double, val fraccion: Double)
 
 object CalculadoraSeguimiento {
 
@@ -55,14 +55,22 @@ object CalculadoraSeguimiento {
     }
 
     // Procesar una nueva lectura de ubicación y devolver el estado actualizado con los avisos generados
-    fun actualizar(estado: EstadoSeguimiento, lectura: LecturaUbicacion, ahora: Long): ResultadoSeguimiento {
+    fun actualizar(
+        estado: EstadoSeguimiento,
+        lectura: LecturaUbicacion,
+        ahora: Long,
+        precisionMaximaMetros: Float = PRECISION_MAXIMA_ACEPTABLE_METROS
+    ): ResultadoSeguimiento {
         val nuevaPosicion = lectura.coordenada
         val tiempoTranscurrido = ahora - estado.instanteInicioMilisegundos
         val trazado = estado.trazado
-        if ((lectura.precisionMetros ?: 0f) > PRECISION_MAXIMA_ACEPTABLE_METROS) {
-            // Lectura imprecisa: no mueve la posición ni suma distancia; solo hace correr el tiempo y reevalúa la calidad
-            val sinMover = estado.copy(tiempoTranscurridoMilisegundos = tiempoTranscurrido)
-            return ResultadoSeguimiento(estado = sinMover.copy(calidadSenal = evaluarCalidad(sinMover, ahora)), avisos = emptyList())
+        if ((lectura.precisionMetros ?: 0f) > precisionMaximaMetros) {
+            // Lectura imprecisa: no mueve la posición ni suma distancia; hace correr el tiempo, toma la velocidad del GPS (sigue siendo útil) y reevalúa la señal
+            val sinMover = estado.copy(
+                tiempoTranscurridoMilisegundos = tiempoTranscurrido,
+                velocidadMetrosPorSegundo = lectura.velocidadMetrosPorSegundo
+            )
+            return ResultadoSeguimiento(estado = reevaluarSenal(sinMover, ahora), avisos = emptyList())
         }
         if (trazado.size < 2) {
             return ResultadoSeguimiento(
@@ -189,6 +197,15 @@ object CalculadoraSeguimiento {
         }
     }
 
+    // Reevaluar la señal con el reloj: actualiza la calidad y, si pasa a DEBIL, deja la velocidad desconocida porque ya no es confiable
+    fun reevaluarSenal(estado: EstadoSeguimiento, ahora: Long): EstadoSeguimiento {
+        val calidad = evaluarCalidad(estado, ahora)
+        return estado.copy(
+            calidadSenal = calidad,
+            velocidadMetrosPorSegundo = if (calidad == CalidadSenal.DEBIL) null else estado.velocidadMetrosPorSegundo
+        )
+    }
+
     // Calcular el desplazamiento máximo plausible en kilómetros desde la lectura anterior con una velocidad de caminata
     private fun desplazamientoPlausibleKilometros(estado: EstadoSeguimiento, ahora: Long): Double {
         val instanteAnterior = estado.instanteUltimaLecturaMilisegundos ?: return Double.POSITIVE_INFINITY
@@ -287,7 +304,7 @@ object CalculadoraSeguimiento {
     }
 
     // Proyectar la posición sobre un tramo con una aproximación equirectangular local
-    private fun proyectarSobreTramo(posicion: Coordenada, origen: PuntoRecorrido, destino: PuntoRecorrido): Proyeccion {
+    internal fun proyectarSobreTramo(posicion: Coordenada, origen: PuntoRecorrido, destino: PuntoRecorrido): Proyeccion {
         val factorLongitud = cos(Math.toRadians(origen.latitud))
         val destinoX = (destino.longitud - origen.longitud) * factorLongitud
         val destinoY = destino.latitud - origen.latitud

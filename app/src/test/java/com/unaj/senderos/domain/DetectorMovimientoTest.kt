@@ -54,4 +54,22 @@ class DetectorMovimientoTest {
     fun `velocidad de medio metro por segundo ya es movimiento`() {
         assertEquals(false, DetectorMovimiento.estaDetenido(0.5f, null, 0L, 60_000L, midePasos = true))
     }
+
+    // Verificar que sin sensor de pasos, con velocidad desconocida y señal débil, está detenido
+    @Test
+    fun `sin pasos con velocidad desconocida y senal debil esta detenido`() {
+        assertEquals(true, DetectorMovimiento.estaDetenido(null, null, 0L, 30_000L, midePasos = false, senalDebil = true))
+    }
+
+    // Verificar que sin sensor de pasos, con velocidad desconocida y señal buena, se asume movimiento
+    @Test
+    fun `sin pasos con velocidad desconocida y senal buena no esta detenido`() {
+        assertEquals(false, DetectorMovimiento.estaDetenido(null, null, 0L, 30_000L, midePasos = false, senalDebil = false))
+    }
+
+    // Verificar que con señal débil una velocidad conocida y alta sigue siendo movimiento
+    @Test
+    fun `con senal debil una velocidad conocida y alta sigue siendo movimiento`() {
+        assertEquals(false, DetectorMovimiento.estaDetenido(1.4f, null, 0L, 30_000L, midePasos = false, senalDebil = true))
+    }
 }

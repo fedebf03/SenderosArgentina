@@ -10,7 +10,13 @@ import com.unaj.senderos.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.repository.ControlSeguimiento
 import com.unaj.senderos.domain.repository.LanzadorSeguimiento
+import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.presentation.comun.ControladorRevisionPuntos
+import com.unaj.senderos.presentation.comun.describirErrorParaElUsuario
+import com.unaj.senderos.presentation.comun.describirPuntoGuardadoConPosicionAntigua
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +29,8 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "RECORRIDO"
 private const val PLAZO_INICIO_MILISEGUNDOS = 5_000L
+private const val MENSAJE_PUNTO_GUARDADO = "Punto guardado"
+private const val MENSAJE_ERROR_PUNTO = "No se pudo guardar el punto"
 
 // Mostrar el recorrido en curso a partir del control de seguimiento de ámbito de proceso
 class RecorridoViewModel(
@@ -31,6 +39,9 @@ class RecorridoViewModel(
     private val controlSeguimiento: ControlSeguimiento,
     private val lanzadorSeguimiento: LanzadorSeguimiento,
     capacidadesDispositivo: CapacidadesDispositivo,
+    observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
+    incorporarPuntosCapturadosUseCase: IncorporarPuntosCapturadosUseCase,
+    descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase,
     private val reloj: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
@@ -45,6 +56,16 @@ class RecorridoViewModel(
     private val canalEfectos = Channel<RecorridoEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
+    private val controladorRevision = ControladorRevisionPuntos(
+        idSendero = idSendero,
+        observarPuntosCapturadosConDistanciaUseCase = observarPuntosCapturadosConDistanciaUseCase,
+        incorporarPuntosCapturadosUseCase = incorporarPuntosCapturadosUseCase,
+        descartarPuntosCapturadosUseCase = descartarPuntosCapturadosUseCase,
+        alcance = viewModelScope,
+        alEmitirAviso = { mensaje -> emitirEfecto(RecorridoEfecto.MostrarAviso(mensaje)) }
+    )
+
+    private var estaCapturandoPunto = false
     private var ultimoEstadoSeguimiento: EstadoSeguimiento? = null
     private var haVistoEstadoActivo = false
     private var estaFinalizando = false
@@ -54,6 +75,7 @@ class RecorridoViewModel(
         observarSendero()
         observarSeguimiento()
         observarAvisos()
+        observarRevisionDePuntos()
         esperarInicioDelServicio()
     }
 
@@ -96,9 +118,91 @@ class RecorridoViewModel(
             is RecorridoEvento.AlTocarSimularDesvio -> {
                 if (_estadoVisual.value.esSimulado) controlSeguimiento.simularDesvio()
             }
+            is RecorridoEvento.AlTocarAgregarPunto -> abrirHojaPunto()
+            is RecorridoEvento.AlCerrarHojaPunto -> cerrarHojaPunto()
+            is RecorridoEvento.AlElegirTipoPunto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(tipoPuntoElegido = evento.tipo) }
+            }
+            is RecorridoEvento.AlCambiarNotaPunto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(notaPunto = evento.nota) }
+            }
+            is RecorridoEvento.AlSeleccionarFotoPunto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(fotoPunto = evento.uri) }
+            }
+            is RecorridoEvento.AlQuitarFotoPunto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(fotoPunto = null) }
+            }
+            is RecorridoEvento.AlFallarFotoPunto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(mensajeErrorPunto = evento.mensaje) }
+            }
+            is RecorridoEvento.AlGuardarPunto -> guardarPunto()
+            is RecorridoEvento.AlRevisarPuntos -> controladorRevision.procesarEvento(evento.evento)
             is RecorridoEvento.AlTocarCentrar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(estaSiguiendo = true) }
             }
+        }
+    }
+
+    // Reflejar en el estado visual los puntos capturados pendientes y su revisión
+    private fun observarRevisionDePuntos() {
+        viewModelScope.launch {
+            controladorRevision.estado.collect { revision ->
+                _estadoVisual.update { estadoActual -> estadoActual.copy(revision = revision) }
+            }
+        }
+    }
+
+    // Abrir la hoja de captura con el formulario limpio, solo si el recorrido permite marcar puntos
+    private fun abrirHojaPunto() {
+        if (!_estadoVisual.value.puedeAgregarPunto) return
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(
+                esHojaPuntoVisible = true,
+                tipoPuntoElegido = TIPO_PUNTO_INICIAL,
+                notaPunto = "",
+                fotoPunto = null,
+                mensajeErrorPunto = null
+            )
+        }
+    }
+
+    // Cerrar la hoja de captura descartando lo escrito
+    private fun cerrarHojaPunto() {
+        _estadoVisual.update { estadoActual -> estadoActual.copy(esHojaPuntoVisible = false, mensajeErrorPunto = null) }
+    }
+
+    // Capturar el punto con los datos de la hoja; si sale bien se cierra y se avisa, si no se muestra el motivo en la hoja
+    private fun guardarPunto() {
+        if (estaCapturandoPunto) return
+        val estadoActual = _estadoVisual.value
+        estaCapturandoPunto = true
+        _estadoVisual.update { estadoNuevo -> estadoNuevo.copy(estaGuardandoPunto = true, mensajeErrorPunto = null) }
+        viewModelScope.launch {
+            val resultado = controlSeguimiento.capturarPunto(
+                tipo = estadoActual.tipoPuntoElegido,
+                nota = estadoActual.notaPunto.trim(),
+                uriFoto = estadoActual.fotoPunto
+            )
+            estaCapturandoPunto = false
+            resultado.fold(
+                onSuccess = { resultadoCaptura ->
+                    Log.d(TAG, "Punto capturado: ${resultadoCaptura.punto.tipo}")
+                    _estadoVisual.update { estadoNuevo ->
+                        estadoNuevo.copy(esHojaPuntoVisible = false, estaGuardandoPunto = false)
+                    }
+                    val mensajeGuardado = resultadoCaptura.antiguedadPosicionMilisegundos
+                        ?.let { antiguedad -> describirPuntoGuardadoConPosicionAntigua(antiguedad) }
+                        ?: MENSAJE_PUNTO_GUARDADO
+                    emitirEfecto(RecorridoEfecto.MostrarAviso(mensajeGuardado))
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo capturar el punto", error)
+                    val mensaje = describirErrorParaElUsuario(error, MENSAJE_ERROR_PUNTO)
+                    _estadoVisual.update { estadoNuevo ->
+                        estadoNuevo.copy(estaGuardandoPunto = false, mensajeErrorPunto = mensaje)
+                    }
+                }
+            )
         }
     }
 
@@ -164,7 +268,9 @@ class RecorridoViewModel(
             if (motivoFin == MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO) {
                 Log.d(TAG, "El recorrido se canceló fuera de la pantalla; se vuelve al detalle sin resumen")
                 estaFinalizando = true
-                _estadoVisual.update { estadoActual -> estadoActual.copy(fase = FaseRecorrido.NO_ACTIVO) }
+                _estadoVisual.update { estadoActual ->
+                    estadoActual.copy(fase = FaseRecorrido.NO_ACTIVO, esHojaPuntoVisible = false)
+                }
                 emitirEfecto(RecorridoEfecto.VolverAlDetalle)
                 emitirEfecto(RecorridoEfecto.MostrarAviso(describirMotivoFin(motivoFin)))
                 return
@@ -213,7 +319,9 @@ class RecorridoViewModel(
             delay(PLAZO_INICIO_MILISEGUNDOS)
             if (!haVistoEstadoActivo) {
                 Log.d(TAG, "El servicio no publicó un estado dentro del plazo")
-                _estadoVisual.update { estadoActual -> estadoActual.copy(fase = FaseRecorrido.NO_ACTIVO) }
+                _estadoVisual.update { estadoActual ->
+                    estadoActual.copy(fase = FaseRecorrido.NO_ACTIVO, esHojaPuntoVisible = false)
+                }
             }
         }
     }
@@ -232,7 +340,12 @@ class RecorridoViewModel(
     // Descartar el recorrido sin guardarlo ni mostrar resumen y volver al detalle
     private fun cancelarRecorrido() {
         _estadoVisual.update { estadoActual ->
-            estadoActual.copy(esDialogoCancelarVisible = false, esDialogoFinalizarVisible = false, esDialogoLlegadaVisible = false)
+            estadoActual.copy(
+                esDialogoCancelarVisible = false,
+                esDialogoFinalizarVisible = false,
+                esDialogoLlegadaVisible = false,
+                esHojaPuntoVisible = false
+            )
         }
         if (estaFinalizando) return
         estaFinalizando = true
@@ -256,6 +369,7 @@ class RecorridoViewModel(
                 fase = FaseRecorrido.NO_ACTIVO,
                 esDialogoFinalizarVisible = false,
                 esDialogoLlegadaVisible = false,
+                esHojaPuntoVisible = false,
                 resumen = resumen
             )
         }

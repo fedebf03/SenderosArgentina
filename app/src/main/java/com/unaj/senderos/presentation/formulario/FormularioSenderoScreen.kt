@@ -1,13 +1,7 @@
 package com.unaj.senderos.presentation.formulario
 
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
@@ -56,19 +49,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.presentation.comun.limpiarFotosTemporalesViejas
+import com.unaj.senderos.presentation.comun.recordarAccionesDeFoto
 import com.unaj.senderos.presentation.tema.TemaSenderos
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.IOException
 
 private const val TAG = "FORMULARIO_SENDERO"
-private const val UNA_HORA_EN_MILISEGUNDOS = 3_600_000L
+
 
 // Renderizar el formulario de sendero conectando el ViewModel, la cámara y la galería
 @Composable
@@ -82,37 +71,17 @@ fun FormularioSenderoPantalla(
     val volverActual by rememberUpdatedState(alVolver)
     val guardarActual by rememberUpdatedState(alGuardar)
 
-    val selectorFoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarFoto(uri.toString()))
-    }
-
     var mostrarDialogoOrigenFoto by rememberSaveable { mutableStateOf(false) }
-    var rutaFotoPendiente by rememberSaveable { mutableStateOf<String?>(null) }
     val contexto = LocalContext.current
-    val alcanceCorrutina = rememberCoroutineScope()
-
-    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { seTomoFoto ->
-        val rutaPendiente = rutaFotoPendiente
-        rutaFotoPendiente = null
-        alcanceCorrutina.launch {
-            if (rutaPendiente != null && seTomoFoto) {
-                try {
-                    val uri = obtenerUriDeFoto(contexto, File(rutaPendiente))
-                    viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarFoto(uri.toString()))
-                } catch (error: IllegalArgumentException) {
-                    Log.e(TAG, "No se pudo compartir la foto de la cámara", error)
-                    estadoAvisos.showSnackbar("No se pudo leer la foto tomada")
-                }
-            } else {
-                if (rutaPendiente != null) borrarArchivo(rutaPendiente)
-                Log.d(TAG, "Captura de foto cancelada")
-            }
-        }
-    }
+    val accionesDeFoto = recordarAccionesDeFoto(
+        alSeleccionarFoto = { uri -> viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarFoto(uri)) },
+        alMostrarAviso = { mensaje -> estadoAvisos.showSnackbar(mensaje) }
+    )
 
     // Limpiar fuera del hilo principal los temporales viejos de la cámara al entrar al formulario
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) { limpiarFotosTemporalesViejas(contexto) }
+        Log.d(TAG, "Pantalla inicializada / rotación completada")
+        limpiarFotosTemporalesViejas(contexto)
     }
 
     BackHandler { viewModel.procesarEvento(FormularioSenderoEvento.AlVolver) }
@@ -138,57 +107,15 @@ fun FormularioSenderoPantalla(
         DialogoOrigenFoto(
             alSacarFoto = {
                 mostrarDialogoOrigenFoto = false
-                alcanceCorrutina.launch {
-                    try {
-                        val archivo = withContext(Dispatchers.IO) { crearArchivoTemporalDeFoto(contexto) }
-                        rutaFotoPendiente = archivo.absolutePath
-                        camara.launch(obtenerUriDeFoto(contexto, archivo))
-                    } catch (excepcion: ActivityNotFoundException) {
-                        Log.e(TAG, "No hay una aplicación de cámara disponible", excepcion)
-                        rutaFotoPendiente?.let { ruta -> borrarArchivo(ruta) }
-                        rutaFotoPendiente = null
-                        estadoAvisos.showSnackbar("No hay una aplicación de cámara disponible")
-                    } catch (error: IOException) {
-                        Log.e(TAG, "No se pudo preparar el archivo de la foto", error)
-                        estadoAvisos.showSnackbar("No se pudo preparar la cámara")
-                    } catch (error: IllegalArgumentException) {
-                        Log.e(TAG, "No se pudo compartir el archivo de la foto", error)
-                        estadoAvisos.showSnackbar("No se pudo preparar la cámara")
-                    }
-                }
+                accionesDeFoto.sacarFoto()
             },
             alElegirDeGaleria = {
                 mostrarDialogoOrigenFoto = false
-                selectorFoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                accionesDeFoto.elegirDeGaleria()
             },
             alCerrar = { mostrarDialogoOrigenFoto = false }
         )
     }
-}
-
-// Crear un archivo temporal en la caché para la foto de la cámara (debe llamarse fuera del hilo principal)
-private fun crearArchivoTemporalDeFoto(contexto: Context): File {
-    val carpeta = File(contexto.cacheDir, "fotos_camara")
-    carpeta.mkdirs()
-    return File.createTempFile("foto_", ".jpg", carpeta)
-}
-
-// Borrar los temporales de la cámara con más de una hora de antigüedad (debe llamarse fuera del hilo principal)
-private fun limpiarFotosTemporalesViejas(contexto: Context) {
-    val limite = System.currentTimeMillis() - UNA_HORA_EN_MILISEGUNDOS
-    File(contexto.cacheDir, "fotos_camara").listFiles()
-        ?.filter { archivo -> archivo.lastModified() < limite }
-        ?.forEach { archivo -> archivo.delete() }
-}
-
-// Obtener la Uri de contenido del proveedor de archivos propio para un temporal de la cámara
-private fun obtenerUriDeFoto(contexto: Context, archivo: File): Uri {
-    return FileProvider.getUriForFile(contexto, "${contexto.packageName}.proveedorarchivos", archivo)
-}
-
-// Borrar un archivo temporal por su ruta fuera del hilo principal
-private suspend fun borrarArchivo(ruta: String) {
-    withContext(Dispatchers.IO) { File(ruta).delete() }
 }
 
 // Renderizar el contenido del formulario a partir del estado visual

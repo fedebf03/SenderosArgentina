@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Park
+import androidx.compose.material.icons.outlined.PinDrop
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material.icons.outlined.Terrain
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Coordenada
@@ -57,8 +59,12 @@ import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.componentes.ChipDificultad
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
+import com.unaj.senderos.presentation.comun.FotoDePunto
+import com.unaj.senderos.presentation.comun.describirCantidadPuntosPorRevisar
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
 import kotlin.math.roundToInt
+
+private val TAMANO_MINIATURA_PUNTO = 40.dp
 
 internal data class DatoRecorrido(
     val icono: ImageVector,
@@ -330,7 +336,8 @@ internal fun SeccionDesplegable(
 @Composable
 internal fun ListaDePuntosDeInteres(
     puntos: List<PuntoDeInteres>,
-    alSeleccionar: (Int) -> Unit
+    alSeleccionar: (Int) -> Unit,
+    alAmpliarFoto: (String) -> Unit = {}
 ) {
     Column {
         puntos.forEach { punto ->
@@ -353,12 +360,51 @@ internal fun ListaDePuntosDeInteres(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f)
                 )
+                if (punto.foto.isNotEmpty()) {
+                    FotoDePunto(
+                        foto = punto.foto,
+                        descripcion = "Ampliar la foto de ${punto.texto()}",
+                        modifier = Modifier
+                            .size(TAMANO_MINIATURA_PUNTO)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { alAmpliarFoto(punto.foto) }
+                    )
+                }
                 Text(
                     text = formatearKilometrosDesdeInicio(punto.distanciaDesdeInicioKilometros),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+// Avisar que hay puntos capturados durante el recorrido y ofrecer revisarlos
+@Composable
+internal fun TarjetaPuntosPorRevisar(cantidad: Int, alRevisar: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.PinDrop,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = describirCantidadPuntosPorRevisar(cantidad),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
+            )
+            TextButton(onClick = alRevisar) { Text("Revisar") }
         }
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.outlined.AddLocationAlt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -44,6 +45,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,6 +53,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
+import com.unaj.senderos.presentation.comun.ContenidoRevisionPuntos
+import com.unaj.senderos.presentation.comun.RevisionPuntosEstadoVisual
+import com.unaj.senderos.presentation.comun.describirCantidadPuntosCapturados
+import com.unaj.senderos.presentation.comun.limpiarFotosTemporalesViejas
+import com.unaj.senderos.presentation.comun.recordarAccionesDeFoto
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.mapa.ModoNavegacion
 import com.unaj.senderos.presentation.tema.TemaSenderos
@@ -71,6 +78,11 @@ fun RecorridoPantalla(
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val volverAlDetalleActual by rememberUpdatedState(alVolverAlDetalle)
+    val contexto = LocalContext.current
+    val accionesDeFoto = recordarAccionesDeFoto(
+        alSeleccionarFoto = { uri -> viewModel.procesarEvento(RecorridoEvento.AlSeleccionarFotoPunto(uri)) },
+        alMostrarAviso = { mensaje -> viewModel.procesarEvento(RecorridoEvento.AlFallarFotoPunto(mensaje)) }
+    )
 
     // Actualizar el reloj cada segundo para que el tiempo avance aunque el GPS no emita
     val ahoraMilisegundos by produceState(initialValue = System.currentTimeMillis()) {
@@ -82,6 +94,7 @@ fun RecorridoPantalla(
 
     LaunchedEffect(Unit) {
         Log.d(TAG, "Pantalla inicializada / rotación completada")
+        limpiarFotosTemporalesViejas(contexto)
         viewModel.efectoVisual.collect { efecto ->
             Log.d(TAG, "Efecto recibido: $efecto")
             when (efecto) {
@@ -98,7 +111,9 @@ fun RecorridoPantalla(
             Log.d(TAG, "Evento del usuario: $evento")
             viewModel.procesarEvento(evento)
         },
-        estadoAvisos = estadoAvisos
+        estadoAvisos = estadoAvisos,
+        alSacarFotoPunto = accionesDeFoto.sacarFoto,
+        alElegirFotoPuntoDeGaleria = accionesDeFoto.elegirDeGaleria
     )
 }
 
@@ -109,7 +124,9 @@ fun RecorridoContenido(
     ahoraMilisegundos: Long,
     alProcesarEvento: (RecorridoEvento) -> Unit,
     modifier: Modifier = Modifier,
-    estadoAvisos: SnackbarHostState = remember { SnackbarHostState() }
+    estadoAvisos: SnackbarHostState = remember { SnackbarHostState() },
+    alSacarFotoPunto: () -> Unit = {},
+    alElegirFotoPuntoDeGaleria: () -> Unit = {}
 ) {
     BackHandler { alProcesarEvento(RecorridoEvento.AlVolver) }
 
@@ -195,7 +212,15 @@ fun RecorridoContenido(
             alProcesarEvento = alProcesarEvento
         )
     }
-    estadoVisual.resumen?.let { resumen -> DialogoResumen(resumen, alProcesarEvento) }
+    if (estadoVisual.esHojaPuntoVisible) {
+        HojaCapturaPunto(
+            estadoVisual = estadoVisual,
+            alProcesarEvento = alProcesarEvento,
+            alSacarFoto = alSacarFotoPunto,
+            alElegirDeGaleria = alElegirFotoPuntoDeGaleria
+        )
+    }
+    estadoVisual.resumen?.let { resumen -> DialogoResumen(resumen, estadoVisual.revision, alProcesarEvento) }
 }
 
 // Mostrar que no hay un recorrido activo con un botón para volver al detalle
@@ -258,6 +283,23 @@ private fun PanelRecorrido(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(12.dp)
                     )
+                }
+            }
+            if (estadoVisual.cantidadPuntosCapturados > 0) {
+                Text(
+                    text = describirCantidadPuntosCapturados(estadoVisual.cantidadPuntosCapturados),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (estadoVisual.puedeAgregarPunto) {
+                OutlinedButton(
+                    onClick = { alProcesarEvento(RecorridoEvento.AlTocarAgregarPunto) },
+                    modifier = Modifier.fillMaxWidth().height(50.dp)
+                ) {
+                    Icon(imageVector = Icons.Outlined.AddLocationAlt, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Agregar punto")
                 }
             }
             Button(
@@ -542,16 +584,30 @@ private fun DialogoConfirmarCancelar(alProcesarEvento: (RecorridoEvento) -> Unit
     )
 }
 
-// Mostrar el resumen con la distancia recorrida y el tiempo al finalizar
+// Mostrar el resumen con la distancia y el tiempo, y si hay puntos capturados, su revisión con casillas
 @Composable
-private fun DialogoResumen(resumen: ResumenRecorrido, alProcesarEvento: (RecorridoEvento) -> Unit) {
+private fun DialogoResumen(
+    resumen: ResumenRecorrido,
+    revision: RevisionPuntosEstadoVisual,
+    alProcesarEvento: (RecorridoEvento) -> Unit
+) {
     AlertDialog(
         onDismissRequest = { alProcesarEvento(RecorridoEvento.AlCerrarResumen) },
         title = { Text("Recorrido finalizado") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 DatoDelPanel("Distancia recorrida", formatearDistanciaRecorrido(resumen.distanciaRecorridaKilometros))
                 DatoDelPanel("Tiempo", formatearTiempoTranscurrido(resumen.tiempoTranscurridoMilisegundos))
+                if (revision.hayPuntosPorRevisar) {
+                    TituloDeSeccion(describirCantidadPuntosCapturados(revision.puntosPendientes.size))
+                    ContenidoRevisionPuntos(
+                        estado = revision,
+                        alProcesarEvento = { evento -> alProcesarEvento(RecorridoEvento.AlRevisarPuntos(evento)) }
+                    )
+                }
             }
         },
         confirmButton = {

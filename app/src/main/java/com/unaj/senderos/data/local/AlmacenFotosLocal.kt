@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
+import android.util.Log
 import android.os.Build
 import androidx.exifinterface.media.ExifInterface
 import com.unaj.senderos.domain.repository.AlmacenFotos
@@ -19,6 +20,7 @@ import kotlin.math.roundToInt
 
 private const val LADO_MAXIMO_PIXELES = 1600
 private const val CALIDAD_JPEG = 85
+private const val TAG = "FOTOS"
 
 class AlmacenFotosLocal(contexto: Context) : AlmacenFotos {
 
@@ -39,6 +41,19 @@ class AlmacenFotosLocal(contexto: Context) : AlmacenFotos {
         } catch (error: Exception) {
             Result.failure(error)
         }
+    }
+
+    // Borrar la copia solo si está dentro de la carpeta privada de fotos; es idempotente y registra sin lanzar cualquier fallo
+    override suspend fun borrar(ruta: String) = withContext(Dispatchers.IO) {
+        try {
+            val archivo = File(ruta).canonicalFile
+            if (archivo.parentFile == carpetaFotos.canonicalFile) archivo.delete()
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "No se pudo borrar la foto $ruta", error)
+        }
+        Unit
     }
 
     // Decodificar la imagen limitando su lado mayor para no guardar ni subir archivos de varios megas

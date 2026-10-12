@@ -58,7 +58,10 @@ import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
+import com.unaj.senderos.presentation.comun.DialogoFotoAmpliada
+import com.unaj.senderos.presentation.comun.DialogoRevisionPuntos
 import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
+import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
 import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
@@ -206,6 +209,17 @@ fun DetalleSenderoContenido(
                 modifier = Modifier.padding(bottom = espaciadoInterno.calculateBottomPadding())
             )
         }
+    }
+
+    if (estadoVisual.revision.esRevisionVisible && estadoVisual.hayPuntosPorRevisar) {
+        DialogoRevisionPuntos(
+            estado = estadoVisual.revision,
+            alProcesarEvento = { evento -> alProcesarEvento(DetalleSenderoEvento.AlRevisionPuntos(evento)) }
+        )
+    }
+
+    estadoVisual.fotoAmpliada?.let { foto ->
+        DialogoFotoAmpliada(foto = foto, alCerrar = { alProcesarEvento(DetalleSenderoEvento.AlCerrarFotoAmpliada) })
     }
 
     estadoVisual.nombreSenderoEnCursoAReemplazar?.let { nombre ->
@@ -389,6 +403,18 @@ private fun CuerpoDetalle(
                 }
             }
         }
+        if (estadoVisual.hayPuntosPorRevisar) {
+            item {
+                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    TarjetaPuntosPorRevisar(
+                        cantidad = estadoVisual.revision.puntosPendientes.size,
+                        alRevisar = {
+                            alProcesarEvento(DetalleSenderoEvento.AlRevisionPuntos(RevisionPuntosEvento.AlAbrir))
+                        }
+                    )
+                }
+            }
+        }
         item {
             Column(
                 modifier = Modifier.padding(horizontal = 24.dp),
@@ -412,7 +438,8 @@ private fun CuerpoDetalle(
                             puntos = estadoVisual.puntosDeInteres,
                             alSeleccionar = { indice ->
                                 alProcesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(indice))
-                            }
+                            },
+                            alAmpliarFoto = { foto -> alProcesarEvento(DetalleSenderoEvento.AlAmpliarFoto(foto)) }
                         )
                     }
                     HorizontalDivider()

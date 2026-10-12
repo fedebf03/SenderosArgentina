@@ -3,6 +3,8 @@ package com.unaj.senderos.presentation.detalle
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.presentation.comun.RevisionPuntosEstadoVisual
+import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
 
 enum class SeccionDetalle { PUNTOS_DE_INTERES, RECOMENDACIONES, SERVICIOS, ETAPAS }
 
@@ -23,8 +25,14 @@ data class DetalleSenderoEstadoVisual(
     val estadoMapaSinConexion: EstadoMapaSinConexion = EstadoMapaSinConexion.NoDescargado,
     val esDialogoEliminarMapaVisible: Boolean = false,
     val esSugerenciaDescargaVisible: Boolean = false,
-    val esDialogoSinGpsVisible: Boolean = false
-)
+    val esDialogoSinGpsVisible: Boolean = false,
+    val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual(),
+    val fotoAmpliada: String? = null
+) {
+    // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
+    val hayPuntosPorRevisar: Boolean
+        get() = revision.hayPuntosPorRevisar && !hayRecorridoEnCursoEnEsteSendero
+}
 
 sealed interface DetalleSenderoEvento {
     data object AlVolver : DetalleSenderoEvento
@@ -52,6 +60,9 @@ sealed interface DetalleSenderoEvento {
     data object AlTocarEliminar : DetalleSenderoEvento
     data object AlCancelarEliminar : DetalleSenderoEvento
     data object AlConfirmarEliminar : DetalleSenderoEvento
+    data class AlRevisionPuntos(val evento: RevisionPuntosEvento) : DetalleSenderoEvento
+    data class AlAmpliarFoto(val foto: String) : DetalleSenderoEvento
+    data object AlCerrarFotoAmpliada : DetalleSenderoEvento
 }
 
 sealed interface DetalleSenderoEfecto {

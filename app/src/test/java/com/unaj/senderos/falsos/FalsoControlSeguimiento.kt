@@ -3,6 +3,8 @@ package com.unaj.senderos.falsos
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.domain.model.ResultadoCaptura
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.repository.ControlSeguimiento
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,5 +57,14 @@ class FalsoControlSeguimiento(private val registro: MutableList<String> = mutabl
         registro.add("control.cancelar")
         motivoFinEmitido.value = MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO
         estadoEmitido.value = null
+    }
+
+    var resultadoCapturarPunto: Result<ResultadoCaptura> = Result.failure(IllegalStateException("Sin configurar"))
+    val capturasPedidas: MutableList<Triple<TipoPunto, String, String?>> = mutableListOf()
+
+    // Registrar el pedido de captura y devolver el resultado configurado
+    override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?): Result<ResultadoCaptura> {
+        capturasPedidas.add(Triple(tipo, nota, uriFoto))
+        return resultadoCapturarPunto
     }
 }

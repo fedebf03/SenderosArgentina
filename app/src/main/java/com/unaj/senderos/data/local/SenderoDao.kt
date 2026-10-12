@@ -40,6 +40,10 @@ interface SenderoDao {
     @Query("UPDATE senderos SET foto = :foto WHERE idUsuario = :idUsuario AND id = :idSendero AND fechaModificacion = :fechaLeida")
     suspend fun actualizarFotoSiNoCambio(idUsuario: String, idSendero: String, fechaLeida: Long, foto: String): Int
 
+    // Actualizar el recorrido solo si la fecha de modificación sigue igual a la leída; devolver filas afectadas
+    @Query("UPDATE senderos SET recorrido = :recorrido WHERE idUsuario = :idUsuario AND id = :idSendero AND fechaModificacion = :fechaLeida")
+    suspend fun actualizarRecorridoSiNoCambio(idUsuario: String, idSendero: String, fechaLeida: Long, recorrido: List<PuntoRecorridoEntidad>): Int
+
     // Borrar el sendero eliminado lógico solo si la fecha de modificación sigue igual a la leída; devolver filas afectadas
     @Query("DELETE FROM senderos WHERE idUsuario = :idUsuario AND id = :idSendero AND estaEliminado = 1 AND fechaModificacion = :fechaLeida")
     suspend fun borrarEliminadoSiNoCambio(idUsuario: String, idSendero: String, fechaLeida: Long): Int

@@ -37,5 +37,6 @@ data class PuntoRecorridoRed(
     val latitud: Double = 0.0,
     val longitud: Double = 0.0,
     val tipo: String = "PASO",
-    val nombre: String = ""
+    val nombre: String = "",
+    val foto: String = ""
 )
