@@ -481,7 +481,7 @@ class ControlSeguimientoEnMemoria(
             ritmoPasosPorMinuto = estadoFinal.pasos?.takeUnless { estadoFinal.esSimulado }?.let { pasos ->
                 if (duracion == 0L) 0.0 else pasos / (duracion / MILISEGUNDOS_POR_MINUTO)
             },
-            trazadoCaminado = estadoFinal.trazadoCaminado,
+            trazadoCaminado = CalculadoraSeguimiento.cerrarTrazadoCaminado(estadoFinal),
             esSimulado = estadoFinal.esSimulado,
             estadoSincronizacion = EstadoSincronizacion.PENDIENTE
         )
