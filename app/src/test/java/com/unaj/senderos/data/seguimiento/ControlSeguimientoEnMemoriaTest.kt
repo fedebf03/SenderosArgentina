@@ -376,6 +376,21 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(EstadoSincronizacion.PENDIENTE, recorrido.estadoSincronizacion)
     }
 
+    // Verificar que detener agrega al trazado guardado la última posición recibida aunque fuera imprecisa
+    @Test
+    fun `detener cierra el trazado guardado en la ultima posicion recibida`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0))
+        ubicaciones.emit(LecturaUbicacion(Coordenada(LATITUD_BASE - 0.0003, LONGITUD_BASE), null, null, precisionMetros = 150f))
+        ubicaciones.emit(LecturaUbicacion(Coordenada(LATITUD_BASE - 0.0006, LONGITUD_BASE), null, null, precisionMetros = 400f))
+
+        control.detener()
+
+        val trazado = repositorioRecorridos.guardados.single().trazadoCaminado
+        assertEquals(listOf(Coordenada(LATITUD_BASE, LONGITUD_BASE), Coordenada(LATITUD_BASE - 0.0003, LONGITUD_BASE)), trazado)
+    }
+
     // Verificar que detener sin ninguna posición recibida no guarda nada
     @Test
     fun `detener sin posiciones no guarda recorrido`() = runTest {

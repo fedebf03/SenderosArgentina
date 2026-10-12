@@ -29,6 +29,8 @@ private const val FRACCION_MINIMA_PARA_LLEGADA = 0.5
 private const val UMBRAL_LLEGADA_METROS = 20.0
 private const val UMBRAL_LLEGADA_MAXIMO_METROS = 40.0
 private const val PRECISION_MAXIMA_ACEPTABLE_METROS = 30f
+private const val FACTOR_PRECISION_TRAZADO_CAMINADO = 2f
+private const val HUECO_MAXIMO_TRAZADO_MILISEGUNDOS = 30_000L
 private const val VIGENCIA_LECTURA_VALIDA_MILISEGUNDOS = 15_000L
 private const val ESPERA_PRIMERA_LECTURA_MILISEGUNDOS = 30_000L
 private const val VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO = 3.0
@@ -65,12 +67,13 @@ object CalculadoraSeguimiento {
         val tiempoTranscurrido = ahora - estado.instanteInicioMilisegundos
         val trazado = estado.trazado
         if ((lectura.precisionMetros ?: 0f) > precisionMaximaMetros) {
-            // Lectura imprecisa: no mueve la posición ni suma distancia; hace correr el tiempo, toma la velocidad del GPS (sigue siendo útil) y reevalúa la señal
+            // Lectura imprecisa: no mueve la posición ni suma distancia (sí puede sumarse al trazado caminado); hace correr el tiempo, toma la velocidad del GPS (sigue siendo útil) y reevalúa la señal
             val sinMover = estado.copy(
                 tiempoTranscurridoMilisegundos = tiempoTranscurrido,
                 velocidadMetrosPorSegundo = lectura.velocidadMetrosPorSegundo
             )
-            return ResultadoSeguimiento(estado = reevaluarSenal(sinMover, ahora), avisos = emptyList())
+            val conTrazado = extenderTrazadoCaminado(sinMover, lectura, ahora, esValida = false, precisionMaximaMetros = precisionMaximaMetros)
+            return ResultadoSeguimiento(estado = reevaluarSenal(conTrazado, ahora), avisos = emptyList())
         }
         if (trazado.size < 2) {
             return ResultadoSeguimiento(
@@ -164,7 +167,6 @@ object CalculadoraSeguimiento {
             rumboGrados = rumboNuevo,
             velocidadMetrosPorSegundo = lectura.velocidadMetrosPorSegundo,
             velocidadMaximaMetrosPorSegundo = maxOf(estado.velocidadMaximaMetrosPorSegundo, lectura.velocidadMetrosPorSegundo ?: 0f),
-            trazadoCaminado = if (seAceptaMovimiento) estado.trazadoCaminado + nuevaPosicion else estado.trazadoCaminado,
             posicionActual = nuevaPosicion,
             ultimaPosicionAceptada = if (seAceptaMovimiento) nuevaPosicion else ultimaAceptada,
             distanciaRecorridaKilometros = distanciaRecorrida,
@@ -180,7 +182,44 @@ object CalculadoraSeguimiento {
             instanteUltimaLecturaValidaMilisegundos = ahora,
             calidadSenal = CalidadSenal.BUENA
         )
-        return ResultadoSeguimiento(estado = nuevoEstado, avisos = avisos)
+        val conTrazado = extenderTrazadoCaminado(nuevoEstado, lectura, ahora, esValida = true, precisionMaximaMetros = precisionMaximaMetros)
+        return ResultadoSeguimiento(estado = conTrazado, avisos = avisos)
+    }
+
+    // Extender el trazado caminado con la lectura si su precisión llega al doble del umbral vigente: siempre la primera, luego las separadas 5 m o más
+    // de la última del trazado, y las válidas tras un hueco de más de 30 s sin puntos (no en simulación); no toca distancia, tramo ni avisos
+    private fun extenderTrazadoCaminado(
+        estado: EstadoSeguimiento,
+        lectura: LecturaUbicacion,
+        ahora: Long,
+        esValida: Boolean,
+        precisionMaximaMetros: Float
+    ): EstadoSeguimiento {
+        if ((lectura.precisionMetros ?: 0f) > FACTOR_PRECISION_TRAZADO_CAMINADO * precisionMaximaMetros) return estado
+        val posicion = lectura.coordenada
+        val ultimoDelTrazado = estado.trazadoCaminado.lastOrNull()
+        val instanteUltimoPunto = estado.instanteUltimoPuntoTrazadoMilisegundos
+        val hayHuecoLargo = esValida && !estado.esSimulado && instanteUltimoPunto != null &&
+            ahora - instanteUltimoPunto > HUECO_MAXIMO_TRAZADO_MILISEGUNDOS
+        val seAgrega = ultimoDelTrazado == null || hayHuecoLargo ||
+            distanciaEnMetros(ultimoDelTrazado, posicion) / METROS_POR_KILOMETRO >= MOVIMIENTO_MINIMO_KILOMETROS
+        return if (seAgrega) {
+            estado.copy(
+                trazadoCaminado = estado.trazadoCaminado + posicion,
+                instanteUltimoPuntoTrazadoMilisegundos = ahora,
+                ultimaPosicionConocida = posicion
+            )
+        } else {
+            estado.copy(ultimaPosicionConocida = posicion)
+        }
+    }
+
+    // Cerrar el trazado caminado para guardarlo: agrega la última posición conocida si dista 5 m o más de la última del trazado
+    fun cerrarTrazadoCaminado(estado: EstadoSeguimiento): List<Coordenada> {
+        val ultimaConocida = estado.ultimaPosicionConocida ?: return estado.trazadoCaminado
+        val ultimoDelTrazado = estado.trazadoCaminado.lastOrNull() ?: return estado.trazadoCaminado
+        val dista = distanciaEnMetros(ultimoDelTrazado, ultimaConocida) / METROS_POR_KILOMETRO >= MOVIMIENTO_MINIMO_KILOMETROS
+        return if (dista) estado.trazadoCaminado + ultimaConocida else estado.trazadoCaminado
     }
 
     // Evaluar la calidad de la señal con el reloj: en simulación siempre BUENA; BUENA si la última lectura válida tiene 15 s o menos;

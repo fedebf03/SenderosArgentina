@@ -87,7 +87,7 @@ class CalidadSenalTest {
         assertEquals(CalidadSenal.BUENA, resultado.estado.calidadSenal)
     }
 
-    // Verificar que una lectura imprecisa no mueve la posición ni suma distancia ni agrega al trazado
+    // Verificar que una lectura imprecisa no mueve la posición ni suma distancia, aunque dentro del doble del umbral sí se agrega al trazado caminado
     @Test
     fun `una lectura imprecisa no mueve la posicion`() {
         val primera = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 10f), INSTANTE_INICIAL + 1_000L).estado
@@ -95,7 +95,7 @@ class CalidadSenalTest {
         val imprecisa = CalculadoraSeguimiento.actualizar(primera, lectura(0.0015, 31f), INSTANTE_INICIAL + 5_000L).estado
 
         assertEquals(primera.posicionActual, imprecisa.posicionActual)
-        assertEquals(primera.trazadoCaminado, imprecisa.trazadoCaminado)
+        assertEquals(primera.trazadoCaminado + lectura(0.0015, 31f).coordenada, imprecisa.trazadoCaminado)
         assertEquals(0.0, imprecisa.distanciaRecorridaKilometros, 0.0001)
         assertEquals(primera.instanteUltimaLecturaValidaMilisegundos, imprecisa.instanteUltimaLecturaValidaMilisegundos)
     }
