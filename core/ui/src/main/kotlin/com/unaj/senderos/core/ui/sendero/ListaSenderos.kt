@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,14 +36,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Sendero
+import java.util.Locale
+import kotlin.math.roundToInt
 
+private val LOCALE_DISTANCIA: Locale = Locale.forLanguageTag("es-AR")
+
+// Renderizar la lista de senderos con su título y la distancia al usuario cuando se conoce
 @Composable
 fun ListaSenderos(
     titulo: String,
     senderos: List<Sendero>,
     alSeleccionarSendero: (String) -> Unit,
     modifier: Modifier = Modifier,
-    espacioInferior: PaddingValues = PaddingValues(bottom = 16.dp)
+    espacioInferior: PaddingValues = PaddingValues(bottom = 16.dp),
+    distanciaKilometrosDe: (Sendero) -> Double? = { null }
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -66,12 +73,14 @@ fun ListaSenderos(
             TarjetaSendero(
                 sendero = sendero,
                 miniaturaEspejada = indice % 2 == 1,
-                alSeleccionar = { alSeleccionarSendero(sendero.id) }
+                alSeleccionar = { alSeleccionarSendero(sendero.id) },
+                distanciaKilometros = distanciaKilometrosDe(sendero)
             )
         }
     }
 }
 
+// Renderizar un indicador de carga centrado
 @Composable
 fun CargandoCentrado(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -79,6 +88,7 @@ fun CargandoCentrado(modifier: Modifier = Modifier) {
     }
 }
 
+// Renderizar un mensaje de texto centrado, en color de error si corresponde
 @Composable
 fun MensajeCentrado(texto: String, modifier: Modifier = Modifier, esError: Boolean = false) {
     Box(modifier.fillMaxSize().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
@@ -91,6 +101,7 @@ fun MensajeCentrado(texto: String, modifier: Modifier = Modifier, esError: Boole
     }
 }
 
+// Renderizar el aviso de lista vacía con ícono, título y detalle
 @Composable
 fun MensajeVacio(icono: ImageVector, titulo: String, detalle: String, modifier: Modifier = Modifier) {
     Column(
@@ -123,8 +134,14 @@ fun MensajeVacio(icono: ImageVector, titulo: String, detalle: String, modifier: 
     }
 }
 
+// Renderizar la tarjeta de un sendero con foto, datos, estado de sincronización y distancia opcional
 @Composable
-fun TarjetaSendero(sendero: Sendero, alSeleccionar: () -> Unit, miniaturaEspejada: Boolean = false) {
+fun TarjetaSendero(
+    sendero: Sendero,
+    alSeleccionar: () -> Unit,
+    miniaturaEspejada: Boolean = false,
+    distanciaKilometros: Double? = null
+) {
     OutlinedCard(
         onClick = alSeleccionar,
         modifier = Modifier.fillMaxWidth(),
@@ -169,6 +186,9 @@ fun TarjetaSendero(sendero: Sendero, alSeleccionar: () -> Unit, miniaturaEspejad
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (distanciaKilometros != null) {
+                    DatoTarjeta(Icons.Outlined.NearMe, formatearDistanciaAlUsuario(distanciaKilometros))
+                }
                 Row(
                     modifier = Modifier.padding(top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -186,6 +206,16 @@ fun TarjetaSendero(sendero: Sendero, alSeleccionar: () -> Unit, miniaturaEspejad
     }
 }
 
+// Formatear la distancia al usuario: metros bajo 1 km, un decimal hasta 10 km y entero a partir de allí
+fun formatearDistanciaAlUsuario(distanciaKilometros: Double): String {
+    val metros = (distanciaKilometros * 1000).roundToInt()
+    if (metros < 1000) return "a $metros m de vos"
+    val kilometrosConDecimal = (distanciaKilometros * 10).roundToInt() / 10.0
+    if (kilometrosConDecimal < 10) return "a ${"%.1f".format(LOCALE_DISTANCIA, kilometrosConDecimal)} km de vos"
+    return "a ${distanciaKilometros.roundToInt()} km de vos"
+}
+
+// Renderizar un dato breve de la tarjeta con ícono y texto
 @Composable
 private fun DatoTarjeta(icono: ImageVector, texto: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -203,6 +233,7 @@ private fun DatoTarjeta(icono: ImageVector, texto: String) {
     }
 }
 
+// Renderizar el ícono del estado de sincronización cuando el sendero no está sincronizado
 @Composable
 private fun IconoSincronizacion(estado: EstadoSincronizacion) {
     when (estado) {

@@ -77,6 +77,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("com.google.android.gms:play-services-location:21.4.0")
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
 
     // Persistencia local offline-first (Room), sincronización diferida (WorkManager) y serialización
     implementation("androidx.room:room-runtime:2.8.5")

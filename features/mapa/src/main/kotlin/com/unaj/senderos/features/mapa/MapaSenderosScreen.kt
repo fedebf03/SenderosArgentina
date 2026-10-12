@@ -1,8 +1,5 @@
 package com.unaj.senderos.presentation.mapasenderos
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.presentation.componentes.BotoneraInferior
 import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
@@ -35,8 +31,11 @@ import com.unaj.senderos.presentation.componentes.CargandoCentrado
 import com.unaj.senderos.presentation.componentes.MensajeCentrado
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.componentes.TarjetaSendero
+import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
+import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.presentation.mapa.MapaDeSenderos
 
+// Renderizar la sección Mapa conectando el ViewModel y el permiso de ubicación
 @Composable
 fun MapaSenderosPantalla(
     viewModel: MapaSenderosViewModel,
@@ -55,7 +54,7 @@ fun MapaSenderosPantalla(
     }
     val solicitarUbicacion = {
         viewModel.procesarEvento(MapaSenderosEvento.AlSolicitarUbicacion)
-        pedirPermiso.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        pedirPermiso.launch(PERMISOS_UBICACION)
     }
 
     // Se pregunta una sola vez por sesión al entrar; después el botón de ubicación permite volver a pedirlo
@@ -88,12 +87,7 @@ fun MapaSenderosPantalla(
     )
 }
 
-private fun tienePermisoDeUbicacion(contexto: Context): Boolean {
-    return listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION).any { permiso ->
-        ContextCompat.checkSelfPermission(contexto, permiso) == PackageManager.PERMISSION_GRANTED
-    }
-}
-
+// Renderizar el mapa de senderos y la tarjeta del sendero seleccionado
 @Composable
 fun MapaSenderosContenido(
     estadoVisual: MapaSenderosEstadoVisual,
