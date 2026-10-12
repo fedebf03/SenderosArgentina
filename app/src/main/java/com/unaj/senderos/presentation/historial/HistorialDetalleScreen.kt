@@ -1,5 +1,11 @@
 package com.unaj.senderos.presentation.historial
 
+import com.unaj.senderos.presentation.componentes.BarraSuperior
+import com.unaj.senderos.presentation.comun.formatearDistanciaCorta
+import com.unaj.senderos.presentation.comun.formatearPasos
+import com.unaj.senderos.presentation.comun.formatearRitmo
+import com.unaj.senderos.presentation.comun.formatearVelocidad
+import com.unaj.senderos.presentation.comun.TEXTO_NO_DISPONIBLE
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +46,6 @@ import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
-import com.unaj.senderos.presentation.recorrido.formatearDistanciaRecorrido
 import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
@@ -76,7 +81,17 @@ fun HistorialDetalleContenido(
 ) {
     BackHandler { alProcesarEvento(HistorialDetalleEvento.AlVolver) }
 
-    Scaffold(modifier = modifier, containerColor = MaterialTheme.colorScheme.background) { espaciadoInterno ->
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            BarraSuperior(
+                titulo = estadoVisual.recorrido?.nombreSendero ?: "Recorrido",
+                alVolver = { alProcesarEvento(HistorialDetalleEvento.AlVolver) },
+                descripcionVolver = "Volver al perfil"
+            )
+        }
+    ) { espaciadoInterno ->
         val recorrido = estadoVisual.recorrido
         when {
             estadoVisual.estaCargando -> Box(
@@ -120,18 +135,6 @@ private fun CuerpoHistorial(
             .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { alProcesarEvento(HistorialDetalleEvento.AlVolver) }) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al perfil")
-            }
-            Text(
-                text = recorrido.nombreSendero,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f)
-            )
-        }
         if (recorrido.esSimulado) EtiquetaSimulado()
 
         OutlinedCard(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().height(280.dp)) {
@@ -157,11 +160,11 @@ private fun CuerpoHistorial(
                 "Inicio" to formatearFechaHora(recorrido.inicioMilisegundos),
                 "Fin" to formatearFechaHora(recorrido.finMilisegundos),
                 "Duración" to formatearTiempoTranscurrido(recorrido.duracionMilisegundos),
-                "Distancia" to formatearDistanciaRecorrido(recorrido.distanciaKilometros),
+                "Distancia" to formatearDistanciaCorta(recorrido.distanciaKilometros),
                 "Velocidad promedio" to formatearVelocidad(recorrido.velocidadPromedioKilometrosPorHora),
                 "Velocidad máxima" to formatearVelocidad(recorrido.velocidadMaximaKilometrosPorHora),
-                "Pasos" to formatearPasos(recorrido.pasos),
-                "Ritmo" to formatearRitmo(recorrido.ritmoPasosPorMinuto)
+                "Pasos" to formatearPasos(recorrido.pasos, TEXTO_NO_DISPONIBLE),
+                "Ritmo" to formatearRitmo(recorrido.ritmoPasosPorMinuto, TEXTO_NO_DISPONIBLE)
             )
             datos.forEachIndexed { indice, (etiqueta, valor) ->
                 if (indice > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

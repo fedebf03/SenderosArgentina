@@ -494,13 +494,6 @@ class RecorridoViewModelTest {
         assertEquals("1:02:05", formatearTiempoTranscurrido(3_725_000L))
     }
 
-    // Verificar el formato de distancias en metros y kilómetros
-    @Test
-    fun `la distancia se formatea en metros o kilometros`() {
-        assertEquals("850 m", formatearDistanciaRecorrido(0.85))
-        assertEquals("1,5 km", formatearDistanciaRecorrido(1.5))
-    }
-
     // Verificar la etiqueta de un punto con nombre y sin nombre
     @Test
     fun `la etiqueta usa el nombre o el tipo del punto`() {
@@ -740,29 +733,12 @@ class RecorridoViewModelTest {
         assertTrue(estadoVisual.copy(esSimulado = false).faltaAcelerometro)
     }
 
-    // Verificar el texto de la velocidad con coma decimal y la alternativa sin dato
-    @Test
-    fun `la velocidad se formatea en kilometros por hora`() {
-        assertEquals("5,4 km/h", formatearVelocidad(1.5f))
-        assertEquals("—", formatearVelocidad(null))
-        assertEquals("3,2 km/h", formatearVelocidadPromedio(3.24))
-    }
-
     // Verificar el texto del rumbo como punto cardinal y grados
     @Test
     fun `el rumbo se formatea como punto cardinal y grados`() {
         assertEquals("NE · 45°", formatearRumbo(45f))
         assertEquals("N · 0°", formatearRumbo(359.6f))
         assertEquals("—", formatearRumbo(null))
-    }
-
-    // Verificar el texto de los pasos y del ritmo del panel
-    @Test
-    fun `los pasos y el ritmo del panel se formatean en es-AR`() {
-        assertEquals("1.234", formatearPasosDelPanel(1234))
-        assertEquals("95 pasos/min", formatearRitmoDelPanel(95.4))
-        assertEquals("—", formatearPasosDelPanel(null))
-        assertEquals("—", formatearRitmoDelPanel(null))
     }
 
     // Verificar que al recrear el ViewModel con la llegada ya registrada se muestra el diálogo

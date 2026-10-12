@@ -1,6 +1,10 @@
 package com.unaj.senderos.presentation.comun
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
+import com.unaj.senderos.presentation.componentes.accionable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,7 +66,8 @@ fun FotoDePunto(
 fun ContenidoRevisionPuntos(
     estado: RevisionPuntosEstadoVisual,
     alProcesarEvento: (RevisionPuntosEvento) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mostrarBotonAgregar: Boolean = true
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -82,16 +87,13 @@ fun ContenidoRevisionPuntos(
                 )
             }
         }
-        Button(
-            onClick = { alProcesarEvento(RevisionPuntosEvento.AlAgregarAlSendero) },
-            enabled = !estado.estaProcesando,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        if (mostrarBotonAgregar) {
+            BotonPrincipal(
+                texto = "Agregar al sendero",
+                alTocar = { alProcesarEvento(RevisionPuntosEvento.AlAgregarAlSendero) },
+                estaHabilitado = !estado.estaProcesando,
+                modifier = Modifier.fillMaxWidth()
             )
-        ) {
-            Text("Agregar al sendero")
         }
         TextButton(
             onClick = { alProcesarEvento(RevisionPuntosEvento.AlTocarDescartarTodos) },
@@ -114,12 +116,12 @@ private fun FilaPuntoCapturado(puntoConDistancia: PuntoCapturadoConDistancia, es
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = alAlternar)
+            .toggleable(value = estaMarcado, role = Role.Checkbox, onValueChange = { alAlternar() })
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Checkbox(checked = estaMarcado, onCheckedChange = { alAlternar() })
+        Checkbox(checked = estaMarcado, onCheckedChange = null)
         Icon(
             imageVector = obtenerIconoTipoPunto(punto.tipo),
             contentDescription = null,
@@ -162,20 +164,15 @@ private fun FilaPuntoCapturado(puntoConDistancia: PuntoCapturadoConDistancia, es
 // Pedir confirmación antes de descartar todos los puntos capturados
 @Composable
 private fun DialogoConfirmarDescartarTodos(alProcesarEvento: (RevisionPuntosEvento) -> Unit) {
-    AlertDialog(
-        onDismissRequest = { alProcesarEvento(RevisionPuntosEvento.AlCancelarDescartarTodos) },
-        title = { Text("Descartar todos los puntos") },
-        text = { Text("Se borrarán los puntos capturados y sus fotos no se agregarán al sendero. Esta acción no se puede deshacer.") },
-        confirmButton = {
-            TextButton(onClick = { alProcesarEvento(RevisionPuntosEvento.AlConfirmarDescartarTodos) }) {
-                Text("Descartar", color = MaterialTheme.colorScheme.error)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = { alProcesarEvento(RevisionPuntosEvento.AlCancelarDescartarTodos) }) {
-                Text("Cancelar")
-            }
-        }
+    DialogoConfirmacion(
+        titulo = "Descartar todos los puntos",
+        texto = "¿Querés descartar todos los puntos capturados? Se borrarán y sus fotos no se agregarán al sendero. " +
+            "Esta acción no se puede deshacer.",
+        textoConfirmar = "Descartar",
+        alConfirmar = { alProcesarEvento(RevisionPuntosEvento.AlConfirmarDescartarTodos) },
+        textoDescartar = "Conservar puntos",
+        alDescartar = { alProcesarEvento(RevisionPuntosEvento.AlCancelarDescartarTodos) },
+        esDestructivo = true
     )
 }
 
@@ -188,8 +185,14 @@ fun DialogoRevisionPuntos(
     AlertDialog(
         onDismissRequest = { alProcesarEvento(RevisionPuntosEvento.AlCerrar) },
         title = { Text("Puntos por revisar") },
-        text = { ContenidoRevisionPuntos(estado, alProcesarEvento) },
-        confirmButton = {},
+        text = { ContenidoRevisionPuntos(estado, alProcesarEvento, mostrarBotonAgregar = false) },
+        confirmButton = {
+            BotonPrincipal(
+                texto = "Agregar al sendero",
+                alTocar = { alProcesarEvento(RevisionPuntosEvento.AlAgregarAlSendero) },
+                estaHabilitado = !estado.estaProcesando
+            )
+        },
         dismissButton = {
             TextButton(onClick = { alProcesarEvento(RevisionPuntosEvento.AlCerrar) }) {
                 Text("Cerrar")
@@ -204,7 +207,7 @@ fun DialogoFotoAmpliada(foto: String, alCerrar: () -> Unit) {
     AlertDialog(
         onDismissRequest = alCerrar,
         text = {
-            Box(modifier = Modifier.fillMaxWidth().clickable(onClick = alCerrar), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().accionable("Cerrar la foto", alTocar = alCerrar), contentAlignment = Alignment.Center) {
                 FotoDePunto(
                     foto = foto,
                     descripcion = "Foto ampliada del punto",

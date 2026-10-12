@@ -9,6 +9,7 @@ import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
 
+// Crear un sendero de prueba con valores por defecto
 fun crearSenderoDePrueba(
     id: String = "sendero-1",
     idUsuario: String = "usuario-1",

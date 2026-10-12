@@ -1,8 +1,11 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.presentation.componentes.IconoDeBoton
+import com.unaj.senderos.presentation.comun.formatearKilometros
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import com.unaj.senderos.presentation.componentes.accionable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +49,7 @@ import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
 
+// Renderizar la sección de la foto del sendero con sus acciones
 @Composable
 internal fun SeccionFoto(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -65,7 +69,9 @@ internal fun SeccionFoto(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, forma)
-                    .clickable(enabled = !estadoVisual.estaProcesandoFoto, onClick = alElegirFoto),
+                    .then(
+                        if (estadoVisual.estaProcesandoFoto) Modifier else Modifier.accionable("Agregar foto", alTocar = alElegirFoto)
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -121,6 +127,7 @@ internal fun SeccionFoto(
     }
 }
 
+// Renderizar la sección con el nombre, la región y la descripción
 @Composable
 internal fun SeccionDatosGenerales(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -151,6 +158,7 @@ internal fun SeccionDatosGenerales(
     )
 }
 
+// Renderizar la sección con la distancia, los desniveles, la dificultad y el tipo de recorrido
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SeccionDatosTecnicos(
@@ -232,6 +240,7 @@ internal fun SeccionDatosTecnicos(
     }
 }
 
+// Renderizar la sección del recorrido con su vista previa y el acceso al editor
 @Composable
 internal fun SeccionRecorrido(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -276,16 +285,15 @@ internal fun SeccionRecorrido(
             modifier = Modifier.fillMaxWidth()
         )
     }
-    OutlinedButton(
-        onClick = { alProcesarEvento(FormularioSenderoEvento.AlAbrirEditorMapa) },
-        modifier = Modifier.fillMaxWidth().height(50.dp)
-    ) {
-        Icon(imageVector = Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(if (estadoVisual.recorrido.isEmpty()) "Marcar recorrido en el mapa" else "Editar en el mapa")
-    }
+    BotonSecundario(
+        texto = if (estadoVisual.recorrido.isEmpty()) "Marcar recorrido en el mapa" else "Editar en el mapa",
+        alTocar = { alProcesarEvento(FormularioSenderoEvento.AlAbrirEditorMapa) },
+        icono = { IconoDeBoton(Icons.Filled.Map) },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
+// Renderizar la sección con la duración, el punto de inicio y la mejor época
 @Composable
 internal fun SeccionPlanificacion(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -314,6 +322,7 @@ internal fun SeccionPlanificacion(
     )
 }
 
+// Renderizar la sección de recomendaciones con su lista editable
 @Composable
 internal fun SeccionRecomendaciones(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -338,6 +347,7 @@ internal fun SeccionRecomendaciones(
     )
 }
 
+// Renderizar la sección de servicios con su lista editable
 @Composable
 internal fun SeccionServicios(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -362,6 +372,7 @@ internal fun SeccionServicios(
     )
 }
 
+// Renderizar la sección de etapas con su lista editable
 @Composable
 internal fun SeccionEtapas(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -370,7 +381,7 @@ internal fun SeccionEtapas(
     TituloDeSeccion("Etapas")
     estadoVisual.etapas.forEachIndexed { indice, etapa ->
         FilaElementoQuitable(
-            texto = "Etapa ${etapa.numero}: ${etapa.nombre} — ${etapa.distanciaKilometros.toString().removeSuffix(".0")} km",
+            texto = "Etapa ${etapa.numero}: ${etapa.nombre} — ${formatearKilometros(etapa.distanciaKilometros)} km",
             descripcionQuitar = "Quitar etapa",
             alQuitar = { alProcesarEvento(FormularioSenderoEvento.AlQuitarEtapa(indice)) }
         )
@@ -390,11 +401,11 @@ internal fun SeccionEtapas(
         )
         CampoTexto(
             valor = estadoVisual.distanciaNuevaEtapa,
-            etiqueta = "Km",
+            etiqueta = "Distancia (km)",
             alCambiar = { texto ->
                 alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA_NUEVA_ETAPA, texto))
             },
-            modifier = Modifier.width(96.dp),
+            modifier = Modifier.width(144.dp),
             tipoTeclado = KeyboardType.Decimal,
             accionTeclado = ImeAction.Done,
             alTerminar = { alProcesarEvento(FormularioSenderoEvento.AlAgregarEtapa) }

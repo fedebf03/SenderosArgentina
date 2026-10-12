@@ -29,11 +29,13 @@ class FalsoSenderoRepositorio(
     val idsUsuarioDetenidos: MutableList<String> = mutableListOf()
     var alDetenerSincronizacion: ((String) -> Unit)? = null
 
+    // Detener la sincronización pendiente del usuario
     override fun detenerSincronizacion(idUsuario: String) {
         idsUsuarioDetenidos.add(idUsuario)
         alDetenerSincronizacion?.invoke(idUsuario)
     }
 
+    // Observar la lista de senderos del usuario desde la fuente local
     override fun observarSenderosDelUsuario(idUsuario: String): Flow<List<Sendero>> {
         idsUsuarioConsultados.add(idUsuario)
         return flow {
@@ -42,6 +44,7 @@ class FalsoSenderoRepositorio(
         }
     }
 
+    // Observar un sendero del usuario desde la fuente local
     override fun observarSendero(idUsuario: String, idSendero: String): Flow<Sendero?> {
         consultasSendero.add(idUsuario to idSendero)
         return flow {
@@ -52,6 +55,7 @@ class FalsoSenderoRepositorio(
         }
     }
 
+    // Invertir la marca de favorito de un sendero
     override suspend fun alternarFavorito(idUsuario: String, idSendero: String): Result<Unit> {
         llamadasAlternarFavorito.add(idUsuario to idSendero)
         if (resultadoAlternarFavorito.isSuccess) {
@@ -64,6 +68,7 @@ class FalsoSenderoRepositorio(
         return resultadoAlternarFavorito
     }
 
+    // Eliminar un sendero del usuario con borrado lógico
     override suspend fun eliminarSendero(idUsuario: String, idSendero: String): Result<Unit> {
         llamadasEliminarSendero.add(idUsuario to idSendero)
         if (resultadoEliminarSendero.isSuccess) {
@@ -72,6 +77,7 @@ class FalsoSenderoRepositorio(
         return resultadoEliminarSendero
     }
 
+    // Guardar un sendero del usuario
     override suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit> {
         llamadasGuardarSendero.add(idUsuario to sendero)
         if (resultadoGuardarSendero.isSuccess) {

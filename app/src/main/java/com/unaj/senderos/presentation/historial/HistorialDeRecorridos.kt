@@ -1,5 +1,8 @@
 package com.unaj.senderos.presentation.historial
 
+import androidx.compose.ui.text.style.TextOverflow
+import com.unaj.senderos.presentation.componentes.accionable
+import com.unaj.senderos.presentation.comun.formatearDistanciaCorta
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.presentation.componentes.IconoSincronizacion
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.recorrido.formatearDistanciaRecorrido
 import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
 
 // Mostrar la sección "Historial de recorridos" con la lista del más reciente al más viejo, o un aviso si está vacía
@@ -27,14 +29,21 @@ import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
 fun HistorialDeRecorridos(
     recorridos: List<RecorridoRealizado>,
     alSeleccionar: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mensajeError: String? = null
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         TituloDeSeccion("Historial de recorridos")
-        if (recorridos.isEmpty()) {
+        if (mensajeError != null) {
+            Text(
+                text = mensajeError,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else if (recorridos.isEmpty()) {
             Text(
                 text = "Todavía no hiciste recorridos",
                 style = MaterialTheme.typography.bodyMedium,
@@ -57,7 +66,7 @@ private fun FilaDeRecorrido(recorrido: RecorridoRealizado, alTocar: () -> Unit) 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = alTocar)
+            .accionable("Ver el detalle del recorrido", alTocar = alTocar)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -66,7 +75,9 @@ private fun FilaDeRecorrido(recorrido: RecorridoRealizado, alTocar: () -> Unit) 
             Text(
                 text = recorrido.nombreSendero,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = formatearFechaHora(recorrido.inicioMilisegundos),
@@ -74,7 +85,7 @@ private fun FilaDeRecorrido(recorrido: RecorridoRealizado, alTocar: () -> Unit) 
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "${formatearDistanciaRecorrido(recorrido.distanciaKilometros)} · " +
+                text = "${formatearDistanciaCorta(recorrido.distanciaKilometros)} · " +
                     formatearTiempoTranscurrido(recorrido.duracionMilisegundos),
                 style = MaterialTheme.typography.bodySmall
             )

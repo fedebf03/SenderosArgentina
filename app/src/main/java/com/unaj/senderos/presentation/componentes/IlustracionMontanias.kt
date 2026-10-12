@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.scale
 import com.unaj.senderos.presentation.tema.CelesteArgentino
 
+// Dibujar la ilustración de montañas que reemplaza a la foto ausente
 @Composable
 fun IlustracionMontanias(modifier: Modifier = Modifier, espejada: Boolean = false) {
     val colorCieloInferior = MaterialTheme.colorScheme.background

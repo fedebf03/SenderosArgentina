@@ -1,5 +1,12 @@
 package com.unaj.senderos.presentation.login
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
+import com.unaj.senderos.presentation.componentes.BotonSecundario
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.senderosargentina.R
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
+// Renderizar el inicio de sesión conectando el ViewModel, los avisos y Google
 @Composable
 fun LoginPantalla(
     viewModel: LoginViewModel,
@@ -88,6 +96,7 @@ fun LoginPantalla(
     }
 }
 
+// Renderizar el contenido del inicio de sesión a partir del estado visual
 @Composable
 fun LoginContenido(
     estadoVisual: LoginEstadoVisual,
@@ -98,13 +107,15 @@ fun LoginContenido(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = 480.dp)
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(R.drawable.logo_senderos),
-            contentDescription = "Logo de SenderosArgentina",
+            contentDescription = null,
             modifier = Modifier.size(120.dp)
         )
 
@@ -113,7 +124,7 @@ fun LoginContenido(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp).semantics { heading() }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -188,23 +199,12 @@ fun LoginContenido(
             Text("¿Olvidaste tu contraseña?")
         }
 
-        Button(
-            onClick = { alProcesarEvento(LoginEvento.AlIniciarSesion) },
-            enabled = !estadoVisual.estaCargando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            if (estadoVisual.estaCargando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("Iniciar sesión")
-            }
-        }
+        BotonPrincipal(
+            texto = "Iniciar sesión",
+            alTocar = { alProcesarEvento(LoginEvento.AlIniciarSesion) },
+            estaCargando = estadoVisual.estaCargando,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Row(
             modifier = Modifier
@@ -221,21 +221,19 @@ fun LoginContenido(
             HorizontalDivider(modifier = Modifier.weight(1f))
         }
 
-        OutlinedButton(
-            onClick = { alProcesarEvento(LoginEvento.AlSolicitarGoogleSignIn) },
-            enabled = !estadoVisual.estaCargando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_google),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("Continuar con Google")
-        }
+        BotonSecundario(
+            texto = "Continuar con Google",
+            alTocar = { alProcesarEvento(LoginEvento.AlSolicitarGoogleSignIn) },
+            estaHabilitado = !estadoVisual.estaCargando,
+            icono = {
+                Image(
+                    painter = painterResource(R.drawable.ic_google),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Row(
             modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
@@ -247,8 +245,56 @@ fun LoginContenido(
             }
         }
     }
+
+    if (estadoVisual.esDialogoRecuperacionVisible) {
+        DialogoRecuperarClave(estadoVisual, alProcesarEvento)
+    }
 }
 
+// Pedir el correo para enviar el enlace de recuperación de la contraseña, mostrando el motivo si falla
+@Composable
+private fun DialogoRecuperarClave(
+    estadoVisual: LoginEstadoVisual,
+    alProcesarEvento: (LoginEvento) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { alProcesarEvento(LoginEvento.AlCerrarDialogoRecuperacion) },
+        title = { Text("Recuperar contraseña") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Te enviamos un enlace para que elijas una contraseña nueva.")
+                OutlinedTextField(
+                    value = estadoVisual.emailRecuperacion,
+                    onValueChange = { texto -> alProcesarEvento(LoginEvento.AlCambiarEmailRecuperacion(texto)) },
+                    label = { Text("Correo electrónico") },
+                    singleLine = true,
+                    isError = estadoVisual.mensajeErrorRecuperacion != null,
+                    supportingText = estadoVisual.mensajeErrorRecuperacion?.let { mensaje -> { Text(mensaje) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(
+                        onSend = { alProcesarEvento(LoginEvento.AlEnviarEnlaceRecuperacion) }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { alProcesarEvento(LoginEvento.AlEnviarEnlaceRecuperacion) },
+                enabled = !estadoVisual.estaEnviandoRecuperacion
+            ) {
+                Text(if (estadoVisual.estaEnviandoRecuperacion) "Enviando…" else "Enviar enlace")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { alProcesarEvento(LoginEvento.AlCerrarDialogoRecuperacion) }) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+// Previsualizar el inicio de sesión con un correo de ejemplo
 @Preview(showBackground = true)
 @Composable
 fun PrevisualizacionLogin() {

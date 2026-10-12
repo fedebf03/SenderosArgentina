@@ -1,5 +1,12 @@
 package com.unaj.senderos.presentation.detalle
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.contentDescription
+import com.unaj.senderos.presentation.componentes.accionable
+import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.presentation.comun.formatearDistanciaSendero
+import com.unaj.senderos.presentation.comun.formatearTamanoMapa
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,9 +69,8 @@ import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.presentation.comun.FotoDePunto
 import com.unaj.senderos.presentation.comun.describirCantidadPuntosPorRevisar
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
-import kotlin.math.roundToInt
 
-private val TAMANO_MINIATURA_PUNTO = 40.dp
+private val TAMANO_MINIATURA_PUNTO = 48.dp
 
 internal data class DatoRecorrido(
     val icono: ImageVector,
@@ -76,11 +82,11 @@ internal data class DatoRecorrido(
 @Composable
 internal fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) {
     val datos = listOf(
-        DatoRecorrido(Icons.Outlined.Straighten, "${sendero.distanciaKilometros.roundToInt()} km", "Distancia"),
+        DatoRecorrido(Icons.Outlined.Straighten, formatearDistanciaSendero(sendero.distanciaKilometros), "Distancia"),
         DatoRecorrido(Icons.AutoMirrored.Filled.TrendingUp, "${sendero.desnivelMetros} m", "Desnivel"),
         DatoRecorrido(Icons.Outlined.Schedule, sendero.duracionEstimada, "Duración"),
-        DatoRecorrido(Icons.Filled.ArrowUpward, "${sendero.alturaMaximaMetros} m", "Altura máx."),
-        DatoRecorrido(Icons.Filled.ArrowDownward, "${sendero.alturaMinimaMetros} m", "Altura mín."),
+        DatoRecorrido(Icons.Filled.ArrowUpward, "${sendero.alturaMaximaMetros} m", "Altura máxima"),
+        DatoRecorrido(Icons.Filled.ArrowDownward, "${sendero.alturaMinimaMetros} m", "Altura mínima"),
         DatoRecorrido(Icons.Outlined.Loop, obtenerTextoTipoRecorrido(sendero.tipoRecorrido), "Tipo")
     )
 
@@ -162,7 +168,8 @@ internal fun RecuadroMapa(
     sendero: Sendero,
     modifier: Modifier = Modifier,
     puntoEnfocado: Coordenada? = null,
-    claveEnfoque: Int = 0
+    claveEnfoque: Int = 0,
+    alDescargarMapa: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -194,7 +201,8 @@ internal fun RecuadroMapa(
                 modifier = Modifier.fillMaxSize(),
                 usarModoTextura = true,
                 puntoEnfocado = puntoEnfocado,
-                claveEnfoque = claveEnfoque
+                claveEnfoque = claveEnfoque,
+                alDescargarMapa = alDescargarMapa
             )
         }
     }
@@ -214,12 +222,11 @@ internal fun TarjetaMapaSinConexion(
         ) {
             Text(text = "Mapa sin conexión", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             when (estado) {
-                is EstadoMapaSinConexion.NoDescargado -> OutlinedButton(
-                    onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) },
+                is EstadoMapaSinConexion.NoDescargado -> BotonSecundario(
+                    texto = "Descargar mapa para usar sin señal",
+                    alTocar = { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) },
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Descargar mapa para usar sin señal")
-                }
+                )
                 is EstadoMapaSinConexion.Descargando -> ProgresoDeDescarga(
                     texto = describirDescarga(estado),
                     porcentaje = estado.porcentaje,
@@ -307,7 +314,8 @@ internal fun SeccionDesplegable(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = alAlternar)
+                .accionable(if (estaExpandida) "Contraer" else "Expandir", alTocar = alAlternar)
+                .semantics { stateDescription = if (estaExpandida) "Expandido" else "Contraído" }
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -320,7 +328,7 @@ internal fun SeccionDesplegable(
             )
             Icon(
                 imageVector = if (estaExpandida) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = if (estaExpandida) "Contraer $titulo" else "Expandir $titulo",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
         }
@@ -342,39 +350,45 @@ internal fun ListaDePuntosDeInteres(
     Column {
         puntos.forEach { punto ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { alSeleccionar(punto.indice) }
-                    .padding(vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = obtenerIconoTipoPunto(punto.tipo),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = punto.texto(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .accionable("Ver en el mapa") { alSeleccionar(punto.indice) }
+                        .semantics(mergeDescendants = true) { contentDescription = punto.descripcionAccesible() }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = obtenerIconoTipoPunto(punto.tipo),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = punto.texto(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = formatearKilometrosDesdeInicio(punto.distanciaDesdeInicioKilometros),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 if (punto.foto.isNotEmpty()) {
                     FotoDePunto(
                         foto = punto.foto,
-                        descripcion = "Ampliar la foto de ${punto.texto()}",
+                        descripcion = "Foto de ${punto.texto()}",
                         modifier = Modifier
                             .size(TAMANO_MINIATURA_PUNTO)
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable { alAmpliarFoto(punto.foto) }
+                            .accionable("Ampliar la foto") { alAmpliarFoto(punto.foto) }
                     )
                 }
-                Text(
-                    text = formatearKilometrosDesdeInicio(punto.distanciaDesdeInicioKilometros),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
@@ -437,7 +451,7 @@ internal fun ListaDeEtapas(etapas: List<Etapa>) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         etapas.forEach { etapa ->
             Text(
-                text = "Etapa ${etapa.numero}: ${etapa.nombre} — ${etapa.distanciaKilometros.roundToInt()} km",
+                text = "Etapa ${etapa.numero}: ${etapa.nombre} — ${formatearDistanciaSendero(etapa.distanciaKilometros)}",
                 style = MaterialTheme.typography.bodyMedium
             )
         }

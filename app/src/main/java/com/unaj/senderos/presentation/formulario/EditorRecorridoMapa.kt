@@ -1,5 +1,14 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.presentation.componentes.BarraSuperior
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.BoxWithConstraints
+import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.presentation.comun.formatearKilometros
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,7 +51,9 @@ import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.tema.TemaSenderos
-import java.util.Locale
+
+// Ancho del panel del punto cuando el editor está en horizontal y el panel va al costado del mapa
+private val ANCHO_PANEL_PUNTO_HORIZONTAL = 340.dp
 
 // Renderizar el editor de pantalla completa para trazar el recorrido sobre el mapa
 @Composable
@@ -53,10 +64,25 @@ fun EditorRecorridoMapa(
 ) {
     BackHandler { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) }
 
+    var esAyudaVisible by rememberSaveable { mutableStateOf(true) }
+
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
-            BarraSuperiorEditor(alProcesarEvento)
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            BarraSuperior(
+                titulo = "Recorrido en el mapa",
+                alVolver = { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) },
+                descripcionVolver = "Volver al formulario",
+                acciones = {
+                    BotonSecundario(
+                        texto = "Listo",
+                        alTocar = { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+            )
+            if (esAyudaVisible) AyudaDelEditor(alOcultar = { esAyudaVisible = false })
+            BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                val esHorizontal = maxWidth > maxHeight
                 MapaRecorrido(
                     puntos = estadoVisual.recorrido,
                     tipoRecorrido = estadoVisual.tipoRecorrido,
@@ -78,7 +104,11 @@ fun EditorRecorridoMapa(
                         indice = indiceSeleccionado,
                         punto = puntoSeleccionado,
                         alProcesarEvento = alProcesarEvento,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp)
+                        modifier = if (esHorizontal) {
+                            Modifier.align(Alignment.CenterEnd).width(ANCHO_PANEL_PUNTO_HORIZONTAL).padding(12.dp)
+                        } else {
+                            Modifier.align(Alignment.BottomCenter).padding(12.dp)
+                        }
                     )
                 }
             }
@@ -87,40 +117,22 @@ fun EditorRecorridoMapa(
     }
 }
 
-// Mostrar la barra superior con volver, título y el botón Listo
+// Mostrar la ayuda del editor, que se puede ocultar y no vuelve a molestar durante la edición
 @Composable
-private fun BarraSuperiorEditor(alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        IconButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) }) {
-            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al formulario")
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Recorrido en el mapa",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+private fun AyudaDelEditor(alOcultar: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(start = 24.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = "Tocá el mapa para agregar puntos. Arrastrá un punto para moverlo o tocalo para editarlo.",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f)
             )
-        }
-        Button(
-            onClick = { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        ) {
-            Text("Listo")
+            IconButton(onClick = alOcultar) {
+                Icon(imageVector = Icons.Filled.Close, contentDescription = "Ocultar la ayuda")
+            }
         }
     }
 }
@@ -145,24 +157,18 @@ private fun BarraInferiorEditor(
             fontWeight = FontWeight.Bold
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(
-                onClick = { alProcesarEvento(FormularioSenderoEvento.AlInvertirSentido) },
-                enabled = estadoVisual.recorrido.size >= 2,
+            BotonSecundario(
+                texto = "Invertir sentido",
+                alTocar = { alProcesarEvento(FormularioSenderoEvento.AlInvertirSentido) },
+                estaHabilitado = estadoVisual.recorrido.size >= 2,
                 modifier = Modifier.weight(1f)
-            ) {
-                Text("Invertir sentido")
-            }
-            Button(
-                onClick = { alProcesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa) },
-                enabled = estadoVisual.recorrido.size >= 2,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
+            )
+            BotonSecundario(
+                texto = "Usar distancia del mapa",
+                alTocar = { alProcesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa) },
+                estaHabilitado = estadoVisual.recorrido.size >= 2,
                 modifier = Modifier.weight(1f)
-            ) {
-                Text("Usar distancia del mapa")
-            }
+            )
         }
     }
 }
@@ -240,11 +246,6 @@ internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
         TipoPunto.CAMPING -> "Camping"
         TipoPunto.PELIGRO -> "Peligro"
     }
-}
-
-// Dar formato de un decimal a una distancia en kilómetros
-internal fun formatearKilometros(kilometros: Double): String {
-    return String.format(Locale.US, "%.1f", kilometros)
 }
 
 // Previsualizar el panel de un punto seleccionado

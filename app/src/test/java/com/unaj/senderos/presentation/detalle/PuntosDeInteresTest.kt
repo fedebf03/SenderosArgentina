@@ -64,6 +64,16 @@ class PuntosDeInteresTest {
         assertEquals("Mirador", sinNombre.texto())
     }
 
+    // Verificar que la descripción para lectores de pantalla incluye tipo, nombre y kilómetro desde el inicio
+    @Test
+    fun `la descripcion accesible dice tipo nombre y kilometro desde el inicio`() {
+        val conNombre = PuntoDeInteres(0, TipoPunto.AGUA, "Arroyo Chico", 2.34)
+        val sinNombre = PuntoDeInteres(1, TipoPunto.MIRADOR, "  ", 12.0)
+
+        assertEquals("Agua, Arroyo Chico, kilómetro 2,3 desde el inicio", conNombre.descripcionAccesible())
+        assertEquals("Mirador, kilómetro 12 desde el inicio", sinNombre.descripcionAccesible())
+    }
+
     // Verificar el formato argentino de kilómetros con un decimal
     @Test
     fun `los kilometros se muestran con coma y un decimal`() {

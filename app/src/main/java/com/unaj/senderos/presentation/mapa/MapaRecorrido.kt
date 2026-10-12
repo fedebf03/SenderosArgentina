@@ -1,5 +1,7 @@
 package com.unaj.senderos.presentation.mapa
 
+import com.unaj.senderos.presentation.componentes.BannerAviso
+import androidx.compose.animation.AnimatedVisibility
 import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.util.Log
@@ -91,7 +93,8 @@ fun MapaRecorrido(
     trazadoCaminado: List<Coordenada> = emptyList(),
     alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
-    alSeleccionarPunto: (Int?) -> Unit = {}
+    alSeleccionarPunto: (Int?) -> Unit = {},
+    alDescargarMapa: (() -> Unit)? = null
 ) {
     val contexto = LocalContext.current
     val densidad = LocalDensity.current.density
@@ -141,18 +144,15 @@ fun MapaRecorrido(
 
     Box(modifier = modifier) {
         AndroidView(factory = { vistaMapa }, modifier = Modifier.fillMaxSize())
-        if (controlador.haFalladoLaCarga) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.85f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Mapa no disponible sin conexión",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
-            }
+        AnimatedVisibility(
+            visible = controlador.haFalladoLaCarga,
+            modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)
+        ) {
+            BannerAviso(
+                texto = "Mapa no disponible sin conexión",
+                textoAccion = if (alDescargarMapa != null) "Descargar el mapa para usar sin señal" else null,
+                alAccionar = { alDescargarMapa?.invoke() }
+            )
         }
     }
 }

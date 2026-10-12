@@ -36,6 +36,7 @@ class FavoritosViewModel(
         )
     }
 
+    // Procesar cada evento de la pantalla de Favoritos
     fun procesarEvento(evento: FavoritosEvento) {
         when (evento) {
             is FavoritosEvento.AlCambiarBusqueda -> {

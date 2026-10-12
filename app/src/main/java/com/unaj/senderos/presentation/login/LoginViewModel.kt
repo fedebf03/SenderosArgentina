@@ -3,9 +3,12 @@ package com.unaj.senderos.presentation.login
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.domain.usecase.EnviarCorreoRecuperacionUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,10 +17,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "AUTH"
+private const val MENSAJE_ENLACE_ENVIADO = "Si el correo está registrado, te enviamos un enlace para restablecer la contraseña"
+private const val MENSAJE_ERROR_RECUPERACION = "No pudimos enviar el correo. Intentá de nuevo."
 
 class LoginViewModel(
     private val iniciarSesionUseCase: IniciarSesionUseCase,
-    private val iniciarSesionConGoogleUseCase: IniciarSesionConGoogleUseCase
+    private val iniciarSesionConGoogleUseCase: IniciarSesionConGoogleUseCase,
+    private val enviarCorreoRecuperacionUseCase: EnviarCorreoRecuperacionUseCase
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(LoginEstadoVisual())
@@ -26,31 +32,43 @@ class LoginViewModel(
     private val canalEfectos = Channel<LoginEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
+    private var trabajoEnvioRecuperacion: Job? = null
+
+    // Procesar cada evento del inicio de sesión
     fun procesarEvento(evento: LoginEvento) {
         when (evento) {
             is LoginEvento.AlCambiarEmail -> actualizarEmail(evento.email)
             is LoginEvento.AlCambiarClave -> actualizarClave(evento.clave)
             is LoginEvento.AlAlternarVisibilidadClave -> alternarVisibilidadClave()
             is LoginEvento.AlIniciarSesion -> ejecutarInicioSesion()
-            is LoginEvento.AlOlvidarClave -> manejarOlvidarClave()
+            is LoginEvento.AlOlvidarClave -> abrirDialogoRecuperacion()
+            is LoginEvento.AlCambiarEmailRecuperacion -> {
+                _estadoVisual.update { it.copy(emailRecuperacion = evento.email, mensajeErrorRecuperacion = null) }
+            }
+            is LoginEvento.AlEnviarEnlaceRecuperacion -> enviarEnlaceRecuperacion()
+            is LoginEvento.AlCerrarDialogoRecuperacion -> cerrarDialogoRecuperacion()
             is LoginEvento.AlSolicitarGoogleSignIn -> solicitarGoogleSignIn()
             is LoginEvento.AlContinuarConGoogle -> ejecutarInicioSesionConGoogle(evento.idToken)
             is LoginEvento.AlIrARegistro -> manejarIrARegistro()
         }
     }
 
+    // Actualizar el correo escrito y limpiar el error
     private fun actualizarEmail(nuevoEmail: String) {
         _estadoVisual.update { it.copy(email = nuevoEmail, mensajeError = null) }
     }
 
+    // Actualizar la contraseña escrita y limpiar el error
     private fun actualizarClave(nuevaClave: String) {
         _estadoVisual.update { it.copy(clave = nuevaClave, mensajeError = null) }
     }
 
+    // Alternar entre mostrar y ocultar la contraseña
     private fun alternarVisibilidadClave() {
         _estadoVisual.update { it.copy(esClaveVisible = !it.esClaveVisible) }
     }
 
+    // Iniciar sesión con correo y contraseña, y navegar al inicio si sale bien
     private fun ejecutarInicioSesion() {
         val estadoActual = _estadoVisual.value
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
@@ -71,12 +89,14 @@ class LoginViewModel(
         }
     }
 
+    // Pedir a la pantalla que abra el selector de cuentas de Google
     private fun solicitarGoogleSignIn() {
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.SolicitarGoogleSignIn)
         }
     }
 
+    // Iniciar sesión con el token de Google, y navegar al inicio si sale bien
     private fun ejecutarInicioSesionConGoogle(idToken: String) {
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
 
@@ -96,12 +116,56 @@ class LoginViewModel(
         }
     }
 
-    private fun manejarOlvidarClave() {
-        viewModelScope.launch {
-            canalEfectos.send(LoginEfecto.MostrarAviso("Todavía no disponible"))
+    // Abrir el diálogo de recuperación con el correo que ya estaba escrito en el inicio de sesión
+    private fun abrirDialogoRecuperacion() {
+        _estadoVisual.update { estado ->
+            estado.copy(
+                esDialogoRecuperacionVisible = true,
+                emailRecuperacion = estado.email,
+                mensajeErrorRecuperacion = null
+            )
         }
     }
 
+    // Cerrar el diálogo de recuperación, cancelar el envío en curso y limpiar su error
+    private fun cerrarDialogoRecuperacion() {
+        trabajoEnvioRecuperacion?.cancel()
+        trabajoEnvioRecuperacion = null
+        ocultarDialogoRecuperacion()
+    }
+
+    // Ocultar el diálogo de recuperación sin cancelar el trabajo que lo invoca
+    private fun ocultarDialogoRecuperacion() {
+        _estadoVisual.update { estado ->
+            estado.copy(esDialogoRecuperacionVisible = false, estaEnviandoRecuperacion = false, mensajeErrorRecuperacion = null)
+        }
+    }
+
+    // Pedir el enlace de recuperación; si sale bien se avisa sin revelar si el correo existe, y si falla se muestra el motivo
+    private fun enviarEnlaceRecuperacion() {
+        val estadoActual = _estadoVisual.value
+        if (estadoActual.estaEnviandoRecuperacion) return
+        _estadoVisual.update { it.copy(estaEnviandoRecuperacion = true, mensajeErrorRecuperacion = null) }
+
+        trabajoEnvioRecuperacion = viewModelScope.launch {
+            val resultado = enviarCorreoRecuperacionUseCase(estadoActual.emailRecuperacion)
+            // Descartar el resultado si el diálogo se cerró durante el envío
+            ensureActive()
+            resultado.fold(
+                onSuccess = {
+                    ocultarDialogoRecuperacion()
+                    canalEfectos.send(LoginEfecto.MostrarAviso(MENSAJE_ENLACE_ENVIADO))
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo enviar el correo de recuperación: ${error.message}")
+                    val mensaje = error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_RECUPERACION
+                    _estadoVisual.update { it.copy(estaEnviandoRecuperacion = false, mensajeErrorRecuperacion = mensaje) }
+                }
+            )
+        }
+    }
+
+    // Pedir a la pantalla que navegue al registro
     private fun manejarIrARegistro() {
         viewModelScope.launch {
             canalEfectos.send(LoginEfecto.NavegarARegistro)

@@ -1,5 +1,7 @@
 package com.unaj.senderos.presentation.detalle
 
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.presentation.componentes.FotoSendero
 
+// Renderizar la cabecera del detalle con la foto, las acciones y el nombre del sendero
 @Composable
 internal fun CabeceraDetalle(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -100,7 +103,8 @@ internal fun CabeceraDetalle(
                     text = sendero.nombre,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.semantics { heading() }
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(
@@ -120,6 +124,7 @@ internal fun CabeceraDetalle(
     }
 }
 
+// Renderizar el menú con las opciones de editar y eliminar el sendero
 @Composable
 internal fun MenuOpciones(
     esVisible: Boolean,
@@ -149,6 +154,7 @@ internal fun MenuOpciones(
     }
 }
 
+// Renderizar un botón de ícono circular que se apoya sobre la foto
 @Composable
 internal fun BotonCircular(
     icono: ImageVector,

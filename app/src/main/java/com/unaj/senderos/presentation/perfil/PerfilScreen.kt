@@ -1,5 +1,10 @@
 package com.unaj.senderos.presentation.perfil
 
+import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.presentation.componentes.IconoDeBoton
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -90,6 +95,21 @@ fun PerfilContenido(
     ) { espaciadoInterno ->
         CuerpoPerfil(estadoVisual, alProcesarEvento, Modifier.padding(espaciadoInterno))
     }
+
+    if (estadoVisual.esDialogoCerrarSesionVisible) {
+        DialogoConfirmacion(
+            titulo = "Cerrar sesión",
+            texto = if (estadoVisual.hayRecorridoEnCurso) {
+                "¿Querés cerrar la sesión? Hay un recorrido en curso: se guardará y se detendrá."
+            } else {
+                "¿Querés cerrar la sesión?"
+            },
+            textoConfirmar = "Cerrar sesión",
+            alConfirmar = { alProcesarEvento(PerfilEvento.AlConfirmarCerrarSesion) },
+            textoDescartar = if (estadoVisual.hayRecorridoEnCurso) "Seguir en la app" else "Cancelar",
+            alDescartar = { alProcesarEvento(PerfilEvento.AlCancelarCerrarSesion) }
+        )
+    }
 }
 
 // Mostrar los datos del usuario, el modo demostración y el cierre de sesión
@@ -127,7 +147,14 @@ private fun CuerpoPerfil(
         )
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp)
+                .toggleable(
+                    value = estadoVisual.esModoDemostracion,
+                    role = Role.Switch,
+                    onValueChange = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoDemostracion(activo)) }
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -139,31 +166,26 @@ private fun CuerpoPerfil(
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Switch(
-                checked = estadoVisual.esModoDemostracion,
-                onCheckedChange = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoDemostracion(activo)) }
-            )
+            Switch(checked = estadoVisual.esModoDemostracion, onCheckedChange = null)
         }
 
         SeccionFuncionesDispositivo(funciones = estadoVisual.funcionesDispositivo)
 
         HistorialDeRecorridos(
             recorridos = estadoVisual.recorridos,
+            mensajeError = estadoVisual.mensajeError,
             alSeleccionar = { idRecorrido -> alProcesarEvento(PerfilEvento.AlSeleccionarRecorrido(idRecorrido)) }
         )
 
-        OutlinedButton(
-            onClick = { alProcesarEvento(PerfilEvento.AlCerrarSesion) },
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+        BotonSecundario(
+            texto = "Cerrar sesión",
+            alTocar = { alProcesarEvento(PerfilEvento.AlTocarCerrarSesion) },
+            icono = { IconoDeBoton(Icons.AutoMirrored.Outlined.Logout) },
+            esDestructivo = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp)
-                .height(50.dp)
-        ) {
-            Icon(imageVector = Icons.AutoMirrored.Outlined.Logout, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Cerrar sesión")
-        }
+        )
     }
 }
 

@@ -1,14 +1,13 @@
 package com.unaj.senderos.presentation.detalle
 
+import com.unaj.senderos.presentation.comun.formatearKilometros
+import com.unaj.senderos.presentation.comun.formatearUnDecimal
 import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
 import com.unaj.senderos.presentation.mapa.tieneCoordenadasValidas
-import java.util.Locale
-
-private val LOCALIDAD_ARGENTINA = Locale.forLanguageTag("es-AR")
 
 // Punto del recorrido que no es un simple paso, con su posición original y su distancia desde el inicio
 data class PuntoDeInteres(
@@ -18,6 +17,16 @@ data class PuntoDeInteres(
     val distanciaDesdeInicioKilometros: Double,
     val foto: String = ""
 ) {
+    // Armar la descripción para lectores de pantalla: "Agua, Arroyo Chico, kilómetro 2,3 desde el inicio"
+    fun descripcionAccesible(): String {
+        val partes = listOfNotNull(
+            obtenerTextoTipoPunto(tipo),
+            nombre.trim().ifBlank { null },
+            "kilómetro ${formatearKilometros(distanciaDesdeInicioKilometros)} desde el inicio"
+        )
+        return partes.joinToString(", ")
+    }
+
     // Armar el texto "Tipo · Nombre", o solo el tipo cuando el punto no tiene nombre
     fun texto(): String {
         val textoTipo = obtenerTextoTipoPunto(tipo)
@@ -40,7 +49,7 @@ internal fun obtenerPuntosDeInteres(sendero: Sendero?): List<PuntoDeInteres> {
 
 // Formatear la distancia desde el inicio como "km X,X" con el formato de Argentina
 internal fun formatearKilometrosDesdeInicio(kilometros: Double): String {
-    return "km " + String.format(LOCALIDAD_ARGENTINA, "%.1f", kilometros)
+    return "km " + formatearUnDecimal(kilometros)
 }
 
 // Obtener la coordenada del punto del recorrido en la posición indicada, o nulo si no existe

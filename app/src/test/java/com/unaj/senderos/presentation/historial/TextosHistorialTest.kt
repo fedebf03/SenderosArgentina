@@ -16,20 +16,4 @@ class TextosHistorialTest {
 
         assertEquals("12/10/2026 · 01:33", formatearFechaHora(milisegundos, zonaArgentina))
     }
-
-    // Verificar que la velocidad lleva coma decimal y la unidad
-    @Test
-    fun `la velocidad se muestra con coma y unidad`() {
-        assertEquals("7,2 km/h", formatearVelocidad(7.2))
-        assertEquals("0,0 km/h", formatearVelocidad(0.0))
-    }
-
-    // Verificar el texto de los pasos y del ritmo, con su alternativa cuando faltan
-    @Test
-    fun `los pasos y el ritmo nulos indican que no estan disponibles`() {
-        assertEquals("No disponible en este dispositivo", formatearPasos(null))
-        assertEquals("1.234", formatearPasos(1234))
-        assertEquals("No disponible en este dispositivo", formatearRitmo(null))
-        assertEquals("95 pasos/min", formatearRitmo(95.4))
-    }
 }

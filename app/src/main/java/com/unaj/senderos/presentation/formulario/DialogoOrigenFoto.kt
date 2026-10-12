@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.presentation.componentes.accionable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,7 +48,7 @@ private fun OpcionOrigenFoto(icono: ImageVector, texto: String, alTocar: () -> U
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = alTocar)
+            .accionable(texto, alTocar = alTocar)
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically

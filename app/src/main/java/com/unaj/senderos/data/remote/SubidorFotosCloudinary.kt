@@ -19,6 +19,7 @@ class SubidorFotosCloudinary(
     private val presetSubida: String
 ) : SubidorFotos {
 
+    // Subir la foto y devolver su URL remota
     override suspend fun subir(rutaLocal: String): String = withContext(Dispatchers.IO) {
         check(nombreNube.isNotBlank() && presetSubida.isNotBlank()) {
             "Cloudinary no está configurado: completá cloudinary.nombreNube y cloudinary.presetSubida en local.properties"
@@ -58,6 +59,7 @@ class SubidorFotosCloudinary(
         }
     }
 
+    // Escribir un campo de texto en el cuerpo multipart
     private fun escribirCampo(salida: DataOutputStream, separador: String, nombre: String, valor: String) {
         salida.writeBytes("--$separador$SALTO")
         salida.writeBytes("Content-Disposition: form-data; name=\"$nombre\"$SALTO$SALTO")

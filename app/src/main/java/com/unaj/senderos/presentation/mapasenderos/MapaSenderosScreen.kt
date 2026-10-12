@@ -1,6 +1,9 @@
 package com.unaj.senderos.presentation.mapasenderos
 
-import android.widget.Toast
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,11 +48,13 @@ fun MapaSenderosPantalla(
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
     val contexto = LocalContext.current
+    val estadoAvisos = remember { SnackbarHostState() }
+    val alcance = rememberCoroutineScope()
     var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
     val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
         tienePermisoUbicacion = respuesta.values.any { otorgado -> otorgado }
         if (!tienePermisoUbicacion) {
-            Toast.makeText(contexto, "Sin permiso de ubicación no podemos mostrar dónde estás", Toast.LENGTH_SHORT).show()
+            alcance.launch { estadoAvisos.showSnackbar("Sin permiso de ubicación no podemos mostrar dónde estás") }
         }
     }
     val solicitarUbicacion = {
@@ -83,7 +88,9 @@ fun MapaSenderosPantalla(
         alProcesarEvento = viewModel::procesarEvento,
         alNavegarASeccion = alNavegarASeccion,
         tienePermisoUbicacion = tienePermisoUbicacion,
-        alPedirUbicacion = solicitarUbicacion
+        alPedirUbicacion = solicitarUbicacion,
+        estadoAvisos = estadoAvisos,
+        alMostrarAviso = { mensaje -> alcance.launch { estadoAvisos.showSnackbar(mensaje) } }
     )
 }
 
@@ -95,10 +102,13 @@ fun MapaSenderosContenido(
     modifier: Modifier = Modifier,
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {},
     tienePermisoUbicacion: Boolean = false,
-    alPedirUbicacion: () -> Unit = {}
+    alPedirUbicacion: () -> Unit = {},
+    estadoAvisos: SnackbarHostState = remember { SnackbarHostState() },
+    alMostrarAviso: (String) -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(hostState = estadoAvisos) },
         topBar = {
             CabeceraPrincipal(
                 usuario = estadoVisual.usuario,
@@ -120,6 +130,8 @@ fun MapaSenderosContenido(
                     },
                     mostrarUbicacion = tienePermisoUbicacion,
                     alPedirUbicacion = alPedirUbicacion,
+                    estaSinConexion = estadoVisual.estaSinConexion,
+                    alMostrarAviso = alMostrarAviso,
                     modifier = Modifier.fillMaxSize()
                 )
 

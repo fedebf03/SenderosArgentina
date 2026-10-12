@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.componentes
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import coil.compose.AsyncImage
 import com.example.senderosargentina.R
 import com.unaj.senderos.domain.model.Usuario
 
+// Renderizar la cabecera de las secciones con el logo, el avatar y un contenido inferior opcional
 @Composable
 fun CabeceraPrincipal(
     usuario: Usuario?,
@@ -52,7 +54,7 @@ fun CabeceraPrincipal(
             .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(modifier = Modifier.height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = painterResource(R.drawable.logo_senderos),
                 contentDescription = null,
@@ -68,17 +70,19 @@ fun CabeceraPrincipal(
                     .weight(1f)
             )
             if (alTocarAvatar != null) {
-                AvatarUsuario(
-                    usuario = usuario,
-                    tamano = 36.dp,
-                    modifier = Modifier.clickable(onClick = alTocarAvatar)
-                )
+                Box(
+                    modifier = Modifier.size(48.dp).accionable("Abrir perfil", alTocar = alTocarAvatar),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AvatarUsuario(usuario = usuario, tamano = 36.dp)
+                }
             }
         }
         contenidoInferior?.invoke()
     }
 }
 
+// Renderizar el campo de búsqueda de senderos con botón para borrar el texto
 @Composable
 fun BuscadorSenderos(texto: String, alCambiarTexto: (String) -> Unit) {
     TextField(
@@ -106,6 +110,7 @@ fun BuscadorSenderos(texto: String, alCambiarTexto: (String) -> Unit) {
     )
 }
 
+// Renderizar el avatar circular del usuario con su foto o con su inicial
 @Composable
 fun AvatarUsuario(usuario: Usuario?, tamano: Dp, modifier: Modifier = Modifier) {
     Box(
@@ -137,6 +142,7 @@ fun AvatarUsuario(usuario: Usuario?, tamano: Dp, modifier: Modifier = Modifier) 
     }
 }
 
+// Obtener la inicial en mayúscula del nombre del usuario o, si falta, de su correo
 private fun obtenerInicial(usuario: Usuario?): String {
     val texto = usuario?.nombre?.ifBlank { usuario.email } ?: ""
     return texto.trim().take(1).uppercase()
