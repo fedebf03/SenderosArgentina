@@ -4,6 +4,7 @@ import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
 import kotlin.math.asin
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -45,6 +46,19 @@ object CalculadoraRecorrido {
             sin(diferenciaLongitud / 2).pow(2)
         return 2 * RADIO_TIERRA_KILOMETROS * asin(sqrt(parcial))
     }
+
+    // Calcular el rumbo inicial en grados [0, 360) desde una coordenada hacia otra
+    fun rumboInicialGrados(desde: Coordenada, hasta: Coordenada): Double {
+        val latitudDesde = Math.toRadians(desde.latitud)
+        val latitudHasta = Math.toRadians(hasta.latitud)
+        val diferenciaLongitud = Math.toRadians(hasta.longitud - desde.longitud)
+        val este = sin(diferenciaLongitud) * cos(latitudHasta)
+        val norte = cos(latitudDesde) * sin(latitudHasta) - sin(latitudDesde) * cos(latitudHasta) * cos(diferenciaLongitud)
+        return (Math.toDegrees(atan2(este, norte)) + 360.0) % 360.0
+    }
+
+    // Normalizar un rumbo cualquiera al intervalo [0, 360)
+    fun normalizarRumbo(grados: Float): Float = ((grados % 360f) + 360f) % 360f
 
     // Invertir el sentido del recorrido devolviendo los puntos en orden contrario
     fun invertirSentido(puntos: List<PuntoRecorrido>): List<PuntoRecorrido> {

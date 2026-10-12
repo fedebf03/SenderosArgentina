@@ -14,8 +14,14 @@ import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
 import com.unaj.senderos.data.sincronizacion.SincronizadorSenderos
 import com.unaj.senderos.data.notificaciones.NotificadorAndroid
+import com.unaj.senderos.data.preferencias.PreferenciasAplicacionLocal
+import com.unaj.senderos.data.seguimiento.ControlSeguimientoEnMemoria
+import com.unaj.senderos.data.seguimiento.LanzadorSeguimientoAndroid
 import com.unaj.senderos.data.ubicacion.ProveedorUbicacionCombinada
+import com.unaj.senderos.domain.repository.ControlSeguimiento
+import com.unaj.senderos.domain.repository.LanzadorSeguimiento
 import com.unaj.senderos.domain.repository.Notificador
+import com.unaj.senderos.domain.repository.PreferenciasAplicacion
 import com.unaj.senderos.domain.repository.ProveedorUbicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
@@ -27,6 +33,9 @@ import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class ContenedorDependencias(contexto: Context) {
     private val autenticacionRepositorio = AutenticacionRepositorioImpl()
@@ -58,12 +67,14 @@ class ContenedorDependencias(contexto: Context) {
 
     val proveedorUbicacion: ProveedorUbicacion = ProveedorUbicacionCombinada(contexto.applicationContext)
     val notificador: Notificador = NotificadorAndroid(contexto.applicationContext)
+    val preferenciasAplicacion: PreferenciasAplicacion = PreferenciasAplicacionLocal(contexto.applicationContext)
+    val lanzadorSeguimiento: LanzadorSeguimiento = LanzadorSeguimientoAndroid(contexto.applicationContext)
 
     val iniciarSesionUseCase = IniciarSesionUseCase(autenticacionRepositorio)
     val iniciarSesionConGoogleUseCase = IniciarSesionConGoogleUseCase(autenticacionRepositorio)
     val registrarUsuarioUseCase = RegistrarUsuarioUseCase(autenticacionRepositorio)
     val obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacionRepositorio)
-    val cerrarSesionUseCase = CerrarSesionUseCase(autenticacionRepositorio, senderoRepositorio)
+    val cerrarSesionUseCase = CerrarSesionUseCase(autenticacionRepositorio, senderoRepositorio, lanzadorSeguimiento)
     val observarSenderosDelUsuarioUseCase =
         ObservarSenderosDelUsuarioUseCase(senderoRepositorio, autenticacionRepositorio)
     val observarDetalleSenderoUseCase =
@@ -71,4 +82,9 @@ class ContenedorDependencias(contexto: Context) {
     val alternarFavoritoUseCase = AlternarFavoritoUseCase(senderoRepositorio, autenticacionRepositorio)
     val eliminarSenderoUseCase = EliminarSenderoUseCase(senderoRepositorio, autenticacionRepositorio)
     val guardarSenderoUseCase = GuardarSenderoUseCase(senderoRepositorio, autenticacionRepositorio)
+
+    // Ámbito de proceso del seguimiento: vive tanto como la aplicación; el hilo principal serializa las actualizaciones del estado
+    private val alcanceSeguimiento = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    val controlSeguimiento: ControlSeguimiento =
+        ControlSeguimientoEnMemoria(proveedorUbicacion, observarDetalleSenderoUseCase, alcanceSeguimiento)
 }

@@ -44,6 +44,7 @@ import com.unaj.senderos.presentation.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.tema.TemaSenderos
 import java.util.Locale
 
+// Renderizar el editor de pantalla completa para trazar el recorrido sobre el mapa
 @Composable
 fun EditorRecorridoMapa(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -86,6 +87,7 @@ fun EditorRecorridoMapa(
     }
 }
 
+// Mostrar la barra superior con volver, título y el botón Listo
 @Composable
 private fun BarraSuperiorEditor(alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
     Row(
@@ -99,7 +101,7 @@ private fun BarraSuperiorEditor(alProcesarEvento: (FormularioSenderoEvento) -> U
         IconButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) }) {
             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al formulario")
         }
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "Recorrido en el mapa",
                 style = MaterialTheme.typography.titleLarge,
@@ -111,9 +113,19 @@ private fun BarraSuperiorEditor(alProcesarEvento: (FormularioSenderoEvento) -> U
                 style = MaterialTheme.typography.bodySmall
             )
         }
+        Button(
+            onClick = { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        ) {
+            Text("Listo")
+        }
     }
 }
 
+// Mostrar la barra inferior con las acciones del recorrido y su distancia
 @Composable
 private fun BarraInferiorEditor(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -155,6 +167,7 @@ private fun BarraInferiorEditor(
     }
 }
 
+// Mostrar el panel para editar el tipo y el nombre del punto seleccionado
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PanelPuntoSeleccionado(
@@ -217,6 +230,7 @@ private fun PanelPuntoSeleccionado(
     }
 }
 
+// Obtener el texto en español de un tipo de punto
 internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
     return when (tipo) {
         TipoPunto.PASO -> "Paso"
@@ -228,10 +242,12 @@ internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
     }
 }
 
+// Dar formato de un decimal a una distancia en kilómetros
 internal fun formatearKilometros(kilometros: Double): String {
     return String.format(Locale.US, "%.1f", kilometros)
 }
 
+// Previsualizar el panel de un punto seleccionado
 @Preview(showBackground = true)
 @Composable
 private fun PrevisualizacionPanelPuntoSeleccionado() {

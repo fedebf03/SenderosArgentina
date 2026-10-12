@@ -1,7 +1,9 @@
 package com.unaj.senderos.presentation.perfil
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +38,9 @@ import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
+private const val TAG = "PERFIL"
+
+// Mostrar el perfil conectado a su ViewModel y atender la navegación al inicio de sesión
 @Composable
 fun PerfilPantalla(
     viewModel: PerfilViewModel,
@@ -45,9 +51,13 @@ fun PerfilPantalla(
     val navegarALoginActual by rememberUpdatedState(alNavegarALogin)
 
     LaunchedEffect(Unit) {
+        Log.d(TAG, "Pantalla inicializada / rotación completada")
         viewModel.efectoVisual.collect { efecto ->
             when (efecto) {
-                is PerfilEfecto.NavegarALogin -> navegarALoginActual()
+                is PerfilEfecto.NavegarALogin -> {
+                    Log.d(TAG, "Navegando al inicio de sesión")
+                    navegarALoginActual()
+                }
             }
         }
     }
@@ -61,6 +71,7 @@ fun PerfilPantalla(
     )
 }
 
+// Renderizar el perfil con su cabecera y la botonera inferior
 @Composable
 fun PerfilContenido(
     estadoVisual: PerfilEstadoVisual,
@@ -77,6 +88,7 @@ fun PerfilContenido(
     }
 }
 
+// Mostrar los datos del usuario, el modo demostración y el cierre de sesión
 @Composable
 private fun CuerpoPerfil(
     estadoVisual: PerfilEstadoVisual,
@@ -110,12 +122,31 @@ private fun CuerpoPerfil(
             modifier = Modifier.padding(top = if (nombre.isNotBlank()) 4.dp else 16.dp)
         )
 
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Modo demostración", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Simula un recorrido sobre el trazado para probar o presentar la app sin caminar",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Switch(
+                checked = estadoVisual.esModoDemostracion,
+                onCheckedChange = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoDemostracion(activo)) }
+            )
+        }
+
         OutlinedButton(
             onClick = { alProcesarEvento(PerfilEvento.AlCerrarSesion) },
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 32.dp)
+                .padding(top = 24.dp)
                 .height(50.dp)
         ) {
             Icon(imageVector = Icons.AutoMirrored.Outlined.Logout, contentDescription = null)
@@ -125,6 +156,7 @@ private fun CuerpoPerfil(
     }
 }
 
+// Previsualizar el perfil de un usuario de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun PerfilContenidoPreview() {
