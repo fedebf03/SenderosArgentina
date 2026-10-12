@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.unaj.senderos.data.seguimiento.EXTRA_ID_SENDERO_RECORRIDO
+import com.unaj.senderos.data.seguimiento.EXTRA_SOLICITAR_CANCELACION
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.detalle.DetalleSenderoPantalla
 import com.unaj.senderos.presentation.detalle.DetalleSenderoViewModel
@@ -81,14 +82,22 @@ class MainActivity : ComponentActivity() {
     // Sendero cuyo recorrido en curso pidió abrir la notificación; la composición lo consume y lo limpia
     private var idSenderoRecorridoPendiente by mutableStateOf<String?>(null)
 
+    // Verdadero si la notificación pidió abrir el recorrido con la confirmación de cancelación; la pantalla lo consume
+    private var solicitudCancelacionPendiente by mutableStateOf(false)
+
     // Tomar el pedido de abrir el recorrido desde la intención recibida y quitarlo para no repetirlo
     private fun leerPedidoDeRecorrido(intencionRecibida: Intent?) {
         val idSendero = intencionRecibida?.getStringExtra(EXTRA_ID_SENDERO_RECORRIDO)
         if (idSendero.isNullOrBlank()) return
+        val solicitaCancelacion = intencionRecibida.getBooleanExtra(EXTRA_SOLICITAR_CANCELACION, false)
         intencionRecibida.removeExtra(EXTRA_ID_SENDERO_RECORRIDO)
+        intencionRecibida.removeExtra(EXTRA_SOLICITAR_CANCELACION)
         // Al reabrir la app desde el historial el extra es viejo: no debe volver a navegar
         val vieneDelHistorial = intencionRecibida.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
-        if (!vieneDelHistorial) idSenderoRecorridoPendiente = idSendero
+        if (!vieneDelHistorial) {
+            solicitudCancelacionPendiente = solicitaCancelacion
+            idSenderoRecorridoPendiente = idSendero
+        }
     }
 
     // Atender la notificación del recorrido cuando la Activity ya estaba abierta (launchMode singleTop)
@@ -144,6 +153,8 @@ class MainActivity : ComponentActivity() {
                         destinoActual = pantallaActual,
                         irARecorrido = { pantallaActual = DestinoPantalla.Recorrido(idRecorridoPedido) }
                     )
+                    // Si el pedido no llevó a la pantalla del recorrido, la solicitud de cancelación se descarta
+                    if (pantallaActual !is DestinoPantalla.Recorrido) solicitudCancelacionPendiente = false
                     idSenderoRecorridoPendiente = null
                 }
             }
@@ -256,6 +267,8 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.Recorrido -> {
                             val clave = "recorrido-$idUsuario-${destino.idSendero}"
                             RecorridoPantalla(
+                                solicitarCancelacion = solicitudCancelacionPendiente,
+                                alAtenderSolicitudCancelacion = { solicitudCancelacionPendiente = false },
                                 viewModel = viewModelDeDestino(clave) {
                                     RecorridoViewModel(
                                         idSendero = destino.idSendero,

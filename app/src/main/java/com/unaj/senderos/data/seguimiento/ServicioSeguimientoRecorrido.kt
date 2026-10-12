@@ -10,6 +10,8 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.example.senderosargentina.SenderosAplicacion
+import com.unaj.senderos.domain.RedactorNotificacionRecorrido
+import com.unaj.senderos.domain.model.ContenidoNotificacionRecorrido
 import com.unaj.senderos.domain.repository.ControlSeguimiento
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,8 +38,7 @@ private const val INTERVALO_NOTIFICACION_MILISEGUNDOS = 1_000L
 // Campos del estado que muestra la notificación persistente; reducir el estado a esto evita republicarla por cambios que no se ven
 private data class DatosNotificacion(
     val idSendero: String,
-    val esSimulado: Boolean,
-    val resumen: String
+    val contenido: ContenidoNotificacionRecorrido
 )
 
 // Mantener el seguimiento del recorrido en primer plano con notificación persistente y avisos
@@ -96,20 +97,23 @@ class ServicioSeguimientoRecorrido : Service() {
             control.estado
                 .map { estado ->
                     estado?.let { estadoActual ->
-                        DatosNotificacion(estadoActual.idSendero, estadoActual.esSimulado, notificador.redactarResumen(estadoActual))
+                        DatosNotificacion(
+                            estadoActual.idSendero,
+                            RedactorNotificacionRecorrido.redactarPersistente(estadoActual, estadoActual.esSimulado)
+                        )
                     }
                 }
                 .distinctUntilChanged()
                 .conflate()
                 .collect { datos ->
                     if (datos != null) {
-                        notificador.actualizarNotificacionEnCurso(datos.idSendero, datos.resumen, datos.esSimulado)
+                        notificador.actualizarNotificacionEnCurso(datos.idSendero, datos.contenido)
                         delay(INTERVALO_NOTIFICACION_MILISEGUNDOS)
                     }
                 }
         }
         alcance.launch {
-            control.avisos.collect { aviso -> notificador.notificarAviso(idSenderoActual, aviso, control.estado.value?.nombreSendero.orEmpty()) }
+            control.avisos.collect { aviso -> notificador.notificarAviso(idSenderoActual, aviso, control.estado.value) }
         }
         Log.d(TAG, "Servicio creado")
     }

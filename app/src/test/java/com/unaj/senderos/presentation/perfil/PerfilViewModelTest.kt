@@ -8,6 +8,7 @@ import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoLanzadorSeguimiento
+import com.unaj.senderos.falsos.FalsoNotificador
 import com.unaj.senderos.falsos.FalsoPreferenciasAplicacion
 import com.unaj.senderos.falsos.FalsoRecorridoRepositorio
 import com.unaj.senderos.falsos.crearRecorridoDePrueba
@@ -60,7 +61,7 @@ class PerfilViewModelTest {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         return PerfilViewModel(
             obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacion),
-            cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento()),
+            cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento(), FalsoNotificador()),
             preferenciasAplicacion = preferencias,
             observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion),
             obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(FalsoDetectorCapacidades(capacidades))

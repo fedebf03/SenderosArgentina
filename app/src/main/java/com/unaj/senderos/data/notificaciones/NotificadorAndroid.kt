@@ -14,6 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.senderosargentina.MainActivity
 import com.example.senderosargentina.R
+import com.unaj.senderos.domain.RedactorNotificacionSincronizacion
 import com.unaj.senderos.domain.model.MensajeNotificacion
 import com.unaj.senderos.domain.repository.Notificador
 
@@ -22,6 +23,7 @@ private const val ID_CANAL_SINCRONIZACION = "sincronizacion"
 private const val NOMBRE_CANAL_SINCRONIZACION = "Sincronización"
 private const val ID_NOTIFICACION_SUBIDOS = 1001
 private const val ID_NOTIFICACION_ERROR = 1002
+private const val CODIGO_PEDIDO_REINTENTAR = 1
 
 // Mostrar notificaciones del sistema Android sobre el resultado de la sincronización
 class NotificadorAndroid(private val contexto: Context) : Notificador {
@@ -33,37 +35,25 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
             return
         }
         crearCanalSiHaceFalta()
-        val (identificador, titulo, cuerpo) = when (mensaje) {
-            is MensajeNotificacion.SenderosSubidos -> Triple(
-                ID_NOTIFICACION_SUBIDOS,
-                "Senderos sincronizados",
-                if (mensaje.cantidad == 1) {
-                    "Tu sendero guardado sin señal ya está en la nube"
-                } else {
-                    "Tus ${mensaje.cantidad} senderos guardados sin señal ya están en la nube"
-                }
-            )
-            is MensajeNotificacion.SenderosConError -> Triple(
-                ID_NOTIFICACION_ERROR,
-                "Error de sincronización",
-                if (mensaje.cantidad == 1) {
-                    "No se pudo sincronizar 1 cambio (sendero o recorrido). Se reintentará al abrir la app"
-                } else {
-                    "No se pudieron sincronizar ${mensaje.cantidad} cambios (senderos o recorridos). Se reintentará al abrir la app"
-                }
-            )
+        val contenido = RedactorNotificacionSincronizacion.redactar(mensaje)
+        val identificador = when (mensaje) {
+            is MensajeNotificacion.SenderosSubidos -> ID_NOTIFICACION_SUBIDOS
+            is MensajeNotificacion.SenderosConError -> ID_NOTIFICACION_ERROR
         }
-        val notificacion = NotificationCompat.Builder(contexto, ID_CANAL_SINCRONIZACION)
+        val constructor = NotificationCompat.Builder(contexto, ID_CANAL_SINCRONIZACION)
             .setSmallIcon(R.drawable.ic_notificacion)
-            .setContentTitle(titulo)
-            .setContentText(cuerpo)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(cuerpo))
+            .setColor(ContextCompat.getColor(contexto, R.color.color_notificacion))
+            .setContentTitle(contenido.titulo)
+            .setContentText(contenido.texto)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(contenido.texto))
             .setContentIntent(crearAccionAbrirAplicacion())
             .setAutoCancel(true)
-            .build()
+        if (contenido.permiteReintentar) {
+            constructor.addAction(0, "Reintentar", crearAccionReintentar())
+        }
         try {
-            NotificationManagerCompat.from(contexto).notify(identificador, notificacion)
-            Log.d(TAG, "Notificación mostrada: $titulo")
+            NotificationManagerCompat.from(contexto).notify(identificador, constructor.build())
+            Log.d(TAG, "Notificación mostrada: ${contenido.titulo}")
         } catch (excepcion: SecurityException) {
             Log.e(TAG, "El sistema rechazó la notificación", excepcion)
         }
@@ -94,10 +84,16 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
         NotificationManagerCompat.from(contexto).createNotificationChannel(canal)
     }
 
-    // Crear el intent pendiente que abre la pantalla principal al tocar la notificación
+    // Crear la intención pendiente, inmutable y explícito, que dirige "Reintentar" al receptor interno de la aplicación
+    private fun crearAccionReintentar(): PendingIntent {
+        val intencion = Intent(contexto, ReintentoSincronizacionReceptor::class.java)
+        return PendingIntent.getBroadcast(contexto, CODIGO_PEDIDO_REINTENTAR, intencion, PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    // Crear la intención pendiente que abre la pantalla principal al tocar la notificación
     private fun crearAccionAbrirAplicacion(): PendingIntent {
-        val intent = Intent(contexto, MainActivity::class.java)
+        val intencion = Intent(contexto, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return PendingIntent.getActivity(contexto, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        return PendingIntent.getActivity(contexto, 0, intencion, PendingIntent.FLAG_IMMUTABLE)
     }
 }

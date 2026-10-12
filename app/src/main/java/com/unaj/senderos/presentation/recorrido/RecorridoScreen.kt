@@ -73,7 +73,9 @@ private const val TEXTO_NO_DISPONIBLE_EN_EQUIPO = "No disponible en este equipo"
 @Composable
 fun RecorridoPantalla(
     viewModel: RecorridoViewModel,
-    alVolverAlDetalle: () -> Unit
+    alVolverAlDetalle: () -> Unit,
+    solicitarCancelacion: Boolean = false,
+    alAtenderSolicitudCancelacion: () -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
@@ -89,6 +91,14 @@ fun RecorridoPantalla(
         while (true) {
             delay(INTERVALO_RELOJ_MILISEGUNDOS)
             value = System.currentTimeMillis()
+        }
+    }
+
+    // Abrir la confirmación de cancelación pedida desde la notificación; nunca cancela sin que el usuario confirme
+    LaunchedEffect(solicitarCancelacion) {
+        if (solicitarCancelacion) {
+            viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
+            alAtenderSolicitudCancelacion()
         }
     }
 
