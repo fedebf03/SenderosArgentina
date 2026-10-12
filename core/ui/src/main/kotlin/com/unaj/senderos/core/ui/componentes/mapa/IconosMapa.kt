@@ -13,7 +13,8 @@ data class PaletaMapa(
     val contenedorPrimario: Int,
     val sobreContenedorPrimario: Int,
     val error: Int,
-    val sobreError: Int
+    val sobreError: Int,
+    val caminado: Int
 )
 
 object NombresImagenMapa {

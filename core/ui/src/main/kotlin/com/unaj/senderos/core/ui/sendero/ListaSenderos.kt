@@ -235,7 +235,7 @@ private fun DatoTarjeta(icono: ImageVector, texto: String) {
 
 // Renderizar el ícono del estado de sincronización cuando el sendero no está sincronizado
 @Composable
-private fun IconoSincronizacion(estado: EstadoSincronizacion) {
+fun IconoSincronizacion(estado: EstadoSincronizacion) {
     when (estado) {
         EstadoSincronizacion.PENDIENTE -> Icon(
             imageVector = Icons.Outlined.CloudUpload,

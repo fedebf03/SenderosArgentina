@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.domain.model.tieneCoordenadasValidas
 import com.unaj.senderos.presentation.tema.CelesteArgentino
 import kotlin.math.abs
 import kotlin.math.hypot
@@ -60,6 +61,8 @@ data class ModoNavegacion(
 
 private const val ID_FUENTE_LINEA = "fuente-linea-recorrido"
 private const val ID_FUENTE_PUNTOS = "fuente-puntos-recorrido"
+private const val ID_FUENTE_TRAZADO_CAMINADO = "fuente-trazado-caminado"
+private const val ID_CAPA_TRAZADO_CAMINADO = "capa-trazado-caminado"
 private const val ID_FUENTE_POSICION = "fuente-posicion-usuario"
 private const val ID_CAPA_POSICION_HALO = "capa-posicion-usuario-halo"
 private const val ID_CAPA_POSICION = "capa-posicion-usuario"
@@ -83,6 +86,9 @@ fun MapaRecorrido(
     usarModoTextura: Boolean = false,
     posicionUsuario: Coordenada? = null,
     modoNavegacion: ModoNavegacion? = null,
+    puntoEnfocado: Coordenada? = null,
+    claveEnfoque: Int = 0,
+    trazadoCaminado: List<Coordenada> = emptyList(),
     alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
     alSeleccionarPunto: (Int?) -> Unit = {}
@@ -105,9 +111,10 @@ fun MapaRecorrido(
             contenedorPrimario = CelesteArgentino.toArgb(),
             sobreContenedorPrimario = esquemaDeColores.onPrimaryContainer.toArgb(),
             error = esquemaDeColores.error.toArgb(),
-            sobreError = esquemaDeColores.onError.toArgb()
+            sobreError = esquemaDeColores.onError.toArgb(),
+            caminado = esquemaDeColores.tertiary.toArgb()
         )
-        ControladorMapaRecorrido(vistaMapa, paleta, densidad)
+        ControladorMapaRecorrido(vistaMapa, paleta, densidad, claveEnfoqueInicial = claveEnfoque)
     }
 
     SideEffect {
@@ -120,6 +127,9 @@ fun MapaRecorrido(
                 sonGestosHabilitados = sonGestosHabilitados,
                 posicionUsuario = posicionUsuario,
                 modoNavegacion = modoNavegacion,
+                puntoEnfocado = puntoEnfocado,
+                claveEnfoque = claveEnfoque,
+                trazadoCaminado = trazadoCaminado,
                 alAgregarPunto = alAgregarPunto,
                 alMoverPunto = alMoverPunto,
                 alSeleccionarPunto = alSeleccionarPunto
@@ -155,6 +165,9 @@ private data class DatosMapa(
     val sonGestosHabilitados: Boolean = true,
     val posicionUsuario: Coordenada? = null,
     val modoNavegacion: ModoNavegacion? = null,
+    val puntoEnfocado: Coordenada? = null,
+    val claveEnfoque: Int = 0,
+    val trazadoCaminado: List<Coordenada> = emptyList(),
     val alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     val alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
     val alSeleccionarPunto: (Int?) -> Unit = {}
@@ -163,7 +176,8 @@ private data class DatosMapa(
 private class ControladorMapaRecorrido(
     private val vistaMapa: MapView,
     private val paleta: PaletaMapa,
-    private val densidad: Float
+    private val densidad: Float,
+    claveEnfoqueInicial: Int
 ) {
     var haFalladoLaCarga by mutableStateOf(false)
         private set
@@ -174,6 +188,7 @@ private class ControladorMapaRecorrido(
     private var fueEncuadrado = false
     private var seSuspendioSeguimiento = false
     private var puntosEncuadrados: List<PuntoRecorrido>? = null
+    private var claveEnfoqueAplicada = claveEnfoqueInicial
 
     private var indiceArrastrado: Int? = null
     private var puntosEnArrastre: List<PuntoRecorrido>? = null
@@ -224,6 +239,7 @@ private class ControladorMapaRecorrido(
     // Aplicar los datos nuevos y refrescar el mapa solo si algo relevante cambió
     fun actualizar(nuevosDatos: DatosMapa) {
         val hayCambios = nuevosDatos.puntos != datos.puntos ||
+            nuevosDatos.trazadoCaminado != datos.trazadoCaminado ||
             nuevosDatos.tipoRecorrido != datos.tipoRecorrido ||
             nuevosDatos.indiceSeleccionado != datos.indiceSeleccionado ||
             nuevosDatos.esEditable != datos.esEditable ||
@@ -237,6 +253,22 @@ private class ControladorMapaRecorrido(
         if (nuevosDatos.modoNavegacion?.estaSiguiendo != true) seSuspendioSeguimiento = false
         if (indiceArrastrado == null) puntosEnArrastre = null
         if (hayCambios && estilo != null) refrescar()
+        aplicarEnfoque()
+    }
+
+    // Centrar la cámara con animación en el punto enfocado, una sola vez por cada clave nueva
+    private fun aplicarEnfoque() {
+        val coordenada = datos.puntoEnfocado ?: return
+        val mapaActual = mapa ?: return
+        if (estilo == null || datos.claveEnfoque == claveEnfoqueAplicada) return
+        if (!coordenada.tieneCoordenadasValidas()) return
+        claveEnfoqueAplicada = datos.claveEnfoque
+        mapaActual.animateCamera(
+            CameraUpdateFactory.newLatLngZoom(
+                LatLng(coordenada.latitud, coordenada.longitud),
+                ConfiguracionMapa.ZOOM_PUNTO_DE_INTERES
+            )
+        )
     }
 
     // Configurar gestos, detectores y estilo cuando el mapa está listo
@@ -259,6 +291,7 @@ private class ControladorMapaRecorrido(
 
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_LINEA))
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_PUNTOS))
+        estiloBase.addSource(GeoJsonSource(ID_FUENTE_TRAZADO_CAMINADO))
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_POSICION))
 
         estiloBase.addLayer(
@@ -277,6 +310,15 @@ private class ControladorMapaRecorrido(
                 PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
                 PropertyFactory.iconAllowOverlap(true),
                 PropertyFactory.iconIgnorePlacement(true)
+            )
+        )
+
+        estiloBase.addLayer(
+            LineLayer(ID_CAPA_TRAZADO_CAMINADO, ID_FUENTE_TRAZADO_CAMINADO).withProperties(
+                PropertyFactory.lineColor(paleta.caminado),
+                PropertyFactory.lineWidth(4f),
+                PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
+                PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND)
             )
         )
 
@@ -384,16 +426,22 @@ private class ControladorMapaRecorrido(
             ?.setGeoJson(
                 ConstructorGeoJsonRecorrido.crearPuntos(puntosVisibles, datos.tipoRecorrido, datos.indiceSeleccionado)
             )
+        estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_TRAZADO_CAMINADO)
+            ?.setGeoJson(ConstructorGeoJsonRecorrido.crearTrazadoCaminado(datos.trazadoCaminado))
         estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_POSICION)
             ?.setGeoJson(ConstructorGeoJsonRecorrido.crearPosicion(datos.posicionUsuario, datos.modoNavegacion?.rumboGrados))
         if (indiceArrastrado == null) aplicarGestos()
         val estaSiguiendoAlUsuario = seguirAlUsuario()
-        val debeEncuadrar = !fueEncuadrado || (!datos.esEditable && puntosEncuadrados != datos.puntos)
-        if (debeEncuadrar && indiceArrastrado == null && !estaSiguiendoAlUsuario) {
-            encuadrar(datos.puntos)
-            fueEncuadrado = true
-            puntosEncuadrados = datos.puntos
+        val puntosAEncuadrar = datos.puntos + datos.trazadoCaminado.map { coordenada ->
+            PuntoRecorrido(latitud = coordenada.latitud, longitud = coordenada.longitud)
         }
+        val debeEncuadrar = !fueEncuadrado || (!datos.esEditable && puntosEncuadrados != puntosAEncuadrar)
+        if (debeEncuadrar && indiceArrastrado == null && !estaSiguiendoAlUsuario) {
+            encuadrar(puntosAEncuadrar)
+            fueEncuadrado = true
+            puntosEncuadrados = puntosAEncuadrar
+        }
+        aplicarEnfoque()
     }
 
     // Centrar la cámara en el usuario con el rumbo, la inclinación y el zoom de caminata; devolver si lo hizo

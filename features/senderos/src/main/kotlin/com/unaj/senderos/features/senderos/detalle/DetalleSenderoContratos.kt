@@ -1,8 +1,9 @@
 package com.unaj.senderos.presentation.detalle
 
+import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Sendero
 
-enum class SeccionDetalle { RECOMENDACIONES, SERVICIOS, ETAPAS }
+enum class SeccionDetalle { PUNTOS_DE_INTERES, RECOMENDACIONES, SERVICIOS, ETAPAS }
 
 data class DetalleSenderoEstadoVisual(
     val sendero: Sendero? = null,
@@ -14,7 +15,10 @@ data class DetalleSenderoEstadoVisual(
     val hayRecorridoEnCursoEnEsteSendero: Boolean = false,
     val esRecorridoEnCursoSimulado: Boolean = false,
     val nombreSenderoEnCursoAReemplazar: String? = null,
-    val esModoDemostracion: Boolean = false
+    val esModoDemostracion: Boolean = false,
+    val puntoEnfocado: Coordenada? = null,
+    val contadorEnfoque: Int = 0,
+    val puntosDeInteres: List<PuntoDeInteres> = emptyList()
 )
 
 sealed interface DetalleSenderoEvento {
@@ -22,6 +26,7 @@ sealed interface DetalleSenderoEvento {
     data object AlAlternarFavorito : DetalleSenderoEvento
     data object AlCompartir : DetalleSenderoEvento
     data class AlAlternarSeccion(val seccion: SeccionDetalle) : DetalleSenderoEvento
+    data class AlSeleccionarPuntoDeInteres(val indice: Int) : DetalleSenderoEvento
     data object AlTocarIniciarRecorrido : DetalleSenderoEvento
     data object AlConcederPermisoUbicacion : DetalleSenderoEvento
     data object AlDenegarPermisoUbicacion : DetalleSenderoEvento

@@ -47,9 +47,9 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
                 ID_NOTIFICACION_ERROR,
                 "Error de sincronización",
                 if (mensaje.cantidad == 1) {
-                    "No se pudo sincronizar 1 sendero. Se reintentará al abrir la app"
+                    "No se pudo sincronizar 1 cambio (sendero o recorrido). Se reintentará al abrir la app"
                 } else {
-                    "No se pudieron sincronizar ${mensaje.cantidad} senderos. Se reintentará al abrir la app"
+                    "No se pudieron sincronizar ${mensaje.cantidad} cambios (senderos o recorridos). Se reintentará al abrir la app"
                 }
             )
         }

@@ -1,5 +1,7 @@
 package com.unaj.senderos.domain.usecase
 
+import com.unaj.senderos.domain.model.Coordenada
+import com.unaj.senderos.domain.model.tieneCoordenadasValidas
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.SenderoInvalidoException
@@ -57,7 +59,7 @@ class GuardarSenderoUseCase(
             camposInvalidos.add(CampoSendero.ALTURA_MAXIMA)
         }
         val hayPuntoFueraDeRango = sendero.recorrido.any { punto ->
-            punto.latitud !in -90.0..90.0 || punto.longitud !in -180.0..180.0
+            !Coordenada(punto.latitud, punto.longitud).tieneCoordenadasValidas()
         }
         if (hayPuntoFueraDeRango) camposInvalidos.add(CampoSendero.RECORRIDO)
         return camposInvalidos

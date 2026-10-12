@@ -3,6 +3,7 @@ package com.unaj.senderos.data.seguimiento
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.LecturaUbicacion
+import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
@@ -12,6 +13,7 @@ import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoProveedorUbicacion
+import com.unaj.senderos.falsos.FalsoRecorridoRepositorio
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
 import com.unaj.senderos.falsos.crearSenderoDePrueba
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -52,6 +54,7 @@ class ControlSeguimientoEnMemoriaTest {
         )
     )
     private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "ana@correo.com", nombre = "Ana"))
+    private val repositorioRecorridos = FalsoRecorridoRepositorio()
     private var instante = 1_000L
 
     // Construir un sendero lineal de prueba con el recorrido indicado
@@ -64,6 +67,7 @@ class ControlSeguimientoEnMemoriaTest {
         return ControlSeguimientoEnMemoria(
             proveedor,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
+            repositorioRecorridos,
             backgroundScope + UnconfinedTestDispatcher(testScheduler)
         ) { instante }
     }
@@ -337,5 +341,145 @@ class ControlSeguimientoEnMemoriaTest {
         control.detener()
 
         assertNull(control.motivoFin.value)
+    }
+
+    // Verificar que detener un recorrido con posiciones lo guarda con todos sus datos calculados
+    @Test
+    fun `detener guarda el recorrido realizado con sus datos`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0, velocidad = 1.0f))
+        instante = 61_000L
+        ubicaciones.emit(alSur(0.001, velocidad = 2.0f))
+        instante = 121_000L
+
+        control.detener()
+
+        assertEquals(1, repositorioRecorridos.guardados.size)
+        val recorrido = repositorioRecorridos.guardados.single()
+        assertEquals("recorrido-1000", recorrido.id)
+        assertEquals("usuario-1", recorrido.idUsuario)
+        assertEquals("con-recorrido", recorrido.idSendero)
+        assertEquals("Cerro Catedral", recorrido.nombreSendero)
+        assertEquals(1_000L, recorrido.inicioMilisegundos)
+        assertEquals(121_000L, recorrido.finMilisegundos)
+        assertEquals(120_000L, recorrido.duracionMilisegundos)
+        assertEquals(0.1112, recorrido.distanciaKilometros, 0.004)
+        assertEquals(recorrido.distanciaKilometros / (120.0 / 3600.0), recorrido.velocidadPromedioKilometrosPorHora, 0.0001)
+        assertEquals(7.2, recorrido.velocidadMaximaKilometrosPorHora, 0.001)
+        assertNull(recorrido.pasos)
+        assertNull(recorrido.ritmoPasosPorMinuto)
+        assertEquals(2, recorrido.trazadoCaminado.size)
+        assertEquals(false, recorrido.esSimulado)
+        assertEquals(EstadoSincronizacion.PENDIENTE, recorrido.estadoSincronizacion)
+    }
+
+    // Verificar que detener sin ninguna posición recibida no guarda nada
+    @Test
+    fun `detener sin posiciones no guarda recorrido`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+
+        control.detener()
+
+        assertTrue(repositorioRecorridos.guardados.isEmpty())
+    }
+
+    // Verificar que detener dos veces guarda el recorrido una sola vez
+    @Test
+    fun `detener dos veces guarda una sola vez`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0))
+
+        control.detener()
+        control.detener()
+
+        assertEquals(1, repositorioRecorridos.guardados.size)
+    }
+
+    // Verificar que un error del proveedor tras recibir posiciones guarda el recorrido hasta ahí
+    @Test
+    fun `un error de ubicacion con posiciones guarda el recorrido`() = runTest {
+        proveedor.ubicaciones = flow {
+            emit(alSur(0.0))
+            emit(alSur(0.001))
+            throw IllegalStateException("Fallo")
+        }
+        val control = crearControl()
+
+        control.iniciar("con-recorrido")
+
+        assertNull(control.estado.value)
+        assertEquals(1, repositorioRecorridos.guardados.size)
+        assertEquals(2, repositorioRecorridos.guardados.single().trazadoCaminado.size)
+    }
+
+    // Verificar que iniciar otro sendero guarda el recorrido anterior si tenía posiciones
+    @Test
+    fun `iniciar otro sendero guarda el recorrido anterior`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0))
+
+        control.iniciar("otro")
+
+        assertEquals(1, repositorioRecorridos.guardados.size)
+        assertEquals("con-recorrido", repositorioRecorridos.guardados.single().idSendero)
+    }
+
+    // Verificar que un resultado fallido del repositorio no rompe la detención
+    @Test
+    fun `un guardado fallido no rompe la detencion`() = runTest {
+        repositorioRecorridos.resultadoGuardar = Result.failure(IllegalStateException("Sin espacio"))
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0))
+
+        control.detener()
+
+        assertNull(control.estado.value)
+        assertEquals(1, repositorioRecorridos.guardados.size)
+    }
+
+    // Verificar que una excepción del repositorio no rompe la detención
+    @Test
+    fun `una excepcion al guardar no rompe la detencion`() = runTest {
+        repositorioRecorridos.errorAlGuardar = IllegalStateException("Fallo inesperado")
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0))
+
+        control.detener()
+
+        assertNull(control.estado.value)
+    }
+
+    // Verificar que cerrar sesión con un recorrido activo lo guarda con el usuario que lo inició
+    @Test
+    fun `cerrar sesion con recorrido activo guarda el recorrido`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido")
+        ubicaciones.emit(alSur(0.0))
+        autenticacion.usuarioActual = null
+
+        control.detener()
+
+        assertEquals(1, repositorioRecorridos.guardados.size)
+        assertEquals("usuario-1", repositorioRecorridos.guardados.single().idUsuario)
+        assertNull(control.estado.value)
+    }
+
+    // Verificar que un recorrido simulado se guarda marcado como simulado
+    @Test
+    fun `un recorrido simulado se guarda marcado como simulado`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido", esSimulado = true)
+        advanceTimeBy(10_500L)
+
+        control.detener()
+
+        assertEquals(1, repositorioRecorridos.guardados.size)
+        assertEquals(true, repositorioRecorridos.guardados.single().esSimulado)
     }
 }

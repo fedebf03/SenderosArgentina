@@ -357,6 +357,65 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0, estado.distanciaRecorridaKilometros, 0.0001)
     }
 
+    // Verificar que cada posición aceptada se agrega al trazado caminado en orden
+    @Test
+    fun `cada posicion aceptada se agrega al trazado caminado`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+        val posiciones = listOf(posicionAlSur(0.0), posicionAlSur(0.0005), posicionAlSur(0.001))
+
+        val estado = recorrer(inicial, posiciones)
+
+        assertEquals(posiciones, estado.trazadoCaminado)
+    }
+
+    // Verificar que un movimiento menor a 5 metros no se agrega al trazado caminado
+    @Test
+    fun `un movimiento menor a cinco metros no se agrega al trazado caminado`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+        val posiciones = listOf(posicionAlSur(0.0), posicionAlSur(0.00002), posicionAlSur(0.00003))
+
+        val estado = recorrer(inicial, posiciones)
+
+        assertEquals(listOf(posicionAlSur(0.0)), estado.trazadoCaminado)
+    }
+
+    // Verificar que el estado inicial no tiene trazado caminado ni velocidad máxima
+    @Test
+    fun `el estado inicial no tiene trazado caminado ni velocidad maxima`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+
+        assertTrue(inicial.trazadoCaminado.isEmpty())
+        assertEquals(0f, inicial.velocidadMaximaMetrosPorSegundo, 0f)
+    }
+
+    // Verificar que la velocidad máxima conserva el mayor valor reportado por las lecturas
+    @Test
+    fun `la velocidad maxima conserva el mayor valor reportado`() {
+        var estado = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+        listOf(1.0f, 3.5f, 2.0f).forEachIndexed { indice, velocidad ->
+            estado = CalculadoraSeguimiento.actualizar(
+                estado,
+                LecturaUbicacion(posicionAlSur(indice * 0.0005), null, velocidad, null),
+                INSTANTE_INICIAL + (indice + 1) * 5_000L
+            ).estado
+        }
+
+        assertEquals(3.5f, estado.velocidadMaximaMetrosPorSegundo, 0f)
+    }
+
+    // Verificar que una lectura sin velocidad no modifica la velocidad máxima
+    @Test
+    fun `una lectura sin velocidad no modifica la velocidad maxima`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+        val conVelocidad = CalculadoraSeguimiento.actualizar(
+            inicial, LecturaUbicacion(posicionAlSur(0.0), null, 2.5f, null), INSTANTE_INICIAL + 1_000L
+        ).estado
+
+        val sinVelocidad = actualizarConPosicion(conVelocidad, posicionAlSur(0.0005), INSTANTE_INICIAL + 2_000L).estado
+
+        assertEquals(2.5f, sinVelocidad.velocidadMaximaMetrosPorSegundo, 0f)
+    }
+
     // Construir una lectura con rumbo y velocidad opcionales
     private fun lectura(coordenada: Coordenada, rumbo: Float? = null, velocidad: Float? = null): LecturaUbicacion {
         return LecturaUbicacion(coordenada, rumbo, velocidad, precisionMetros = null)

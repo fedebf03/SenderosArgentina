@@ -19,12 +19,17 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.Cabin
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.Terrain
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -41,8 +46,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Dificultad
+import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.componentes.ChipDificultad
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
@@ -55,6 +62,7 @@ internal data class DatoRecorrido(
     val etiqueta: String
 )
 
+// Renderizar los datos del recorrido, la dificultad, el punto de inicio y la mejor época
 @Composable
 internal fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) {
     val datos = listOf(
@@ -95,6 +103,7 @@ internal fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) 
     }
 }
 
+// Renderizar una celda con el ícono, el valor y la etiqueta de un dato del recorrido
 @Composable
 internal fun CeldaDato(dato: DatoRecorrido, modifier: Modifier = Modifier) {
     Column(
@@ -123,6 +132,7 @@ internal fun CeldaDato(dato: DatoRecorrido, modifier: Modifier = Modifier) {
     }
 }
 
+// Renderizar una fila con un ícono y un texto
 @Composable
 internal fun FilaConIcono(icono: ImageVector, texto: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -136,8 +146,14 @@ internal fun FilaConIcono(icono: ImageVector, texto: String) {
     }
 }
 
+// Renderizar el recuadro del mapa del recorrido, o un aviso si el sendero no tiene recorrido
 @Composable
-internal fun RecuadroMapa(sendero: Sendero, modifier: Modifier = Modifier) {
+internal fun RecuadroMapa(
+    sendero: Sendero,
+    modifier: Modifier = Modifier,
+    puntoEnfocado: Coordenada? = null,
+    claveEnfoque: Int = 0
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -166,12 +182,15 @@ internal fun RecuadroMapa(sendero: Sendero, modifier: Modifier = Modifier) {
                 puntos = sendero.recorrido,
                 tipoRecorrido = sendero.tipoRecorrido,
                 modifier = Modifier.fillMaxSize(),
-                usarModoTextura = true
+                usarModoTextura = true,
+                puntoEnfocado = puntoEnfocado,
+                claveEnfoque = claveEnfoque
             )
         }
     }
 }
 
+// Renderizar una sección con título que se expande o se contrae al tocarla
 @Composable
 internal fun SeccionDesplegable(
     titulo: String,
@@ -208,6 +227,56 @@ internal fun SeccionDesplegable(
     }
 }
 
+// Listar los puntos de interés con su ícono, su texto y su distancia; tocar uno enfoca el mapa
+@Composable
+internal fun ListaDePuntosDeInteres(
+    puntos: List<PuntoDeInteres>,
+    alSeleccionar: (Int) -> Unit
+) {
+    Column {
+        puntos.forEach { punto ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { alSeleccionar(punto.indice) }
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = obtenerIconoTipoPunto(punto.tipo),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = punto.texto(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = formatearKilometrosDesdeInicio(punto.distanciaDesdeInicioKilometros),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+// Obtener el ícono Material que representa un tipo de punto
+internal fun obtenerIconoTipoPunto(tipo: TipoPunto): ImageVector {
+    return when (tipo) {
+        TipoPunto.PASO -> Icons.Outlined.Flag
+        TipoPunto.MIRADOR -> Icons.Outlined.Terrain
+        TipoPunto.AGUA -> Icons.Outlined.WaterDrop
+        TipoPunto.REFUGIO -> Icons.Outlined.Cabin
+        TipoPunto.CAMPING -> Icons.Outlined.Park
+        TipoPunto.PELIGRO -> Icons.Outlined.Warning
+    }
+}
+
+// Renderizar una lista de textos con viñetas
 @Composable
 internal fun ListaConVinietas(elementos: List<String>) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -217,6 +286,7 @@ internal fun ListaConVinietas(elementos: List<String>) {
     }
 }
 
+// Renderizar la lista de etapas con su número, nombre y distancia
 @Composable
 internal fun ListaDeEtapas(etapas: List<Etapa>) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

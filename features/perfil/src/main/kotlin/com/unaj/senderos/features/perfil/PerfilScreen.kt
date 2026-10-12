@@ -36,6 +36,7 @@ import com.unaj.senderos.presentation.componentes.AvatarUsuario
 import com.unaj.senderos.presentation.componentes.BotoneraInferior
 import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
+import com.unaj.senderos.presentation.historial.HistorialDeRecorridos
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
 private const val TAG = "PERFIL"
@@ -45,10 +46,12 @@ private const val TAG = "PERFIL"
 fun PerfilPantalla(
     viewModel: PerfilViewModel,
     alNavegarALogin: () -> Unit = {},
-    alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
+    alNavegarASeccion: (SeccionPrincipal) -> Unit = {},
+    alNavegarAHistorialDetalle: (String) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarALoginActual by rememberUpdatedState(alNavegarALogin)
+    val navegarAHistorialActual by rememberUpdatedState(alNavegarAHistorialDetalle)
 
     LaunchedEffect(Unit) {
         Log.d(TAG, "Pantalla inicializada / rotación completada")
@@ -58,6 +61,7 @@ fun PerfilPantalla(
                     Log.d(TAG, "Navegando al inicio de sesión")
                     navegarALoginActual()
                 }
+                is PerfilEfecto.NavegarAHistorialDetalle -> navegarAHistorialActual(efecto.idRecorrido)
             }
         }
     }
@@ -140,6 +144,11 @@ private fun CuerpoPerfil(
                 onCheckedChange = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoDemostracion(activo)) }
             )
         }
+
+        HistorialDeRecorridos(
+            recorridos = estadoVisual.recorridos,
+            alSeleccionar = { idRecorrido -> alProcesarEvento(PerfilEvento.AlSeleccionarRecorrido(idRecorrido)) }
+        )
 
         OutlinedButton(
             onClick = { alProcesarEvento(PerfilEvento.AlCerrarSesion) },

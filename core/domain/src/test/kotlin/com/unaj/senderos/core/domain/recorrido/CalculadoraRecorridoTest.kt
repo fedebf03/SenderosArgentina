@@ -107,3 +107,38 @@ class CalculadoraRecorridoTest {
         assertEquals(0f, CalculadoraRecorrido.normalizarRumbo(360f), 0.001f)
     }
 }
+
+class CalculadoraRecorridoDistanciasAcumuladasTest {
+
+    private val origen = PuntoRecorrido(latitud = 0.0, longitud = 0.0)
+    private val unGradoAlEste = PuntoRecorrido(latitud = 0.0, longitud = 1.0)
+    private val unGradoAlNorteYAlEste = PuntoRecorrido(latitud = 1.0, longitud = 1.0)
+    private val dosGradosAlNorteYAlEste = PuntoRecorrido(latitud = 2.0, longitud = 1.0)
+    private val kilometrosPorGrado = 111.195
+
+    // Verificar que el acumulado empieza en cero y suma cada tramo en el orden del recorrido
+    @Test
+    fun `el acumulado parte de cero y suma los tramos en orden`() {
+        val acumuladas = CalculadoraRecorrido.distanciasAcumuladasKilometros(
+            listOf(origen, unGradoAlEste, unGradoAlNorteYAlEste, dosGradosAlNorteYAlEste)
+        )
+
+        assertEquals(4, acumuladas.size)
+        assertEquals(0.0, acumuladas[0], 0.0)
+        assertEquals(kilometrosPorGrado, acumuladas[1], 0.1)
+        assertEquals(kilometrosPorGrado * 2, acumuladas[2], 0.2)
+        assertEquals(kilometrosPorGrado * 3, acumuladas[3], 0.3)
+    }
+
+    // Verificar que un recorrido vacío no devuelve distancias
+    @Test
+    fun `el acumulado de un recorrido vacio es una lista vacia`() {
+        assertEquals(emptyList<Double>(), CalculadoraRecorrido.distanciasAcumuladasKilometros(emptyList()))
+    }
+
+    // Verificar que un recorrido de un solo punto devuelve únicamente el cero
+    @Test
+    fun `el acumulado de un solo punto es cero`() {
+        assertEquals(listOf(0.0), CalculadoraRecorrido.distanciasAcumuladasKilometros(listOf(origen)))
+    }
+}
