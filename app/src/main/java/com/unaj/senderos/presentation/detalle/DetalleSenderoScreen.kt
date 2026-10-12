@@ -1,7 +1,14 @@
 package com.unaj.senderos.presentation.detalle
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,31 +46,84 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
+import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
+import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
+private const val TAG = "DETALLE_SENDERO"
+
+// Mostrar el detalle del sendero conectado a su ViewModel y gestionar los permisos del recorrido
 @Composable
 fun DetalleSenderoPantalla(
     viewModel: DetalleSenderoViewModel,
     alVolverAlListado: () -> Unit,
-    alNavegarAEdicion: (String) -> Unit
+    alNavegarAEdicion: (String) -> Unit,
+    alNavegarARecorrido: (String) -> Unit
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val volverAlListadoActual by rememberUpdatedState(alVolverAlListado)
     val navegarAEdicionActual by rememberUpdatedState(alNavegarAEdicion)
+    val navegarARecorridoActual by rememberUpdatedState(alNavegarARecorrido)
     val contextoActual by rememberUpdatedState(LocalContext.current)
+    // Continuar con el recorrido una vez resuelto el permiso de notificaciones (con o sin él)
+    val pedirPermisoNotificaciones = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (!concedido) {
+            Log.d(TAG, "Permiso de notificaciones denegado")
+            Toast.makeText(
+                contextoActual,
+                "Sin el permiso de notificaciones no verás los avisos del recorrido con la pantalla apagada",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+        viewModel.procesarEvento(DetalleSenderoEvento.AlConcederPermisoUbicacion)
+    }
+    // Pedir las notificaciones en Android 13 o superior si faltan; si no, iniciar el recorrido
+    val continuarTrasUbicacionPrecisa: () -> Unit = {
+        val faltaPermisoNotificaciones = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(contextoActual, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        if (faltaPermisoNotificaciones) {
+            pedirPermisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.procesarEvento(DetalleSenderoEvento.AlConcederPermisoUbicacion)
+        }
+    }
+    val pedirPermisoUbicacion = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { resultados ->
+        val esPrecisa = resultados[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        when {
+            esPrecisa -> continuarTrasUbicacionPrecisa()
+            resultados.values.any { concedido -> concedido } ->
+                viewModel.procesarEvento(DetalleSenderoEvento.AlConcederSoloUbicacionAproximada)
+            else -> viewModel.procesarEvento(DetalleSenderoEvento.AlDenegarPermisoUbicacion)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.efectoVisual.collect { efecto ->
             when (efecto) {
                 is DetalleSenderoEfecto.VolverAlListado -> volverAlListadoActual()
                 is DetalleSenderoEfecto.NavegarAEdicion -> navegarAEdicionActual(efecto.idSendero)
+                is DetalleSenderoEfecto.NavegarARecorrido -> navegarARecorridoActual(efecto.idSendero)
+                is DetalleSenderoEfecto.SolicitarPermisoUbicacion -> {
+                    // Con la ubicación precisa ya concedida se sigue directo; si falta, se pide al sistema
+                    if (tienePermisoDeUbicacionPrecisa(contextoActual)) {
+                        continuarTrasUbicacionPrecisa()
+                    } else {
+                        pedirPermisoUbicacion.launch(PERMISOS_UBICACION)
+                    }
+                }
                 is DetalleSenderoEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
                 is DetalleSenderoEfecto.CompartirSendero -> {
                     val intencionCompartir = Intent(Intent.ACTION_SEND).apply {
@@ -83,6 +143,7 @@ fun DetalleSenderoPantalla(
     )
 }
 
+// Renderizar el detalle del sendero a partir del estado visual
 @Composable
 fun DetalleSenderoContenido(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -98,7 +159,12 @@ fun DetalleSenderoContenido(
         snackbarHost = { SnackbarHost(hostState = estadoAvisos) },
         bottomBar = {
             if (estadoVisual.sendero != null) {
-                BotonIniciarRecorrido(alProcesarEvento)
+                BotonIniciarRecorrido(
+                    hayRecorridoEnCurso = estadoVisual.hayRecorridoEnCursoEnEsteSendero,
+                    esRecorridoSimulado = estadoVisual.esRecorridoEnCursoSimulado,
+                    esModoDemostracion = estadoVisual.esModoDemostracion,
+                    alProcesarEvento = alProcesarEvento
+                )
             }
         }
     ) { espaciadoInterno ->
@@ -134,6 +200,24 @@ fun DetalleSenderoContenido(
         }
     }
 
+    estadoVisual.nombreSenderoEnCursoAReemplazar?.let { nombre ->
+        AlertDialog(
+            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarReemplazarRecorrido) },
+            title = { Text("Recorrido en curso") },
+            text = { Text("Hay un recorrido en curso de $nombre. ¿Finalizarlo e iniciar este?") },
+            confirmButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarReemplazarRecorrido) }) {
+                    Text("Finalizar e iniciar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarReemplazarRecorrido) }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     if (estadoVisual.esDialogoEliminarVisible && estadoVisual.sendero != null) {
         AlertDialog(
             onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminar) },
@@ -155,8 +239,14 @@ fun DetalleSenderoContenido(
     }
 }
 
+// Mostrar el botón inferior que inicia, simula o retoma el recorrido según el caso
 @Composable
-private fun BotonIniciarRecorrido(alProcesarEvento: (DetalleSenderoEvento) -> Unit) {
+private fun BotonIniciarRecorrido(
+    hayRecorridoEnCurso: Boolean,
+    esRecorridoSimulado: Boolean,
+    esModoDemostracion: Boolean,
+    alProcesarEvento: (DetalleSenderoEvento) -> Unit
+) {
     Surface(color = MaterialTheme.colorScheme.background) {
         Button(
             onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido) },
@@ -172,11 +262,18 @@ private fun BotonIniciarRecorrido(alProcesarEvento: (DetalleSenderoEvento) -> Un
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(12.dp))
-            Text("Iniciar recorrido")
+            val textoBoton = when {
+                hayRecorridoEnCurso && esRecorridoSimulado -> "Ver simulación en curso"
+                hayRecorridoEnCurso -> "Ver recorrido en curso"
+                esModoDemostracion -> "Simular recorrido"
+                else -> "Iniciar recorrido"
+            }
+            Text(textoBoton)
         }
     }
 }
 
+// Renderizar la lista con todas las secciones del sendero
 @Composable
 private fun CuerpoDetalle(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -239,6 +336,7 @@ private fun CuerpoDetalle(
     }
 }
 
+// Previsualizar el detalle de un sendero de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun DetalleSenderoContenidoPreview() {

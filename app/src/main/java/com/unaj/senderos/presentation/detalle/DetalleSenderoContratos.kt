@@ -10,7 +10,11 @@ data class DetalleSenderoEstadoVisual(
     val mensajeError: String? = null,
     val seccionesExpandidas: Set<SeccionDetalle> = emptySet(),
     val esMenuOpcionesVisible: Boolean = false,
-    val esDialogoEliminarVisible: Boolean = false
+    val esDialogoEliminarVisible: Boolean = false,
+    val hayRecorridoEnCursoEnEsteSendero: Boolean = false,
+    val esRecorridoEnCursoSimulado: Boolean = false,
+    val nombreSenderoEnCursoAReemplazar: String? = null,
+    val esModoDemostracion: Boolean = false
 )
 
 sealed interface DetalleSenderoEvento {
@@ -19,6 +23,11 @@ sealed interface DetalleSenderoEvento {
     data object AlCompartir : DetalleSenderoEvento
     data class AlAlternarSeccion(val seccion: SeccionDetalle) : DetalleSenderoEvento
     data object AlTocarIniciarRecorrido : DetalleSenderoEvento
+    data object AlConcederPermisoUbicacion : DetalleSenderoEvento
+    data object AlDenegarPermisoUbicacion : DetalleSenderoEvento
+    data object AlConcederSoloUbicacionAproximada : DetalleSenderoEvento
+    data object AlConfirmarReemplazarRecorrido : DetalleSenderoEvento
+    data object AlCancelarReemplazarRecorrido : DetalleSenderoEvento
     data object AlAbrirMenuOpciones : DetalleSenderoEvento
     data object AlCerrarMenuOpciones : DetalleSenderoEvento
     data object AlTocarEditar : DetalleSenderoEvento
@@ -32,4 +41,6 @@ sealed interface DetalleSenderoEfecto {
     data class MostrarAviso(val mensaje: String) : DetalleSenderoEfecto
     data class CompartirSendero(val texto: String) : DetalleSenderoEfecto
     data class NavegarAEdicion(val idSendero: String) : DetalleSenderoEfecto
+    data object SolicitarPermisoUbicacion : DetalleSenderoEfecto
+    data class NavegarARecorrido(val idSendero: String) : DetalleSenderoEfecto
 }

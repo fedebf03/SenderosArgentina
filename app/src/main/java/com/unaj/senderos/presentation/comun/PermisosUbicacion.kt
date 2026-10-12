@@ -16,3 +16,9 @@ fun tienePermisoDeUbicacion(contexto: Context): Boolean {
         ContextCompat.checkSelfPermission(contexto, permiso) == PackageManager.PERMISSION_GRANTED
     }
 }
+
+// Verificar si la aplicación tiene el permiso de ubicación precisa, que exige el seguimiento del recorrido
+fun tienePermisoDeUbicacionPrecisa(contexto: Context): Boolean {
+    return ContextCompat.checkSelfPermission(contexto, Manifest.permission.ACCESS_FINE_LOCATION) ==
+        PackageManager.PERMISSION_GRANTED
+}

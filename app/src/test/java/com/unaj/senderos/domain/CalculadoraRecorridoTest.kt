@@ -1,5 +1,6 @@
 package com.unaj.senderos.domain
 
+import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
@@ -85,5 +86,24 @@ class CalculadoraRecorridoTest {
 
         assertEquals(puntos, dobleInversion)
         assertEquals(emptyList<PuntoRecorrido>(), CalculadoraRecorrido.invertirSentido(emptyList()))
+    }
+
+    // Verificar el rumbo inicial hacia los cuatro puntos cardinales
+    @Test
+    fun `el rumbo inicial apunta a los puntos cardinales`() {
+        val origen = Coordenada(-39.95, -71.07)
+
+        assertEquals(0.0, CalculadoraRecorrido.rumboInicialGrados(origen, Coordenada(-39.949, -71.07)), 0.5)
+        assertEquals(90.0, CalculadoraRecorrido.rumboInicialGrados(origen, Coordenada(-39.95, -71.069)), 0.5)
+        assertEquals(180.0, CalculadoraRecorrido.rumboInicialGrados(origen, Coordenada(-39.951, -71.07)), 0.5)
+        assertEquals(270.0, CalculadoraRecorrido.rumboInicialGrados(origen, Coordenada(-39.95, -71.071)), 0.5)
+    }
+
+    // Verificar la normalización de rumbos fuera de rango
+    @Test
+    fun `normalizar un rumbo lo lleva al intervalo de 0 a 360`() {
+        assertEquals(10f, CalculadoraRecorrido.normalizarRumbo(370f), 0.001f)
+        assertEquals(270f, CalculadoraRecorrido.normalizarRumbo(-90f), 0.001f)
+        assertEquals(0f, CalculadoraRecorrido.normalizarRumbo(360f), 0.001f)
     }
 }

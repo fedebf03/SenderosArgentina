@@ -1,0 +1,48 @@
+package com.unaj.senderos.falsos
+
+import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.EstadoSeguimiento
+import com.unaj.senderos.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.domain.repository.ControlSeguimiento
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+
+class FalsoControlSeguimiento : ControlSeguimiento {
+
+    // Estado que la prueba modifica para simular lo que publica el servicio
+    val estadoEmitido = MutableStateFlow<EstadoSeguimiento?>(null)
+
+    // Avisos que la prueba emite para simular proximidad y desvío
+    val avisosEmitidos = MutableSharedFlow<AvisoRecorrido>(extraBufferCapacity = 16)
+
+    override val estado: StateFlow<EstadoSeguimiento?> = estadoEmitido
+    val motivoFinEmitido = MutableStateFlow<MotivoFinSeguimiento?>(null)
+    override val motivoFin: StateFlow<MotivoFinSeguimiento?> = motivoFinEmitido
+    override val avisos: SharedFlow<AvisoRecorrido> = avisosEmitidos
+
+    // Guardar el estado inicial del sendero indicado
+    override suspend fun iniciar(idSendero: String, esSimulado: Boolean) {
+        estadoEmitido.value = EstadoSeguimiento(idSendero = idSendero, trazado = emptyList(), esSimulado = esSimulado)
+    }
+
+    val multiplicadoresCambiados: MutableList<Int> = mutableListOf()
+    var cantidadDesviosSimulados: Int = 0
+        private set
+
+    // Registrar el multiplicador pedido
+    override fun cambiarMultiplicadorSimulacion(valor: Int) {
+        multiplicadoresCambiados.add(valor)
+    }
+
+    // Contar los desvíos pedidos
+    override fun simularDesvio() {
+        cantidadDesviosSimulados++
+    }
+
+    // Dejar el estado en null como lo hace el control real
+    override fun detener() {
+        estadoEmitido.value = null
+    }
+}
