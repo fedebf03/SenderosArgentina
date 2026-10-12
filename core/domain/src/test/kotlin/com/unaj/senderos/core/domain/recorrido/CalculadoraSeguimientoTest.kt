@@ -686,4 +686,153 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.llegoAlFinal)
         assertTrue(estado.distanciaRecorridaKilometros > 0.3)
     }
+
+    // Construir un circular chico de unos 335 m con lados de 111 m, 85 m y el cierre
+    private fun trianguloCircularChico(): Sendero {
+        return construirSendero(
+            listOf(
+                PuntoRecorrido(LATITUD_BASE, LONGITUD_BASE),
+                PuntoRecorrido(LATITUD_BASE - 0.001, LONGITUD_BASE),
+                PuntoRecorrido(LATITUD_BASE - 0.001, LONGITUD_BASE + 0.001)
+            ),
+            TipoRecorrido.CIRCULAR
+        )
+    }
+
+    // Construir un sendero lineal de tres tramos de 111 m cada uno
+    private fun senderoLinealDeTresTramos(): Sendero {
+        return construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.001), puntoAlSur(0.002), puntoAlSur(0.003)))
+    }
+
+    // Verificar que un salto espurio de 200 m en un circular chico no adelanta el tramo ni dispara la llegada
+    @Test
+    fun `un salto espurio de doscientos metros no adelanta el tramo ni dispara la llegada`() {
+        val inicial = CalculadoraSeguimiento.iniciar(trianguloCircularChico(), INSTANTE_INICIAL)
+        val primera = actualizarConPosicion(inicial, Coordenada(LATITUD_BASE, LONGITUD_BASE), INSTANTE_INICIAL + 5_000L)
+
+        val salto = actualizarConPosicion(
+            primera.estado,
+            Coordenada(LATITUD_BASE, LONGITUD_BASE + 0.00235),
+            INSTANTE_INICIAL + 10_000L
+        )
+
+        assertEquals(0, salto.estado.indiceTramoActual)
+        assertFalse(salto.estado.llegoAlFinal)
+        assertFalse(AvisoRecorrido.LlegadaAlFinal in salto.avisos)
+    }
+
+    // Verificar que una lectura con precisión peor a 50 m no suma distancia ni se agrega al trazado caminado
+    @Test
+    fun `una lectura imprecisa no suma distancia ni se agrega al trazado caminado`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+        val primera = actualizarConPosicion(inicial, posicionAlSur(0.0), INSTANTE_INICIAL + 5_000L).estado
+
+        val imprecisa = CalculadoraSeguimiento.actualizar(
+            primera,
+            LecturaUbicacion(posicionAlSur(0.0015), null, null, precisionMetros = 80f),
+            INSTANTE_INICIAL + 600_000L
+        ).estado
+
+        assertEquals(0.0, imprecisa.distanciaRecorridaKilometros, 0.0001)
+        assertEquals(1, imprecisa.trazadoCaminado.size)
+    }
+
+    // Verificar que una lectura imprecisa no amplía la ventana de búsqueda del tramo
+    @Test
+    fun `una lectura imprecisa no amplia la ventana de busqueda`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealDeTresTramos(), INSTANTE_INICIAL)
+        val primera = actualizarConPosicion(inicial, posicionAlSur(0.0), INSTANTE_INICIAL + 5_000L).estado
+
+        val imprecisa = CalculadoraSeguimiento.actualizar(
+            primera,
+            LecturaUbicacion(posicionAlSur(0.0028), null, null, precisionMetros = 80f),
+            INSTANTE_INICIAL + 600_000L
+        ).estado
+
+        assertTrue(imprecisa.indiceTramoActual <= 1)
+    }
+
+    // Construir un estado de un lineal corto con las lecturas previas necesarias para probar la llegada
+    private fun estadoCercaDelFinalLineal(): EstadoSeguimiento {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
+        return recorrer(inicial, listOf(posicionAlSur(0.0), posicionAlSur(0.001), posicionAlSur(0.0015)))
+    }
+
+    // Verificar que la precisión de la lectura eleva el umbral de llegada por encima de 20 m
+    @Test
+    fun `la precision eleva el umbral de llegada`() {
+        val estado = estadoCercaDelFinalLineal()
+        val instante = INSTANTE_INICIAL + 20_000L
+
+        val sinPrecision = actualizarConPosicion(estado, posicionAlSur(0.00175), instante)
+        val conPrecision = CalculadoraSeguimiento.actualizar(
+            estado,
+            LecturaUbicacion(posicionAlSur(0.00175), null, null, precisionMetros = 30f),
+            instante
+        )
+
+        assertFalse(sinPrecision.estado.llegoAlFinal)
+        assertTrue(conPrecision.estado.llegoAlFinal)
+        assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.LlegadaAlFinal), conPrecision.avisos)
+    }
+
+    // Verificar que el umbral de llegada nunca supera los 40 m aunque la precisión sea peor
+    @Test
+    fun `el umbral de llegada se acota a cuarenta metros`() {
+        val estado = estadoCercaDelFinalLineal()
+        val instante = INSTANTE_INICIAL + 20_000L
+
+        val aCuarentaYDosMetros = CalculadoraSeguimiento.actualizar(
+            estado,
+            LecturaUbicacion(posicionAlSur(0.00162), null, null, precisionMetros = 49f),
+            instante
+        )
+        val aTreintaYOchoMetros = CalculadoraSeguimiento.actualizar(
+            estado,
+            LecturaUbicacion(posicionAlSur(0.00165), null, null, precisionMetros = 45f),
+            instante
+        )
+
+        assertFalse(aCuarentaYDosMetros.estado.llegoAlFinal)
+        assertTrue(aTreintaYOchoMetros.estado.llegoAlFinal)
+    }
+
+    // Verificar que la primera lectura busca el tramo más cercano en todo el trazado
+    @Test
+    fun `la primera lectura lejos del inicio busca el tramo mas cercano en todo el trazado`() {
+        val inicial = CalculadoraSeguimiento.iniciar(senderoLinealDeTresTramos(), INSTANTE_INICIAL)
+
+        val estado = actualizarConPosicion(inicial, posicionAlSur(0.0027), INSTANTE_INICIAL + 5_000L).estado
+
+        assertEquals(2, estado.indiceTramoActual)
+        assertTrue(estado.distanciaRestanteKilometros < 0.05)
+    }
+
+    // Verificar que en un circular la primera lectura cerca del inicio elige el tramo 0 aunque el cierre sea más cercano
+    @Test
+    fun `en un circular la primera lectura cerca del inicio elige el primer tramo`() {
+        val inicial = CalculadoraSeguimiento.iniciar(trianguloCircularChico(), INSTANTE_INICIAL)
+
+        val estado = actualizarConPosicion(
+            inicial,
+            Coordenada(LATITUD_BASE - 0.0002, LONGITUD_BASE + 0.0002),
+            INSTANTE_INICIAL + 5_000L
+        ).estado
+
+        assertEquals(0, estado.indiceTramoActual)
+    }
+
+    // Verificar que en un circular la primera lectura sobre el cierre y lejos del tramo 0 elige el cierre
+    @Test
+    fun `en un circular la primera lectura sobre el cierre y lejos del primer tramo elige el cierre`() {
+        val inicial = CalculadoraSeguimiento.iniciar(trianguloCircularChico(), INSTANTE_INICIAL)
+
+        val estado = actualizarConPosicion(
+            inicial,
+            Coordenada(LATITUD_BASE - 0.0007, LONGITUD_BASE + 0.0007),
+            INSTANTE_INICIAL + 5_000L
+        ).estado
+
+        assertEquals(2, estado.indiceTramoActual)
+    }
 }

@@ -16,7 +16,14 @@ import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
 import com.unaj.senderos.data.sincronizacion.SincronizadorRecorridos
 import com.unaj.senderos.data.sincronizacion.SincronizadorSenderos
+import com.unaj.senderos.data.mapas.GestorMapasSinConexionMapLibre
 import com.unaj.senderos.data.notificaciones.NotificadorAndroid
+import com.unaj.senderos.data.conectividad.MonitorConectividadAndroid
+import com.unaj.senderos.domain.repository.GestorMapasSinConexion
+import com.unaj.senderos.domain.repository.MonitorConectividad
+import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
+import com.unaj.senderos.domain.usecase.EliminarMapaSinConexionUseCase
+import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.data.preferencias.PreferenciasAplicacionLocal
 import com.unaj.senderos.data.seguimiento.ControlSeguimientoEnMemoria
 import com.unaj.senderos.data.seguimiento.LanzadorSeguimientoAndroid
@@ -98,6 +105,13 @@ class ContenedorDependencias(contexto: Context) {
     val guardarSenderoUseCase = GuardarSenderoUseCase(senderoRepositorio, autenticacionRepositorio)
     val observarRecorridosUseCase = ObservarRecorridosUseCase(recorridoRepositorio, autenticacionRepositorio)
     val observarRecorridoUseCase = ObservarRecorridoUseCase(recorridoRepositorio, autenticacionRepositorio)
+
+    val monitorConectividad: MonitorConectividad = MonitorConectividadAndroid(contexto.applicationContext)
+    private val gestorMapasSinConexion: GestorMapasSinConexion =
+        GestorMapasSinConexionMapLibre(contexto.applicationContext)
+    val observarMapaSinConexionUseCase = ObservarMapaSinConexionUseCase(gestorMapasSinConexion, autenticacionRepositorio)
+    val descargarMapaSinConexionUseCase = DescargarMapaSinConexionUseCase(gestorMapasSinConexion, autenticacionRepositorio)
+    val eliminarMapaSinConexionUseCase = EliminarMapaSinConexionUseCase(gestorMapasSinConexion, autenticacionRepositorio)
 
     // Ámbito de proceso del seguimiento: vive tanto como la aplicación; el hilo principal serializa las actualizaciones del estado
     private val alcanceSeguimiento = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

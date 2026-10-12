@@ -4,12 +4,18 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.model.Dificultad
+import com.unaj.senderos.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.repository.ControlSeguimiento
 import com.unaj.senderos.domain.repository.LanzadorSeguimiento
+import com.unaj.senderos.domain.repository.MonitorConectividad
 import com.unaj.senderos.domain.repository.PreferenciasAplicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
+import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
+import com.unaj.senderos.domain.usecase.EliminarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
+import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import kotlin.math.roundToInt
@@ -40,7 +46,11 @@ class DetalleSenderoViewModel(
     private val eliminarSenderoUseCase: EliminarSenderoUseCase,
     private val lanzadorSeguimiento: LanzadorSeguimiento,
     private val controlSeguimiento: ControlSeguimiento,
-    private val preferenciasAplicacion: PreferenciasAplicacion
+    private val preferenciasAplicacion: PreferenciasAplicacion,
+    private val observarMapaSinConexionUseCase: ObservarMapaSinConexionUseCase,
+    private val descargarMapaSinConexionUseCase: DescargarMapaSinConexionUseCase,
+    private val eliminarMapaSinConexionUseCase: EliminarMapaSinConexionUseCase,
+    private val monitorConectividad: MonitorConectividad
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(DetalleSenderoEstadoVisual())
@@ -52,6 +62,10 @@ class DetalleSenderoViewModel(
     private var estaEliminando = false
 
     private var trabajoAlternarFavorito: Job? = null
+
+    private var trabajoMapaSinConexion: Job? = null
+    private var trabajoDescargaMapa: Job? = null
+    private var recorridoObservadoDelMapa: List<PuntoRecorrido>? = null
 
     init {
         observarSendero()
@@ -79,6 +93,23 @@ class DetalleSenderoViewModel(
             }
             is DetalleSenderoEvento.AlConfirmarReemplazarRecorrido -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(nombreSenderoEnCursoAReemplazar = null) }
+                sugerirDescargaOSolicitarPermiso()
+            }
+            is DetalleSenderoEvento.AlTocarDescargarMapa -> descargarMapa()
+            is DetalleSenderoEvento.AlTocarEliminarMapa -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarMapaVisible = true) }
+            }
+            is DetalleSenderoEvento.AlCancelarEliminarMapa -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarMapaVisible = false) }
+            }
+            is DetalleSenderoEvento.AlConfirmarEliminarMapa -> eliminarMapa()
+            is DetalleSenderoEvento.AlDescargarEIniciar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esSugerenciaDescargaVisible = false) }
+                descargarMapa()
+                emitirEfecto(DetalleSenderoEfecto.SolicitarPermisoUbicacion)
+            }
+            is DetalleSenderoEvento.AlIniciarSinDescargar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esSugerenciaDescargaVisible = false) }
                 emitirEfecto(DetalleSenderoEfecto.SolicitarPermisoUbicacion)
             }
             is DetalleSenderoEvento.AlCancelarReemplazarRecorrido -> {
@@ -131,6 +162,7 @@ class DetalleSenderoViewModel(
                     mensajeError = null
                 )
             }
+            observarMapaSinConexion(senderoEmitido)
         } else if (!estaEliminando) {
             mostrarError("No se encontró el sendero")
         }
@@ -241,7 +273,7 @@ class DetalleSenderoViewModel(
         }
         val recorridoActivo = controlSeguimiento.estado.value
         when {
-            recorridoActivo == null -> emitirEfecto(DetalleSenderoEfecto.SolicitarPermisoUbicacion)
+            recorridoActivo == null -> sugerirDescargaOSolicitarPermiso()
             recorridoActivo.idSendero == idSendero -> emitirEfecto(DetalleSenderoEfecto.NavegarARecorrido(idSendero))
             else -> pedirConfirmarReemplazo(recorridoActivo.idSendero)
         }
@@ -277,6 +309,74 @@ class DetalleSenderoViewModel(
     private fun tieneRecorridoSeguible(): Boolean {
         val cantidadPuntos = _estadoVisual.value.sendero?.recorrido?.size ?: 0
         return cantidadPuntos >= CANTIDAD_MINIMA_PUNTOS_RECORRIDO
+    }
+
+    // Observar el estado del mapa sin conexión, volviendo a observar solo si cambió el recorrido del sendero
+    private fun observarMapaSinConexion(sendero: Sendero) {
+        if (sendero.recorrido == recorridoObservadoDelMapa) return
+        recorridoObservadoDelMapa = sendero.recorrido
+        trabajoMapaSinConexion?.cancel()
+        if (sendero.recorrido.isEmpty()) {
+            _estadoVisual.update { estadoActual ->
+                estadoActual.copy(estadoMapaSinConexion = EstadoMapaSinConexion.NoDescargado)
+            }
+            return
+        }
+        observarMapaSinConexionUseCase(sendero).fold(
+            onSuccess = { flujoEstado ->
+                trabajoMapaSinConexion = viewModelScope.launch {
+                    flujoEstado
+                        .catch { error -> Log.e(TAG, "Error al observar el mapa sin conexión", error) }
+                        .collect { estadoMapa ->
+                            _estadoVisual.update { estadoActual -> estadoActual.copy(estadoMapaSinConexion = estadoMapa) }
+                        }
+                }
+            },
+            onFailure = { error -> Log.e(TAG, "No se pudo observar el mapa sin conexión", error) }
+        )
+    }
+
+    // Pedir la descarga del mapa del sendero cargado; el avance llega por el flujo de estado
+    private fun descargarMapa() {
+        val sendero = _estadoVisual.value.sendero ?: return
+        val estadoMapa = _estadoVisual.value.estadoMapaSinConexion
+        val hayDescargaActiva = estadoMapa is EstadoMapaSinConexion.Descargando ||
+            estadoMapa is EstadoMapaSinConexion.EsperandoConexion
+        if (hayDescargaActiva || trabajoDescargaMapa?.isActive == true) return
+        Log.d(TAG, "Descargando el mapa sin conexión del sendero $idSendero")
+        trabajoDescargaMapa = viewModelScope.launch {
+            descargarMapaSinConexionUseCase(sendero).onFailure { error ->
+                Log.e(TAG, "Error al descargar el mapa sin conexión", error)
+                canalEfectos.send(
+                    DetalleSenderoEfecto.MostrarAviso(error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO)
+                )
+            }
+        }
+    }
+
+    // Eliminar el mapa descargado del sendero tras la confirmación
+    private fun eliminarMapa() {
+        _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarMapaVisible = false) }
+        Log.d(TAG, "Eliminando el mapa sin conexión del sendero $idSendero")
+        viewModelScope.launch {
+            eliminarMapaSinConexionUseCase(idSendero).onFailure { error ->
+                Log.e(TAG, "Error al eliminar el mapa sin conexión", error)
+                canalEfectos.send(
+                    DetalleSenderoEfecto.MostrarAviso(error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO)
+                )
+            }
+        }
+    }
+
+    // Sugerir descargar el mapa si falta o está desactualizado; si no, seguir con el pedido de permiso
+    private fun sugerirDescargaOSolicitarPermiso() {
+        val estadoMapa = _estadoVisual.value.estadoMapaSinConexion
+        val conviene = estadoMapa is EstadoMapaSinConexion.NoDescargado || estadoMapa is EstadoMapaSinConexion.Desactualizado
+        if (conviene && monitorConectividad.hayConexion()) {
+            _estadoVisual.update { estadoActual -> estadoActual.copy(esSugerenciaDescargaVisible = true) }
+        } else {
+            emitirEfecto(DetalleSenderoEfecto.SolicitarPermisoUbicacion)
+        }
     }
 
     // Enviar un efecto único a la pantalla
