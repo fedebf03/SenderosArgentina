@@ -1,6 +1,7 @@
 package com.unaj.senderos.domain
 
 import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.LecturaUbicacion
@@ -27,7 +28,9 @@ private const val FACTOR_VENTANA_POR_DESPLAZAMIENTO = 2.0
 private const val FRACCION_MINIMA_PARA_LLEGADA = 0.5
 private const val UMBRAL_LLEGADA_METROS = 20.0
 private const val UMBRAL_LLEGADA_MAXIMO_METROS = 40.0
-private const val PRECISION_MAXIMA_ACEPTABLE_METROS = 50f
+private const val PRECISION_MAXIMA_ACEPTABLE_METROS = 30f
+private const val VIGENCIA_LECTURA_VALIDA_MILISEGUNDOS = 15_000L
+private const val ESPERA_PRIMERA_LECTURA_MILISEGUNDOS = 30_000L
 private const val VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO = 3.0
 private const val DISTANCIA_MAXIMA_PRIMER_TRAMO_CIRCULAR_METROS = 30.0
 
@@ -56,9 +59,19 @@ object CalculadoraSeguimiento {
         val nuevaPosicion = lectura.coordenada
         val tiempoTranscurrido = ahora - estado.instanteInicioMilisegundos
         val trazado = estado.trazado
+        if ((lectura.precisionMetros ?: 0f) > PRECISION_MAXIMA_ACEPTABLE_METROS) {
+            // Lectura imprecisa: no mueve la posición ni suma distancia; solo hace correr el tiempo y reevalúa la calidad
+            val sinMover = estado.copy(tiempoTranscurridoMilisegundos = tiempoTranscurrido)
+            return ResultadoSeguimiento(estado = sinMover.copy(calidadSenal = evaluarCalidad(sinMover, ahora)), avisos = emptyList())
+        }
         if (trazado.size < 2) {
             return ResultadoSeguimiento(
-                estado = estado.copy(posicionActual = nuevaPosicion, tiempoTranscurridoMilisegundos = tiempoTranscurrido),
+                estado = estado.copy(
+                    posicionActual = nuevaPosicion,
+                    tiempoTranscurridoMilisegundos = tiempoTranscurrido,
+                    calidadSenal = CalidadSenal.BUENA,
+                    instanteUltimaLecturaValidaMilisegundos = ahora
+                ),
                 avisos = emptyList()
             )
         }
@@ -66,14 +79,10 @@ object CalculadoraSeguimiento {
         val indiceTramoAnterior = estado.indiceTramoActual.coerceIn(0, ultimoTramo)
         val largoTotal = longitudTotal(trazado)
         val esPrimeraLectura = estado.posicionActual == null
-        val tienePrecisionAceptable = (lectura.precisionMetros ?: 0f) <= PRECISION_MAXIMA_ACEPTABLE_METROS
         val desplazamientoDesdeLecturaAnteriorKilometros = estado.posicionActual
             ?.let { anterior -> distanciaEnMetros(anterior, nuevaPosicion) / METROS_POR_KILOMETRO } ?: 0.0
-        val desplazamientoParaVentanaKilometros = if (tienePrecisionAceptable) {
+        val desplazamientoParaVentanaKilometros =
             minOf(desplazamientoDesdeLecturaAnteriorKilometros, desplazamientoPlausibleKilometros(estado, ahora))
-        } else {
-            0.0
-        }
         val progresoActualKilometros = largoTotal - estado.distanciaRestanteKilometros
         val limiteDeBusquedaKilometros = if (esPrimeraLectura) {
             Double.POSITIVE_INFINITY
@@ -129,8 +138,7 @@ object CalculadoraSeguimiento {
         } else {
             distanciaEnMetros(ultimaAceptada, nuevaPosicion) / METROS_POR_KILOMETRO
         }
-        val seAceptaMovimiento = tienePrecisionAceptable &&
-            (ultimaAceptada == null || desplazamientoKilometros >= MOVIMIENTO_MINIMO_KILOMETROS)
+        val seAceptaMovimiento = ultimaAceptada == null || desplazamientoKilometros >= MOVIMIENTO_MINIMO_KILOMETROS
         val esSaltoDeSimulacion = estado.esSimulado && (estado.estaDesviado || estaDesviado)
         val distanciaSumada = if (ultimaAceptada != null && seAceptaMovimiento && !esSaltoDeSimulacion) desplazamientoKilometros else 0.0
 
@@ -160,9 +168,25 @@ object CalculadoraSeguimiento {
             estaDesviado = estaDesviado,
             indicesPuntosAvisados = puntosAvisados,
             tiempoTranscurridoMilisegundos = tiempoTranscurrido,
-            instanteUltimaLecturaMilisegundos = ahora
+            instanteUltimaLecturaMilisegundos = ahora,
+            instanteUltimaLecturaValidaMilisegundos = ahora,
+            calidadSenal = CalidadSenal.BUENA
         )
         return ResultadoSeguimiento(estado = nuevoEstado, avisos = avisos)
+    }
+
+    // Evaluar la calidad de la señal con el reloj: en simulación siempre BUENA; BUENA si la última lectura válida tiene 15 s o menos;
+    // DEBIL si pasó más; sin ninguna lectura válida, BUSCANDO hasta los 30 s del inicio y DEBIL después
+    fun evaluarCalidad(estado: EstadoSeguimiento, ahora: Long): CalidadSenal {
+        if (estado.esSimulado) return CalidadSenal.BUENA
+        val ultimaValida = estado.instanteUltimaLecturaValidaMilisegundos
+        return if (ultimaValida == null) {
+            if (ahora - estado.instanteInicioMilisegundos > ESPERA_PRIMERA_LECTURA_MILISEGUNDOS) CalidadSenal.DEBIL else CalidadSenal.BUSCANDO
+        } else if (ahora - ultimaValida > VIGENCIA_LECTURA_VALIDA_MILISEGUNDOS) {
+            CalidadSenal.DEBIL
+        } else {
+            CalidadSenal.BUENA
+        }
     }
 
     // Calcular el desplazamiento máximo plausible en kilómetros desde la lectura anterior con una velocidad de caminata

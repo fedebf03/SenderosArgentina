@@ -37,7 +37,11 @@ data class EstadoSeguimiento(
     // Verdadero si la velocidad es menor a 0,5 m/s (o desconocida) y no hubo pasos en 10 s
     val estaDetenido: Boolean = false,
     // Rumbo magnético de la brújula (vector de rotación); null si el equipo no la tiene o en simulación
-    val rumboBrujulaGrados: Float? = null
+    val rumboBrujulaGrados: Float? = null,
+    // BUSCANDO hasta la primera lectura válida; BUENA si la última válida tiene 15 s o menos; DEBIL si no (siempre BUENA en simulación)
+    val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO,
+    // Instante de la última lectura válida (precisión de 30 m o mejor, o sin precisión informada); null si todavía no hubo ninguna
+    val instanteUltimaLecturaValidaMilisegundos: Long? = null
 ) {
 
     // Rumbo a mostrar: el de la brújula si el usuario está detenido y hay brújula (el GPS no da rumbo fiable sin movimiento);

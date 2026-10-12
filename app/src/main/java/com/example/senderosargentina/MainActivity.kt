@@ -238,7 +238,8 @@ class MainActivity : ComponentActivity() {
                                         observarMapaSinConexionUseCase = dependencias.observarMapaSinConexionUseCase,
                                         descargarMapaSinConexionUseCase = dependencias.descargarMapaSinConexionUseCase,
                                         eliminarMapaSinConexionUseCase = dependencias.eliminarMapaSinConexionUseCase,
-                                        monitorConectividad = dependencias.monitorConectividad
+                                        monitorConectividad = dependencias.monitorConectividad,
+                                        capacidadesDispositivo = dependencias.capacidadesDispositivo
                                     )
                                 },
                                 alVolverAlListado = {

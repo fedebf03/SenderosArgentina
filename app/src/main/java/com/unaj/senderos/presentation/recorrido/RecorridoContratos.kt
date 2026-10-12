@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.recorrido
 
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
@@ -42,8 +43,13 @@ data class RecorridoEstadoVisual(
     val estaDetenido: Boolean = false,
     val tieneAcelerometro: Boolean = true,
     val tieneBrujula: Boolean = true,
-    val esDialogoCancelarVisible: Boolean = false
+    val esDialogoCancelarVisible: Boolean = false,
+    val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO
 ) {
+    // Indicar si las distancias y velocidades merecen confianza: solo con buena señal
+    val sonConfiablesLosDatosDeDistancia: Boolean
+        get() = calidadSenal == CalidadSenal.BUENA
+
     // Indicar que no hay acelerómetro que medir; en simulación los pasos los estima el control
     val faltaAcelerometro: Boolean
         get() = !tieneAcelerometro && !esSimulado

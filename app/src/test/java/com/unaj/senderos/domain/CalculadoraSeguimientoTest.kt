@@ -721,7 +721,7 @@ class CalculadoraSeguimientoTest {
         assertFalse(AvisoRecorrido.LlegadaAlFinal in salto.avisos)
     }
 
-    // Verificar que una lectura con precisión peor a 50 m no suma distancia ni se agrega al trazado caminado
+    // Verificar que una lectura con precisión peor a 30 m no suma distancia ni se agrega al trazado caminado
     @Test
     fun `una lectura imprecisa no suma distancia ni se agrega al trazado caminado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -776,25 +776,25 @@ class CalculadoraSeguimientoTest {
         assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.LlegadaAlFinal), conPrecision.avisos)
     }
 
-    // Verificar que el umbral de llegada nunca supera los 40 m aunque la precisión sea peor
+    // Verificar que el umbral de llegada nunca supera los 30 m (la precisión máxima válida): a 39 m del final no se llega aunque la precisión sea de 30 m
     @Test
-    fun `el umbral de llegada se acota a cuarenta metros`() {
+    fun `el umbral de llegada se acota a la precision maxima valida`() {
         val estado = estadoCercaDelFinalLineal()
         val instante = INSTANTE_INICIAL + 20_000L
 
         val aCuarentaYDosMetros = CalculadoraSeguimiento.actualizar(
             estado,
-            LecturaUbicacion(posicionAlSur(0.00162), null, null, precisionMetros = 49f),
+            LecturaUbicacion(posicionAlSur(0.00162), null, null, precisionMetros = 30f),
             instante
         )
-        val aTreintaYOchoMetros = CalculadoraSeguimiento.actualizar(
+        val aTreintaYNueveMetros = CalculadoraSeguimiento.actualizar(
             estado,
-            LecturaUbicacion(posicionAlSur(0.00165), null, null, precisionMetros = 45f),
+            LecturaUbicacion(posicionAlSur(0.00165), null, null, precisionMetros = 30f),
             instante
         )
 
         assertFalse(aCuarentaYDosMetros.estado.llegoAlFinal)
-        assertTrue(aTreintaYOchoMetros.estado.llegoAlFinal)
+        assertFalse(aTreintaYNueveMetros.estado.llegoAlFinal)
     }
 
     // Verificar que la primera lectura busca el tramo más cercano en todo el trazado

@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.detalle
 
+import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
@@ -63,6 +64,72 @@ class DetalleSenderoViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private var capacidades = CapacidadesDispositivo(
+        tieneGps = true,
+        tieneAcelerometro = true,
+        tieneBrujula = true,
+        tieneCamara = true
+    )
+
+    // Verificar que en un equipo sin GPS iniciar un recorrido real pide confirmar antes del permiso
+    @Test
+    fun `sin gps iniciar un recorrido real muestra el aviso antes del permiso`() = runTest(despachadorPrueba) {
+        capacidades = capacidades.copy(tieneGps = false)
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.esDialogoSinGpsVisible)
+        assertTrue(efectosRecibidos.isEmpty())
+    }
+
+    // Verificar que "Iniciar igual" cierra el aviso y sigue con el pedido de permiso
+    @Test
+    fun `iniciar igual sin gps continua con el permiso`() = runTest(despachadorPrueba) {
+        capacidades = capacidades.copy(tieneGps = false)
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlIniciarSinGps)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoSinGpsVisible)
+        assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
+    }
+
+    // Verificar que cancelar el aviso no inicia nada
+    @Test
+    fun `cancelar el aviso sin gps no inicia el recorrido`() = runTest(despachadorPrueba) {
+        capacidades = capacidades.copy(tieneGps = false)
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlCancelarSinGps)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoSinGpsVisible)
+        assertTrue(efectosRecibidos.isEmpty())
+    }
+
+    // Verificar que en simulación no se muestra el aviso aunque el equipo no tenga GPS
+    @Test
+    fun `en simulacion no se avisa la falta de gps`() = runTest(despachadorPrueba) {
+        capacidades = capacidades.copy(tieneGps = false)
+        preferencias.cambiarModoDemostracion(true)
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoSinGpsVisible)
+        assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
+    }
+
     // Crear el ViewModel con un sendero de prueba y recolectar sus efectos en una lista
     private fun crearViewModel(recorrido: List<PuntoRecorrido>): DetalleSenderoViewModel {
         val repositorio = FalsoSenderoRepositorio(
@@ -83,7 +150,8 @@ class DetalleSenderoViewModelTest {
             observarMapaSinConexionUseCase = ObservarMapaSinConexionUseCase(gestorMapas, autenticacion),
             descargarMapaSinConexionUseCase = DescargarMapaSinConexionUseCase(gestorMapas, autenticacion),
             eliminarMapaSinConexionUseCase = EliminarMapaSinConexionUseCase(gestorMapas, autenticacion),
-            monitorConectividad = monitorConectividad
+            monitorConectividad = monitorConectividad,
+            capacidadesDispositivo = capacidades
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }
@@ -289,7 +357,8 @@ class DetalleSenderoViewModelTest {
             observarMapaSinConexionUseCase = ObservarMapaSinConexionUseCase(gestorMapas, autenticacion),
             descargarMapaSinConexionUseCase = DescargarMapaSinConexionUseCase(gestorMapas, autenticacion),
             eliminarMapaSinConexionUseCase = EliminarMapaSinConexionUseCase(gestorMapas, autenticacion),
-            monitorConectividad = monitorConectividad
+            monitorConectividad = monitorConectividad,
+            capacidadesDispositivo = capacidades
         )
         advanceUntilIdle()
         control.estadoEmitido.value = EstadoSeguimiento(idSendero = "sendero-2", trazado = recorridoValido)

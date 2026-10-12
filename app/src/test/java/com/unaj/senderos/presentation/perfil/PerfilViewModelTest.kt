@@ -150,6 +150,10 @@ class PerfilViewModelTest {
             "Sin brújula, la dirección se calcula solo mientras caminás",
             explicarFuncionNoDisponible(FuncionDispositivo.BRUJULA)
         )
+        assertEquals(
+            "Sin GPS, la ubicación sale del wifi o de la red móvil: es menos precisa y no funciona sin señal",
+            explicarFuncionNoDisponible(FuncionDispositivo.GPS)
+        )
         FuncionDispositivo.entries.forEach { funcion ->
             assertTrue(explicarFuncionNoDisponible(funcion).isNotBlank())
         }

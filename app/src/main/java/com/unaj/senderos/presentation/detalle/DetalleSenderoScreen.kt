@@ -226,6 +226,26 @@ fun DetalleSenderoContenido(
         )
     }
 
+    if (estadoVisual.esDialogoSinGpsVisible) {
+        AlertDialog(
+            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarSinGps) },
+            title = { Text("Tu equipo no tiene GPS") },
+            text = {
+                Text("El seguimiento usará la ubicación por wifi o red móvil: será impreciso y no funcionará sin señal.")
+            },
+            confirmButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinGps) }) {
+                    Text("Iniciar igual")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarSinGps) }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     if (estadoVisual.esSugerenciaDescargaVisible) {
         AlertDialog(
             onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinDescargar) },
