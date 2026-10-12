@@ -4,6 +4,7 @@ package com.unaj.senderos.domain.model
 data class EstadoSeguimiento(
     val idSendero: String,
     val trazado: List<PuntoRecorrido>,
+    val nombreSendero: String = "",
     val indicesRecorridoDelTrazado: List<Int> = trazado.indices.toList(),
     val posicionActual: Coordenada? = null,
     val ultimaPosicionAceptada: Coordenada? = null,
@@ -22,6 +23,7 @@ data class EstadoSeguimiento(
     val esSimulado: Boolean = false,
     val multiplicadorSimulacion: Int = 1,
     val estaDesviado: Boolean = false,
+    val llegoAlFinal: Boolean = false,
     val indicesPuntosAvisados: Set<Int> = emptySet(),
     val instanteInicioMilisegundos: Long = 0L,
     val tiempoTranscurridoMilisegundos: Long = 0L

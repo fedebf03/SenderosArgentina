@@ -69,7 +69,7 @@ class ServicioSeguimientoRecorrido : Service() {
             }
         }
         alcance.launch {
-            control.avisos.collect { aviso -> notificador.notificarAviso(idSenderoActual, aviso) }
+            control.avisos.collect { aviso -> notificador.notificarAviso(idSenderoActual, aviso, control.estado.value?.nombreSendero.orEmpty()) }
         }
         Log.d(TAG, "Servicio creado")
     }

@@ -22,7 +22,10 @@ private const val TOLERANCIA_EMPATE_METROS = 0.5
 private const val CERCANIA_FIN_TRAMO_KILOMETROS = 0.005
 private const val VELOCIDAD_MINIMA_PARA_RUMBO = 0.5f
 private const val DESPLAZAMIENTO_MINIMO_PARA_RUMBO_METROS = 10.0
-private const val VENTANA_BUSQUEDA_KILOMETROS = 0.2
+private const val VENTANA_MINIMA_BUSQUEDA_KILOMETROS = 0.06
+private const val FACTOR_VENTANA_POR_DESPLAZAMIENTO = 2.0
+private const val FRACCION_MINIMA_PARA_LLEGADA = 0.5
+private const val UMBRAL_LLEGADA_KILOMETROS = 0.02
 
 // Proyección de una posición sobre un tramo: distancia perpendicular y fracción recorrida del tramo (0 a 1)
 private data class Proyeccion(val distanciaMetros: Double, val fraccion: Double)
@@ -34,6 +37,7 @@ object CalculadoraSeguimiento {
         val trazado = construirTrazado(sendero.recorrido, sendero.tipoRecorrido)
         return EstadoSeguimiento(
             idSendero = sendero.id,
+            nombreSendero = sendero.nombre,
             trazado = trazado,
             indicesRecorridoDelTrazado = construirIndicesDelRecorrido(sendero.recorrido.size, sendero.tipoRecorrido, trazado.size),
             distanciaRestanteKilometros = longitudTotal(trazado),
@@ -55,7 +59,15 @@ object CalculadoraSeguimiento {
         }
         val ultimoTramo = trazado.size - 2
         val indiceTramoAnterior = estado.indiceTramoActual.coerceIn(0, ultimoTramo)
-        val (indiceTramo, proyeccion) = buscarTramoMasCercano(trazado, nuevaPosicion, indiceTramoAnterior)
+        val largoTotal = longitudTotal(trazado)
+        val desplazamientoDesdeLecturaAnteriorKilometros = estado.posicionActual
+            ?.let { anterior -> distanciaEnMetros(anterior, nuevaPosicion) / METROS_POR_KILOMETRO } ?: 0.0
+        val progresoActualKilometros = largoTotal - estado.distanciaRestanteKilometros
+        val limiteDeBusquedaKilometros = progresoActualKilometros + maxOf(
+            VENTANA_MINIMA_BUSQUEDA_KILOMETROS,
+            FACTOR_VENTANA_POR_DESPLAZAMIENTO * desplazamientoDesdeLecturaAnteriorKilometros
+        )
+        val (indiceTramo, proyeccion) = buscarTramoMasCercano(trazado, nuevaPosicion, indiceTramoAnterior, limiteDeBusquedaKilometros)
         val largoTramo = largoDelTramo(trazado, indiceTramo)
         val progresoKilometros = (0 until indiceTramo).sumOf { indice -> largoDelTramo(trazado, indice) } +
             proyeccion.fraccion * largoTramo
@@ -83,6 +95,8 @@ object CalculadoraSeguimiento {
             estaDesviado = false
         }
 
+        val distanciaRestante = (largoTotal - progresoKilometros).coerceAtLeast(0.0)
+
         val ultimaAceptada = estado.ultimaPosicionAceptada
         val desplazamientoKilometros = if (ultimaAceptada == null) {
             0.0
@@ -93,6 +107,14 @@ object CalculadoraSeguimiento {
         val esSaltoDeSimulacion = estado.esSimulado && (estado.estaDesviado || estaDesviado)
         val distanciaSumada = if (ultimaAceptada != null && seAceptaMovimiento && !esSaltoDeSimulacion) desplazamientoKilometros else 0.0
 
+        val distanciaRecorrida = estado.distanciaRecorridaKilometros + distanciaSumada
+        val llegoAlFinal = estado.llegoAlFinal || (
+            indiceTramo == ultimoTramo &&
+                distanciaRestante < UMBRAL_LLEGADA_KILOMETROS &&
+                distanciaRecorrida >= FRACCION_MINIMA_PARA_LLEGADA * largoTotal
+            )
+        if (llegoAlFinal && !estado.llegoAlFinal) avisos.add(AvisoRecorrido.LlegadaAlFinal)
+
         val rumboNuevo = determinarRumbo(estado.rumboGrados, lectura, ultimaAceptada, desplazamientoKilometros * METROS_POR_KILOMETRO)
 
         val nuevoEstado = estado.copy(
@@ -102,8 +124,9 @@ object CalculadoraSeguimiento {
             trazadoCaminado = if (seAceptaMovimiento) estado.trazadoCaminado + nuevaPosicion else estado.trazadoCaminado,
             posicionActual = nuevaPosicion,
             ultimaPosicionAceptada = if (seAceptaMovimiento) nuevaPosicion else ultimaAceptada,
-            distanciaRecorridaKilometros = estado.distanciaRecorridaKilometros + distanciaSumada,
-            distanciaRestanteKilometros = (longitudTotal(trazado) - progresoKilometros).coerceAtLeast(0.0),
+            distanciaRecorridaKilometros = distanciaRecorrida,
+            distanciaRestanteKilometros = distanciaRestante,
+            llegoAlFinal = llegoAlFinal,
             distanciaAlTrazadoMetros = proyeccion.distanciaMetros,
             indiceTramoActual = indiceTramoNuevo,
             indiceProximoPunto = (indiceTramoNuevo + 1).coerceAtMost(trazado.lastIndex),
@@ -175,24 +198,25 @@ object CalculadoraSeguimiento {
         return distanciaEnMetros(desde, PuntoRecorrido(hasta.latitud, hasta.longitud))
     }
 
-    // Buscar el tramo más cercano en una ventana de unos 200 m por delante (mínimo el siguiente); el más temprano gana los empates
+    // Buscar el tramo más cercano entre el actual y los que empiezan antes del límite de progreso; el más temprano gana los empates
     private fun buscarTramoMasCercano(
         trazado: List<PuntoRecorrido>,
         posicion: Coordenada,
-        indiceInicial: Int
+        indiceInicial: Int,
+        limiteDeProgresoKilometros: Double
     ): Pair<Int, Proyeccion> {
         var mejorIndice = indiceInicial
         var mejorProyeccion = proyectarSobreTramo(posicion, trazado[indiceInicial], trazado[indiceInicial + 1])
-        var kilometrosAdelante = largoDelTramo(trazado, indiceInicial)
+        var inicioDelTramoKilometros = (0 until indiceInicial).sumOf { indice -> largoDelTramo(trazado, indice) }
+        inicioDelTramoKilometros += largoDelTramo(trazado, indiceInicial)
         for (indice in (indiceInicial + 1)..(trazado.size - 2)) {
-            val esTramoSiguiente = indice == indiceInicial + 1
-            if (!esTramoSiguiente && kilometrosAdelante > VENTANA_BUSQUEDA_KILOMETROS) break
+            if (inicioDelTramoKilometros > limiteDeProgresoKilometros) break
             val proyeccion = proyectarSobreTramo(posicion, trazado[indice], trazado[indice + 1])
             if (proyeccion.distanciaMetros < mejorProyeccion.distanciaMetros - TOLERANCIA_EMPATE_METROS) {
                 mejorIndice = indice
                 mejorProyeccion = proyeccion
             }
-            kilometrosAdelante += largoDelTramo(trazado, indice)
+            inicioDelTramoKilometros += largoDelTramo(trazado, indice)
         }
         return mejorIndice to mejorProyeccion
     }

@@ -42,6 +42,7 @@ fun describirAviso(aviso: AvisoRecorrido): String {
     return when (aviso) {
         is AvisoRecorrido.CercaDePunto -> "Cerca de ${obtenerEtiquetaPunto(aviso.punto)}"
         AvisoRecorrido.Desvio -> "Te alejaste del sendero"
+        AvisoRecorrido.LlegadaAlFinal -> "¡Llegaste al final!"
     }
 }
 

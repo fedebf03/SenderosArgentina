@@ -482,4 +482,21 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1, repositorioRecorridos.guardados.size)
         assertEquals(true, repositorioRecorridos.guardados.single().esSimulado)
     }
+
+    // Verificar que la simulación que termina el trazado dispara la llegada una sola vez
+    @Test
+    fun `la simulacion que llega al final avisa la llegada una sola vez`() = runTest {
+        val control = crearControl()
+        control.iniciar("con-recorrido", esSimulado = true)
+        control.cambiarMultiplicadorSimulacion(20)
+        val avisosRecibidos = mutableListOf<AvisoRecorrido>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            control.avisos.collect { aviso -> avisosRecibidos.add(aviso) }
+        }
+
+        advanceTimeBy(30_000L)
+
+        assertEquals(1, avisosRecibidos.count { aviso -> aviso == AvisoRecorrido.LlegadaAlFinal })
+        assertTrue(control.estado.value?.llegoAlFinal == true)
+    }
 }

@@ -3,6 +3,7 @@ package com.unaj.senderos.presentation.recorrido
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.repository.ControlSeguimiento
@@ -67,6 +68,12 @@ class RecorridoViewModel(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoFinalizarVisible = false) }
             }
             is RecorridoEvento.AlConfirmarFinalizar -> finalizar()
+            is RecorridoEvento.AlSeguirCaminando -> {
+                Log.d(TAG, "El usuario sigue caminando tras llegar al final")
+                _estadoVisual.update { estadoActual ->
+                    estadoActual.copy(seDescartoLlegada = true, esDialogoLlegadaVisible = false)
+                }
+            }
             is RecorridoEvento.AlMoverMapaConGesto -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(estaSiguiendo = false) }
             }
@@ -124,7 +131,10 @@ class RecorridoViewModel(
                     distanciaRestanteKilometros = estadoDelSendero.distanciaRestanteKilometros,
                     instanteInicioMilisegundos = estadoDelSendero.instanteInicioMilisegundos,
                     proximoPunto = estadoDelSendero.trazado.getOrNull(estadoDelSendero.indiceProximoPunto),
-                    estaDesviado = estadoDelSendero.estaDesviado
+                    estaDesviado = estadoDelSendero.estaDesviado,
+                    nombreSendero = estadoDelSendero.nombreSendero,
+                    llegoAlFinal = estadoDelSendero.llegoAlFinal,
+                    esDialogoLlegadaVisible = estadoDelSendero.llegoAlFinal && !estadoActual.seDescartoLlegada
                 )
             }
         } else if (haVistoEstadoActivo && !estaFinalizando) {
@@ -149,8 +159,21 @@ class RecorridoViewModel(
         viewModelScope.launch {
             controlSeguimiento.avisos.collect { aviso ->
                 Log.d(TAG, "Aviso del recorrido: $aviso")
-                emitirEfecto(RecorridoEfecto.MostrarAviso(describirAviso(aviso)))
+                if (aviso is AvisoRecorrido.LlegadaAlFinal) {
+                    // La llegada se avisa con un diálogo, no con el Snackbar
+                    mostrarDialogoDeLlegada()
+                } else {
+                    emitirEfecto(RecorridoEfecto.MostrarAviso(describirAviso(aviso)))
+                }
             }
+        }
+    }
+
+    // Mostrar el diálogo de llegada salvo que ya se haya descartado o se esté finalizando
+    private fun mostrarDialogoDeLlegada() {
+        if (estaFinalizando) return
+        _estadoVisual.update { estadoActual ->
+            if (estadoActual.seDescartoLlegada) estadoActual else estadoActual.copy(esDialogoLlegadaVisible = true)
         }
     }
 
@@ -188,6 +211,7 @@ class RecorridoViewModel(
             estadoActual.copy(
                 fase = FaseRecorrido.NO_ACTIVO,
                 esDialogoFinalizarVisible = false,
+                esDialogoLlegadaVisible = false,
                 resumen = resumen
             )
         }
