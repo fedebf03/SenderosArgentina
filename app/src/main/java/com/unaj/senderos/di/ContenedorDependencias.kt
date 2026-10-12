@@ -14,6 +14,7 @@ import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
 import com.unaj.senderos.data.repository.RecorridoRepositorioOfflineFirst
 import com.unaj.senderos.data.repository.PuntosCapturadosRepositorioOfflineFirst
 import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
+import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacion
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
 import com.unaj.senderos.data.sincronizacion.SincronizadorRecorridos
 import com.unaj.senderos.data.sincronizacion.SincronizadorSenderos
@@ -72,7 +73,7 @@ class ContenedorDependencias(contexto: Context) {
     ).build()
     private val fuenteRemota = FirestoreSenderoFuenteRemota(FirebaseFirestore.getInstance())
     private val ejecutorTransacciones = EjecutorTransaccionesRoom(baseDatosSenderos)
-    private val planificadorSincronizacion =
+    val planificadorSincronizacion: PlanificadorSincronizacion =
         PlanificadorSincronizacionWorkManager(WorkManager.getInstance(contexto))
     private val senderoRepositorio =
         SenderoRepositorioOfflineFirst(
@@ -119,7 +120,7 @@ class ContenedorDependencias(contexto: Context) {
     val iniciarSesionConGoogleUseCase = IniciarSesionConGoogleUseCase(autenticacionRepositorio)
     val registrarUsuarioUseCase = RegistrarUsuarioUseCase(autenticacionRepositorio)
     val obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacionRepositorio)
-    val cerrarSesionUseCase = CerrarSesionUseCase(autenticacionRepositorio, senderoRepositorio, lanzadorSeguimiento)
+    val cerrarSesionUseCase = CerrarSesionUseCase(autenticacionRepositorio, senderoRepositorio, lanzadorSeguimiento, notificador)
     val observarSenderosDelUsuarioUseCase =
         ObservarSenderosDelUsuarioUseCase(senderoRepositorio, autenticacionRepositorio)
     val observarDetalleSenderoUseCase =

@@ -612,8 +612,8 @@ class RecorridoViewModelTest {
 
         viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
 
-        assertTrue(viewModel.estadoVisual.value.esDialogoCancelarVisible)
         assertEquals(0, lanzador.cantidadCancelaciones)
+        assertTrue(viewModel.estadoVisual.value.esDialogoCancelarVisible)
     }
 
     // Verificar que descartar la confirmación la cierra sin cancelar
