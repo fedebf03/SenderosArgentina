@@ -192,7 +192,8 @@ class MainActivity : ComponentActivity() {
                                     dependencias.obtenerUsuarioActualUseCase,
                                     dependencias.cerrarSesionUseCase,
                                     dependencias.preferenciasAplicacion,
-                                    dependencias.observarRecorridosUseCase
+                                    dependencias.observarRecorridosUseCase,
+                                    dependencias.obtenerCapacidadesDispositivoUseCase
                                 )
                             },
                             alNavegarALogin = {
@@ -256,7 +257,8 @@ class MainActivity : ComponentActivity() {
                                         idSendero = destino.idSendero,
                                         observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
                                         controlSeguimiento = dependencias.controlSeguimiento,
-                                        lanzadorSeguimiento = dependencias.lanzadorSeguimiento
+                                        lanzadorSeguimiento = dependencias.lanzadorSeguimiento,
+                                        capacidadesDispositivo = dependencias.capacidadesDispositivo
                                     )
                                 },
                                 // Volver no detiene el seguimiento: sigue en segundo plano con su notificación

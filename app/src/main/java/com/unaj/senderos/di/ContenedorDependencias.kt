@@ -25,10 +25,17 @@ import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.EliminarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.data.preferencias.PreferenciasAplicacionLocal
+import com.unaj.senderos.data.sensores.DetectorCapacidadesAndroid
+import com.unaj.senderos.data.sensores.FuenteAcelerometroAndroid
+import com.unaj.senderos.data.sensores.FuenteBrujulaAndroid
+import com.unaj.senderos.data.sensores.ProveedorDeclinacionAndroid
 import com.unaj.senderos.data.seguimiento.ControlSeguimientoEnMemoria
 import com.unaj.senderos.data.seguimiento.LanzadorSeguimientoAndroid
 import com.unaj.senderos.data.ubicacion.ProveedorUbicacionCombinada
+import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.repository.ControlSeguimiento
+import com.unaj.senderos.domain.repository.DetectorCapacidades
+import com.unaj.senderos.domain.usecase.ObtenerCapacidadesDispositivoUseCase
 import com.unaj.senderos.domain.repository.LanzadorSeguimiento
 import com.unaj.senderos.domain.repository.Notificador
 import com.unaj.senderos.domain.repository.PreferenciasAplicacion
@@ -113,6 +120,11 @@ class ContenedorDependencias(contexto: Context) {
     val descargarMapaSinConexionUseCase = DescargarMapaSinConexionUseCase(gestorMapasSinConexion, autenticacionRepositorio)
     val eliminarMapaSinConexionUseCase = EliminarMapaSinConexionUseCase(gestorMapasSinConexion, autenticacionRepositorio)
 
+    // Capacidades del equipo: no cambian durante la vida del proceso, por eso se detectan una sola vez
+    private val detectorCapacidades: DetectorCapacidades = DetectorCapacidadesAndroid(contexto.applicationContext)
+    val obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(detectorCapacidades)
+    val capacidadesDispositivo: CapacidadesDispositivo = obtenerCapacidadesDispositivoUseCase()
+
     // Ámbito de proceso del seguimiento: vive tanto como la aplicación; el hilo principal serializa las actualizaciones del estado
     private val alcanceSeguimiento = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val controlSeguimiento: ControlSeguimiento =
@@ -120,6 +132,10 @@ class ContenedorDependencias(contexto: Context) {
             proveedorUbicacion,
             observarDetalleSenderoUseCase,
             recorridoRepositorio,
-            alcanceSeguimiento
+            alcanceSeguimiento,
+            capacidadesDispositivo,
+            FuenteAcelerometroAndroid(contexto.applicationContext),
+            FuenteBrujulaAndroid(contexto.applicationContext),
+            ProveedorDeclinacionAndroid()
         )
 }

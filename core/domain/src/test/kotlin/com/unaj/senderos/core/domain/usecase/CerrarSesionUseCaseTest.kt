@@ -28,6 +28,9 @@ class CerrarSesionUseCaseTest {
                 eventos.add("seguimiento")
                 lanzador.detener()
             }
+
+            // Ignorar la cancelación: esta prueba no la usa
+            override fun cancelar() = Unit
         })
 
         casoDeUso()

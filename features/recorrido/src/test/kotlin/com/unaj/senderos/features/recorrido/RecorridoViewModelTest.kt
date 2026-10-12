@@ -1,6 +1,7 @@
 package com.unaj.senderos.presentation.recorrido
 
 import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
@@ -36,8 +37,9 @@ import org.junit.Test
 class RecorridoViewModelTest {
 
     private val despachadorPrueba = StandardTestDispatcher()
-    private val control = FalsoControlSeguimiento()
-    private val lanzador = FalsoLanzadorSeguimiento()
+    private val registroLlamadas = mutableListOf<String>()
+    private val control = FalsoControlSeguimiento(registroLlamadas)
+    private val lanzador = FalsoLanzadorSeguimiento(registroLlamadas)
     private val efectosRecibidos = mutableListOf<RecorridoEfecto>()
     private var relojActual = 0L
 
@@ -46,6 +48,12 @@ class RecorridoViewModelTest {
         longitud = -71.31,
         tipo = TipoPunto.MIRADOR,
         nombre = "Mirador del lago"
+    )
+    private val capacidadesCompletas = CapacidadesDispositivo(
+        tieneGps = true,
+        tieneAcelerometro = true,
+        tieneBrujula = true,
+        tieneCamara = true
     )
     private val trazado = listOf(PuntoRecorrido(latitud = -41.10, longitud = -71.30), mirador)
 
@@ -62,7 +70,9 @@ class RecorridoViewModelTest {
     }
 
     // Crear el ViewModel de un sendero con recorrido y recolectar sus efectos en una lista
-    private fun crearViewModel(): RecorridoViewModel {
+    private fun crearViewModel(
+        capacidades: CapacidadesDispositivo = capacidadesCompletas
+    ): RecorridoViewModel {
         val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(id = "sendero-1", recorrido = trazado)))
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val viewModel = RecorridoViewModel(
@@ -70,6 +80,7 @@ class RecorridoViewModelTest {
             observarDetalleSenderoUseCase = ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             controlSeguimiento = control,
             lanzadorSeguimiento = lanzador,
+            capacidadesDispositivo = capacidades,
             reloj = { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch {
@@ -85,7 +96,13 @@ class RecorridoViewModelTest {
         rumboGrados: Float? = null,
         esSimulado: Boolean = false,
         multiplicadorSimulacion: Int = 1,
-        llegoAlFinal: Boolean = false
+        llegoAlFinal: Boolean = false,
+        velocidadMetrosPorSegundo: Float? = null,
+        pasos: Int? = null,
+        ritmoPasosPorMinuto: Double? = null,
+        estaDetenido: Boolean = false,
+        rumboBrujulaGrados: Float? = null,
+        tiempoTranscurridoMilisegundos: Long = 0L
     ): EstadoSeguimiento {
         return EstadoSeguimiento(
             idSendero = idSendero,
@@ -100,7 +117,13 @@ class RecorridoViewModelTest {
             multiplicadorSimulacion = multiplicadorSimulacion,
             instanteInicioMilisegundos = 1_000L,
             nombreSendero = "Cerro Catedral",
-            llegoAlFinal = llegoAlFinal
+            llegoAlFinal = llegoAlFinal,
+            velocidadMetrosPorSegundo = velocidadMetrosPorSegundo,
+            pasos = pasos,
+            ritmoPasosPorMinuto = ritmoPasosPorMinuto,
+            estaDetenido = estaDetenido,
+            rumboBrujulaGrados = rumboBrujulaGrados,
+            tiempoTranscurridoMilisegundos = tiempoTranscurridoMilisegundos
         )
     }
 
@@ -523,6 +546,178 @@ class RecorridoViewModelTest {
         assertEquals(1, lanzador.cantidadDetenciones)
         assertFalse(estadoVisual.esDialogoLlegadaVisible)
         assertNotNull(estadoVisual.resumen)
+    }
+
+    // Verificar que los sensores del estado llegan al estado visual con el rumbo efectivo de la brújula al estar detenido
+    @Test
+    fun `los sensores del estado se reflejan y detenido usa el rumbo de la brujula`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(
+            rumboGrados = 90f,
+            velocidadMetrosPorSegundo = 1.5f,
+            pasos = 120,
+            ritmoPasosPorMinuto = 95.0,
+            estaDetenido = true,
+            rumboBrujulaGrados = 270f,
+            tiempoTranscurridoMilisegundos = 3_600_000L
+        )
+        advanceUntilIdle()
+
+        val estadoVisual = viewModel.estadoVisual.value
+        assertEquals(270f, estadoVisual.rumboGrados)
+        assertEquals(1.5f, estadoVisual.velocidadActualMetrosPorSegundo)
+        assertEquals(1.5, estadoVisual.velocidadPromedioKilometrosPorHora, 0.0001)
+        assertEquals(120, estadoVisual.pasos)
+        assertEquals(95.0, estadoVisual.ritmoPasosPorMinuto)
+        assertTrue(estadoVisual.estaDetenido)
+    }
+
+    // Verificar que en movimiento el rumbo mostrado es el del GPS aunque haya brújula
+    @Test
+    fun `en movimiento el rumbo es el del gps`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(rumboGrados = 90f, estaDetenido = false, rumboBrujulaGrados = 270f)
+        advanceUntilIdle()
+
+        assertEquals(90f, viewModel.estadoVisual.value.rumboGrados)
+        assertFalse(viewModel.estadoVisual.value.estaDetenido)
+    }
+
+    // Verificar que las capacidades del equipo llegan al estado visual desde el inicio
+    @Test
+    fun `las capacidades del equipo se reflejan en el estado visual`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(capacidadesCompletas.copy(tieneAcelerometro = false, tieneBrujula = false))
+        runCurrent()
+
+        assertFalse(viewModel.estadoVisual.value.tieneAcelerometro)
+        assertFalse(viewModel.estadoVisual.value.tieneBrujula)
+    }
+
+    // Verificar que tocar Cancelar recorrido solo abre la confirmación
+    @Test
+    fun `tocar cancelar recorrido abre la confirmacion sin cancelar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
+
+        assertTrue(viewModel.estadoVisual.value.esDialogoCancelarVisible)
+        assertEquals(0, lanzador.cantidadCancelaciones)
+    }
+
+    // Verificar que descartar la confirmación la cierra sin cancelar
+    @Test
+    fun `descartar la confirmacion de cancelar no cancela`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+        viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
+
+        viewModel.procesarEvento(RecorridoEvento.AlDescartarCancelacion)
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoCancelarVisible)
+        assertEquals(0, lanzador.cantidadCancelaciones)
+    }
+
+    // Verificar que confirmar cancela sin guardar, sin resumen y vuelve al detalle
+    @Test
+    fun `confirmar cancelar descarta sin resumen y vuelve al detalle`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+        viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
+
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarCancelarRecorrido)
+        control.estadoEmitido.value = null
+        advanceUntilIdle()
+
+        val estadoVisual = viewModel.estadoVisual.value
+        assertEquals(1, control.cantidadCancelaciones)
+        assertEquals(0, lanzador.cantidadCancelaciones)
+        assertNull(estadoVisual.resumen)
+        assertFalse(estadoVisual.esDialogoCancelarVisible)
+        assertEquals(listOf<RecorridoEfecto>(RecorridoEfecto.VolverAlDetalle), efectosRecibidos)
+    }
+
+    // Verificar que se cancela en el control antes de detener el servicio, para que no quede nada por guardar
+    @Test
+    fun `cancelar descarta en el control antes de detener el servicio`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarCancelarRecorrido)
+        advanceUntilIdle()
+
+        assertEquals(listOf("control.cancelar", "lanzador.detener"), registroLlamadas)
+    }
+
+    // Verificar que una cancelación hecha desde otro lado vuelve al detalle sin resumen y avisa
+    @Test
+    fun `una cancelacion externa vuelve sin resumen y avisa`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+
+        control.cancelar()
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.resumen)
+        assertEquals(
+            listOf<RecorridoEfecto>(
+                RecorridoEfecto.VolverAlDetalle,
+                RecorridoEfecto.MostrarAviso("El recorrido fue cancelado")
+            ),
+            efectosRecibidos
+        )
+    }
+
+    // Verificar que la cancelación hecha por esta pantalla no duplica el aviso
+    @Test
+    fun `la cancelacion propia no emite aviso`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarCancelarRecorrido)
+        advanceUntilIdle()
+
+        assertEquals(listOf<RecorridoEfecto>(RecorridoEfecto.VolverAlDetalle), efectosRecibidos)
+    }
+
+    // Verificar que en simulación los pasos se muestran aunque el equipo no tenga acelerómetro
+    @Test
+    fun `en simulacion no se marca la falta de acelerometro`() {
+        val estadoVisual = RecorridoEstadoVisual(tieneAcelerometro = false, esSimulado = true)
+
+        assertFalse(estadoVisual.faltaAcelerometro)
+        assertTrue(estadoVisual.copy(esSimulado = false).faltaAcelerometro)
+    }
+
+    // Verificar el texto de la velocidad con coma decimal y la alternativa sin dato
+    @Test
+    fun `la velocidad se formatea en kilometros por hora`() {
+        assertEquals("5,4 km/h", formatearVelocidad(1.5f))
+        assertEquals("—", formatearVelocidad(null))
+        assertEquals("3,2 km/h", formatearVelocidadPromedio(3.24))
+    }
+
+    // Verificar el texto del rumbo como punto cardinal y grados
+    @Test
+    fun `el rumbo se formatea como punto cardinal y grados`() {
+        assertEquals("NE · 45°", formatearRumbo(45f))
+        assertEquals("N · 0°", formatearRumbo(359.6f))
+        assertEquals("—", formatearRumbo(null))
+    }
+
+    // Verificar el texto de los pasos y del ritmo del panel
+    @Test
+    fun `los pasos y el ritmo del panel se formatean en es-AR`() {
+        assertEquals("1.234", formatearPasosDelPanel(1234))
+        assertEquals("95 pasos/min", formatearRitmoDelPanel(95.4))
+        assertEquals("—", formatearPasosDelPanel(null))
+        assertEquals("—", formatearRitmoDelPanel(null))
     }
 
     // Verificar que al recrear el ViewModel con la llegada ya registrada se muestra el diálogo

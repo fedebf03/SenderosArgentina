@@ -145,6 +145,8 @@ private fun CuerpoPerfil(
             )
         }
 
+        SeccionFuncionesDispositivo(funciones = estadoVisual.funcionesDispositivo)
+
         HistorialDeRecorridos(
             recorridos = estadoVisual.recorridos,
             alSeleccionar = { idRecorrido -> alProcesarEvento(PerfilEvento.AlSeleccionarRecorrido(idRecorrido)) }

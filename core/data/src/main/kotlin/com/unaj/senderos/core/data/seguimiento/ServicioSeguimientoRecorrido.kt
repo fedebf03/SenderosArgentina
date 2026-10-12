@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.example.senderosargentina.SenderosAplicacion
@@ -15,14 +16,29 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SERVICIO_RECORRIDO"
 private const val ACCION_INICIAR = "com.example.senderosargentina.seguimiento.INICIAR"
 private const val ACCION_DETENER = "com.example.senderosargentina.seguimiento.DETENER"
+private const val ACCION_CANCELAR = "com.example.senderosargentina.seguimiento.CANCELAR"
 private const val EXTRA_ID_SENDERO = "idSendero"
 private const val EXTRA_ES_SIMULADO = "esSimulado"
+private const val ETIQUETA_BLOQUEO = "senderos:seguimiento"
+private const val DURACION_MAXIMA_BLOQUEO_MILISEGUNDOS = 6L * 60L * 60L * 1000L
+private const val INTERVALO_NOTIFICACION_MILISEGUNDOS = 1_000L
+
+// Campos del estado que muestra la notificación persistente; reducir el estado a esto evita republicarla por cambios que no se ven
+private data class DatosNotificacion(
+    val idSendero: String,
+    val esSimulado: Boolean,
+    val resumen: String
+)
 
 // Mantener el seguimiento del recorrido en primer plano con notificación persistente y avisos
 class ServicioSeguimientoRecorrido : Service() {
@@ -34,6 +50,8 @@ class ServicioSeguimientoRecorrido : Service() {
     private var esSimuladoActual = false
     private var trabajoInicio: Job? = null
     private var seVioEstadoActivo = false
+    private var bloqueoParcial: PowerManager.WakeLock? = null
+    private var tieneAcelerometro = false
 
     companion object {
 
@@ -45,9 +63,14 @@ class ServicioSeguimientoRecorrido : Service() {
                 .putExtra(EXTRA_ES_SIMULADO, esSimulado)
         }
 
-        // Crear la intención que detiene el seguimiento
+        // Crear la intención que detiene el seguimiento guardando el recorrido
         fun crearIntencionDetener(contexto: Context): Intent {
             return Intent(contexto, ServicioSeguimientoRecorrido::class.java).setAction(ACCION_DETENER)
+        }
+
+        // Crear la intención que cancela el seguimiento sin guardar el recorrido
+        fun crearIntencionCancelar(contexto: Context): Intent {
+            return Intent(contexto, ServicioSeguimientoRecorrido::class.java).setAction(ACCION_CANCELAR)
         }
     }
 
@@ -57,11 +80,11 @@ class ServicioSeguimientoRecorrido : Service() {
         val contenedor = (applicationContext as SenderosAplicacion).contenedorDependencias
         control = contenedor.controlSeguimiento
         notificador = NotificadorRecorrido(applicationContext)
+        tieneAcelerometro = contenedor.capacidadesDispositivo.tieneAcelerometro
         alcance.launch {
-            control.estado.collect { estado ->
-                if (estado != null) {
+            control.estado.map { estado -> estado != null }.distinctUntilChanged().collect { estaActivo ->
+                if (estaActivo) {
                     seVioEstadoActivo = true
-                    notificador.actualizarNotificacionEnCurso(estado.idSendero, estado)
                 } else if (seVioEstadoActivo) {
                     Log.d(TAG, "El seguimiento terminó; se detiene el servicio")
                     detenerServicio()
@@ -69,13 +92,37 @@ class ServicioSeguimientoRecorrido : Service() {
             }
         }
         alcance.launch {
+            // Republicar la notificación a lo sumo una vez por segundo y solo si cambió algo de lo que muestra
+            control.estado
+                .map { estado ->
+                    estado?.let { estadoActual ->
+                        DatosNotificacion(estadoActual.idSendero, estadoActual.esSimulado, notificador.redactarResumen(estadoActual))
+                    }
+                }
+                .distinctUntilChanged()
+                .conflate()
+                .collect { datos ->
+                    if (datos != null) {
+                        notificador.actualizarNotificacionEnCurso(datos.idSendero, datos.resumen, datos.esSimulado)
+                        delay(INTERVALO_NOTIFICACION_MILISEGUNDOS)
+                    }
+                }
+        }
+        alcance.launch {
             control.avisos.collect { aviso -> notificador.notificarAviso(idSenderoActual, aviso, control.estado.value?.nombreSendero.orEmpty()) }
         }
         Log.d(TAG, "Servicio creado")
     }
 
-    // Atender las acciones de iniciar y detener recibidas por intención
+    // Atender las acciones de iniciar, detener y cancelar recibidas por intención
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACCION_CANCELAR) {
+            Log.d(TAG, "Cancelación pedida: se descarta el recorrido sin guardarlo")
+            trabajoInicio?.cancel()
+            control.cancelar()
+            detenerServicio()
+            return START_NOT_STICKY
+        }
         if (intent?.action == ACCION_DETENER) {
             control.detener()
             detenerServicio()
@@ -91,6 +138,7 @@ class ServicioSeguimientoRecorrido : Service() {
             return START_NOT_STICKY
         }
         idSenderoActual = idSendero
+        if (!esSimulado && tieneAcelerometro) adquirirBloqueoParcial()
         trabajoInicio?.cancel()
         trabajoInicio = alcance.launch {
             try {
@@ -108,6 +156,7 @@ class ServicioSeguimientoRecorrido : Service() {
     // Detener el control y liberar el alcance al destruirse el servicio
     override fun onDestroy() {
         control.detener()
+        liberarBloqueoParcial()
         notificador.cancelarAvisos()
         alcance.cancel()
         Log.d(TAG, "Servicio destruido")
@@ -141,7 +190,29 @@ class ServicioSeguimientoRecorrido : Service() {
 
     // Quitar la notificación persistente y detener el servicio
     private fun detenerServicio() {
+        liberarBloqueoParcial()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    // Tomar un WakeLock parcial (máximo 6 h) para que la CPU siga entregando muestras del acelerómetro con la pantalla apagada
+    private fun adquirirBloqueoParcial() {
+        val bloqueo = bloqueoParcial ?: (getSystemService(PowerManager::class.java)
+            ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, ETIQUETA_BLOQUEO)
+            ?.also { nuevo ->
+                nuevo.setReferenceCounted(false)
+                bloqueoParcial = nuevo
+            }) ?: return
+        bloqueo.acquire(DURACION_MAXIMA_BLOQUEO_MILISEGUNDOS)
+        Log.d(TAG, "WakeLock parcial adquirido")
+    }
+
+    // Liberar el WakeLock parcial si está tomado
+    private fun liberarBloqueoParcial() {
+        val bloqueo = bloqueoParcial ?: return
+        if (bloqueo.isHeld) {
+            bloqueo.release()
+            Log.d(TAG, "WakeLock parcial liberado")
+        }
     }
 }

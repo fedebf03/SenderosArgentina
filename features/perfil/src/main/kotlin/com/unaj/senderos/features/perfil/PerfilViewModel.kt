@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.repository.PreferenciasAplicacion
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObservarRecorridosUseCase
+import com.unaj.senderos.domain.usecase.ObtenerCapacidadesDispositivoUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,10 +23,16 @@ class PerfilViewModel(
     obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
     private val cerrarSesionUseCase: CerrarSesionUseCase,
     private val preferenciasAplicacion: PreferenciasAplicacion,
-    private val observarRecorridosUseCase: ObservarRecorridosUseCase
+    private val observarRecorridosUseCase: ObservarRecorridosUseCase,
+    obtenerCapacidadesDispositivoUseCase: ObtenerCapacidadesDispositivoUseCase
 ) : ViewModel() {
 
-    private val _estadoVisual = MutableStateFlow(PerfilEstadoVisual(usuario = obtenerUsuarioActualUseCase()))
+    private val _estadoVisual = MutableStateFlow(
+        PerfilEstadoVisual(
+            usuario = obtenerUsuarioActualUseCase(),
+            funcionesDispositivo = listarFuncionesDispositivo(obtenerCapacidadesDispositivoUseCase())
+        )
+    )
     val estadoVisual: StateFlow<PerfilEstadoVisual> = _estadoVisual.asStateFlow()
 
     private val canalEfectos = Channel<PerfilEfecto>(Channel.BUFFERED)

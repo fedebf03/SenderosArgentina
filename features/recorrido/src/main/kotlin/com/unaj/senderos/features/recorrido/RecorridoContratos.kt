@@ -34,14 +34,29 @@ data class RecorridoEstadoVisual(
     val nombreSendero: String = "",
     val llegoAlFinal: Boolean = false,
     val seDescartoLlegada: Boolean = false,
-    val esDialogoLlegadaVisible: Boolean = false
-)
+    val esDialogoLlegadaVisible: Boolean = false,
+    val velocidadActualMetrosPorSegundo: Float? = null,
+    val velocidadPromedioKilometrosPorHora: Double = 0.0,
+    val pasos: Int? = null,
+    val ritmoPasosPorMinuto: Double? = null,
+    val estaDetenido: Boolean = false,
+    val tieneAcelerometro: Boolean = true,
+    val tieneBrujula: Boolean = true,
+    val esDialogoCancelarVisible: Boolean = false
+) {
+    // Indicar que no hay acelerómetro que medir; en simulación los pasos los estima el control
+    val faltaAcelerometro: Boolean
+        get() = !tieneAcelerometro && !esSimulado
+}
 
 sealed interface RecorridoEvento {
     data object AlVolver : RecorridoEvento
     data object AlTocarFinalizar : RecorridoEvento
     data object AlCancelarFinalizar : RecorridoEvento
     data object AlConfirmarFinalizar : RecorridoEvento
+    data object AlTocarCancelarRecorrido : RecorridoEvento
+    data object AlDescartarCancelacion : RecorridoEvento
+    data object AlConfirmarCancelarRecorrido : RecorridoEvento
     data object AlCerrarResumen : RecorridoEvento
     data object AlSeguirCaminando : RecorridoEvento
     data object AlMoverMapaConGesto : RecorridoEvento

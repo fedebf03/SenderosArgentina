@@ -26,6 +26,9 @@ interface ControlSeguimiento {
     // Desplazar la posición simulada fuera del trazado unos segundos; no hace nada si el recorrido no es simulado
     fun simularDesvio()
 
-    // Detener el seguimiento activo
+    // Detener el seguimiento activo guardando el recorrido realizado en el historial
     fun detener()
+
+    // Cancelar el seguimiento activo descartando lo recorrido: no se guarda nada en el historial
+    fun cancelar()
 }

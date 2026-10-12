@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -40,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +57,7 @@ import kotlinx.coroutines.delay
 
 private const val TAG = "RECORRIDO"
 private const val INTERVALO_RELOJ_MILISEGUNDOS = 1_000L
+private const val TEXTO_NO_DISPONIBLE_EN_EQUIPO = "No disponible en este equipo"
 
 // Mostrar la pantalla "Recorrido en curso" conectada a su ViewModel
 @Composable
@@ -179,6 +183,9 @@ fun RecorridoContenido(
     if (estadoVisual.esDialogoFinalizarVisible) {
         DialogoConfirmarFinalizar(alProcesarEvento)
     }
+    if (estadoVisual.esDialogoCancelarVisible) {
+        DialogoConfirmarCancelar(alProcesarEvento)
+    }
     if (estadoVisual.esDialogoLlegadaVisible) {
         DialogoLlegadaAlFinal(
             nombreSendero = estadoVisual.nombreSendero.ifBlank { estadoVisual.sendero?.nombre.orEmpty() },
@@ -228,15 +235,10 @@ private fun PanelRecorrido(
             }
             TituloDeSeccion("Recorrido en curso")
             Text(text = nombreSendero, style = MaterialTheme.typography.bodyMedium)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DatoDelPanel("Recorrido", formatearDistanciaRecorrido(estadoVisual.distanciaRecorridaKilometros), Modifier.weight(1f))
-                DatoDelPanel("Restante", formatearDistanciaRecorrido(estadoVisual.distanciaRestanteKilometros), Modifier.weight(1f))
-                DatoDelPanel(
-                    titulo = "Tiempo",
-                    valor = formatearTiempoTranscurrido(ahoraMilisegundos - estadoVisual.instanteInicioMilisegundos),
-                    modifier = Modifier.weight(1f)
-                )
+            if (estadoVisual.estaDetenido) {
+                IndicadorDetenido()
             }
+            GrillaDeDatos(estadoVisual, ahoraMilisegundos)
             estadoVisual.proximoPunto?.let { punto ->
                 DatoDelPanel("Próximo punto", obtenerEtiquetaPunto(punto), Modifier.fillMaxWidth())
             }
@@ -267,6 +269,117 @@ private fun PanelRecorrido(
                 }
             ) {
                 Text("Finalizar")
+            }
+            TextButton(
+                onClick = { alProcesarEvento(RecorridoEvento.AlTocarCancelarRecorrido) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Cancelar recorrido")
+            }
+        }
+    }
+}
+
+// Mostrar en una grilla de dos columnas las magnitudes del recorrido y de los sensores
+@Composable
+private fun GrillaDeDatos(estadoVisual: RecorridoEstadoVisual, ahoraMilisegundos: Long) {
+    val sinAcelerometro = estadoVisual.faltaAcelerometro
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        FilaDeDatos(
+            DatoDeGrilla("Recorrido", formatearDistanciaRecorrido(estadoVisual.distanciaRecorridaKilometros)),
+            DatoDeGrilla("Restante", formatearDistanciaRecorrido(estadoVisual.distanciaRestanteKilometros))
+        )
+        FilaDeDatos(
+            DatoDeGrilla("Tiempo", formatearTiempoTranscurrido(ahoraMilisegundos - estadoVisual.instanteInicioMilisegundos)),
+            DatoDeGrilla("Velocidad", formatearVelocidad(estadoVisual.velocidadActualMetrosPorSegundo))
+        )
+        FilaDeDatos(
+            DatoDeGrilla("Vel. promedio", formatearVelocidadPromedio(estadoVisual.velocidadPromedioKilometrosPorHora)),
+            DatoDeGrilla(
+                titulo = "Pasos",
+                valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE_EN_EQUIPO else formatearPasosDelPanel(estadoVisual.pasos),
+                esNoDisponible = sinAcelerometro
+            )
+        )
+        FilaDeDatos(
+            DatoDeGrilla(
+                titulo = "Ritmo",
+                valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE_EN_EQUIPO else formatearRitmoDelPanel(estadoVisual.ritmoPasosPorMinuto),
+                esNoDisponible = sinAcelerometro
+            ),
+            armarDatoRumbo(estadoVisual)
+        )
+    }
+}
+
+// Datos de una celda de la grilla: título, valor y si el equipo no puede medirlo
+private class DatoDeGrilla(val titulo: String, val valor: String, val esNoDisponible: Boolean = false, val rumboGrados: Float? = null)
+
+// Armar el dato del rumbo: sin rumbo conocido y sin brújula se indica que no está disponible en el equipo
+private fun armarDatoRumbo(estadoVisual: RecorridoEstadoVisual): DatoDeGrilla {
+    val rumbo = estadoVisual.rumboGrados
+    val sinBrujulaNiRumbo = rumbo == null && !estadoVisual.tieneBrujula
+    return DatoDeGrilla(
+        titulo = "Rumbo",
+        valor = if (sinBrujulaNiRumbo) TEXTO_NO_DISPONIBLE_EN_EQUIPO else formatearRumbo(rumbo),
+        esNoDisponible = sinBrujulaNiRumbo,
+        rumboGrados = rumbo
+    )
+}
+
+// Mostrar dos datos lado a lado con el mismo ancho
+@Composable
+private fun FilaDeDatos(izquierdo: DatoDeGrilla, derecho: DatoDeGrilla) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        CeldaDelPanel(izquierdo, Modifier.weight(1f))
+        CeldaDelPanel(derecho, Modifier.weight(1f))
+    }
+}
+
+// Mostrar el aviso de que el usuario está quieto
+@Composable
+private fun IndicadorDetenido() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Text(
+            text = "Detenido",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+    }
+}
+
+// Mostrar una celda de la grilla; el rumbo suma una flecha girada hacia donde se mira
+@Composable
+private fun CeldaDelPanel(dato: DatoDeGrilla, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = dato.titulo,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (dato.rumboGrados != null) {
+                Icon(
+                    imageVector = Icons.Filled.Navigation,
+                    contentDescription = "Rumbo ${dato.valor}",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp).rotate(dato.rumboGrados)
+                )
+                Spacer(Modifier.width(6.dp))
+            }
+            if (dato.esNoDisponible) {
+                Text(
+                    text = dato.valor,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Text(text = dato.valor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -351,6 +464,29 @@ private fun DialogoConfirmarFinalizar(alProcesarEvento: (RecorridoEvento) -> Uni
         dismissButton = {
             TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlCancelarFinalizar) }) {
                 Text("Cancelar")
+            }
+        }
+    )
+}
+
+// Pedir confirmación antes de descartar el recorrido sin guardarlo
+@Composable
+private fun DialogoConfirmarCancelar(alProcesarEvento: (RecorridoEvento) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { alProcesarEvento(RecorridoEvento.AlDescartarCancelacion) },
+        title = { Text("Cancelar recorrido") },
+        text = { Text("¿Cancelar el recorrido? Se descartará lo recorrido y no quedará en el historial") },
+        confirmButton = {
+            TextButton(
+                onClick = { alProcesarEvento(RecorridoEvento.AlConfirmarCancelarRecorrido) },
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Cancelar recorrido")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlDescartarCancelacion) }) {
+                Text("Seguir")
             }
         }
     )

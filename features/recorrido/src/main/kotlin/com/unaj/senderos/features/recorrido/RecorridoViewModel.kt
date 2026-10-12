@@ -4,7 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.EstadoSeguimiento
+import com.unaj.senderos.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.repository.ControlSeguimiento
 import com.unaj.senderos.domain.repository.LanzadorSeguimiento
@@ -28,10 +30,16 @@ class RecorridoViewModel(
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val controlSeguimiento: ControlSeguimiento,
     private val lanzadorSeguimiento: LanzadorSeguimiento,
+    capacidadesDispositivo: CapacidadesDispositivo,
     private val reloj: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
-    private val _estadoVisual = MutableStateFlow(RecorridoEstadoVisual())
+    private val _estadoVisual = MutableStateFlow(
+        RecorridoEstadoVisual(
+            tieneAcelerometro = capacidadesDispositivo.tieneAcelerometro,
+            tieneBrujula = capacidadesDispositivo.tieneBrujula
+        )
+    )
     val estadoVisual: StateFlow<RecorridoEstadoVisual> = _estadoVisual.asStateFlow()
 
     private val canalEfectos = Channel<RecorridoEfecto>(Channel.BUFFERED)
@@ -68,6 +76,13 @@ class RecorridoViewModel(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoFinalizarVisible = false) }
             }
             is RecorridoEvento.AlConfirmarFinalizar -> finalizar()
+            is RecorridoEvento.AlTocarCancelarRecorrido -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoCancelarVisible = true) }
+            }
+            is RecorridoEvento.AlDescartarCancelacion -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoCancelarVisible = false) }
+            }
+            is RecorridoEvento.AlConfirmarCancelarRecorrido -> cancelarRecorrido()
             is RecorridoEvento.AlSeguirCaminando -> {
                 Log.d(TAG, "El usuario sigue caminando tras llegar al final")
                 _estadoVisual.update { estadoActual ->
@@ -124,7 +139,12 @@ class RecorridoViewModel(
                 estadoActual.copy(
                     fase = FaseRecorrido.EN_CURSO,
                     posicionUsuario = estadoDelSendero.posicionActual,
-                    rumboGrados = estadoDelSendero.rumboGrados,
+                    rumboGrados = estadoDelSendero.rumboEfectivoGrados,
+                    velocidadActualMetrosPorSegundo = estadoDelSendero.velocidadMetrosPorSegundo,
+                    velocidadPromedioKilometrosPorHora = estadoDelSendero.velocidadPromedioKilometrosPorHora,
+                    pasos = estadoDelSendero.pasos,
+                    ritmoPasosPorMinuto = estadoDelSendero.ritmoPasosPorMinuto,
+                    estaDetenido = estadoDelSendero.estaDetenido,
                     esSimulado = estadoDelSendero.esSimulado,
                     multiplicadorSimulacion = estadoDelSendero.multiplicadorSimulacion,
                     distanciaRecorridaKilometros = estadoDelSendero.distanciaRecorridaKilometros,
@@ -139,9 +159,18 @@ class RecorridoViewModel(
             }
         } else if (haVistoEstadoActivo && !estaFinalizando) {
             // El seguimiento terminó por fuera de la pantalla (por ejemplo desde la notificación)
+            val motivoFin = controlSeguimiento.motivoFin.value
+            if (motivoFin == MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO) {
+                Log.d(TAG, "El recorrido se canceló fuera de la pantalla; se vuelve al detalle sin resumen")
+                estaFinalizando = true
+                _estadoVisual.update { estadoActual -> estadoActual.copy(fase = FaseRecorrido.NO_ACTIVO) }
+                emitirEfecto(RecorridoEfecto.VolverAlDetalle)
+                emitirEfecto(RecorridoEfecto.MostrarAviso(describirMotivoFin(motivoFin)))
+                return
+            }
             Log.d(TAG, "El seguimiento terminó fuera de la pantalla; se muestra el resumen del último estado")
             ultimoEstadoSeguimiento?.let { estadoFinal -> mostrarResumen(estadoFinal) }
-            controlSeguimiento.motivoFin.value?.let { motivo ->
+            motivoFin?.let { motivo ->
                 emitirEfecto(RecorridoEfecto.MostrarAviso(describirMotivoFin(motivo)))
             }
         }
@@ -197,6 +226,20 @@ class RecorridoViewModel(
         }
         lanzadorSeguimiento.detener()
         mostrarResumen(estadoFinal)
+    }
+
+    // Descartar el recorrido sin guardarlo ni mostrar resumen y volver al detalle
+    private fun cancelarRecorrido() {
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(esDialogoCancelarVisible = false, esDialogoFinalizarVisible = false, esDialogoLlegadaVisible = false)
+        }
+        if (estaFinalizando) return
+        estaFinalizando = true
+        Log.d(TAG, "Recorrido cancelado por el usuario; se descarta sin guardar")
+        // Primero se descarta en el control (síncrono) y después se detiene el servicio: al destruirse no queda nada por guardar
+        controlSeguimiento.cancelar()
+        lanzadorSeguimiento.detener()
+        emitirEfecto(RecorridoEfecto.VolverAlDetalle)
     }
 
     // Capturar distancia y tiempo del estado indicado y mostrarlos en el diálogo de resumen
