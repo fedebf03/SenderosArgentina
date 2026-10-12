@@ -1,6 +1,7 @@
 package com.unaj.senderos.falsos
 
 import com.unaj.senderos.data.local.SenderoDao
+import com.unaj.senderos.data.local.PuntoRecorridoEntidad
 import com.unaj.senderos.data.local.SenderoEntidad
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,6 +87,30 @@ class FalsoSenderoDao(
                 ) {
                     filasAfectadas++
                     existente.copy(foto = foto)
+                } else {
+                    existente
+                }
+            }
+        }
+        return filasAfectadas
+    }
+
+    // Actualizar el recorrido solo si la fecha de modificación coincide con la leída; devolver filas afectadas
+    override suspend fun actualizarRecorridoSiNoCambio(
+        idUsuario: String,
+        idSendero: String,
+        fechaLeida: Long,
+        recorrido: List<PuntoRecorridoEntidad>
+    ): Int {
+        var filasAfectadas = 0
+        entidades.update { listaActual ->
+            filasAfectadas = 0
+            listaActual.map { existente ->
+                if (existente.idUsuario == idUsuario && existente.id == idSendero &&
+                    existente.fechaModificacion == fechaLeida
+                ) {
+                    filasAfectadas++
+                    existente.copy(recorrido = recorrido)
                 } else {
                     existente
                 }

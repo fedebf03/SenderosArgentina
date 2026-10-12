@@ -70,6 +70,8 @@ class ControlSeguimientoSensoresTest {
             proveedor,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             repositorioRecorridos,
+            com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio(),
+            com.unaj.senderos.falsos.FalsoAlmacenFotos(),
             backgroundScope + UnconfinedTestDispatcher(testScheduler),
             capacidades = capacidades,
             fuenteAcelerometro = fuenteAcelerometro,

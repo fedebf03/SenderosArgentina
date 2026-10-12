@@ -11,7 +11,13 @@ import com.unaj.senderos.falsos.FalsoMonitorConectividad
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
+import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
+import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio
+import com.unaj.senderos.falsos.crearPuntoCapturadoDePrueba
+import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoControlSeguimiento
@@ -46,6 +52,7 @@ class DetalleSenderoViewModelTest {
     private val monitorConectividad = FalsoMonitorConectividad()
     private val gestorMapas = FalsoGestorMapasSinConexion().apply { estado.value = EstadoMapaSinConexion.Disponible(1_000L) }
     private val efectosRecibidos = mutableListOf<DetalleSenderoEfecto>()
+    private val repositorioPuntos = FalsoPuntosCapturadosRepositorio()
 
     private val recorridoValido = listOf(
         PuntoRecorrido(latitud = -41.10, longitud = -71.30),
@@ -151,7 +158,10 @@ class DetalleSenderoViewModelTest {
             descargarMapaSinConexionUseCase = DescargarMapaSinConexionUseCase(gestorMapas, autenticacion),
             eliminarMapaSinConexionUseCase = EliminarMapaSinConexionUseCase(gestorMapas, autenticacion),
             monitorConectividad = monitorConectividad,
-            capacidadesDispositivo = capacidades
+            capacidadesDispositivo = capacidades,
+            observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorio, repositorioPuntos.also { falso -> falso.senderoRepositorio = repositorio }, autenticacion),
+            incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),
+            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(repositorioPuntos, autenticacion)
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }
@@ -358,7 +368,10 @@ class DetalleSenderoViewModelTest {
             descargarMapaSinConexionUseCase = DescargarMapaSinConexionUseCase(gestorMapas, autenticacion),
             eliminarMapaSinConexionUseCase = EliminarMapaSinConexionUseCase(gestorMapas, autenticacion),
             monitorConectividad = monitorConectividad,
-            capacidadesDispositivo = capacidades
+            capacidadesDispositivo = capacidades,
+            observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorio, repositorioPuntos.also { falso -> falso.senderoRepositorio = repositorio }, autenticacion),
+            incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),
+            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(repositorioPuntos, autenticacion)
         )
         advanceUntilIdle()
         control.estadoEmitido.value = EstadoSeguimiento(idSendero = "sendero-2", trazado = recorridoValido)
@@ -623,5 +636,96 @@ class DetalleSenderoViewModelTest {
         }
 
         assertTrue(gestorMapas.descargas.isEmpty())
+    }
+
+    // Verificar que sin puntos capturados no hay tarjeta de revisión
+    @Test
+    fun `sin puntos capturados no hay puntos por revisar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.hayPuntosPorRevisar)
+        assertEquals(0, viewModel.estadoVisual.value.revision.puntosPendientes.size)
+    }
+
+    // Verificar que los puntos capturados del sendero activan la tarjeta y los de otro sendero no cuentan
+    @Test
+    fun `los puntos capturados del sendero activan la tarjeta de revision`() = runTest(despachadorPrueba) {
+        repositorioPuntos.puntos.value = listOf(
+            crearPuntoCapturadoDePrueba(id = "a"),
+            crearPuntoCapturadoDePrueba(id = "b", instanteMilisegundos = 2L),
+            crearPuntoCapturadoDePrueba(id = "ajeno", idSendero = "sendero-2")
+        )
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.hayPuntosPorRevisar)
+        assertEquals(2, viewModel.estadoVisual.value.revision.puntosPendientes.size)
+    }
+
+    // Verificar que con un recorrido en curso en este sendero la tarjeta se oculta
+    @Test
+    fun `con un recorrido en curso la tarjeta de revision se oculta`() = runTest(despachadorPrueba) {
+        repositorioPuntos.puntos.value = listOf(crearPuntoCapturadoDePrueba(id = "a"))
+        val viewModel = crearViewModel(recorridoValido)
+        control.estadoEmitido.value = EstadoSeguimiento(idSendero = "sendero-1", trazado = recorridoValido)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.hayPuntosPorRevisar)
+    }
+
+    // Verificar que revisar abre el diálogo y que agregar los puntos los incorpora y lo cierra
+    @Test
+    fun `revisar abre el dialogo y agregar incorpora los puntos`() = runTest(despachadorPrueba) {
+        repositorioPuntos.puntos.value = listOf(
+            crearPuntoCapturadoDePrueba(id = "a", latitud = -41.105, longitud = -71.305),
+            crearPuntoCapturadoDePrueba(id = "b", latitud = -41.107, longitud = -71.307, instanteMilisegundos = 2L)
+        )
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlRevisionPuntos(RevisionPuntosEvento.AlAbrir))
+        advanceUntilIdle()
+        assertTrue(viewModel.estadoVisual.value.revision.esRevisionVisible)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlRevisionPuntos(RevisionPuntosEvento.AlAlternarPunto("b")))
+        viewModel.procesarEvento(DetalleSenderoEvento.AlRevisionPuntos(RevisionPuntosEvento.AlAgregarAlSendero))
+        advanceUntilIdle()
+
+        assertTrue(repositorioPuntos.puntos.value.isEmpty())
+        assertFalse(viewModel.estadoVisual.value.revision.esRevisionVisible)
+        assertEquals(3, viewModel.estadoVisual.value.sendero?.recorrido?.size)
+        assertTrue(efectosRecibidos.contains(DetalleSenderoEfecto.MostrarAviso("Puntos agregados al sendero")))
+    }
+
+    // Verificar que descartar todos desde el detalle exige confirmación y vacía los pendientes
+    @Test
+    fun `descartar todos desde el detalle pide confirmacion y descarta`() = runTest(despachadorPrueba) {
+        repositorioPuntos.puntos.value = listOf(crearPuntoCapturadoDePrueba(id = "a"))
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlRevisionPuntos(RevisionPuntosEvento.AlTocarDescartarTodos))
+        advanceUntilIdle()
+        assertTrue(viewModel.estadoVisual.value.revision.esConfirmarDescartarTodosVisible)
+        assertEquals(1, repositorioPuntos.puntos.value.size)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlRevisionPuntos(RevisionPuntosEvento.AlConfirmarDescartarTodos))
+        advanceUntilIdle()
+
+        assertTrue(repositorioPuntos.puntos.value.isEmpty())
+    }
+
+    // Verificar que tocar la miniatura amplía la foto y cerrarla la oculta
+    @Test
+    fun `ampliar una foto la muestra y cerrarla la oculta`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlAmpliarFoto("/fotos/mirador.jpg"))
+        assertEquals("/fotos/mirador.jpg", viewModel.estadoVisual.value.fotoAmpliada)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlCerrarFotoAmpliada)
+        assertNull(viewModel.estadoVisual.value.fotoAmpliada)
     }
 }

@@ -9,7 +9,11 @@ import com.unaj.senderos.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoControlSeguimiento
 import com.unaj.senderos.falsos.FalsoLanzadorSeguimiento
@@ -82,6 +86,9 @@ class RecorridoViewModelTest {
             controlSeguimiento = control,
             lanzadorSeguimiento = lanzador,
             capacidadesDispositivo = capacidades,
+            observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorio, FalsoPuntosCapturadosRepositorio(), autenticacion),
+            incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion),
+            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion),
             reloj = { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch {

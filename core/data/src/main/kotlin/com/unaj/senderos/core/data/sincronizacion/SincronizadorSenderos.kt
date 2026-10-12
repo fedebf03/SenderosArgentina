@@ -13,6 +13,7 @@ import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.ResumenSincronizacion
 import com.unaj.senderos.domain.model.UMBRAL_DEMORA_MILISEGUNDOS
 import com.unaj.senderos.domain.model.esFotoLocal
+import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SINCRONIZACION"
@@ -24,6 +25,7 @@ class SincronizadorSenderos(
     private val fuenteRemota: SenderoFuenteRemota,
     private val ejecutorTransacciones: EjecutorTransacciones,
     private val subidorFotos: SubidorFotos,
+    private val existeArchivo: (String) -> Boolean = { ruta -> File(ruta).exists() },
     private val reloj: () -> Long = System::currentTimeMillis
 ) {
     // Sincronizar al usuario con Firestore y devolver el resumen de lo subido, o failure si falla la lectura remota
@@ -100,7 +102,7 @@ class SincronizadorSenderos(
     // Subir una entidad y transicionar su estado solo si no cambió durante la subida; devolver el error o null
     private suspend fun subirEntidad(idUsuario: String, entidad: SenderoEntidad): Throwable? {
         return try {
-            val entidadConFotoRemota = subirFotoSiEsLocal(idUsuario, entidad)
+            val entidadConFotoRemota = subirFotosSiSonLocales(idUsuario, entidad)
             fuenteRemota.guardarSendero(idUsuario, entidadConFotoRemota.aRed())
             if (entidad.estaEliminado) {
                 senderoDao.borrarEliminadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion)
@@ -134,5 +136,31 @@ class SincronizadorSenderos(
         Log.d(TAG, "Foto del sendero ${entidad.id} subida a $urlRemota")
         senderoDao.actualizarFotoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, urlRemota)
         return entidad.copy(foto = urlRemota)
+    }
+    // Subir las fotos locales del sendero y de sus puntos de interés antes que el documento
+    private suspend fun subirFotosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
+        val conFotoPrincipal = subirFotoSiEsLocal(idUsuario, entidad)
+        return subirFotosDePuntosSiSonLocales(idUsuario, conFotoPrincipal)
+    }
+
+    // Subir en orden las fotos locales de los puntos del recorrido y guardar cada URL con la transición condicional,
+    // para no repetir la subida si una posterior falla; la excepción de una subida fallida sube al llamador
+    private suspend fun subirFotosDePuntosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
+        if (entidad.estaEliminado || entidad.recorrido.none { punto -> esFotoLocal(punto.foto) }) return entidad
+        val recorrido = entidad.recorrido.toMutableList()
+        for (indice in entidad.recorrido.indices) {
+            val punto = entidad.recorrido[indice]
+            if (!esFotoLocal(punto.foto)) continue
+            // Si el archivo ya no existe (borrado o limpiado), la foto se limpia para no dejar el sendero en CON_ERROR para siempre
+            val fotoNueva = if (existeArchivo(punto.foto)) {
+                subidorFotos.subir(punto.foto).also { urlRemota -> Log.d(TAG, "Foto del punto $indice del sendero ${entidad.id} subida a $urlRemota") }
+            } else {
+                Log.e(TAG, "Falta el archivo local de la foto del punto $indice del sendero ${entidad.id}; se limpia la foto")
+                ""
+            }
+            recorrido[indice] = punto.copy(foto = fotoNueva)
+            senderoDao.actualizarRecorridoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, recorrido.toList())
+        }
+        return entidad.copy(recorrido = recorrido)
     }
 }

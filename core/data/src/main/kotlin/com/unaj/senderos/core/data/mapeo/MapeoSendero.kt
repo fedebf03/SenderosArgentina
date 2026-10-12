@@ -53,7 +53,7 @@ fun SenderoEntidad.aDominio(): Sendero {
         esFavorito = esFavorito,
         estadoSincronizacion = resolverEstadoSincronizacion(estadoSincronizacion),
         recorrido = recorrido.map { punto ->
-            PuntoRecorrido(punto.latitud, punto.longitud, resolverTipoPunto(punto.tipo), punto.nombre)
+            PuntoRecorrido(punto.latitud, punto.longitud, resolverTipoPunto(punto.tipo), punto.nombre, punto.foto)
         },
         foto = foto
     )
@@ -87,7 +87,7 @@ fun Sendero.aEntidad(
         estadoSincronizacion = estadoSincronizacion.name,
         estaEliminado = estaEliminado,
         recorrido = recorrido.map { punto ->
-            PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo.name, punto.nombre)
+            PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo.name, punto.nombre, punto.foto)
         },
         foto = foto
     )
@@ -114,7 +114,7 @@ fun SenderoEntidad.aRed(): SenderoRed {
         esFavorito = esFavorito,
         fechaModificacion = fechaModificacion,
         eliminado = estaEliminado,
-        recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre) },
+        recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto) },
         foto = foto
     )
 }
@@ -143,7 +143,7 @@ fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
         estadoSincronizacion = EstadoSincronizacion.SINCRONIZADO.name,
         estaEliminado = eliminado,
         recorrido = recorrido.map { punto ->
-            PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo, punto.nombre)
+            PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto)
         },
         foto = foto
     )

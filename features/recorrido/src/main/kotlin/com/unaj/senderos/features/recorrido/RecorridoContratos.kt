@@ -4,6 +4,12 @@ import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.TipoPunto
+import com.unaj.senderos.presentation.comun.RevisionPuntosEstadoVisual
+import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
+
+// Tipo de punto que propone la hoja de captura
+val TIPO_PUNTO_INICIAL: TipoPunto = TipoPunto.MIRADOR
 
 // Velocidades de avance que admite la simulación
 val MULTIPLICADORES_SIMULACION: List<Int> = listOf(1, 5, 20)
@@ -44,8 +50,23 @@ data class RecorridoEstadoVisual(
     val tieneAcelerometro: Boolean = true,
     val tieneBrujula: Boolean = true,
     val esDialogoCancelarVisible: Boolean = false,
-    val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO
+    val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO,
+    val esHojaPuntoVisible: Boolean = false,
+    val tipoPuntoElegido: TipoPunto = TIPO_PUNTO_INICIAL,
+    val notaPunto: String = "",
+    val fotoPunto: String? = null,
+    val estaGuardandoPunto: Boolean = false,
+    val mensajeErrorPunto: String? = null,
+    val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual()
 ) {
+    // Indicar si se puede marcar un punto de interés: con el recorrido activo y quieto, o siempre en simulación
+    val puedeAgregarPunto: Boolean
+        get() = fase == FaseRecorrido.EN_CURSO && (estaDetenido || esSimulado)
+
+    // Cantidad de puntos capturados de este sendero que todavía no se incorporaron ni descartaron
+    val cantidadPuntosCapturados: Int
+        get() = revision.puntosPendientes.size
+
     // Indicar si las distancias y velocidades merecen confianza: solo con buena señal
     val sonConfiablesLosDatosDeDistancia: Boolean
         get() = calidadSenal == CalidadSenal.BUENA
@@ -69,6 +90,15 @@ sealed interface RecorridoEvento {
     data object AlTocarCentrar : RecorridoEvento
     data class AlSeleccionarMultiplicador(val valor: Int) : RecorridoEvento
     data object AlTocarSimularDesvio : RecorridoEvento
+    data object AlTocarAgregarPunto : RecorridoEvento
+    data object AlCerrarHojaPunto : RecorridoEvento
+    data class AlElegirTipoPunto(val tipo: TipoPunto) : RecorridoEvento
+    data class AlCambiarNotaPunto(val nota: String) : RecorridoEvento
+    data class AlSeleccionarFotoPunto(val uri: String) : RecorridoEvento
+    data object AlQuitarFotoPunto : RecorridoEvento
+    data class AlFallarFotoPunto(val mensaje: String) : RecorridoEvento
+    data object AlGuardarPunto : RecorridoEvento
+    data class AlRevisarPuntos(val evento: RevisionPuntosEvento) : RecorridoEvento
 }
 
 sealed interface RecorridoEfecto {

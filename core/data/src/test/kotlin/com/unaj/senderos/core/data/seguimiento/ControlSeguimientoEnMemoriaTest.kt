@@ -68,6 +68,8 @@ class ControlSeguimientoEnMemoriaTest {
             proveedor,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             repositorioRecorridos,
+            com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio(),
+            com.unaj.senderos.falsos.FalsoAlmacenFotos(),
             backgroundScope + UnconfinedTestDispatcher(testScheduler)
         ) { instante }
     }

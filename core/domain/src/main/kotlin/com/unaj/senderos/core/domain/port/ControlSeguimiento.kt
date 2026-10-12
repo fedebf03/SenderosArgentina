@@ -3,6 +3,8 @@ package com.unaj.senderos.domain.repository
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.domain.model.ResultadoCaptura
+import com.unaj.senderos.domain.model.TipoPunto
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -31,4 +33,8 @@ interface ControlSeguimiento {
 
     // Cancelar el seguimiento activo descartando lo recorrido: no se guarda nada en el historial
     fun cancelar()
+
+    // Capturar un punto de interés en la última posición válida del recorrido activo, en simulación también.
+    // Copia la foto (Uri) a la carpeta privada si viene y guarda el punto al instante en la base local; falla con un mensaje claro si no hay recorrido o posición; con la señal débil el resultado informa la antigüedad de la posición usada
+    suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?): Result<ResultadoCaptura>
 }

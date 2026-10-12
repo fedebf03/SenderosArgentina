@@ -80,4 +80,17 @@ class PuntosDeInteresTest {
         assertEquals(Coordenada(0.0, 2.0), estado.coordenadaDelPunto(2))
         assertEquals(null, estado.coordenadaDelPunto(9))
     }
+
+    // Verificar que la foto del punto del recorrido llega al punto de interés y que sin foto queda vacía
+    @Test
+    fun `el punto de interes trae la foto del punto del recorrido`() {
+        val conFoto = listOf(
+            PuntoRecorrido(latitud = 0.0, longitud = 0.0, tipo = TipoPunto.MIRADOR, nombre = "Cima", foto = "/fotos/cima.jpg"),
+            PuntoRecorrido(latitud = 0.0, longitud = 1.0, tipo = TipoPunto.AGUA)
+        )
+
+        val puntos = obtenerPuntosDeInteres(crearSenderoDePrueba(recorrido = conFoto))
+
+        assertEquals(listOf("/fotos/cima.jpg", ""), puntos.map { punto -> punto.foto })
+    }
 }

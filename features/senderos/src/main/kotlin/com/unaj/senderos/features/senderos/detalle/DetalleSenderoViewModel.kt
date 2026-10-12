@@ -14,11 +14,15 @@ import com.unaj.senderos.domain.repository.MonitorConectividad
 import com.unaj.senderos.domain.repository.PreferenciasAplicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
+import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.EliminarMapaSinConexionUseCase
+import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
+import com.unaj.senderos.presentation.comun.ControladorRevisionPuntos
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -52,7 +56,10 @@ class DetalleSenderoViewModel(
     private val descargarMapaSinConexionUseCase: DescargarMapaSinConexionUseCase,
     private val eliminarMapaSinConexionUseCase: EliminarMapaSinConexionUseCase,
     private val monitorConectividad: MonitorConectividad,
-    private val capacidadesDispositivo: CapacidadesDispositivo
+    private val capacidadesDispositivo: CapacidadesDispositivo,
+    observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
+    incorporarPuntosCapturadosUseCase: IncorporarPuntosCapturadosUseCase,
+    descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(DetalleSenderoEstadoVisual())
@@ -60,6 +67,15 @@ class DetalleSenderoViewModel(
 
     private val canalEfectos = Channel<DetalleSenderoEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
+
+    private val controladorRevision = ControladorRevisionPuntos(
+        idSendero = idSendero,
+        observarPuntosCapturadosConDistanciaUseCase = observarPuntosCapturadosConDistanciaUseCase,
+        incorporarPuntosCapturadosUseCase = incorporarPuntosCapturadosUseCase,
+        descartarPuntosCapturadosUseCase = descartarPuntosCapturadosUseCase,
+        alcance = viewModelScope,
+        alEmitirAviso = { mensaje -> emitirEfecto(DetalleSenderoEfecto.MostrarAviso(mensaje)) }
+    )
 
     private var estaEliminando = false
 
@@ -73,6 +89,7 @@ class DetalleSenderoViewModel(
         observarSendero()
         observarRecorridoEnCurso()
         observarModoDemostracion()
+        observarRevisionDePuntos()
     }
 
     // Procesar cada evento de la pantalla de detalle
@@ -143,6 +160,22 @@ class DetalleSenderoViewModel(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = false) }
             }
             is DetalleSenderoEvento.AlConfirmarEliminar -> eliminar()
+            is DetalleSenderoEvento.AlRevisionPuntos -> controladorRevision.procesarEvento(evento.evento)
+            is DetalleSenderoEvento.AlAmpliarFoto -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(fotoAmpliada = evento.foto) }
+            }
+            is DetalleSenderoEvento.AlCerrarFotoAmpliada -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(fotoAmpliada = null) }
+            }
+        }
+    }
+
+    // Reflejar en el estado visual los puntos capturados pendientes y su revisión
+    private fun observarRevisionDePuntos() {
+        viewModelScope.launch {
+            controladorRevision.estado.collect { revision ->
+                _estadoVisual.update { estadoActual -> estadoActual.copy(revision = revision) }
+            }
         }
     }
 

@@ -12,6 +12,7 @@ import com.unaj.senderos.data.remote.FirestoreSenderoFuenteRemota
 import com.unaj.senderos.data.remote.SubidorFotosCloudinary
 import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
 import com.unaj.senderos.data.repository.RecorridoRepositorioOfflineFirst
+import com.unaj.senderos.data.repository.PuntosCapturadosRepositorioOfflineFirst
 import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
 import com.unaj.senderos.data.sincronizacion.SincronizadorRecorridos
@@ -40,10 +41,15 @@ import com.unaj.senderos.domain.repository.LanzadorSeguimiento
 import com.unaj.senderos.domain.repository.Notificador
 import com.unaj.senderos.domain.repository.PreferenciasAplicacion
 import com.unaj.senderos.domain.repository.RecorridoRepositorio
+import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
 import com.unaj.senderos.domain.repository.ProveedorUbicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
+import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
+import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
@@ -92,6 +98,17 @@ class ContenedorDependencias(contexto: Context) {
         ejecutorTransacciones
     )
     val almacenFotos = AlmacenFotosLocal(contexto)
+    // Alcance de proceso para escrituras que no deben cancelarse con la pantalla (incorporar puntos al sendero)
+    private val alcanceEscrituras = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio =
+        PuntosCapturadosRepositorioOfflineFirst(
+            baseDatosSenderos.puntoCapturadoDao(),
+            baseDatosSenderos.senderoDao(),
+            ejecutorTransacciones,
+            planificadorSincronizacion,
+            almacenFotos,
+            alcanceEscrituras
+        )
 
     val proveedorUbicacion: ProveedorUbicacion = ProveedorUbicacionCombinada(contexto.applicationContext)
     val notificador: Notificador = NotificadorAndroid(contexto.applicationContext)
@@ -112,6 +129,12 @@ class ContenedorDependencias(contexto: Context) {
     val guardarSenderoUseCase = GuardarSenderoUseCase(senderoRepositorio, autenticacionRepositorio)
     val observarRecorridosUseCase = ObservarRecorridosUseCase(recorridoRepositorio, autenticacionRepositorio)
     val observarRecorridoUseCase = ObservarRecorridoUseCase(recorridoRepositorio, autenticacionRepositorio)
+    val observarPuntosCapturadosUseCase = ObservarPuntosCapturadosUseCase(puntosCapturadosRepositorio, autenticacionRepositorio)
+    val observarPuntosCapturadosConDistanciaUseCase =
+        ObservarPuntosCapturadosConDistanciaUseCase(senderoRepositorio, puntosCapturadosRepositorio, autenticacionRepositorio)
+    val incorporarPuntosCapturadosUseCase =
+        IncorporarPuntosCapturadosUseCase(puntosCapturadosRepositorio, autenticacionRepositorio)
+    val descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(puntosCapturadosRepositorio, autenticacionRepositorio)
 
     val monitorConectividad: MonitorConectividad = MonitorConectividadAndroid(contexto.applicationContext)
     private val gestorMapasSinConexion: GestorMapasSinConexion =
@@ -132,6 +155,8 @@ class ContenedorDependencias(contexto: Context) {
             proveedorUbicacion,
             observarDetalleSenderoUseCase,
             recorridoRepositorio,
+            puntosCapturadosRepositorio,
+            almacenFotos,
             alcanceSeguimiento,
             capacidadesDispositivo,
             FuenteAcelerometroAndroid(contexto.applicationContext),

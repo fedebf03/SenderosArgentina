@@ -239,7 +239,10 @@ class MainActivity : ComponentActivity() {
                                         descargarMapaSinConexionUseCase = dependencias.descargarMapaSinConexionUseCase,
                                         eliminarMapaSinConexionUseCase = dependencias.eliminarMapaSinConexionUseCase,
                                         monitorConectividad = dependencias.monitorConectividad,
-                                        capacidadesDispositivo = dependencias.capacidadesDispositivo
+                                        capacidadesDispositivo = dependencias.capacidadesDispositivo,
+                                        observarPuntosCapturadosConDistanciaUseCase = dependencias.observarPuntosCapturadosConDistanciaUseCase,
+                                        incorporarPuntosCapturadosUseCase = dependencias.incorporarPuntosCapturadosUseCase,
+                                        descartarPuntosCapturadosUseCase = dependencias.descartarPuntosCapturadosUseCase
                                     )
                                 },
                                 alVolverAlListado = {
@@ -259,7 +262,10 @@ class MainActivity : ComponentActivity() {
                                         observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
                                         controlSeguimiento = dependencias.controlSeguimiento,
                                         lanzadorSeguimiento = dependencias.lanzadorSeguimiento,
-                                        capacidadesDispositivo = dependencias.capacidadesDispositivo
+                                        capacidadesDispositivo = dependencias.capacidadesDispositivo,
+                                        observarPuntosCapturadosConDistanciaUseCase = dependencias.observarPuntosCapturadosConDistanciaUseCase,
+                                        incorporarPuntosCapturadosUseCase = dependencias.incorporarPuntosCapturadosUseCase,
+                                        descartarPuntosCapturadosUseCase = dependencias.descartarPuntosCapturadosUseCase
                                     )
                                 },
                                 // Volver no detiene el seguimiento: sigue en segundo plano con su notificación
