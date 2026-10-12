@@ -29,5 +29,29 @@ data class EstadoSeguimiento(
     val tiempoTranscurridoMilisegundos: Long = 0L,
     // Instante de la lectura anterior, para acotar el desplazamiento plausible entre lecturas; nulo antes de la primera
     val instanteUltimaLecturaMilisegundos: Long? = null,
-    val esCircular: Boolean = false
-)
+    val esCircular: Boolean = false,
+    // Pasos contados desde el inicio; null si el equipo no tiene acelerómetro (en simulación se estiman a 1 cada 0,75 m)
+    val pasos: Int? = null,
+    // Pasos por minuto en los últimos 10 s; null si el equipo no mide pasos
+    val ritmoPasosPorMinuto: Double? = null,
+    // Verdadero si la velocidad es menor a 0,5 m/s (o desconocida) y no hubo pasos en 10 s
+    val estaDetenido: Boolean = false,
+    // Rumbo magnético de la brújula (vector de rotación); null si el equipo no la tiene o en simulación
+    val rumboBrujulaGrados: Float? = null
+) {
+
+    // Rumbo a mostrar: el de la brújula si el usuario está detenido y hay brújula (el GPS no da rumbo fiable sin movimiento);
+    // en movimiento, o sin brújula, el último del GPS
+    val rumboEfectivoGrados: Float?
+        get() = if (estaDetenido && rumboBrujulaGrados != null) rumboBrujulaGrados else rumboGrados
+
+    // Velocidad promedio en km/h: distancia recorrida sobre el tiempo transcurrido; 0 si todavía no pasó tiempo
+    val velocidadPromedioKilometrosPorHora: Double
+        get() = if (tiempoTranscurridoMilisegundos <= 0L) {
+            0.0
+        } else {
+            distanciaRecorridaKilometros / (tiempoTranscurridoMilisegundos / MILISEGUNDOS_POR_HORA)
+        }
+}
+
+private const val MILISEGUNDOS_POR_HORA = 3_600_000.0

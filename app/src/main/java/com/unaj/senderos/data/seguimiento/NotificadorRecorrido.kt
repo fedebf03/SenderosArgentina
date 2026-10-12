@@ -42,13 +42,22 @@ class NotificadorRecorrido(private val contexto: Context) {
 
     // Construir la notificación persistente del servicio según el estado actual del recorrido
     fun construirNotificacionEnCurso(idSendero: String, estado: EstadoSeguimiento?, esSimulado: Boolean): Notification {
-        crearCanales()
-        val resumen = if (estado == null) {
+        return construirNotificacionConResumen(idSendero, redactarResumen(estado), esSimulado)
+    }
+
+    // Redactar el texto de progreso de la notificación persistente a partir del estado (o "Preparando" si todavía no hay)
+    fun redactarResumen(estado: EstadoSeguimiento?): String {
+        return if (estado == null) {
             "Preparando el recorrido"
         } else {
             "${formatearKilometros(estado.distanciaRestanteKilometros)} km restantes · " +
                 "${formatearKilometros(estado.distanciaRecorridaKilometros)} km recorridos"
         }
+    }
+
+    // Construir la notificación persistente con un resumen ya redactado
+    private fun construirNotificacionConResumen(idSendero: String, resumen: String, esSimulado: Boolean): Notification {
+        crearCanales()
         return NotificationCompat.Builder(contexto, ID_CANAL_EN_CURSO)
             .setSmallIcon(R.drawable.ic_notificacion)
             .setContentTitle(if (esSimulado) "SIMULACIÓN · Recorrido en curso" else "Recorrido en curso")
@@ -63,8 +72,8 @@ class NotificadorRecorrido(private val contexto: Context) {
     }
 
     // Actualizar la notificación persistente ya publicada por el servicio
-    fun actualizarNotificacionEnCurso(idSendero: String, estado: EstadoSeguimiento) {
-        administrador.notify(ID_NOTIFICACION_EN_CURSO, construirNotificacionEnCurso(idSendero, estado, estado.esSimulado))
+    fun actualizarNotificacionEnCurso(idSendero: String, resumen: String, esSimulado: Boolean) {
+        administrador.notify(ID_NOTIFICACION_EN_CURSO, construirNotificacionConResumen(idSendero, resumen, esSimulado))
     }
 
     // Obtener el identificador de la notificación persistente para iniciar el servicio en primer plano

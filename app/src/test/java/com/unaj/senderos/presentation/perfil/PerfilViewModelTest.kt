@@ -1,6 +1,9 @@
 package com.unaj.senderos.presentation.perfil
 
+import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.domain.usecase.ObtenerCapacidadesDispositivoUseCase
+import com.unaj.senderos.falsos.FalsoDetectorCapacidades
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
@@ -46,13 +49,21 @@ class PerfilViewModelTest {
     }
 
     // Crear el ViewModel del perfil con un usuario activo y las preferencias falsas
-    private fun crearViewModel(): PerfilViewModel {
+    private fun crearViewModel(
+        capacidades: CapacidadesDispositivo = CapacidadesDispositivo(
+            tieneGps = true,
+            tieneAcelerometro = true,
+            tieneBrujula = true,
+            tieneCamara = true
+        )
+    ): PerfilViewModel {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         return PerfilViewModel(
             obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacion),
             cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento()),
             preferenciasAplicacion = preferencias,
-            observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion)
+            observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion),
+            obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(FalsoDetectorCapacidades(capacidades))
         )
     }
 
@@ -111,6 +122,37 @@ class PerfilViewModelTest {
         advanceUntilIdle()
 
         assertTrue(viewModel.estadoVisual.value.recorridos.isEmpty())
+    }
+
+    // Verificar que las cuatro funciones del equipo se listan con su disponibilidad
+    @Test
+    fun `las funciones del dispositivo reflejan las capacidades detectadas`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(
+            CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = false, tieneBrujula = false, tieneCamara = true)
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                EstadoFuncion(FuncionDispositivo.GPS, estaDisponible = true),
+                EstadoFuncion(FuncionDispositivo.ACELEROMETRO, estaDisponible = false),
+                EstadoFuncion(FuncionDispositivo.BRUJULA, estaDisponible = false),
+                EstadoFuncion(FuncionDispositivo.CAMARA, estaDisponible = true)
+            ),
+            viewModel.estadoVisual.value.funcionesDispositivo
+        )
+    }
+
+    // Verificar que cada función explica qué se pierde si falta
+    @Test
+    fun `cada funcion explica que se pierde si falta`() {
+        assertEquals(
+            "Sin brújula, la dirección se calcula solo mientras caminás",
+            explicarFuncionNoDisponible(FuncionDispositivo.BRUJULA)
+        )
+        FuncionDispositivo.entries.forEach { funcion ->
+            assertTrue(explicarFuncionNoDisponible(funcion).isNotBlank())
+        }
     }
 
     // Verificar que tocar un recorrido emite el efecto de navegación a su detalle

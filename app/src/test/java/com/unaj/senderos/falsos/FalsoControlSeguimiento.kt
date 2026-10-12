@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class FalsoControlSeguimiento : ControlSeguimiento {
+class FalsoControlSeguimiento(private val registro: MutableList<String> = mutableListOf()) : ControlSeguimiento {
 
     // Estado que la prueba modifica para simular lo que publica el servicio
     val estadoEmitido = MutableStateFlow<EstadoSeguimiento?>(null)
@@ -41,8 +41,19 @@ class FalsoControlSeguimiento : ControlSeguimiento {
         cantidadDesviosSimulados++
     }
 
+    var cantidadCancelaciones: Int = 0
+        private set
+
     // Dejar el estado en null como lo hace el control real
     override fun detener() {
+        estadoEmitido.value = null
+    }
+
+    // Contar la cancelación, fijar el motivo y dejar el estado en null como lo hace el control real
+    override fun cancelar() {
+        cantidadCancelaciones++
+        registro.add("control.cancelar")
+        motivoFinEmitido.value = MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO
         estadoEmitido.value = null
     }
 }
