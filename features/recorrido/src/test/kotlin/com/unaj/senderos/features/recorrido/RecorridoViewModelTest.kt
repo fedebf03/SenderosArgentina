@@ -1,6 +1,7 @@
 package com.unaj.senderos.presentation.recorrido
 
 import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoSeguimiento
@@ -102,7 +103,8 @@ class RecorridoViewModelTest {
         ritmoPasosPorMinuto: Double? = null,
         estaDetenido: Boolean = false,
         rumboBrujulaGrados: Float? = null,
-        tiempoTranscurridoMilisegundos: Long = 0L
+        tiempoTranscurridoMilisegundos: Long = 0L,
+        calidadSenal: CalidadSenal = CalidadSenal.BUENA
     ): EstadoSeguimiento {
         return EstadoSeguimiento(
             idSendero = idSendero,
@@ -123,7 +125,8 @@ class RecorridoViewModelTest {
             ritmoPasosPorMinuto = ritmoPasosPorMinuto,
             estaDetenido = estaDetenido,
             rumboBrujulaGrados = rumboBrujulaGrados,
-            tiempoTranscurridoMilisegundos = tiempoTranscurridoMilisegundos
+            tiempoTranscurridoMilisegundos = tiempoTranscurridoMilisegundos,
+            calidadSenal = calidadSenal
         )
     }
 
@@ -684,6 +687,41 @@ class RecorridoViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf<RecorridoEfecto>(RecorridoEfecto.VolverAlDetalle), efectosRecibidos)
+    }
+
+    // Verificar que mientras se busca la señal el estado visual lo indica y los datos de distancia no son confiables
+    @Test
+    fun `buscando senal se refleja y los datos de distancia no son confiables`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(calidadSenal = CalidadSenal.BUSCANDO)
+        advanceUntilIdle()
+
+        assertEquals(CalidadSenal.BUSCANDO, viewModel.estadoVisual.value.calidadSenal)
+        assertFalse(viewModel.estadoVisual.value.sonConfiablesLosDatosDeDistancia)
+    }
+
+    // Verificar que con señal débil el estado visual lo indica y los datos de distancia no son confiables
+    @Test
+    fun `senal debil se refleja y los datos de distancia no son confiables`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(calidadSenal = CalidadSenal.DEBIL)
+        advanceUntilIdle()
+
+        assertEquals(CalidadSenal.DEBIL, viewModel.estadoVisual.value.calidadSenal)
+        assertFalse(viewModel.estadoVisual.value.sonConfiablesLosDatosDeDistancia)
+    }
+
+    // Verificar que con buena señal no hay cartel y los datos de distancia son confiables
+    @Test
+    fun `buena senal deja los datos de distancia confiables`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado(calidadSenal = CalidadSenal.DEBIL)
+        advanceUntilIdle()
+        control.estadoEmitido.value = crearEstado(calidadSenal = CalidadSenal.BUENA)
+        advanceUntilIdle()
+
+        assertEquals(CalidadSenal.BUENA, viewModel.estadoVisual.value.calidadSenal)
+        assertTrue(viewModel.estadoVisual.value.sonConfiablesLosDatosDeDistancia)
     }
 
     // Verificar que en simulación los pasos se muestran aunque el equipo no tenga acelerómetro

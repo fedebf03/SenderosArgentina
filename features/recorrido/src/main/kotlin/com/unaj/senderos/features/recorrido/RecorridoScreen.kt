@@ -20,6 +20,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.mapa.ModoNavegacion
@@ -57,6 +59,7 @@ import kotlinx.coroutines.delay
 
 private const val TAG = "RECORRIDO"
 private const val INTERVALO_RELOJ_MILISEGUNDOS = 1_000L
+private const val TEXTO_SIN_SENAL = "—"
 private const val TEXTO_NO_DISPONIBLE_EN_EQUIPO = "No disponible en este equipo"
 
 // Mostrar la pantalla "Recorrido en curso" conectada a su ViewModel
@@ -233,6 +236,7 @@ private fun PanelRecorrido(
             if (estadoVisual.esSimulado) {
                 ControlesSimulacion(estadoVisual.multiplicadorSimulacion, alProcesarEvento)
             }
+            CartelDeSenal(estadoVisual.calidadSenal)
             TituloDeSeccion("Recorrido en curso")
             Text(text = nombreSendero, style = MaterialTheme.typography.bodyMedium)
             if (estadoVisual.estaDetenido) {
@@ -285,17 +289,30 @@ private fun PanelRecorrido(
 @Composable
 private fun GrillaDeDatos(estadoVisual: RecorridoEstadoVisual, ahoraMilisegundos: Long) {
     val sinAcelerometro = estadoVisual.faltaAcelerometro
+    val confiable = estadoVisual.sonConfiablesLosDatosDeDistancia
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         FilaDeDatos(
-            DatoDeGrilla("Recorrido", formatearDistanciaRecorrido(estadoVisual.distanciaRecorridaKilometros)),
-            DatoDeGrilla("Restante", formatearDistanciaRecorrido(estadoVisual.distanciaRestanteKilometros))
+            DatoDeGrilla(
+                "Recorrido",
+                if (confiable) formatearDistanciaRecorrido(estadoVisual.distanciaRecorridaKilometros) else TEXTO_SIN_SENAL
+            ),
+            DatoDeGrilla(
+                "Restante",
+                if (confiable) formatearDistanciaRecorrido(estadoVisual.distanciaRestanteKilometros) else TEXTO_SIN_SENAL
+            )
         )
         FilaDeDatos(
             DatoDeGrilla("Tiempo", formatearTiempoTranscurrido(ahoraMilisegundos - estadoVisual.instanteInicioMilisegundos)),
-            DatoDeGrilla("Velocidad", formatearVelocidad(estadoVisual.velocidadActualMetrosPorSegundo))
+            DatoDeGrilla(
+                "Velocidad",
+                if (confiable) formatearVelocidad(estadoVisual.velocidadActualMetrosPorSegundo) else TEXTO_SIN_SENAL
+            )
         )
         FilaDeDatos(
-            DatoDeGrilla("Vel. promedio", formatearVelocidadPromedio(estadoVisual.velocidadPromedioKilometrosPorHora)),
+            DatoDeGrilla(
+                "Vel. promedio",
+                if (confiable) formatearVelocidadPromedio(estadoVisual.velocidadPromedioKilometrosPorHora) else TEXTO_SIN_SENAL
+            ),
             DatoDeGrilla(
                 titulo = "Pasos",
                 valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE_EN_EQUIPO else formatearPasosDelPanel(estadoVisual.pasos),
@@ -334,6 +351,39 @@ private fun FilaDeDatos(izquierdo: DatoDeGrilla, derecho: DatoDeGrilla) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         CeldaDelPanel(izquierdo, Modifier.weight(1f))
         CeldaDelPanel(derecho, Modifier.weight(1f))
+    }
+}
+
+// Mostrar un cartel mientras se busca la señal GPS o cuando se perdió; con buena señal no muestra nada
+@Composable
+private fun CartelDeSenal(calidadSenal: CalidadSenal) {
+    if (calidadSenal == CalidadSenal.BUENA) return
+    val estaBuscando = calidadSenal == CalidadSenal.BUSCANDO
+    Surface(
+        color = if (estaBuscando) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.errorContainer,
+        contentColor = if (estaBuscando) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onErrorContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (estaBuscando) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(imageVector = Icons.Filled.GpsOff, contentDescription = null)
+            }
+            Text(
+                text = if (estaBuscando) {
+                    "Buscando señal GPS…"
+                } else {
+                    "Sin señal GPS: salí al aire libre, lejos de techos y árboles"
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 

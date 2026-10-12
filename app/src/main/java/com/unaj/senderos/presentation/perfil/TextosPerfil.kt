@@ -15,7 +15,7 @@ fun obtenerNombreFuncion(funcion: FuncionDispositivo): String {
 // Explicar brevemente qué se pierde cuando el equipo no tiene la función
 fun explicarFuncionNoDisponible(funcion: FuncionDispositivo): String {
     return when (funcion) {
-        FuncionDispositivo.GPS -> "Sin GPS no se puede seguir tu posición ni calcular distancias del recorrido"
+        FuncionDispositivo.GPS -> "Sin GPS, la ubicación sale del wifi o de la red móvil: es menos precisa y no funciona sin señal"
         FuncionDispositivo.ACELEROMETRO -> "Sin acelerómetro no se cuentan los pasos ni el ritmo"
         FuncionDispositivo.BRUJULA -> "Sin brújula, la dirección se calcula solo mientras caminás"
         FuncionDispositivo.CAMARA -> "Sin cámara no se pueden sacar fotos; sí elegirlas de la galería"

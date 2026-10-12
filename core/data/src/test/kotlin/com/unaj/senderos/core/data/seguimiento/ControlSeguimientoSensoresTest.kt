@@ -1,5 +1,6 @@
 package com.unaj.senderos.data.seguimiento
 
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.LecturaUbicacion
@@ -78,8 +79,8 @@ class ControlSeguimientoSensoresTest {
     }
 
     // Construir una lectura de GPS al sur del origen
-    private fun lectura(gradosAlSur: Double, velocidad: Float? = null): LecturaUbicacion {
-        return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, velocidad, precisionMetros = null)
+    private fun lectura(gradosAlSur: Double, velocidad: Float? = null, precision: Float? = null): LecturaUbicacion {
+        return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, velocidad, precisionMetros = precision)
     }
 
     // Emitir una caminata sintética de 2 pasos por segundo avanzando el reloj del control con las muestras
@@ -444,6 +445,88 @@ class ControlSeguimientoSensoresTest {
         control.cancelar()
 
         assertTrue(repositorioRecorridos.guardados.isEmpty())
+        assertNull(control.estado.value)
+    }
+
+    // Verificar que el temporizador degrada la señal a débil sin que lleguen lecturas
+    @Test
+    fun `el temporizador pasa la senal de buena a debil sin lecturas`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+        ubicaciones.emit(lectura(0.0, precision = 10f))
+        assertEquals(CalidadSenal.BUENA, control.estado.value?.calidadSenal)
+
+        instante += 20_000L
+        advanceTimeBy(5_500L)
+
+        assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
+    }
+
+    // Verificar que sin ninguna lectura válida el estado busca y luego pasa a débil por el temporizador
+    @Test
+    fun `sin lecturas validas busca y luego es debil por el temporizador`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+        assertEquals(CalidadSenal.BUSCANDO, control.estado.value?.calidadSenal)
+
+        instante += 31_000L
+        advanceTimeBy(5_500L)
+
+        assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
+    }
+
+    // Verificar que una lectura válida devuelve la señal a buena tras haber estado débil
+    @Test
+    fun `una lectura valida devuelve la senal a buena`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+        ubicaciones.emit(lectura(0.0, precision = 10f))
+        instante += 20_000L
+        advanceTimeBy(5_500L)
+        assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
+
+        ubicaciones.emit(lectura(0.0001, precision = 10f))
+
+        assertEquals(CalidadSenal.BUENA, control.estado.value?.calidadSenal)
+    }
+
+    // Verificar que las lecturas imprecisas no mueven la posición y dejan la señal débil pasados 15 s
+    @Test
+    fun `las lecturas imprecisas dejan la senal debil sin mover la posicion`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+        ubicaciones.emit(lectura(0.0, precision = 10f))
+        val posicion = control.estado.value?.posicionActual
+
+        instante += 20_000L
+        ubicaciones.emit(lectura(0.001, precision = 80f))
+
+        assertEquals(posicion, control.estado.value?.posicionActual)
+        assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
+    }
+
+    // Verificar que el recorrido simulado tiene buena señal desde el inicio y sigue así
+    @Test
+    fun `la simulacion siempre tiene buena senal`() = runTest {
+        val control = crearControl()
+
+        control.iniciar("s1", esSimulado = true)
+        assertEquals(CalidadSenal.BUENA, control.estado.value?.calidadSenal)
+        instante += 600_000L
+        advanceTimeBy(20_000L)
+
+        assertEquals(CalidadSenal.BUENA, control.estado.value?.calidadSenal)
+    }
+
+    // Verificar que cancelar detiene el temporizador de calidad
+    @Test
+    fun `cancelar detiene el temporizador de calidad`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+
+        control.cancelar()
+        advanceTimeBy(20_000L)
+
         assertNull(control.estado.value)
     }
 }

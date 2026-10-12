@@ -3,6 +3,7 @@ package com.unaj.senderos.presentation.detalle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.PuntoRecorrido
@@ -50,7 +51,8 @@ class DetalleSenderoViewModel(
     private val observarMapaSinConexionUseCase: ObservarMapaSinConexionUseCase,
     private val descargarMapaSinConexionUseCase: DescargarMapaSinConexionUseCase,
     private val eliminarMapaSinConexionUseCase: EliminarMapaSinConexionUseCase,
-    private val monitorConectividad: MonitorConectividad
+    private val monitorConectividad: MonitorConectividad,
+    private val capacidadesDispositivo: CapacidadesDispositivo
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(DetalleSenderoEstadoVisual())
@@ -93,7 +95,14 @@ class DetalleSenderoViewModel(
             }
             is DetalleSenderoEvento.AlConfirmarReemplazarRecorrido -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(nombreSenderoEnCursoAReemplazar = null) }
+                avisarSinGpsOSugerirDescarga()
+            }
+            is DetalleSenderoEvento.AlIniciarSinGps -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoSinGpsVisible = false) }
                 sugerirDescargaOSolicitarPermiso()
+            }
+            is DetalleSenderoEvento.AlCancelarSinGps -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoSinGpsVisible = false) }
             }
             is DetalleSenderoEvento.AlTocarDescargarMapa -> descargarMapa()
             is DetalleSenderoEvento.AlTocarEliminarMapa -> {
@@ -273,7 +282,7 @@ class DetalleSenderoViewModel(
         }
         val recorridoActivo = controlSeguimiento.estado.value
         when {
-            recorridoActivo == null -> sugerirDescargaOSolicitarPermiso()
+            recorridoActivo == null -> avisarSinGpsOSugerirDescarga()
             recorridoActivo.idSendero == idSendero -> emitirEfecto(DetalleSenderoEfecto.NavegarARecorrido(idSendero))
             else -> pedirConfirmarReemplazo(recorridoActivo.idSendero)
         }
@@ -365,6 +374,16 @@ class DetalleSenderoViewModel(
                     DetalleSenderoEfecto.MostrarAviso(error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO)
                 )
             }
+        }
+    }
+
+    // Avisar que el equipo no tiene GPS antes del flujo de permisos (salvo en simulación); si no, seguir con la sugerencia de descarga
+    private fun avisarSinGpsOSugerirDescarga() {
+        val esSimulado = preferenciasAplicacion.esModoDemostracion.value
+        if (!capacidadesDispositivo.tieneGps && !esSimulado) {
+            _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoSinGpsVisible = true) }
+        } else {
+            sugerirDescargaOSolicitarPermiso()
         }
     }
 

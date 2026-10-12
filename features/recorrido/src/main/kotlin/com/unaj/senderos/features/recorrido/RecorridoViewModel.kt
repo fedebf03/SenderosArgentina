@@ -145,6 +145,7 @@ class RecorridoViewModel(
                     pasos = estadoDelSendero.pasos,
                     ritmoPasosPorMinuto = estadoDelSendero.ritmoPasosPorMinuto,
                     estaDetenido = estadoDelSendero.estaDetenido,
+                    calidadSenal = estadoDelSendero.calidadSenal,
                     esSimulado = estadoDelSendero.esSimulado,
                     multiplicadorSimulacion = estadoDelSendero.multiplicadorSimulacion,
                     distanciaRecorridaKilometros = estadoDelSendero.distanciaRecorridaKilometros,

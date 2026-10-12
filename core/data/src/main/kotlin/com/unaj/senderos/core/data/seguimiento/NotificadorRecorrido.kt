@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import com.example.senderosargentina.MainActivity
 import com.example.senderosargentina.R
 import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.TipoPunto
 import java.util.Locale
@@ -49,6 +50,8 @@ class NotificadorRecorrido(private val contexto: Context) {
     fun redactarResumen(estado: EstadoSeguimiento?): String {
         return if (estado == null) {
             "Preparando el recorrido"
+        } else if (estado.calidadSenal == CalidadSenal.DEBIL) {
+            "Sin señal GPS · salí al aire libre"
         } else {
             "${formatearKilometros(estado.distanciaRestanteKilometros)} km restantes · " +
                 "${formatearKilometros(estado.distanciaRecorridaKilometros)} km recorridos"

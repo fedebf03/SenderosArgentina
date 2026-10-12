@@ -22,7 +22,8 @@ data class DetalleSenderoEstadoVisual(
     val puntosDeInteres: List<PuntoDeInteres> = emptyList(),
     val estadoMapaSinConexion: EstadoMapaSinConexion = EstadoMapaSinConexion.NoDescargado,
     val esDialogoEliminarMapaVisible: Boolean = false,
-    val esSugerenciaDescargaVisible: Boolean = false
+    val esSugerenciaDescargaVisible: Boolean = false,
+    val esDialogoSinGpsVisible: Boolean = false
 )
 
 sealed interface DetalleSenderoEvento {
@@ -38,6 +39,8 @@ sealed interface DetalleSenderoEvento {
     data object AlCancelarEliminarMapa : DetalleSenderoEvento
     data object AlDescargarEIniciar : DetalleSenderoEvento
     data object AlIniciarSinDescargar : DetalleSenderoEvento
+    data object AlIniciarSinGps : DetalleSenderoEvento
+    data object AlCancelarSinGps : DetalleSenderoEvento
     data object AlConcederPermisoUbicacion : DetalleSenderoEvento
     data object AlDenegarPermisoUbicacion : DetalleSenderoEvento
     data object AlConcederSoloUbicacionAproximada : DetalleSenderoEvento

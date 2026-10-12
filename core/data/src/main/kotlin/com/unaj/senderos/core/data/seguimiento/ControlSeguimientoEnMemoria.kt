@@ -12,6 +12,7 @@ import com.unaj.senderos.domain.repository.FuenteAcelerometro
 import com.unaj.senderos.domain.repository.FuenteBrujula
 import com.unaj.senderos.domain.repository.ProveedorDeclinacion
 import com.unaj.senderos.domain.model.AvisoRecorrido
+import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
@@ -25,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +45,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SEGUIMIENTO"
 private const val CAPACIDAD_AVISOS = 16
+private const val INTERVALO_REEVALUACION_MILISEGUNDOS = 5_000L
 private const val MILISEGUNDOS_POR_HORA = 3_600_000.0
 private const val KILOMETROS_POR_HORA_POR_METRO_POR_SEGUNDO = 3.6
 private const val METROS_POR_KILOMETRO = 1000.0
@@ -119,6 +122,7 @@ class ControlSeguimientoEnMemoria(
             val estaMidiendoPasos = esSimulado || pasosRealesActivos
             val estadoInicial = CalculadoraSeguimiento.iniciar(sendero, reloj()).copy(
                 esSimulado = esSimulado,
+                calidadSenal = if (esSimulado) CalidadSenal.BUENA else CalidadSenal.BUSCANDO,
                 pasos = if (estaMidiendoPasos) 0 else null,
                 ritmoPasosPorMinuto = if (estaMidiendoPasos) 0.0 else null
             )
@@ -136,7 +140,8 @@ class ControlSeguimientoEnMemoria(
             idUsuarioActivo = sendero.idUsuario
             estadoInterno.value = estadoInicial
             Log.d(TAG, "Seguimiento iniciado: $idSendero (simulado: $esSimulado)")
-            trabajosSensores = if (esSimulado) emptyList() else lanzarRecoleccionDeSensores()
+            trabajosSensores = (if (esSimulado) emptyList() else lanzarRecoleccionDeSensores()) +
+                alcance.launch { reevaluarCalidadPeriodicamente() }
             trabajoUbicaciones = alcance.launch { recolectarUbicaciones(proveedorActivo) }
         }
     }
@@ -177,6 +182,17 @@ class ControlSeguimientoEnMemoria(
         motivoFinInterno.value = if (guardar) null else MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO
         estadoInterno.value = null
         Log.d(TAG, if (guardar) "Seguimiento detenido" else "Seguimiento cancelado sin guardar")
+    }
+
+    // Reevaluar cada 5 s con el reloj la calidad de la señal (y lo derivado del tiempo, como detenido), porque el tiempo avanza aunque no lleguen lecturas
+    private suspend fun reevaluarCalidadPeriodicamente() {
+        while (true) {
+            delay(INTERVALO_REEVALUACION_MILISEGUNDOS)
+            val ahora = reloj()
+            actualizarConSensores(ahora) { estadoActual ->
+                estadoActual.copy(calidadSenal = CalculadoraSeguimiento.evaluarCalidad(estadoActual, ahora))
+            }
+        }
     }
 
     // Lanzar la recolección del acelerómetro y de la brújula según lo que ofrece el equipo

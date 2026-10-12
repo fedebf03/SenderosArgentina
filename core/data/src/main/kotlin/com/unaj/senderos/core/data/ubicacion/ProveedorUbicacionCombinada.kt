@@ -26,7 +26,6 @@ import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "UBICACION"
 private const val INTERVALO_UBICACION_MILISEGUNDOS = 5_000L
-private const val PRECISION_MAXIMA_METROS = 30f
 
 // Obtener la ubicación del dispositivo con el proveedor combinado de Google Play Services
 class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbicacion {
@@ -69,15 +68,9 @@ class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbic
         val cliente = LocationServices.getFusedLocationProviderClient(contexto)
         val peticion = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, INTERVALO_UBICACION_MILISEGUNDOS).build()
         val escucha = object : LocationCallback() {
-            // Emitir la última posición recibida como coordenada de dominio
+            // Emitir la última posición recibida con su precisión; el dominio decide si es válida (así puede medir la calidad de la señal)
             override fun onLocationResult(resultado: LocationResult) {
-                resultado.lastLocation?.let { posicion ->
-                    if (posicion.hasAccuracy() && posicion.accuracy > PRECISION_MAXIMA_METROS) {
-                        Log.d(TAG, "Lectura descartada por baja precisión: ${posicion.accuracy} m")
-                    } else {
-                        trySend(convertirALectura(posicion))
-                    }
-                }
+                resultado.lastLocation?.let { posicion -> trySend(convertirALectura(posicion)) }
             }
         }
         try {
