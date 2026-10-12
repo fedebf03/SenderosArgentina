@@ -1,6 +1,5 @@
 package com.unaj.senderos.presentation.comun
 
-import java.util.Locale
 import kotlin.math.roundToInt
 
 // Describir cuántos puntos se capturaron en el recorrido, con singular y plural
@@ -18,7 +17,7 @@ fun describirDistanciaAlTrazado(metros: Double): String {
     return if (metros < 1_000.0) {
         "a ${metros.roundToInt()} m del trazado"
     } else {
-        "a ${String.format(Locale.forLanguageTag("es-AR"), "%.1f", metros / 1_000.0)} km del trazado"
+        "a ${formatearUnDecimal(metros / 1_000.0)} km del trazado"
     }
 }
 

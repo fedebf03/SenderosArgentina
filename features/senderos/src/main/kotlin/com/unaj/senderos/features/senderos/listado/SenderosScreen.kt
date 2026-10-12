@@ -1,10 +1,13 @@
 package com.unaj.senderos.presentation.senderos
 
+import com.unaj.senderos.presentation.componentes.BannerAviso
+import androidx.compose.animation.AnimatedVisibility
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -67,6 +70,7 @@ fun SenderosPantalla(
     val contexto = LocalContext.current
     var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
     val estadoAvisos = remember { SnackbarHostState() }
+    val alcance = rememberCoroutineScope()
 
     val pedirPermisoUbicacion = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
         tienePermisoUbicacion = respuesta.values.any { otorgado -> otorgado }
@@ -75,7 +79,7 @@ fun SenderosPantalla(
         } else {
             Log.d(TAG, "Permiso de ubicación denegado")
             viewModel.procesarEvento(SenderosEvento.AlCambiarOrdenCercania(activado = false))
-            Toast.makeText(contexto, "Sin permiso de ubicación no podemos ordenar por cercanía", Toast.LENGTH_SHORT).show()
+            alcance.launch { estadoAvisos.showSnackbar("Sin permiso de ubicación no podemos ordenar por cercanía") }
         }
     }
     val pedirPermisoNotificaciones = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { otorgado ->
@@ -158,37 +162,45 @@ fun SenderosContenido(
             )
         }
     ) { espaciadoInterno ->
-        val modificadorCuerpo = Modifier.padding(espaciadoInterno)
-        when {
-            estadoVisual.estaCargando -> CargandoCentrado(modificadorCuerpo)
-            estadoVisual.mensajeError != null -> MensajeCentrado(estadoVisual.mensajeError, modificadorCuerpo, esError = true)
-            estadoVisual.senderos.isEmpty() -> MensajeVacio(
-                icono = Icons.Outlined.Hiking,
-                titulo = "Todavía no agregaste senderos",
-                detalle = "Tocá «Nuevo sendero» para cargar el primero.",
-                modifier = modificadorCuerpo
-            )
-            estadoVisual.senderosFiltrados.isEmpty() -> MensajeCentrado("No se encontraron senderos", modificadorCuerpo)
-            else -> Column(modifier = modificadorCuerpo) {
-                FilterChip(
-                    selected = estadoVisual.ordenarPorCercania,
-                    onClick = { alProcesarEvento(SenderosEvento.AlCambiarOrdenCercania(!estadoVisual.ordenarPorCercania)) },
-                    label = { Text("Más cercanos") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.NearMe, contentDescription = null, modifier = Modifier.size(18.dp))
-                    },
+        Column(modifier = Modifier.padding(espaciadoInterno)) {
+            AnimatedVisibility(visible = estadoVisual.estaSinConexion) {
+                BannerAviso(
+                    texto = "Sin conexión: los cambios se sincronizarán después",
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                 )
-                ListaSenderos(
-                    titulo = "Mis senderos",
-                    senderos = estadoVisual.senderosFiltrados,
-                    alSeleccionarSendero = { idSendero ->
-                        alProcesarEvento(SenderosEvento.AlSeleccionarSendero(idSendero))
-                    },
-                    modifier = Modifier.weight(1f),
-                    espacioInferior = PaddingValues(bottom = 96.dp),
-                    distanciaKilometrosDe = estadoVisual::distanciaKilometrosA
+            }
+            val modificadorCuerpo = Modifier.weight(1f)
+            when {
+                estadoVisual.estaCargando -> CargandoCentrado(modificadorCuerpo)
+                estadoVisual.mensajeError != null -> MensajeCentrado(estadoVisual.mensajeError, modificadorCuerpo, esError = true)
+                estadoVisual.senderos.isEmpty() -> MensajeVacio(
+                    icono = Icons.Outlined.Hiking,
+                    titulo = "Todavía no agregaste senderos",
+                    detalle = "Tocá «Nuevo sendero» para cargar el primero.",
+                    modifier = modificadorCuerpo
                 )
+                estadoVisual.senderosFiltrados.isEmpty() -> MensajeCentrado("No se encontraron senderos", modificadorCuerpo)
+                else -> Column(modifier = modificadorCuerpo) {
+                    FilterChip(
+                        selected = estadoVisual.ordenarPorCercania,
+                        onClick = { alProcesarEvento(SenderosEvento.AlCambiarOrdenCercania(!estadoVisual.ordenarPorCercania)) },
+                        label = { Text("Más cercanos") },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Outlined.NearMe, contentDescription = null, modifier = Modifier.size(18.dp))
+                        },
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                    )
+                    ListaSenderos(
+                        titulo = "Mis senderos",
+                        senderos = estadoVisual.senderosFiltrados,
+                        alSeleccionarSendero = { idSendero ->
+                            alProcesarEvento(SenderosEvento.AlSeleccionarSendero(idSendero))
+                        },
+                        modifier = Modifier.weight(1f),
+                        espacioInferior = PaddingValues(bottom = 96.dp),
+                        distanciaKilometrosDe = estadoVisual::distanciaKilometrosA
+                    )
+                }
             }
         }
     }

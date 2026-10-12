@@ -25,6 +25,7 @@ import com.unaj.senderos.presentation.componentes.MensajeVacio
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
+// Renderizar la sección Favoritos conectando el ViewModel y la navegación
 @Composable
 fun FavoritosPantalla(
     viewModel: FavoritosViewModel,
@@ -51,6 +52,7 @@ fun FavoritosPantalla(
     )
 }
 
+// Renderizar el contenido de Favoritos a partir del estado visual
 @Composable
 fun FavoritosContenido(
     estadoVisual: FavoritosEstadoVisual,
@@ -102,6 +104,7 @@ fun FavoritosContenido(
     }
 }
 
+// Previsualizar Favoritos con senderos de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun FavoritosContenidoPreview() {
@@ -120,6 +123,7 @@ private fun FavoritosContenidoPreview() {
     }
 }
 
+// Previsualizar Favoritos sin ningún sendero marcado
 @Preview(showBackground = true)
 @Composable
 private fun FavoritosVacioPreview() {

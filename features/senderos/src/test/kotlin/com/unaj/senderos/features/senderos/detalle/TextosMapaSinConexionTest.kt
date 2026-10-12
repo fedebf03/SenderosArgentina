@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.detalle
 
+import com.unaj.senderos.presentation.comun.formatearTamanoMapa
 import org.junit.Assert.assertEquals
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import org.junit.Test

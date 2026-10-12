@@ -4,6 +4,7 @@ import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
+import com.unaj.senderos.falsos.FalsoMonitorConectividad
 import com.unaj.senderos.falsos.FalsoProveedorUbicacion
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ class SenderosViewModelTest {
 
     private val despachadorPrueba = StandardTestDispatcher()
     private val proveedorUbicacion = FalsoProveedorUbicacion()
+    private val monitorConectividad = FalsoMonitorConectividad()
 
     // Configurar el despachador principal de las corrutinas de prueba
     @Before
@@ -46,7 +48,7 @@ class SenderosViewModelTest {
     private fun crearViewModel(): SenderosViewModel {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val casoDeUso = ObservarSenderosDelUsuarioUseCase(FalsoSenderoRepositorio(), autenticacion)
-        return SenderosViewModel(casoDeUso, proveedorUbicacion)
+        return SenderosViewModel(casoDeUso, proveedorUbicacion, monitorConectividad)
     }
 
     // Verificar que al informar el permiso el ViewModel guarda la ubicación obtenida
@@ -197,5 +199,21 @@ class SenderosViewModelTest {
         viewModel.procesarEvento(SenderosEvento.AlSolicitarPermisoNotificaciones)
 
         assertTrue(viewModel.estadoVisual.value.seSolicitoPermisoNotificaciones)
+    }
+
+    // Verificar que el estado indica cuando no hay conexión y se corrige al volver
+    @Test
+    fun `el estado refleja la falta de conexion`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+        assertFalse(viewModel.estadoVisual.value.estaSinConexion)
+
+        monitorConectividad.hayConexionActual = false
+        advanceUntilIdle()
+        assertTrue(viewModel.estadoVisual.value.estaSinConexion)
+
+        monitorConectividad.hayConexionActual = true
+        advanceUntilIdle()
+        assertFalse(viewModel.estadoVisual.value.estaSinConexion)
     }
 }

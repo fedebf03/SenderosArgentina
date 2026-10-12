@@ -14,7 +14,8 @@ data class SenderosEstadoVisual(
     val mensajeError: String? = null,
     val ubicacionActual: Coordenada? = null,
     val ordenarPorCercania: Boolean = false,
-    val seSolicitoPermisoNotificaciones: Boolean = false
+    val seSolicitoPermisoNotificaciones: Boolean = false,
+    val estaSinConexion: Boolean = false
 ) {
     // Calcular la distancia en kilómetros al primer punto del recorrido; null sin recorrido o sin ubicación
     fun distanciaKilometrosA(sendero: Sendero): Double? {

@@ -1,5 +1,7 @@
 package com.unaj.senderos.presentation.componentes
 
+import com.unaj.senderos.presentation.comun.formatearDistanciaAlUsuario
+import com.unaj.senderos.presentation.comun.formatearDistanciaSendero
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -36,10 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Sendero
-import java.util.Locale
-import kotlin.math.roundToInt
 
-private val LOCALE_DISTANCIA: Locale = Locale.forLanguageTag("es-AR")
+// Ancho mínimo de una tarjeta: en pantallas angostas hay una columna y en tablets se reparten en varias
+private val ANCHO_MINIMO_TARJETA = 360.dp
 
 // Renderizar la lista de senderos con su título y la distancia al usuario cuando se conoce
 @Composable
@@ -51,7 +54,8 @@ fun ListaSenderos(
     espacioInferior: PaddingValues = PaddingValues(bottom = 16.dp),
     distanciaKilometrosDe: (Sendero) -> Double? = { null }
 ) {
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = ANCHO_MINIMO_TARJETA),
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = 24.dp,
@@ -59,9 +63,10 @@ fun ListaSenderos(
             top = 8.dp,
             bottom = espacioInferior.calculateBottomPadding()
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
                 text = "$titulo · ${senderos.size}",
                 style = MaterialTheme.typography.titleMedium,
@@ -194,7 +199,7 @@ fun TarjetaSendero(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    DatoTarjeta(Icons.Outlined.Straighten, "%.0f km".format(sendero.distanciaKilometros))
+                    DatoTarjeta(Icons.Outlined.Straighten, formatearDistanciaSendero(sendero.distanciaKilometros))
                     if (sendero.duracionEstimada.isNotBlank()) {
                         DatoTarjeta(Icons.Outlined.Schedule, sendero.duracionEstimada)
                     }
@@ -204,15 +209,6 @@ fun TarjetaSendero(
             }
         }
     }
-}
-
-// Formatear la distancia al usuario: metros bajo 1 km, un decimal hasta 10 km y entero a partir de allí
-fun formatearDistanciaAlUsuario(distanciaKilometros: Double): String {
-    val metros = (distanciaKilometros * 1000).roundToInt()
-    if (metros < 1000) return "a $metros m de vos"
-    val kilometrosConDecimal = (distanciaKilometros * 10).roundToInt() / 10.0
-    if (kilometrosConDecimal < 10) return "a ${"%.1f".format(LOCALE_DISTANCIA, kilometrosConDecimal)} km de vos"
-    return "a ${distanciaKilometros.roundToInt()} km de vos"
 }
 
 // Renderizar un dato breve de la tarjeta con ícono y texto

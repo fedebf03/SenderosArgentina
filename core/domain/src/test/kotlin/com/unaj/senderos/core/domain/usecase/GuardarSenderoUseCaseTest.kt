@@ -18,6 +18,7 @@ class GuardarSenderoUseCaseTest {
     private val falsoAutenticacion = FalsoAutenticacionRepositorio(usuarioActual = usuario)
     private val falsoSendero = FalsoSenderoRepositorio()
 
+    // Crear el caso de uso con sus dependencias de prueba
     private fun crearCasoDeUso(
         autenticacion: FalsoAutenticacionRepositorio = falsoAutenticacion
     ): GuardarSenderoUseCase {
@@ -28,12 +29,14 @@ class GuardarSenderoUseCaseTest {
         )
     }
 
+    // Obtener los campos inválidos informados en el resultado fallido
     private fun camposInvalidosDe(resultado: Result<*>): Set<CampoSendero> {
         val excepcion = resultado.exceptionOrNull()
         assertTrue(excepcion is SenderoInvalidoException)
         return (excepcion as SenderoInvalidoException).camposInvalidos
     }
 
+    // Verificar que sin sesion activa falla con mensaje y no toca el repositorio
     @Test
     fun `sin sesion activa falla con mensaje y no toca el repositorio`() = runTest {
         val casoDeUso = crearCasoDeUso(FalsoAutenticacionRepositorio(usuarioActual = null))
@@ -45,6 +48,7 @@ class GuardarSenderoUseCaseTest {
         assertTrue(falsoSendero.llamadasGuardarSendero.isEmpty())
     }
 
+    // Verificar que nombre en blanco marca el campo NOMBRE
     @Test
     fun `nombre en blanco marca el campo NOMBRE`() = runTest {
         val resultado = crearCasoDeUso()(crearSenderoDePrueba(nombre = "   "))
@@ -52,6 +56,7 @@ class GuardarSenderoUseCaseTest {
         assertEquals(setOf(CampoSendero.NOMBRE), camposInvalidosDe(resultado))
     }
 
+    // Verificar que distancia menor o igual a cero marca el campo DISTANCIA
     @Test
     fun `distancia menor o igual a cero marca el campo DISTANCIA`() = runTest {
         val resultadoCero = crearCasoDeUso()(crearSenderoDePrueba(distanciaKilometros = 0.0))
@@ -61,6 +66,7 @@ class GuardarSenderoUseCaseTest {
         assertEquals(setOf(CampoSendero.DISTANCIA), camposInvalidosDe(resultadoNegativo))
     }
 
+    // Verificar que altura maxima menor que la minima marca el campo ALTURA_MAXIMA
     @Test
     fun `altura maxima menor que la minima marca el campo ALTURA_MAXIMA`() = runTest {
         val resultado = crearCasoDeUso()(
@@ -70,6 +76,7 @@ class GuardarSenderoUseCaseTest {
         assertEquals(setOf(CampoSendero.ALTURA_MAXIMA), camposInvalidosDe(resultado))
     }
 
+    // Verificar que genera el identificador con el generador inyectado si esta en blanco
     @Test
     fun `genera el identificador con el generador inyectado si esta en blanco`() = runTest {
         val guardado = crearCasoDeUso()(crearSenderoDePrueba(id = "")).getOrThrow()
@@ -78,6 +85,7 @@ class GuardarSenderoUseCaseTest {
         assertEquals("id-generado", falsoSendero.llamadasGuardarSendero.single().second.id)
     }
 
+    // Verificar que fuerza el idUsuario del usuario autenticado
     @Test
     fun `fuerza el idUsuario del usuario autenticado`() = runTest {
         val guardado = crearCasoDeUso()(crearSenderoDePrueba(idUsuario = "otro-usuario")).getOrThrow()
@@ -87,6 +95,7 @@ class GuardarSenderoUseCaseTest {
         assertEquals("usuario-1", falsoSendero.llamadasGuardarSendero.single().second.idUsuario)
     }
 
+    // Verificar que no llama al repositorio si el sendero es invalido
     @Test
     fun `no llama al repositorio si el sendero es invalido`() = runTest {
         crearCasoDeUso()(crearSenderoDePrueba(nombre = ""))
@@ -94,6 +103,7 @@ class GuardarSenderoUseCaseTest {
         assertTrue(falsoSendero.llamadasGuardarSendero.isEmpty())
     }
 
+    // Verificar que latitud fuera de rango marca el campo RECORRIDO
     @Test
     fun `latitud fuera de rango marca el campo RECORRIDO`() = runTest {
         val resultadoNorte = crearCasoDeUso()(

@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.detalle
 
+import com.unaj.senderos.presentation.comun.formatearDistanciaSendero
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,7 +24,6 @@ import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.comun.ControladorRevisionPuntos
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -255,7 +255,7 @@ class DetalleSenderoViewModel(
     private fun compartir() {
         val sendero = _estadoVisual.value.sendero ?: return
         val texto = "${sendero.nombre} (${sendero.region})\n" +
-            "Distancia: ${sendero.distanciaKilometros.roundToInt()} km · " +
+            "Distancia: ${formatearDistanciaSendero(sendero.distanciaKilometros)} · " +
             "Desnivel: ${sendero.desnivelMetros} m · Dificultad: ${obtenerTextoDificultad(sendero.dificultad)}\n" +
             "Compartido desde SenderosArgentina"
         emitirEfecto(DetalleSenderoEfecto.CompartirSendero(texto))

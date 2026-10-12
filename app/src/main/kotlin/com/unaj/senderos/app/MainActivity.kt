@@ -1,15 +1,22 @@
 package com.example.senderosargentina
 
+import kotlinx.coroutines.launch
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.layout.Box
 import android.graphics.Color
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -72,7 +79,11 @@ class MainActivity : ComponentActivity() {
     // Login y Registro viven mientras viva la Activity: así se conserva lo escrito al ir y volver entre ambas
     private val loginViewModel: LoginViewModel by viewModels {
         viewModelFactory {
-            initializer { LoginViewModel(dependencias.iniciarSesionUseCase, dependencias.iniciarSesionConGoogleUseCase) }
+            initializer { LoginViewModel(
+                dependencias.iniciarSesionUseCase,
+                dependencias.iniciarSesionConGoogleUseCase,
+                dependencias.enviarCorreoRecuperacionUseCase
+            ) }
         }
     }
     private val registroViewModel: RegistroViewModel by viewModels {
@@ -142,6 +153,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
             val idUsuario = dependencias.obtenerUsuarioActualUseCase()?.id.orEmpty()
+            // Aviso global para lo que ocurre fuera de una pantalla concreta, como un pedido desde la notificación
+            val estadoAvisosGlobal = remember { SnackbarHostState() }
+            val alcance = rememberCoroutineScope()
 
             // Abrir el recorrido en curso al tocar la notificación; sin sesión activa se descarta el pedido
             val idRecorridoPedido = idSenderoRecorridoPendiente
@@ -151,6 +165,7 @@ class MainActivity : ComponentActivity() {
                         idSendero = idRecorridoPedido,
                         idUsuario = idUsuario,
                         destinoActual = pantallaActual,
+                        alAvisar = { mensaje -> alcance.launch { estadoAvisosGlobal.showSnackbar(mensaje) } },
                         irARecorrido = { pantallaActual = DestinoPantalla.Recorrido(idRecorridoPedido) }
                     )
                     // Si el pedido no llevó a la pantalla del recorrido, la solicitud de cancelación se descarta
@@ -174,7 +189,11 @@ class MainActivity : ComponentActivity() {
                         )
                         is DestinoPantalla.Inicio -> SenderosPantalla(
                             viewModel = viewModelDeDestino("inicio-$idUsuario") {
-                                SenderosViewModel(dependencias.observarSenderosDelUsuarioUseCase, dependencias.proveedorUbicacion)
+                                SenderosViewModel(
+                                    dependencias.observarSenderosDelUsuarioUseCase,
+                                    dependencias.proveedorUbicacion,
+                                    dependencias.monitorConectividad
+                                )
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Inicio),
                             alNavegarACreacion = {
@@ -185,7 +204,10 @@ class MainActivity : ComponentActivity() {
                         )
                         is DestinoPantalla.Mapa -> MapaSenderosPantalla(
                             viewModel = viewModelDeDestino("mapa-$idUsuario") {
-                                MapaSenderosViewModel(dependencias.observarSenderosDelUsuarioUseCase)
+                                MapaSenderosViewModel(
+                                    dependencias.observarSenderosDelUsuarioUseCase,
+                                    dependencias.monitorConectividad
+                                )
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Mapa),
                             alNavegarASeccion = navegarASeccion
@@ -204,7 +226,8 @@ class MainActivity : ComponentActivity() {
                                     dependencias.cerrarSesionUseCase,
                                     dependencias.preferenciasAplicacion,
                                     dependencias.observarRecorridosUseCase,
-                                    dependencias.obtenerCapacidadesDispositivoUseCase
+                                    dependencias.obtenerCapacidadesDispositivoUseCase,
+                                    dependencias.controlSeguimiento
                                 )
                             },
                             alNavegarALogin = {
@@ -314,6 +337,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        SnackbarHost(
+                            hostState = estadoAvisosGlobal,
+                            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+                        )
+                    }
                 }
             }
         }
@@ -325,16 +354,13 @@ class MainActivity : ComponentActivity() {
         idSendero: String,
         idUsuario: String,
         destinoActual: DestinoPantalla,
+        alAvisar: (String) -> Unit,
         irARecorrido: () -> Unit
     ) {
         when {
             idUsuario.isEmpty() -> Unit
             destinoActual is DestinoPantalla.Formulario -> {
-                Toast.makeText(
-                    this,
-                    "Terminá o descartá el formulario para volver al recorrido en curso",
-                    Toast.LENGTH_LONG
-                ).show()
+                alAvisar("Terminá o descartá el formulario para volver al recorrido en curso")
             }
             destinoActual is DestinoPantalla.Recorrido && destinoActual.idSendero == idSendero -> Unit
             else -> {

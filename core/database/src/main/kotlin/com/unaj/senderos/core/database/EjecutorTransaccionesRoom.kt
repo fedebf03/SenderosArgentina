@@ -6,6 +6,7 @@ class EjecutorTransaccionesRoom(
     private val baseDatos: BaseDatosSenderos
 ) : EjecutorTransacciones {
 
+    // Ejecutar el bloque dentro de una transacción
     override suspend fun <T> ejecutar(bloque: suspend () -> T): T {
         return baseDatos.withTransaction(bloque)
     }

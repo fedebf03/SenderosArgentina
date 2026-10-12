@@ -7,6 +7,8 @@ import com.unaj.senderos.falsos.FalsoDetectorCapacidades
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
+import com.unaj.senderos.falsos.FalsoControlSeguimiento
+import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.falsos.FalsoLanzadorSeguimiento
 import com.unaj.senderos.falsos.FalsoNotificador
 import com.unaj.senderos.falsos.FalsoPreferenciasAplicacion
@@ -26,6 +28,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -36,6 +40,8 @@ class PerfilViewModelTest {
     private val despachadorPrueba = StandardTestDispatcher()
     private val preferencias = FalsoPreferenciasAplicacion()
     private val repositorioRecorridos = FalsoRecorridoRepositorio()
+    private val controlSeguimiento = FalsoControlSeguimiento()
+    private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
 
     // Configurar el despachador principal de las corrutinas de prueba
     @Before
@@ -58,13 +64,13 @@ class PerfilViewModelTest {
             tieneCamara = true
         )
     ): PerfilViewModel {
-        val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         return PerfilViewModel(
             obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacion),
             cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento(), FalsoNotificador()),
             preferenciasAplicacion = preferencias,
             observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion),
-            obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(FalsoDetectorCapacidades(capacidades))
+            obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(FalsoDetectorCapacidades(capacidades)),
+            controlSeguimiento = controlSeguimiento
         )
     }
 
@@ -172,5 +178,82 @@ class PerfilViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf<PerfilEfecto>(PerfilEfecto.NavegarAHistorialDetalle("r1")), efectos)
+    }
+
+    // Verificar que tocar cerrar sesión pide confirmación y todavía no cierra la sesión
+    @Test
+    fun `tocar cerrar sesion muestra la confirmacion sin cerrar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(PerfilEvento.AlTocarCerrarSesion)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.esDialogoCerrarSesionVisible)
+        assertEquals(0, autenticacion.cantidadCierresSesion)
+    }
+
+    // Verificar que confirmar cierra la sesión, oculta el diálogo y navega al inicio de sesión
+    @Test
+    fun `confirmar cerrar sesion cierra la sesion y navega al login`() = runTest(despachadorPrueba) {
+        val efectos = mutableListOf<PerfilEfecto>()
+        val viewModel = crearViewModel()
+        CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectos.add(efecto) } }
+        viewModel.procesarEvento(PerfilEvento.AlTocarCerrarSesion)
+
+        viewModel.procesarEvento(PerfilEvento.AlConfirmarCerrarSesion)
+        advanceUntilIdle()
+
+        assertEquals(1, autenticacion.cantidadCierresSesion)
+        assertFalse(viewModel.estadoVisual.value.esDialogoCerrarSesionVisible)
+        assertEquals(listOf<PerfilEfecto>(PerfilEfecto.NavegarALogin), efectos)
+    }
+
+    // Verificar que cancelar la confirmación conserva la sesión
+    @Test
+    fun `cancelar cerrar sesion conserva la sesion`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        viewModel.procesarEvento(PerfilEvento.AlTocarCerrarSesion)
+
+        viewModel.procesarEvento(PerfilEvento.AlCancelarCerrarSesion)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoCerrarSesionVisible)
+        assertEquals(0, autenticacion.cantidadCierresSesion)
+    }
+
+    // Verificar que el estado avisa cuando hay un recorrido en curso y deja de avisar al terminar
+    @Test
+    fun `el estado indica si hay un recorrido en curso`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+        assertFalse(viewModel.estadoVisual.value.hayRecorridoEnCurso)
+
+        controlSeguimiento.estadoEmitido.value = EstadoSeguimiento(idSendero = "s1", trazado = emptyList())
+        advanceUntilIdle()
+        assertTrue(viewModel.estadoVisual.value.hayRecorridoEnCurso)
+
+        controlSeguimiento.estadoEmitido.value = null
+        advanceUntilIdle()
+        assertFalse(viewModel.estadoVisual.value.hayRecorridoEnCurso)
+    }
+
+    // Verificar que un fallo al leer el historial queda como mensaje y no como lista vacía
+    @Test
+    fun `un fallo al leer el historial muestra un mensaje de error`() = runTest(despachadorPrueba) {
+        autenticacion.usuarioActual = null
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.estadoVisual.value.mensajeError)
+    }
+
+    // Verificar que con el historial disponible no hay mensaje de error
+    @Test
+    fun `con el historial disponible no hay mensaje de error`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.mensajeError)
     }
 }

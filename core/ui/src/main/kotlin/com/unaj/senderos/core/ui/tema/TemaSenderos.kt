@@ -38,6 +38,7 @@ private val esquemaClaro = lightColorScheme(
     onError = Color.White
 )
 
+// Aplicar el tema de la aplicación a un contenido
 @Composable
 fun TemaSenderos(contenido: @Composable () -> Unit) {
     MaterialTheme(colorScheme = esquemaClaro, content = contenido)
@@ -45,6 +46,7 @@ fun TemaSenderos(contenido: @Composable () -> Unit) {
 
 data class ColoresDificultad(val fondo: Color, val texto: Color)
 
+// Obtener los colores de fondo y de texto que identifican una dificultad
 fun obtenerColoresDificultad(dificultad: Dificultad): ColoresDificultad {
     return when (dificultad) {
         Dificultad.BAJA -> ColoresDificultad(Color(0xFFD9F2E3), Color(0xFF14532D))

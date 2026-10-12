@@ -2,25 +2,86 @@ package com.unaj.senderos.data.conectividad
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
 import android.util.Log
 import com.unaj.senderos.domain.repository.MonitorConectividad
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.stateIn
 
 private const val TAG = "CONECTIVIDAD"
+private const val ESPERA_SIN_SUSCRIPTORES_MILISEGUNDOS = 5_000L
 
-class MonitorConectividadAndroid(contexto: Context) : MonitorConectividad {
+/**
+ * Monitor de red de Android. Recibe un alcance de proceso (el del contenedor de dependencias, que vive
+ * tanto como la aplicación) para compartir una sola escucha de red entre todos los suscriptores: con
+ * `WhileSubscribed` la escucha se registra al primer suscriptor y se libera 5 segundos después del último.
+ */
+class MonitorConectividadAndroid(
+    contexto: Context,
+    alcance: CoroutineScope
+) : MonitorConectividad {
     private val administradorConectividad =
         contexto.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
 
-    // Indicar si la red activa declara salida a Internet; no valida que el servidor sea alcanzable
+    private val conexionCompartida: StateFlow<Boolean> = crearFlujoDeConexion().stateIn(
+        scope = alcance,
+        started = SharingStarted.WhileSubscribed(ESPERA_SIN_SUSCRIPTORES_MILISEGUNDOS),
+        initialValue = hayConexion()
+    )
+
+    // Indicar si la red activa tiene salida a Internet validada por el sistema
     override fun hayConexion(): Boolean {
         return try {
             val red = administradorConectividad?.activeNetwork ?: return false
             val capacidades = administradorConectividad.getNetworkCapabilities(red) ?: return false
-            capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            tieneInternetValidado(capacidades)
         } catch (error: SecurityException) {
             Log.e(TAG, "Sin permiso para consultar el estado de la red", error)
             false
         }
     }
+
+    // Observar la conexión compartida entre todos los suscriptores (tipo más específico que el contrato)
+    override fun observarConexion(): StateFlow<Boolean> = conexionCompartida
+
+    // Indicar si las capacidades declaran Internet y el sistema lo validó
+    private fun tieneInternetValidado(capacidades: NetworkCapabilities): Boolean {
+        return capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    // Crear el flujo que registra una escucha de la red predeterminada y la libera al cancelarse
+    private fun crearFlujoDeConexion(): Flow<Boolean> = callbackFlow {
+        val escucha = object : ConnectivityManager.NetworkCallback() {
+            // Emitir la conexión a partir de las capacidades recibidas de la red predeterminada
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                trySend(tieneInternetValidado(networkCapabilities))
+            }
+
+            // Emitir falso cuando se pierde la red predeterminada
+            override fun onLost(network: Network) {
+                trySend(false)
+            }
+        }
+        trySend(hayConexion())
+        try {
+            administradorConectividad?.registerDefaultNetworkCallback(escucha)
+        } catch (error: SecurityException) {
+            Log.e(TAG, "Sin permiso para observar el estado de la red", error)
+        }
+        awaitClose {
+            try {
+                administradorConectividad?.unregisterNetworkCallback(escucha)
+            } catch (error: IllegalArgumentException) {
+                Log.e(TAG, "La escucha de red ya no estaba registrada", error)
+            }
+        }
+    }.distinctUntilChanged()
 }

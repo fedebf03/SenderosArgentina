@@ -48,6 +48,7 @@ import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
+import com.unaj.senderos.domain.usecase.EnviarCorreoRecuperacionUseCase
 import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
 import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosUseCase
@@ -118,6 +119,7 @@ class ContenedorDependencias(contexto: Context) {
 
     val iniciarSesionUseCase = IniciarSesionUseCase(autenticacionRepositorio)
     val iniciarSesionConGoogleUseCase = IniciarSesionConGoogleUseCase(autenticacionRepositorio)
+    val enviarCorreoRecuperacionUseCase = EnviarCorreoRecuperacionUseCase(autenticacionRepositorio)
     val registrarUsuarioUseCase = RegistrarUsuarioUseCase(autenticacionRepositorio)
     val obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacionRepositorio)
     val cerrarSesionUseCase = CerrarSesionUseCase(autenticacionRepositorio, senderoRepositorio, lanzadorSeguimiento, notificador)
@@ -137,7 +139,7 @@ class ContenedorDependencias(contexto: Context) {
         IncorporarPuntosCapturadosUseCase(puntosCapturadosRepositorio, autenticacionRepositorio)
     val descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(puntosCapturadosRepositorio, autenticacionRepositorio)
 
-    val monitorConectividad: MonitorConectividad = MonitorConectividadAndroid(contexto.applicationContext)
+    val monitorConectividad: MonitorConectividad = MonitorConectividadAndroid(contexto.applicationContext, alcanceEscrituras)
     private val gestorMapasSinConexion: GestorMapasSinConexion =
         GestorMapasSinConexionMapLibre(contexto.applicationContext)
     val observarMapaSinConexionUseCase = ObservarMapaSinConexionUseCase(gestorMapasSinConexion, autenticacionRepositorio)

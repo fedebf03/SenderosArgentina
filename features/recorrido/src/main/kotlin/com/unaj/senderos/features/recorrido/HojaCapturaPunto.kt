@@ -1,5 +1,10 @@
 package com.unaj.senderos.presentation.recorrido
 
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
+import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.presentation.componentes.IconoDeBoton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -75,7 +80,8 @@ fun HojaCapturaPunto(
                 text = "Agregar punto",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.semantics { heading() }
             )
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -112,25 +118,12 @@ fun HojaCapturaPunto(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            Button(
-                onClick = { alProcesarEvento(RecorridoEvento.AlGuardarPunto) },
-                enabled = !estadoVisual.estaGuardandoPunto,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            ) {
-                if (estadoVisual.estaGuardandoPunto) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                } else {
-                    Text("Guardar")
-                }
-            }
+            BotonPrincipal(
+                texto = "Guardar",
+                alTocar = { alProcesarEvento(RecorridoEvento.AlGuardarPunto) },
+                estaCargando = estadoVisual.estaGuardandoPunto,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -162,22 +155,20 @@ private fun SeccionFotoDelPunto(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(
-                onClick = alSacarFoto,
-                enabled = !estadoVisual.estaGuardandoPunto,
+            BotonSecundario(
+                texto = "Sacar foto",
+                alTocar = alSacarFoto,
+                icono = { IconoDeBoton(Icons.Outlined.PhotoCamera) },
+                estaHabilitado = !estadoVisual.estaGuardandoPunto,
                 modifier = Modifier.weight(1f)
-            ) {
-                Icon(imageVector = Icons.Outlined.PhotoCamera, contentDescription = null, modifier = Modifier.size(20.dp))
-                Text("Sacar foto", modifier = Modifier.padding(start = 8.dp))
-            }
-            OutlinedButton(
-                onClick = alElegirDeGaleria,
-                enabled = !estadoVisual.estaGuardandoPunto,
+            )
+            BotonSecundario(
+                texto = "Elegir de la galería",
+                alTocar = alElegirDeGaleria,
+                icono = { IconoDeBoton(Icons.Outlined.AddPhotoAlternate) },
+                estaHabilitado = !estadoVisual.estaGuardandoPunto,
                 modifier = Modifier.weight(1f)
-            ) {
-                Icon(imageVector = Icons.Outlined.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(20.dp))
-                Text("Elegir de la galería", modifier = Modifier.padding(start = 8.dp))
-            }
+            )
         }
     }
 }

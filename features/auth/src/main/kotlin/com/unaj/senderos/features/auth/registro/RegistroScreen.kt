@@ -1,5 +1,10 @@
 package com.unaj.senderos.presentation.registro
 
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.senderosargentina.R
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
+// Renderizar el registro conectando el ViewModel y la navegación
 @Composable
 fun RegistroPantalla(
     viewModel: RegistroViewModel,
@@ -72,6 +78,7 @@ fun RegistroPantalla(
     }
 }
 
+// Renderizar el contenido del registro a partir del estado visual
 @Composable
 fun RegistroContenido(
     estadoVisual: RegistroEstadoVisual,
@@ -90,13 +97,15 @@ fun RegistroContenido(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = 480.dp)
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(R.drawable.logo_senderos),
-            contentDescription = "Logo de SenderosArgentina",
+            contentDescription = null,
             modifier = Modifier.size(96.dp)
         )
 
@@ -105,7 +114,7 @@ fun RegistroContenido(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 8.dp).semantics { heading() }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -141,9 +150,9 @@ fun RegistroContenido(
                             Icons.Outlined.Visibility
                         },
                         contentDescription = if (estadoVisual.esClaveVisible) {
-                            "Ocultar contraseñas"
+                            "Ocultar contraseña"
                         } else {
-                            "Mostrar contraseñas"
+                            "Mostrar contraseña"
                         }
                     )
                 }
@@ -187,23 +196,12 @@ fun RegistroContenido(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = { alProcesarEvento(RegistroEvento.AlRegistrarse) },
-            enabled = !estadoVisual.estaCargando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            if (estadoVisual.estaCargando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("Crear cuenta")
-            }
-        }
+        BotonPrincipal(
+            texto = "Crear cuenta",
+            alTocar = { alProcesarEvento(RegistroEvento.AlRegistrarse) },
+            estaCargando = estadoVisual.estaCargando,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Row(
             modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
@@ -217,6 +215,7 @@ fun RegistroContenido(
     }
 }
 
+// Previsualizar el registro con un correo de ejemplo
 @Preview(showBackground = true)
 @Composable
 fun PrevisualizacionRegistro() {

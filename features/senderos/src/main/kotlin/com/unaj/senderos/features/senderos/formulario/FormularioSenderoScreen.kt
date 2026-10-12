@@ -1,5 +1,9 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
+import com.unaj.senderos.presentation.componentes.BarraSuperior
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
+import com.unaj.senderos.presentation.componentes.IconoDeBoton
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -8,14 +12,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +65,9 @@ import com.unaj.senderos.presentation.comun.recordarAccionesDeFoto
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
 private const val TAG = "FORMULARIO_SENDERO"
+
+// Ancho máximo del contenido del formulario para que no se estire en tablets
+private val ANCHO_MAXIMO_FORMULARIO = 480.dp
 
 
 // Renderizar el formulario de sendero conectando el ViewModel, la cámara y la galería
@@ -131,8 +142,32 @@ fun FormularioSenderoContenido(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
-            topBar = { BarraSuperiorFormulario(estadoVisual.esEdicion, alProcesarEvento) },
-            bottomBar = { BotonGuardar(estadoVisual.estaGuardando, alProcesarEvento) },
+            topBar = {
+                BarraSuperior(
+                    titulo = if (estadoVisual.esEdicion) "Editar sendero" else "Nuevo sendero",
+                    alVolver = { alProcesarEvento(FormularioSenderoEvento.AlVolver) },
+                    acciones = {
+                        TextButton(
+                            onClick = { alProcesarEvento(FormularioSenderoEvento.AlGuardar) },
+                            enabled = !estadoVisual.estaGuardando && !estadoVisual.estaProcesandoFoto
+                        ) {
+                            if (estadoVisual.estaGuardando) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .semantics {
+                                            contentDescription = "Guardando"
+                                            stateDescription = "Guardando"
+                                        },
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("Guardar")
+                            }
+                        }
+                    }
+                )
+            },
             snackbarHost = { SnackbarHost(hostState = estadoAvisos) }
         ) { espaciadoInterno ->
             when {
@@ -161,7 +196,7 @@ fun FormularioSenderoContenido(
                     estadoVisual = estadoVisual,
                     alProcesarEvento = alProcesarEvento,
                     alElegirFoto = alElegirFoto,
-                    modifier = Modifier.padding(espaciadoInterno)
+                    modifier = Modifier.padding(espaciadoInterno).consumeWindowInsets(espaciadoInterno)
                 )
             }
         }
@@ -172,83 +207,15 @@ fun FormularioSenderoContenido(
     }
 
     if (estadoVisual.esDialogoDescartarVisible) {
-        AlertDialog(
-            onDismissRequest = { alProcesarEvento(FormularioSenderoEvento.AlCancelarDescartar) },
-            title = { Text("¿Descartar los cambios?") },
-            text = { Text("Los datos que modificaste se van a perder.") },
-            confirmButton = {
-                TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlConfirmarDescartar) }) {
-                    Text("Descartar", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlCancelarDescartar) }) {
-                    Text("Seguir editando")
-                }
-            }
+        DialogoConfirmacion(
+            titulo = "Descartar cambios",
+            texto = "¿Querés descartar los cambios? Los datos que modificaste se van a perder.",
+            textoConfirmar = "Descartar",
+            alConfirmar = { alProcesarEvento(FormularioSenderoEvento.AlConfirmarDescartar) },
+            textoDescartar = "Seguir editando",
+            alDescartar = { alProcesarEvento(FormularioSenderoEvento.AlCancelarDescartar) },
+            esDestructivo = true
         )
-    }
-}
-
-// Renderizar la barra superior del formulario con el botón de volver
-@Composable
-private fun BarraSuperiorFormulario(
-    esEdicion: Boolean,
-    alProcesarEvento: (FormularioSenderoEvento) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        IconButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlVolver) }) {
-            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-        }
-        Text(
-            text = if (esEdicion) "Editar sendero" else "Nuevo sendero",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
-// Renderizar el botón de guardar del formulario con su indicador de progreso
-@Composable
-private fun BotonGuardar(
-    estaGuardando: Boolean,
-    alProcesarEvento: (FormularioSenderoEvento) -> Unit
-) {
-    Surface(color = MaterialTheme.colorScheme.background) {
-        Button(
-            onClick = { alProcesarEvento(FormularioSenderoEvento.AlGuardar) },
-            enabled = !estaGuardando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp)
-                .height(50.dp)
-        ) {
-            if (estaGuardando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.Save,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text("Guardar")
-            }
-        }
     }
 }
 
@@ -264,6 +231,9 @@ private fun CuerpoFormulario(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = ANCHO_MAXIMO_FORMULARIO)
+            .imePadding()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -282,6 +252,14 @@ private fun CuerpoFormulario(
         SeccionServicios(estadoVisual, alProcesarEvento)
         Spacer(Modifier.height(4.dp))
         SeccionEtapas(estadoVisual, alProcesarEvento)
+        Spacer(Modifier.height(8.dp))
+        BotonPrincipal(
+            texto = "Guardar",
+            alTocar = { alProcesarEvento(FormularioSenderoEvento.AlGuardar) },
+            icono = { IconoDeBoton(Icons.Filled.Save) },
+            estaCargando = estadoVisual.estaGuardando,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(Modifier.height(16.dp))
     }
 }

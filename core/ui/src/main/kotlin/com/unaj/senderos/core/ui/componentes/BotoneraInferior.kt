@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 
 enum class SeccionPrincipal { INICIO, MAPA, FAVORITOS, PERFIL }
 
+// Renderizar la botonera inferior con las cuatro secciones principales
 @Composable
 fun BotoneraInferior(
     seccionActual: SeccionPrincipal,
@@ -43,6 +44,7 @@ fun BotoneraInferior(
     }
 }
 
+// Renderizar un destino de la botonera inferior con su ícono y su etiqueta
 @Composable
 private fun RowScope.ItemBotonera(
     seccion: SeccionPrincipal,

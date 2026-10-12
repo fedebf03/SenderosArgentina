@@ -32,7 +32,7 @@ object RedactorNotificacionRecorrido {
     // Redactar el título, el texto corto, el texto expandido y el progreso de la notificación persistente
     fun redactarPersistente(estado: EstadoSeguimiento?, esSimulado: Boolean): ContenidoNotificacionRecorrido {
         val nombre = estado?.nombreSendero.orEmpty().ifBlank { "el sendero" }
-        val prefijo = if (esSimulado) "SIMULACIÓN · " else ""
+        val prefijo = if (esSimulado) "Simulación · " else ""
         val textoCorto = redactarTextoCorto(estado)
         return ContenidoNotificacionRecorrido(
             titulo = "${prefijo}Recorriendo $nombre",

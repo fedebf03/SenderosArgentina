@@ -114,7 +114,7 @@ class RedactorNotificacionRecorridoTest {
     @Test
     fun `el titulo de una simulacion lleva el prefijo`() {
         val contenido = RedactorNotificacionRecorrido.redactarPersistente(crearEstado(), esSimulado = true)
-        assertEquals("SIMULACIÓN · Recorriendo Cerro Uritorco", contenido.titulo)
+        assertEquals("Simulación · Recorriendo Cerro Uritorco", contenido.titulo)
     }
 
     // Verificar el título cuando el nombre está vacío

@@ -1,11 +1,15 @@
 package com.unaj.senderos.presentation.detalle
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
+import com.unaj.senderos.presentation.componentes.IconoDeBoton
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -80,6 +84,7 @@ fun DetalleSenderoPantalla(
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
+    val alcance = rememberCoroutineScope()
     val volverAlListadoActual by rememberUpdatedState(alVolverAlListado)
     val navegarAEdicionActual by rememberUpdatedState(alNavegarAEdicion)
     val navegarARecorridoActual by rememberUpdatedState(alNavegarARecorrido)
@@ -90,11 +95,11 @@ fun DetalleSenderoPantalla(
     ) { concedido ->
         if (!concedido) {
             Log.d(TAG, "Permiso de notificaciones denegado")
-            Toast.makeText(
-                contextoActual,
-                "Sin el permiso de notificaciones no verás los avisos del recorrido con la pantalla apagada",
-                Toast.LENGTH_LONG
-            ).show()
+            alcance.launch {
+                estadoAvisos.showSnackbar(
+                    "Sin el permiso de notificaciones no verás los avisos del recorrido con la pantalla apagada"
+                )
+            }
         }
         viewModel.procesarEvento(DetalleSenderoEvento.AlConcederPermisoUbicacion)
     }
@@ -223,106 +228,67 @@ fun DetalleSenderoContenido(
     }
 
     estadoVisual.nombreSenderoEnCursoAReemplazar?.let { nombre ->
-        AlertDialog(
-            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarReemplazarRecorrido) },
-            title = { Text("Recorrido en curso") },
-            text = { Text("Hay un recorrido en curso de $nombre. ¿Finalizarlo e iniciar este?") },
-            confirmButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarReemplazarRecorrido) }) {
-                    Text("Finalizar e iniciar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarReemplazarRecorrido) }) {
-                    Text("Cancelar")
-                }
-            }
+        DialogoConfirmacion(
+            titulo = "Recorrido en curso",
+            texto = "Hay un recorrido en curso de $nombre. ¿Querés finalizarlo e iniciar este?",
+            textoConfirmar = "Finalizar e iniciar",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarReemplazarRecorrido) },
+            textoDescartar = "Seguir con el actual",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarReemplazarRecorrido) }
         )
     }
 
     if (estadoVisual.esDialogoSinGpsVisible) {
-        AlertDialog(
-            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarSinGps) },
-            title = { Text("Tu equipo no tiene GPS") },
-            text = {
-                Text("El seguimiento usará la ubicación por wifi o red móvil: será impreciso y no funcionará sin señal.")
-            },
-            confirmButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinGps) }) {
-                    Text("Iniciar igual")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarSinGps) }) {
-                    Text("Cancelar")
-                }
-            }
+        DialogoConfirmacion(
+            titulo = "Dispositivo sin GPS",
+            texto = "El seguimiento usará la ubicación por wifi o red móvil: será impreciso y no funcionará sin señal. " +
+                "¿Querés iniciar el recorrido igual?",
+            textoConfirmar = "Iniciar igual",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinGps) },
+            textoDescartar = "Cancelar",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarSinGps) }
         )
     }
 
     if (estadoVisual.esSugerenciaDescargaVisible) {
-        AlertDialog(
-            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinDescargar) },
-            title = { Text("¿Descargar el mapa para usarlo sin señal?") },
-            text = { Text("Podés iniciar el recorrido igual: la descarga sigue en segundo plano.") },
-            confirmButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlDescargarEIniciar) }) {
-                    Text("Descargar e iniciar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinDescargar) }) {
-                    Text("Iniciar sin descargar")
-                }
-            }
+        DialogoConfirmacion(
+            titulo = "Descargar el mapa",
+            texto = "¿Querés descargar el mapa para usarlo sin señal? Podés iniciar el recorrido igual: " +
+                "la descarga sigue en segundo plano.",
+            textoConfirmar = "Descargar e iniciar",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlDescargarEIniciar) },
+            textoDescartar = "Iniciar sin descargar",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinDescargar) }
         )
     }
 
     if (estadoVisual.esDialogoEliminarMapaVisible) {
         val estaDescargando = estadoVisual.estadoMapaSinConexion is EstadoMapaSinConexion.Descargando ||
             estadoVisual.estadoMapaSinConexion is EstadoMapaSinConexion.EsperandoConexion
-        AlertDialog(
-            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminarMapa) },
-            title = { Text(if (estaDescargando) "Cancelar descarga" else "Eliminar mapa sin conexión") },
-            text = {
-                Text(
-                    if (estaDescargando) {
-                        "Se detendrá la descarga y se descartará lo descargado hasta ahora."
-                    } else {
-                        "Vas a necesitar conexión para ver el mapa de este sendero."
-                    }
-                )
+        DialogoConfirmacion(
+            titulo = if (estaDescargando) "Cancelar la descarga" else "Eliminar mapa sin conexión",
+            texto = if (estaDescargando) {
+                "¿Querés cancelar la descarga? Se detendrá y se descartará lo descargado hasta ahora."
+            } else {
+                "¿Querés eliminar el mapa? Vas a necesitar conexión para ver el mapa de este sendero."
             },
-            confirmButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarEliminarMapa) }) {
-                    Text(if (estaDescargando) "Cancelar descarga" else "Eliminar", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminarMapa) }) {
-                    Text(if (estaDescargando) "Seguir descargando" else "Cancelar")
-                }
-            }
+            textoConfirmar = if (estaDescargando) "Detener descarga" else "Eliminar",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarEliminarMapa) },
+            textoDescartar = if (estaDescargando) "Seguir descargando" else "Conservar mapa",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminarMapa) },
+            esDestructivo = true
         )
     }
 
     if (estadoVisual.esDialogoEliminarVisible && estadoVisual.sendero != null) {
-        AlertDialog(
-            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminar) },
-            title = { Text("Eliminar sendero") },
-            text = {
-                Text("¿Querés eliminar ${estadoVisual.sendero.nombre}? Esta acción no se puede deshacer.")
-            },
-            confirmButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarEliminar) }) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminar) }) {
-                    Text("Cancelar")
-                }
-            }
+        DialogoConfirmacion(
+            titulo = "Eliminar sendero",
+            texto = "¿Querés eliminar ${estadoVisual.sendero.nombre}? Esta acción no se puede deshacer.",
+            textoConfirmar = "Eliminar",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarEliminar) },
+            textoDescartar = "Conservar sendero",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminar) },
+            esDestructivo = true
         )
     }
 }
@@ -336,28 +302,21 @@ private fun BotonIniciarRecorrido(
     alProcesarEvento: (DetalleSenderoEvento) -> Unit
 ) {
     Surface(color = MaterialTheme.colorScheme.background) {
-        Button(
-            onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido) },
+        val textoBoton = when {
+            hayRecorridoEnCurso && esRecorridoSimulado -> "Ver simulación en curso"
+            hayRecorridoEnCurso -> "Ver recorrido en curso"
+            esModoDemostracion -> "Simular recorrido"
+            else -> "Iniciar recorrido"
+        }
+        BotonPrincipal(
+            texto = textoBoton,
+            alTocar = { alProcesarEvento(DetalleSenderoEvento.AlTocarIniciarRecorrido) },
+            icono = { IconoDeBoton(Icons.AutoMirrored.Filled.DirectionsWalk) },
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 8.dp)
-                .height(50.dp)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(12.dp))
-            val textoBoton = when {
-                hayRecorridoEnCurso && esRecorridoSimulado -> "Ver simulación en curso"
-                hayRecorridoEnCurso -> "Ver recorrido en curso"
-                esModoDemostracion -> "Simular recorrido"
-                else -> "Iniciar recorrido"
-            }
-            Text(textoBoton)
-        }
+        )
     }
 }
 
@@ -396,7 +355,12 @@ private fun CuerpoDetalle(
                 RecuadroMapa(
                     sendero = sendero,
                     puntoEnfocado = estadoVisual.puntoEnfocado,
-                    claveEnfoque = estadoVisual.contadorEnfoque
+                    claveEnfoque = estadoVisual.contadorEnfoque,
+                    alDescargarMapa = if (estadoVisual.estadoMapaSinConexion is EstadoMapaSinConexion.NoDescargado) {
+                        { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) }
+                    } else {
+                        null
+                    }
                 )
                 if (sendero.recorrido.isNotEmpty()) {
                     TarjetaMapaSinConexion(estadoVisual.estadoMapaSinConexion, alProcesarEvento)

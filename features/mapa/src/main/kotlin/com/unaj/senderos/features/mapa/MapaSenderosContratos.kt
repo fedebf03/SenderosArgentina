@@ -9,7 +9,8 @@ data class MapaSenderosEstadoVisual(
     val estaCargando: Boolean = true,
     val mensajeError: String? = null,
     val idSeleccionado: String? = null,
-    val seSolicitoUbicacion: Boolean = false
+    val seSolicitoUbicacion: Boolean = false,
+    val estaSinConexion: Boolean = false
 ) {
     val senderosEnMapa: List<Sendero>
         get() = senderos.filter { sendero -> sendero.recorrido.isNotEmpty() }

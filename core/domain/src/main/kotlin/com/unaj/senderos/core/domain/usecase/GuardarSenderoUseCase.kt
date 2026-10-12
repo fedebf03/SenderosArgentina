@@ -14,6 +14,7 @@ class GuardarSenderoUseCase(
     private val autenticacionRepositorio: AutenticacionRepositorio,
     private val generarIdentificador: () -> String = { UUID.randomUUID().toString() }
 ) {
+    // Ejecutar el caso de uso
     suspend operator fun invoke(sendero: Sendero): Result<Sendero> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
@@ -32,6 +33,7 @@ class GuardarSenderoUseCase(
             .map { senderoAGuardar }
     }
 
+    // Normalizar los textos del sendero antes de validarlo
     private fun normalizar(sendero: Sendero): Sendero {
         return sendero.copy(
             nombre = sendero.nombre.trim(),
@@ -47,6 +49,7 @@ class GuardarSenderoUseCase(
         )
     }
 
+    // Validar el sendero y devolver los campos inválidos
     private fun validar(sendero: Sendero): Set<CampoSendero> {
         val camposInvalidos = mutableSetOf<CampoSendero>()
         if (sendero.nombre.isBlank()) camposInvalidos.add(CampoSendero.NOMBRE)

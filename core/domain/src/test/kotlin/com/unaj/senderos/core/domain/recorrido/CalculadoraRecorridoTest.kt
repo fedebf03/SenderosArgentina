@@ -17,6 +17,7 @@ class CalculadoraRecorridoTest {
 
     private val kilometrosDiagonal = 157.25
 
+    // Verificar que distancia entre dos puntos conocidos coincide con Haversine
     @Test
     fun `distancia entre dos puntos conocidos coincide con Haversine`() {
         val distancia = CalculadoraRecorrido.distanciaKilometros(
@@ -27,6 +28,7 @@ class CalculadoraRecorridoTest {
         assertEquals(kilometrosPorGradoEcuatorial, distancia, 0.05)
     }
 
+    // Verificar que lineal suma los tramos consecutivos sin cierre
     @Test
     fun `lineal suma los tramos consecutivos sin cierre`() {
         val distancia = CalculadoraRecorrido.distanciaKilometros(
@@ -37,6 +39,7 @@ class CalculadoraRecorridoTest {
         assertEquals(kilometrosPorGradoEcuatorial * 2, distancia, 0.1)
     }
 
+    // Verificar que circular suma el tramo de cierre del ultimo al primero
     @Test
     fun `circular suma el tramo de cierre del ultimo al primero`() {
         val distancia = CalculadoraRecorrido.distanciaKilometros(
@@ -47,6 +50,7 @@ class CalculadoraRecorridoTest {
         assertEquals(kilometrosPorGradoEcuatorial * 2 + kilometrosDiagonal, distancia, 0.5)
     }
 
+    // Verificar que ida y vuelta duplica la distancia lineal
     @Test
     fun `ida y vuelta duplica la distancia lineal`() {
         val distancia = CalculadoraRecorrido.distanciaKilometros(
@@ -57,6 +61,7 @@ class CalculadoraRecorridoTest {
         assertEquals(kilometrosPorGradoEcuatorial * 4, distancia, 0.2)
     }
 
+    // Verificar que con menos de dos puntos la distancia es cero
     @Test
     fun `con menos de dos puntos la distancia es cero`() {
         for (tipoRecorrido in TipoRecorrido.entries) {
@@ -65,6 +70,7 @@ class CalculadoraRecorridoTest {
         }
     }
 
+    // Verificar que invertir sentido devuelve los puntos en orden contrario
     @Test
     fun `invertir sentido devuelve los puntos en orden contrario`() {
         val puntos = listOf(
@@ -78,6 +84,7 @@ class CalculadoraRecorridoTest {
         assertEquals(puntos.reversed(), invertidos)
     }
 
+    // Verificar que invertir dos veces devuelve el original y la lista vacia sigue vacia
     @Test
     fun `invertir dos veces devuelve el original y la lista vacia sigue vacia`() {
         val puntos = listOf(origen, unGradoAlEste, unGradoAlNorteYAlEste)

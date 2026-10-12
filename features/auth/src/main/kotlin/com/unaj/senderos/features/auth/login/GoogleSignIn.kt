@@ -14,6 +14,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
 private const val TAG = "AUTH"
 
+// Pedir el token de identidad de Google con el Credential Manager y entregarlo a quien llama
 suspend fun pedirTokenDeGoogle(
     contexto: Context,
     alObtenerToken: (String) -> Unit,

@@ -21,6 +21,7 @@ class RegistroViewModel(
     private val canalEfectos = Channel<RegistroEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
+    // Procesar cada evento del registro
     fun procesarEvento(evento: RegistroEvento) {
         when (evento) {
             is RegistroEvento.AlCambiarEmail ->
@@ -35,6 +36,7 @@ class RegistroViewModel(
         }
     }
 
+    // Registrar al usuario y navegar al inicio si sale bien
     private fun ejecutarRegistro() {
         val estadoActual = _estadoVisual.value
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
