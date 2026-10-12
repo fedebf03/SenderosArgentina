@@ -6,13 +6,21 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [SenderoEntidad::class],
-    version = 3,
+    entities = [SenderoEntidad::class, RecorridoEntidad::class],
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)]
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4)
+    ]
 )
 @TypeConverters(ConvertidoresSendero::class)
 abstract class BaseDatosSenderos : RoomDatabase() {
 
+    // Obtener el DAO de senderos
     abstract fun senderoDao(): SenderoDao
+
+    // Obtener el DAO de recorridos realizados
+    abstract fun recorridoDao(): RecorridoDao
 }

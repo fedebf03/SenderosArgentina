@@ -1,0 +1,32 @@
+package com.unaj.senderos.data.local
+
+import androidx.room.Entity
+import kotlinx.serialization.Serializable
+
+// Posición del trazado caminado, guardada como JSON dentro de la fila del recorrido
+@Serializable
+data class CoordenadaEntidad(
+    val latitud: Double,
+    val longitud: Double
+)
+
+// Fila de Room que representa un recorrido realizado por un usuario (fuente única de verdad)
+@Entity(tableName = "recorridos", primaryKeys = ["idUsuario", "id"])
+data class RecorridoEntidad(
+    val id: String,
+    val idUsuario: String,
+    val idSendero: String,
+    val nombreSendero: String,
+    val inicioMilisegundos: Long,
+    val finMilisegundos: Long,
+    val duracionMilisegundos: Long,
+    val distanciaKilometros: Double,
+    val velocidadPromedioKilometrosPorHora: Double,
+    val velocidadMaximaKilometrosPorHora: Double,
+    val pasos: Int?,
+    val ritmoPasosPorMinuto: Double?,
+    val trazadoCaminado: List<CoordenadaEntidad>,
+    val esSimulado: Boolean,
+    val estadoSincronizacion: String,
+    val fechaModificacion: Long
+)

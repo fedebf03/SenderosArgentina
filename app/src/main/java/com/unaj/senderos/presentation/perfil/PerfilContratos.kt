@@ -1,17 +1,21 @@
 package com.unaj.senderos.presentation.perfil
 
+import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.Usuario
 
 data class PerfilEstadoVisual(
     val usuario: Usuario? = null,
-    val esModoDemostracion: Boolean = false
+    val esModoDemostracion: Boolean = false,
+    val recorridos: List<RecorridoRealizado> = emptyList()
 )
 
 sealed interface PerfilEvento {
     data object AlCerrarSesion : PerfilEvento
     data class AlCambiarModoDemostracion(val activo: Boolean) : PerfilEvento
+    data class AlSeleccionarRecorrido(val idRecorrido: String) : PerfilEvento
 }
 
 sealed interface PerfilEfecto {
     data object NavegarALogin : PerfilEfecto
+    data class NavegarAHistorialDetalle(val idRecorrido: String) : PerfilEfecto
 }

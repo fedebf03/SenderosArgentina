@@ -98,6 +98,8 @@ object CalculadoraSeguimiento {
         val nuevoEstado = estado.copy(
             rumboGrados = rumboNuevo,
             velocidadMetrosPorSegundo = lectura.velocidadMetrosPorSegundo,
+            velocidadMaximaMetrosPorSegundo = maxOf(estado.velocidadMaximaMetrosPorSegundo, lectura.velocidadMetrosPorSegundo ?: 0f),
+            trazadoCaminado = if (seAceptaMovimiento) estado.trazadoCaminado + nuevaPosicion else estado.trazadoCaminado,
             posicionActual = nuevaPosicion,
             ultimaPosicionAceptada = if (seAceptaMovimiento) nuevaPosicion else ultimaAceptada,
             distanciaRecorridaKilometros = estado.distanciaRecorridaKilometros + distanciaSumada,

@@ -66,6 +66,7 @@ class DetalleSenderoViewModel(
             is DetalleSenderoEvento.AlAlternarFavorito -> alternarFavorito()
             is DetalleSenderoEvento.AlCompartir -> compartir()
             is DetalleSenderoEvento.AlAlternarSeccion -> alternarSeccion(evento.seccion)
+            is DetalleSenderoEvento.AlSeleccionarPuntoDeInteres -> enfocarPuntoDeInteres(evento.indice)
             is DetalleSenderoEvento.AlTocarIniciarRecorrido -> pedirPermisoParaIniciarRecorrido()
             is DetalleSenderoEvento.AlConcederPermisoUbicacion -> iniciarRecorrido()
             is DetalleSenderoEvento.AlDenegarPermisoUbicacion -> {
@@ -123,7 +124,12 @@ class DetalleSenderoViewModel(
     private fun reflejarSendero(senderoEmitido: Sendero?) {
         if (senderoEmitido != null) {
             _estadoVisual.update { estadoActual ->
-                estadoActual.copy(sendero = senderoEmitido, estaCargando = false, mensajeError = null)
+                estadoActual.copy(
+                    sendero = senderoEmitido,
+                    puntosDeInteres = obtenerPuntosDeInteres(senderoEmitido),
+                    estaCargando = false,
+                    mensajeError = null
+                )
             }
         } else if (!estaEliminando) {
             mostrarError("No se encontró el sendero")
@@ -190,6 +196,15 @@ class DetalleSenderoViewModel(
                 estadoActual.seccionesExpandidas + seccion
             }
             estadoActual.copy(seccionesExpandidas = seccionesNuevas)
+        }
+    }
+
+    // Enfocar el mapa en el punto elegido, incrementando el contador para repetir el enfoque sobre el mismo punto
+    private fun enfocarPuntoDeInteres(indice: Int) {
+        val coordenada = _estadoVisual.value.coordenadaDelPunto(indice) ?: return
+        Log.d(TAG, "Enfocando el punto de interés $indice del sendero $idSendero")
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(puntoEnfocado = coordenada, contadorEnfoque = estadoActual.contadorEnfoque + 1)
         }
     }
 

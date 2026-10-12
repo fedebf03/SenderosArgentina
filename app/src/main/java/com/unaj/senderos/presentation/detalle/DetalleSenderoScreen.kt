@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.AlertDialog
@@ -38,6 +39,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -58,6 +62,9 @@ import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
 private const val TAG = "DETALLE_SENDERO"
+
+// Posición del recuadro del mapa dentro de la lista del detalle
+private const val INDICE_ELEMENTO_MAPA = 2
 
 // Mostrar el detalle del sendero conectado a su ViewModel y gestionar los permisos del recorrido
 @Composable
@@ -281,7 +288,18 @@ private fun CuerpoDetalle(
     alProcesarEvento: (DetalleSenderoEvento) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val estadoLista = rememberLazyListState()
+    // Recordar la última clave desplazada para no repetir el desplazamiento al recrear la pantalla
+    var ultimaClaveDesplazada by rememberSaveable { mutableIntStateOf(0) }
+    // Desplazar la lista hasta el mapa cada vez que se elige un punto de interés
+    LaunchedEffect(estadoVisual.contadorEnfoque) {
+        if (estadoVisual.contadorEnfoque > ultimaClaveDesplazada) {
+            ultimaClaveDesplazada = estadoVisual.contadorEnfoque
+            estadoLista.animateScrollToItem(INDICE_ELEMENTO_MAPA)
+        }
+    }
     LazyColumn(
+        state = estadoLista,
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -289,7 +307,14 @@ private fun CuerpoDetalle(
         item {
             DatosDelRecorrido(sendero, modifier = Modifier.padding(horizontal = 24.dp))
         }
-        item { RecuadroMapa(sendero = sendero, modifier = Modifier.padding(horizontal = 24.dp)) }
+        item {
+            RecuadroMapa(
+                sendero = sendero,
+                modifier = Modifier.padding(horizontal = 24.dp),
+                puntoEnfocado = estadoVisual.puntoEnfocado,
+                claveEnfoque = estadoVisual.contadorEnfoque
+            )
+        }
         item {
             Column(
                 modifier = Modifier.padding(horizontal = 24.dp),
@@ -301,6 +326,23 @@ private fun CuerpoDetalle(
         }
         item {
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                if (estadoVisual.puntosDeInteres.isNotEmpty()) {
+                    SeccionDesplegable(
+                        titulo = "Puntos de interés",
+                        estaExpandida = SeccionDetalle.PUNTOS_DE_INTERES in estadoVisual.seccionesExpandidas,
+                        alAlternar = {
+                            alProcesarEvento(DetalleSenderoEvento.AlAlternarSeccion(SeccionDetalle.PUNTOS_DE_INTERES))
+                        }
+                    ) {
+                        ListaDePuntosDeInteres(
+                            puntos = estadoVisual.puntosDeInteres,
+                            alSeleccionar = { indice ->
+                                alProcesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(indice))
+                            }
+                        )
+                    }
+                    HorizontalDivider()
+                }
                 SeccionDesplegable(
                     titulo = "Recomendaciones",
                     estaExpandida = SeccionDetalle.RECOMENDACIONES in estadoVisual.seccionesExpandidas,

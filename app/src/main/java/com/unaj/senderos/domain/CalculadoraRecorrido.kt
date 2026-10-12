@@ -27,6 +27,15 @@ object CalculadoraRecorrido {
         return total
     }
 
+    // Calcular la distancia acumulada en kilómetros desde el inicio hasta cada punto, siguiendo el orden del recorrido
+    fun distanciasAcumuladasKilometros(puntos: List<PuntoRecorrido>): List<Double> {
+        var acumulada = 0.0
+        return puntos.mapIndexed { indice, punto ->
+            if (indice > 0) acumulada += distanciaEntre(puntos[indice - 1], punto)
+            acumulada
+        }
+    }
+
     // Calcular la distancia en kilómetros desde una coordenada hasta un punto del recorrido
     fun distanciaEntre(desde: Coordenada, hasta: PuntoRecorrido): Double {
         return haversine(desde.latitud, desde.longitud, hasta.latitud, hasta.longitud)

@@ -30,7 +30,7 @@ class SincronizacionTrabajador(
     parametros: WorkerParameters
 ) : CoroutineWorker(contexto, parametros) {
 
-    // Sincronizar los senderos del usuario, notificar el resultado y decidir si WorkManager reintenta
+    // Sincronizar los senderos y luego los recorridos del usuario, notificar el resultado y decidir si WorkManager reintenta
     override suspend fun doWork(): Result {
         val idUsuario = inputData.getString(CLAVE_ID_USUARIO).orEmpty()
         if (idUsuario.isBlank()) {
@@ -39,7 +39,8 @@ class SincronizacionTrabajador(
         }
         val aplicacion = applicationContext as SenderosAplicacion
         val resultado = aplicacion.contenedorDependencias.sincronizadorSenderos.sincronizar(idUsuario)
-        val primerError = resultado.getOrNull()?.primerError
+        val errorRecorridos = aplicacion.contenedorDependencias.sincronizadorRecorridos.sincronizar(idUsuario).exceptionOrNull()
+        val primerError = resultado.getOrNull()?.primerError ?: errorRecorridos
         if (resultado.isSuccess && primerError == null) {
             Log.d(TAG, "Sincronización terminada para el usuario $idUsuario")
             resultado.getOrNull()?.let { resumen -> notificarResultado(aplicacion, resumen, true) }
@@ -80,9 +81,10 @@ class SincronizacionTrabajador(
         aplicacion.contenedorDependencias.notificador.notificar(mensaje)
     }
 
-    // Notificar el error con la cantidad de pendientes cuando la sincronización falló por completo y no se reintentará
+    // Notificar el error con la cantidad de senderos y recorridos pendientes cuando la sincronización falló por completo y no se reintentará
     private suspend fun notificarPendientesSinSincronizar(aplicacion: SenderosAplicacion, idUsuario: String) {
-        val cantidadPendientes = aplicacion.contenedorDependencias.senderoDao.obtenerPendientes(idUsuario).size
+        val cantidadPendientes = aplicacion.contenedorDependencias.senderoDao.obtenerPendientes(idUsuario).size +
+            aplicacion.contenedorDependencias.recorridoDao.obtenerPendientes(idUsuario).size
         if (cantidadPendientes > 0) {
             aplicacion.contenedorDependencias.notificador.notificar(
                 MensajeNotificacion.SenderosConError(cantidadPendientes)

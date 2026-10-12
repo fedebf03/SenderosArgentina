@@ -6,6 +6,12 @@ import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoLanzadorSeguimiento
 import com.unaj.senderos.falsos.FalsoPreferenciasAplicacion
+import com.unaj.senderos.falsos.FalsoRecorridoRepositorio
+import com.unaj.senderos.falsos.crearRecorridoDePrueba
+import com.unaj.senderos.domain.usecase.ObservarRecorridosUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.junit.Assert.assertEquals
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +31,7 @@ class PerfilViewModelTest {
 
     private val despachadorPrueba = StandardTestDispatcher()
     private val preferencias = FalsoPreferenciasAplicacion()
+    private val repositorioRecorridos = FalsoRecorridoRepositorio()
 
     // Configurar el despachador principal de las corrutinas de prueba
     @Before
@@ -44,7 +51,8 @@ class PerfilViewModelTest {
         return PerfilViewModel(
             obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacion),
             cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento()),
-            preferenciasAplicacion = preferencias
+            preferenciasAplicacion = preferencias,
+            observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion)
         )
     }
 
@@ -81,5 +89,41 @@ class PerfilViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.estadoVisual.value.esModoDemostracion)
+    }
+
+    // Verificar que el historial llega del más reciente al más viejo
+    @Test
+    fun `el historial refleja los recorridos del mas reciente al mas viejo`() = runTest(despachadorPrueba) {
+        repositorioRecorridos.recorridos.value = listOf(
+            crearRecorridoDePrueba(id = "viejo", inicioMilisegundos = 1_000L),
+            crearRecorridoDePrueba(id = "nuevo", inicioMilisegundos = 9_000L, finMilisegundos = 12_000L)
+        )
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf("nuevo", "viejo"), viewModel.estadoVisual.value.recorridos.map { recorrido -> recorrido.id })
+    }
+
+    // Verificar que sin recorridos la lista queda vacía
+    @Test
+    fun `sin recorridos el historial es vacio`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.recorridos.isEmpty())
+    }
+
+    // Verificar que tocar un recorrido emite el efecto de navegación a su detalle
+    @Test
+    fun `seleccionar un recorrido navega a su detalle`() = runTest(despachadorPrueba) {
+        val efectos = mutableListOf<PerfilEfecto>()
+        val viewModel = crearViewModel()
+        CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectos.add(efecto) } }
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(PerfilEvento.AlSeleccionarRecorrido("r1"))
+        advanceUntilIdle()
+
+        assertEquals(listOf<PerfilEfecto>(PerfilEfecto.NavegarAHistorialDetalle("r1")), efectos)
     }
 }

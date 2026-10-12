@@ -3,6 +3,7 @@ package com.unaj.senderos.presentation.mapa
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.domain.model.tieneCoordenadasValidas
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
@@ -10,7 +11,7 @@ import org.maplibre.geojson.Point
 
 // Verificar que las coordenadas del punto sean finitas y estén en rango
 fun PuntoRecorrido.tieneCoordenadasValidas(): Boolean {
-    return latitud.isFinite() && longitud.isFinite() && latitud in -90.0..90.0 && longitud in -180.0..180.0
+    return Coordenada(latitud, longitud).tieneCoordenadasValidas()
 }
 
 object PropiedadesPunto {
@@ -44,6 +45,14 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(coordenadasConCierre)))
     }
 
+    // Crear la línea GeoJSON del trazado caminado, ignorando las coordenadas inválidas
+    fun crearTrazadoCaminado(trazado: List<Coordenada>): FeatureCollection {
+        val validas = trazado.filter { coordenada -> coordenada.tieneCoordenadasValidas() }
+        if (validas.size < 2) return FeatureCollection.fromFeatures(emptyList<Feature>())
+        val coordenadas = validas.map { coordenada -> Point.fromLngLat(coordenada.longitud, coordenada.latitud) }
+        return FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(coordenadas)))
+    }
+
     // Crear los puntos GeoJSON numerados con su tipo, rol y estado de selección
     fun crearPuntos(
         puntos: List<PuntoRecorrido>,
@@ -65,10 +74,7 @@ object ConstructorGeoJsonRecorrido {
 
     // Crear el punto destacado de la posición del usuario; sin posición válida la colección queda vacía
     fun crearPosicion(posicion: Coordenada?, rumboGrados: Float? = null): FeatureCollection {
-        val esValida = posicion != null &&
-            posicion.latitud.isFinite() && posicion.longitud.isFinite() &&
-            posicion.latitud in -90.0..90.0 && posicion.longitud in -180.0..180.0
-        if (posicion == null || !esValida) return FeatureCollection.fromFeatures(emptyList<Feature>())
+        if (posicion == null || !posicion.tieneCoordenadasValidas()) return FeatureCollection.fromFeatures(emptyList<Feature>())
         val elemento = Feature.fromGeometry(Point.fromLngLat(posicion.longitud, posicion.latitud))
         if (rumboGrados != null && rumboGrados.isFinite()) {
             elemento.addNumberProperty(PropiedadesPunto.RUMBO, rumboGrados)

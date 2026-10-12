@@ -32,6 +32,8 @@ import com.unaj.senderos.presentation.favoritos.FavoritosPantalla
 import com.unaj.senderos.presentation.favoritos.FavoritosViewModel
 import com.unaj.senderos.presentation.formulario.FormularioSenderoPantalla
 import com.unaj.senderos.presentation.formulario.FormularioSenderoViewModel
+import com.unaj.senderos.presentation.historial.HistorialDetallePantalla
+import com.unaj.senderos.presentation.historial.HistorialDetalleViewModel
 import com.unaj.senderos.presentation.login.LoginPantalla
 import com.unaj.senderos.presentation.login.LoginViewModel
 import com.unaj.senderos.presentation.mapasenderos.MapaSenderosPantalla
@@ -56,6 +58,7 @@ sealed interface DestinoPantalla {
     data class Detalle(val idSendero: String) : DestinoPantalla
     data class Formulario(val idSendero: String?) : DestinoPantalla
     data class Recorrido(val idSendero: String) : DestinoPantalla
+    data class HistorialDetalle(val idRecorrido: String) : DestinoPantalla
 }
 
 class MainActivity : ComponentActivity() {
@@ -188,7 +191,8 @@ class MainActivity : ComponentActivity() {
                                 PerfilViewModel(
                                     dependencias.obtenerUsuarioActualUseCase,
                                     dependencias.cerrarSesionUseCase,
-                                    dependencias.preferenciasAplicacion
+                                    dependencias.preferenciasAplicacion,
+                                    dependencias.observarRecorridosUseCase
                                 )
                             },
                             alNavegarALogin = {
@@ -197,8 +201,27 @@ class MainActivity : ComponentActivity() {
                                     almacenDestinos.liberarDestino("$seccion-$idUsuario")
                                 }
                             },
-                            alNavegarASeccion = navegarASeccion
+                            alNavegarASeccion = navegarASeccion,
+                            alNavegarAHistorialDetalle = { idRecorrido ->
+                                pantallaActual = DestinoPantalla.HistorialDetalle(idRecorrido)
+                            }
                         )
+                        is DestinoPantalla.HistorialDetalle -> {
+                            val clave = "historial-$idUsuario-${destino.idRecorrido}"
+                            HistorialDetallePantalla(
+                                viewModel = viewModelDeDestino(clave) {
+                                    HistorialDetalleViewModel(
+                                        idRecorrido = destino.idRecorrido,
+                                        observarRecorridoUseCase = dependencias.observarRecorridoUseCase,
+                                        observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase
+                                    )
+                                },
+                                alVolverAlPerfil = {
+                                    pantallaActual = DestinoPantalla.Perfil
+                                    almacenDestinos.liberarDestino(clave)
+                                }
+                            )
+                        }
                         is DestinoPantalla.Detalle -> {
                             val clave = "detalle-$idUsuario-${destino.idSendero}"
                             DetalleSenderoPantalla(
@@ -316,6 +339,7 @@ private fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String?
         is DestinoPantalla.Detalle -> "detalle-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.Formulario -> "formulario-$idUsuario-${destino.idSendero ?: "nuevo"}"
         is DestinoPantalla.Recorrido -> "recorrido-$idUsuario-${destino.idSendero}"
+        is DestinoPantalla.HistorialDetalle -> "historial-$idUsuario-${destino.idRecorrido}"
     }
 }
 
@@ -332,6 +356,7 @@ private val guardadorDeDestino = Saver<DestinoPantalla, String>(
             is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
             is DestinoPantalla.Formulario -> "formulario:${destino.idSendero.orEmpty()}"
             is DestinoPantalla.Recorrido -> "recorrido:${destino.idSendero}"
+            is DestinoPantalla.HistorialDetalle -> "historial:${destino.idRecorrido}"
         }
     },
     restore = { texto ->
@@ -345,6 +370,7 @@ private val guardadorDeDestino = Saver<DestinoPantalla, String>(
             texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
             texto.startsWith("formulario:") -> DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
             texto.startsWith("recorrido:") -> DestinoPantalla.Recorrido(texto.removePrefix("recorrido:"))
+            texto.startsWith("historial:") -> DestinoPantalla.HistorialDetalle(texto.removePrefix("historial:"))
             else -> null
         }
     }

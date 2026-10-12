@@ -300,4 +300,41 @@ class DetalleSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.hayRecorridoEnCursoEnEsteSendero)
         assertTrue(viewModel.estadoVisual.value.esRecorridoEnCursoSimulado)
     }
+
+    // Verificar que elegir un punto de interés guarda su coordenada y repite el enfoque sobre el mismo punto
+    @Test
+    fun `seleccionar un punto de interes enfoca su coordenada y repite el enfoque`() = runTest(despachadorPrueba) {
+        val recorridoConInteres = listOf(
+            PuntoRecorrido(latitud = -41.10, longitud = -71.30),
+            PuntoRecorrido(latitud = -41.11, longitud = -71.31, tipo = com.unaj.senderos.domain.model.TipoPunto.AGUA)
+        )
+        val viewModel = crearViewModel(recorridoConInteres)
+        advanceUntilIdle()
+        assertEquals(0, viewModel.estadoVisual.value.contadorEnfoque)
+        assertEquals(listOf(1), viewModel.estadoVisual.value.puntosDeInteres.map { punto -> punto.indice })
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(1))
+        advanceUntilIdle()
+        val primero = viewModel.estadoVisual.value
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(1))
+        advanceUntilIdle()
+        val segundo = viewModel.estadoVisual.value
+
+        assertEquals(com.unaj.senderos.domain.model.Coordenada(-41.11, -71.31), primero.puntoEnfocado)
+        assertEquals(1, primero.contadorEnfoque)
+        assertEquals(2, segundo.contadorEnfoque)
+    }
+
+    // Verificar que un índice inexistente no cambia el enfoque
+    @Test
+    fun `seleccionar un indice inexistente no cambia el enfoque`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(7))
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.puntoEnfocado)
+        assertEquals(0, viewModel.estadoVisual.value.contadorEnfoque)
+    }
 }
