@@ -25,7 +25,11 @@ private const val DESPLAZAMIENTO_MINIMO_PARA_RUMBO_METROS = 10.0
 private const val VENTANA_MINIMA_BUSQUEDA_KILOMETROS = 0.06
 private const val FACTOR_VENTANA_POR_DESPLAZAMIENTO = 2.0
 private const val FRACCION_MINIMA_PARA_LLEGADA = 0.5
-private const val UMBRAL_LLEGADA_KILOMETROS = 0.02
+private const val UMBRAL_LLEGADA_METROS = 20.0
+private const val UMBRAL_LLEGADA_MAXIMO_METROS = 40.0
+private const val PRECISION_MAXIMA_ACEPTABLE_METROS = 50f
+private const val VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO = 3.0
+private const val DISTANCIA_MAXIMA_PRIMER_TRAMO_CIRCULAR_METROS = 30.0
 
 // Proyección de una posición sobre un tramo: distancia perpendicular y fracción recorrida del tramo (0 a 1)
 private data class Proyeccion(val distanciaMetros: Double, val fraccion: Double)
@@ -42,7 +46,8 @@ object CalculadoraSeguimiento {
             indicesRecorridoDelTrazado = construirIndicesDelRecorrido(sendero.recorrido.size, sendero.tipoRecorrido, trazado.size),
             distanciaRestanteKilometros = longitudTotal(trazado),
             indiceProximoPunto = if (trazado.size > 1) 1 else 0,
-            instanteInicioMilisegundos = ahora
+            instanteInicioMilisegundos = ahora,
+            esCircular = sendero.tipoRecorrido == TipoRecorrido.CIRCULAR && sendero.recorrido.size >= 2
         )
     }
 
@@ -60,14 +65,35 @@ object CalculadoraSeguimiento {
         val ultimoTramo = trazado.size - 2
         val indiceTramoAnterior = estado.indiceTramoActual.coerceIn(0, ultimoTramo)
         val largoTotal = longitudTotal(trazado)
+        val esPrimeraLectura = estado.posicionActual == null
+        val tienePrecisionAceptable = (lectura.precisionMetros ?: 0f) <= PRECISION_MAXIMA_ACEPTABLE_METROS
         val desplazamientoDesdeLecturaAnteriorKilometros = estado.posicionActual
             ?.let { anterior -> distanciaEnMetros(anterior, nuevaPosicion) / METROS_POR_KILOMETRO } ?: 0.0
+        val desplazamientoParaVentanaKilometros = if (tienePrecisionAceptable) {
+            minOf(desplazamientoDesdeLecturaAnteriorKilometros, desplazamientoPlausibleKilometros(estado, ahora))
+        } else {
+            0.0
+        }
         val progresoActualKilometros = largoTotal - estado.distanciaRestanteKilometros
-        val limiteDeBusquedaKilometros = progresoActualKilometros + maxOf(
-            VENTANA_MINIMA_BUSQUEDA_KILOMETROS,
-            FACTOR_VENTANA_POR_DESPLAZAMIENTO * desplazamientoDesdeLecturaAnteriorKilometros
-        )
-        val (indiceTramo, proyeccion) = buscarTramoMasCercano(trazado, nuevaPosicion, indiceTramoAnterior, limiteDeBusquedaKilometros)
+        val limiteDeBusquedaKilometros = if (esPrimeraLectura) {
+            Double.POSITIVE_INFINITY
+        } else {
+            progresoActualKilometros + maxOf(
+                VENTANA_MINIMA_BUSQUEDA_KILOMETROS,
+                FACTOR_VENTANA_POR_DESPLAZAMIENTO * desplazamientoParaVentanaKilometros
+            )
+        }
+        val (indiceTramoBuscado, proyeccionBuscada) = buscarTramoMasCercano(trazado, nuevaPosicion, indiceTramoAnterior, limiteDeBusquedaKilometros)
+        val (indiceTramo, proyeccion) = if (esPrimeraLectura && estado.esCircular && indiceTramoBuscado == ultimoTramo) {
+            val proyeccionPrimerTramo = proyectarSobreTramo(nuevaPosicion, trazado[0], trazado[1])
+            if (proyeccionPrimerTramo.distanciaMetros < DISTANCIA_MAXIMA_PRIMER_TRAMO_CIRCULAR_METROS) {
+                0 to proyeccionPrimerTramo
+            } else {
+                indiceTramoBuscado to proyeccionBuscada
+            }
+        } else {
+            indiceTramoBuscado to proyeccionBuscada
+        }
         val largoTramo = largoDelTramo(trazado, indiceTramo)
         val progresoKilometros = (0 until indiceTramo).sumOf { indice -> largoDelTramo(trazado, indice) } +
             proyeccion.fraccion * largoTramo
@@ -103,14 +129,15 @@ object CalculadoraSeguimiento {
         } else {
             distanciaEnMetros(ultimaAceptada, nuevaPosicion) / METROS_POR_KILOMETRO
         }
-        val seAceptaMovimiento = ultimaAceptada == null || desplazamientoKilometros >= MOVIMIENTO_MINIMO_KILOMETROS
+        val seAceptaMovimiento = tienePrecisionAceptable &&
+            (ultimaAceptada == null || desplazamientoKilometros >= MOVIMIENTO_MINIMO_KILOMETROS)
         val esSaltoDeSimulacion = estado.esSimulado && (estado.estaDesviado || estaDesviado)
         val distanciaSumada = if (ultimaAceptada != null && seAceptaMovimiento && !esSaltoDeSimulacion) desplazamientoKilometros else 0.0
 
         val distanciaRecorrida = estado.distanciaRecorridaKilometros + distanciaSumada
         val llegoAlFinal = estado.llegoAlFinal || (
             indiceTramo == ultimoTramo &&
-                distanciaRestante < UMBRAL_LLEGADA_KILOMETROS &&
+                distanciaRestante < umbralDeLlegadaKilometros(lectura) &&
                 distanciaRecorrida >= FRACCION_MINIMA_PARA_LLEGADA * largoTotal
             )
         if (llegoAlFinal && !estado.llegoAlFinal) avisos.add(AvisoRecorrido.LlegadaAlFinal)
@@ -132,9 +159,23 @@ object CalculadoraSeguimiento {
             indiceProximoPunto = (indiceTramoNuevo + 1).coerceAtMost(trazado.lastIndex),
             estaDesviado = estaDesviado,
             indicesPuntosAvisados = puntosAvisados,
-            tiempoTranscurridoMilisegundos = tiempoTranscurrido
+            tiempoTranscurridoMilisegundos = tiempoTranscurrido,
+            instanteUltimaLecturaMilisegundos = ahora
         )
         return ResultadoSeguimiento(estado = nuevoEstado, avisos = avisos)
+    }
+
+    // Calcular el desplazamiento máximo plausible en kilómetros desde la lectura anterior con una velocidad de caminata
+    private fun desplazamientoPlausibleKilometros(estado: EstadoSeguimiento, ahora: Long): Double {
+        val instanteAnterior = estado.instanteUltimaLecturaMilisegundos ?: return Double.POSITIVE_INFINITY
+        val segundos = ((ahora - instanteAnterior) / 1000.0).coerceAtLeast(0.0)
+        return VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO * segundos * estado.multiplicadorSimulacion / METROS_POR_KILOMETRO
+    }
+
+    // Calcular el umbral de llegada en kilómetros: el mayor entre 20 m y la precisión de la lectura, con tope de 40 m
+    private fun umbralDeLlegadaKilometros(lectura: LecturaUbicacion): Double {
+        val metros = maxOf(UMBRAL_LLEGADA_METROS, (lectura.precisionMetros ?: 0f).toDouble())
+        return minOf(metros, UMBRAL_LLEGADA_MAXIMO_METROS) / METROS_POR_KILOMETRO
     }
 
     // Determinar el rumbo: el del GPS si la velocidad es suficiente o desconocida, el geodésico si el desplazamiento supera el ruido, o el último conocido

@@ -1,8 +1,10 @@
 package com.unaj.senderos.presentation.mapa
 
+import com.unaj.senderos.domain.configuracion.ConfiguracionEstiloMapa
+
 object ConfiguracionMapa {
-    // Estilo vectorial gratuito de OpenFreeMap (sin clave); MapLibre agrega la atribución automáticamente
-    const val URL_ESTILO = "https://tiles.openfreemap.org/styles/liberty"
+    // El estilo vive en dominio para compartirlo con la descarga de mapas sin conexión
+    const val URL_ESTILO = ConfiguracionEstiloMapa.URL_ESTILO
 
     const val FUENTE_TEXTO = "Noto Sans Bold"
 

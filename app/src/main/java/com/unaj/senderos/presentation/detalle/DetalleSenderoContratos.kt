@@ -1,6 +1,7 @@
 package com.unaj.senderos.presentation.detalle
 
 import com.unaj.senderos.domain.model.Coordenada
+import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Sendero
 
 enum class SeccionDetalle { PUNTOS_DE_INTERES, RECOMENDACIONES, SERVICIOS, ETAPAS }
@@ -18,7 +19,10 @@ data class DetalleSenderoEstadoVisual(
     val esModoDemostracion: Boolean = false,
     val puntoEnfocado: Coordenada? = null,
     val contadorEnfoque: Int = 0,
-    val puntosDeInteres: List<PuntoDeInteres> = emptyList()
+    val puntosDeInteres: List<PuntoDeInteres> = emptyList(),
+    val estadoMapaSinConexion: EstadoMapaSinConexion = EstadoMapaSinConexion.NoDescargado,
+    val esDialogoEliminarMapaVisible: Boolean = false,
+    val esSugerenciaDescargaVisible: Boolean = false
 )
 
 sealed interface DetalleSenderoEvento {
@@ -28,6 +32,12 @@ sealed interface DetalleSenderoEvento {
     data class AlAlternarSeccion(val seccion: SeccionDetalle) : DetalleSenderoEvento
     data class AlSeleccionarPuntoDeInteres(val indice: Int) : DetalleSenderoEvento
     data object AlTocarIniciarRecorrido : DetalleSenderoEvento
+    data object AlTocarDescargarMapa : DetalleSenderoEvento
+    data object AlTocarEliminarMapa : DetalleSenderoEvento
+    data object AlConfirmarEliminarMapa : DetalleSenderoEvento
+    data object AlCancelarEliminarMapa : DetalleSenderoEvento
+    data object AlDescargarEIniciar : DetalleSenderoEvento
+    data object AlIniciarSinDescargar : DetalleSenderoEvento
     data object AlConcederPermisoUbicacion : DetalleSenderoEvento
     data object AlDenegarPermisoUbicacion : DetalleSenderoEvento
     data object AlConcederSoloUbicacionAproximada : DetalleSenderoEvento

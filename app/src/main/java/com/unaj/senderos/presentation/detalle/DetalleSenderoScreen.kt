@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.domain.model.Dificultad
+import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
@@ -225,6 +226,52 @@ fun DetalleSenderoContenido(
         )
     }
 
+    if (estadoVisual.esSugerenciaDescargaVisible) {
+        AlertDialog(
+            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinDescargar) },
+            title = { Text("¿Descargar el mapa para usarlo sin señal?") },
+            text = { Text("Podés iniciar el recorrido igual: la descarga sigue en segundo plano.") },
+            confirmButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlDescargarEIniciar) }) {
+                    Text("Descargar e iniciar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlIniciarSinDescargar) }) {
+                    Text("Iniciar sin descargar")
+                }
+            }
+        )
+    }
+
+    if (estadoVisual.esDialogoEliminarMapaVisible) {
+        val estaDescargando = estadoVisual.estadoMapaSinConexion is EstadoMapaSinConexion.Descargando ||
+            estadoVisual.estadoMapaSinConexion is EstadoMapaSinConexion.EsperandoConexion
+        AlertDialog(
+            onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminarMapa) },
+            title = { Text(if (estaDescargando) "Cancelar descarga" else "Eliminar mapa sin conexión") },
+            text = {
+                Text(
+                    if (estaDescargando) {
+                        "Se detendrá la descarga y se descartará lo descargado hasta ahora."
+                    } else {
+                        "Vas a necesitar conexión para ver el mapa de este sendero."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarEliminarMapa) }) {
+                    Text(if (estaDescargando) "Cancelar descarga" else "Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminarMapa) }) {
+                    Text(if (estaDescargando) "Seguir descargando" else "Cancelar")
+                }
+            }
+        )
+    }
+
     if (estadoVisual.esDialogoEliminarVisible && estadoVisual.sendero != null) {
         AlertDialog(
             onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCancelarEliminar) },
@@ -308,12 +355,19 @@ private fun CuerpoDetalle(
             DatosDelRecorrido(sendero, modifier = Modifier.padding(horizontal = 24.dp))
         }
         item {
-            RecuadroMapa(
-                sendero = sendero,
+            Column(
                 modifier = Modifier.padding(horizontal = 24.dp),
-                puntoEnfocado = estadoVisual.puntoEnfocado,
-                claveEnfoque = estadoVisual.contadorEnfoque
-            )
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                RecuadroMapa(
+                    sendero = sendero,
+                    puntoEnfocado = estadoVisual.puntoEnfocado,
+                    claveEnfoque = estadoVisual.contadorEnfoque
+                )
+                if (sendero.recorrido.isNotEmpty()) {
+                    TarjetaMapaSinConexion(estadoVisual.estadoMapaSinConexion, alProcesarEvento)
+                }
+            }
         }
         item {
             Column(

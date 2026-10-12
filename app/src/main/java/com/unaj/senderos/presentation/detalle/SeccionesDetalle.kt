@@ -35,8 +35,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Etapa
+import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.componentes.ChipDificultad
@@ -186,6 +190,101 @@ internal fun RecuadroMapa(
                 puntoEnfocado = puntoEnfocado,
                 claveEnfoque = claveEnfoque
             )
+        }
+    }
+}
+
+// Renderizar la tarjeta "Mapa sin conexión" según el estado de la descarga del mapa del sendero
+@Composable
+internal fun TarjetaMapaSinConexion(
+    estado: EstadoMapaSinConexion,
+    alProcesarEvento: (DetalleSenderoEvento) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedCard(shape = RoundedCornerShape(16.dp), modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(text = "Mapa sin conexión", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            when (estado) {
+                is EstadoMapaSinConexion.NoDescargado -> OutlinedButton(
+                    onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Descargar mapa para usar sin señal")
+                }
+                is EstadoMapaSinConexion.Descargando -> ProgresoDeDescarga(
+                    texto = describirDescarga(estado),
+                    porcentaje = estado.porcentaje,
+                    alCancelar = { alProcesarEvento(DetalleSenderoEvento.AlTocarEliminarMapa) }
+                )
+                is EstadoMapaSinConexion.EsperandoConexion -> ProgresoDeDescarga(
+                    texto = describirDescarga(estado),
+                    porcentaje = estado.porcentaje,
+                    alCancelar = { alProcesarEvento(DetalleSenderoEvento.AlTocarEliminarMapa) }
+                )
+                is EstadoMapaSinConexion.Disponible -> FilaEstadoMapa(
+                    texto = "Disponible sin conexión · ${formatearTamanoMapa(estado.bytes)}",
+                    textoAccion = "Eliminar",
+                    alAccionar = { alProcesarEvento(DetalleSenderoEvento.AlTocarEliminarMapa) }
+                )
+                is EstadoMapaSinConexion.Desactualizado -> FilaEstadoMapa(
+                    texto = "El recorrido cambió · ${formatearTamanoMapa(estado.bytes)}",
+                    textoAccion = "Volver a descargar",
+                    alAccionar = { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) },
+                    textoAccionSecundaria = "Eliminar",
+                    alAccionarSecundaria = { alProcesarEvento(DetalleSenderoEvento.AlTocarEliminarMapa) }
+                )
+                is EstadoMapaSinConexion.ConError -> FilaEstadoMapa(
+                    texto = estado.mensaje,
+                    textoAccion = "Reintentar",
+                    alAccionar = { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) },
+                    esError = true,
+                    textoAccionSecundaria = "Eliminar",
+                    alAccionarSecundaria = { alProcesarEvento(DetalleSenderoEvento.AlTocarEliminarMapa) }
+                )
+            }
+        }
+    }
+}
+
+// Renderizar un texto de estado del mapa junto a su acción
+@Composable
+private fun FilaEstadoMapa(
+    texto: String,
+    textoAccion: String,
+    alAccionar: () -> Unit,
+    esError: Boolean = false,
+    textoAccionSecundaria: String? = null,
+    alAccionarSecundaria: () -> Unit = {}
+) {
+    Column {
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (esError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+        )
+        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+            if (textoAccionSecundaria != null) {
+                TextButton(onClick = alAccionarSecundaria) { Text(textoAccionSecundaria) }
+            }
+            TextButton(onClick = alAccionar) { Text(textoAccion) }
+        }
+    }
+}
+
+// Renderizar el texto y la barra de progreso de una descarga activa con la opción de cancelarla
+@Composable
+private fun ProgresoDeDescarga(texto: String, porcentaje: Int, alCancelar: () -> Unit) {
+    Column {
+        Text(text = texto, style = MaterialTheme.typography.bodyMedium)
+        LinearProgressIndicator(
+            progress = { porcentaje.coerceIn(0, 100) / 100f },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+            TextButton(onClick = alCancelar) { Text("Cancelar descarga") }
         }
     }
 }

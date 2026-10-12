@@ -26,5 +26,8 @@ data class EstadoSeguimiento(
     val llegoAlFinal: Boolean = false,
     val indicesPuntosAvisados: Set<Int> = emptySet(),
     val instanteInicioMilisegundos: Long = 0L,
-    val tiempoTranscurridoMilisegundos: Long = 0L
+    val tiempoTranscurridoMilisegundos: Long = 0L,
+    // Instante de la lectura anterior, para acotar el desplazamiento plausible entre lecturas; nulo antes de la primera
+    val instanteUltimaLecturaMilisegundos: Long? = null,
+    val esCircular: Boolean = false
 )

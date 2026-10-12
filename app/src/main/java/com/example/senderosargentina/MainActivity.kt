@@ -233,7 +233,11 @@ class MainActivity : ComponentActivity() {
                                         eliminarSenderoUseCase = dependencias.eliminarSenderoUseCase,
                                         lanzadorSeguimiento = dependencias.lanzadorSeguimiento,
                                         controlSeguimiento = dependencias.controlSeguimiento,
-                                        preferenciasAplicacion = dependencias.preferenciasAplicacion
+                                        preferenciasAplicacion = dependencias.preferenciasAplicacion,
+                                        observarMapaSinConexionUseCase = dependencias.observarMapaSinConexionUseCase,
+                                        descargarMapaSinConexionUseCase = dependencias.descargarMapaSinConexionUseCase,
+                                        eliminarMapaSinConexionUseCase = dependencias.eliminarMapaSinConexionUseCase,
+                                        monitorConectividad = dependencias.monitorConectividad
                                     )
                                 },
                                 alVolverAlListado = {
