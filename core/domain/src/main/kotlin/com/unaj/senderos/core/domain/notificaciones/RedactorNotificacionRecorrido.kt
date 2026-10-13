@@ -82,7 +82,7 @@ object RedactorNotificacionRecorrido {
                 TipoPunto.MIRADOR -> TipoAvisoVisual.MIRADOR
                 TipoPunto.REFUGIO -> TipoAvisoVisual.REFUGIO
                 TipoPunto.CAMPING -> TipoAvisoVisual.CAMPING
-                TipoPunto.PASO -> TipoAvisoVisual.PASO
+                TipoPunto.PASO, TipoPunto.OTRO -> TipoAvisoVisual.PASO
             }
             AvisoRecorrido.Desvio -> TipoAvisoVisual.DESVIO
             AvisoRecorrido.LlegadaAlFinal -> TipoAvisoVisual.LLEGADA
@@ -162,6 +162,7 @@ object RedactorNotificacionRecorrido {
             TipoPunto.REFUGIO -> "un refugio"
             TipoPunto.CAMPING -> "un camping"
             TipoPunto.PELIGRO -> "una zona de peligro"
+            TipoPunto.OTRO -> "un lugar de interés"
         }
     }
 
@@ -173,6 +174,7 @@ object RedactorNotificacionRecorrido {
             TipoPunto.REFUGIO -> "refugio"
             TipoPunto.CAMPING -> "camping"
             TipoPunto.PELIGRO -> "zona de peligro"
+            TipoPunto.OTRO -> "lugar de interés"
         }
     }
 }

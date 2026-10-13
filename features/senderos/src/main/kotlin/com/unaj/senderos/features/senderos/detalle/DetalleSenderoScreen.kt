@@ -373,12 +373,21 @@ private fun CuerpoDetalle(
                     sendero = sendero,
                     puntoEnfocado = estadoVisual.puntoEnfocado,
                     claveEnfoque = estadoVisual.contadorEnfoque,
+                    indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
+                    alSeleccionarPunto = { indice -> alProcesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoEnMapa(indice)) },
                     alDescargarMapa = if (estadoVisual.estadoMapaSinConexion is EstadoMapaSinConexion.NoDescargado) {
                         { alProcesarEvento(DetalleSenderoEvento.AlTocarDescargarMapa) }
                     } else {
                         null
                     }
                 )
+                estadoVisual.puntosDeInteres.firstOrNull { punto -> punto.indice == estadoVisual.indicePuntoSeleccionado }?.let { punto ->
+                    TarjetaPuntoSeleccionado(
+                        punto = punto,
+                        alAmpliarFoto = { foto -> alProcesarEvento(DetalleSenderoEvento.AlAmpliarFoto(foto)) },
+                        alCerrar = { alProcesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoEnMapa(null)) }
+                    )
+                }
                 if (sendero.recorrido.isNotEmpty()) {
                     TarjetaMapaSinConexion(estadoVisual.estadoMapaSinConexion, alProcesarEvento)
                 }

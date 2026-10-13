@@ -42,6 +42,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.EstadoSincronizacion
@@ -220,7 +225,14 @@ private fun ContenidoTarjetaSendero(
                 }
             }
             Text(
-                text = sendero.region,
+                text = buildAnnotatedString {
+                    append(sendero.region)
+                    if (sendero.bioma != Bioma.SIN_DEFINIR) {
+                        append(" · ")
+                        val colorTexto = lerp(obtenerColoresDelBioma(sendero.bioma).principal, Color.Black, 0.15f)
+                        withStyle(SpanStyle(color = colorTexto)) { append(obtenerTextoBioma(sendero.bioma)) }
+                    }
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -234,9 +246,6 @@ private fun ContenidoTarjetaSendero(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-            if (sendero.bioma != Bioma.SIN_DEFINIR) {
-                EtiquetaBioma(sendero.bioma)
             }
             if (distanciaKilometros != null) {
                 DatoTarjeta(Icons.Outlined.NearMe, formatearDistanciaAlUsuario(distanciaKilometros))
