@@ -1,4 +1,4 @@
-package com.unaj.senderos
+package com.unaj.senderos.di
 
 import android.content.Context
 import androidx.room.Room
@@ -64,6 +64,7 @@ import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import com.unaj.senderos.BuildConfig
 
 class ContenedorDependencias(contexto: Context) {
     private val autenticacionRepositorio = AutenticacionRepositorioImpl()

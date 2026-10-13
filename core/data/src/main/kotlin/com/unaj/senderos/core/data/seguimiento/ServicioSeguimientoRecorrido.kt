@@ -9,7 +9,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
-import com.unaj.senderos.SenderosAplicacion
+import com.unaj.senderos.app.SenderosAplicacion
 import com.unaj.senderos.domain.notificaciones.RedactorNotificacionRecorrido
 import com.unaj.senderos.domain.notificaciones.ContenidoNotificacionRecorrido
 import com.unaj.senderos.domain.port.ControlSeguimiento

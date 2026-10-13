@@ -1,4 +1,4 @@
-package com.unaj.senderos
+package com.unaj.senderos.presentation.navegacion
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore

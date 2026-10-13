@@ -17,8 +17,8 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.unaj.senderos.MainActivity
 import com.unaj.senderos.R
+import com.unaj.senderos.app.MainActivity
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.notificaciones.ContenidoNotificacionRecorrido

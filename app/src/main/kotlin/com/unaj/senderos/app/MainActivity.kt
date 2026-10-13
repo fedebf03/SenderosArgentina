@@ -1,4 +1,4 @@
-package com.unaj.senderos
+package com.unaj.senderos.app
 
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -55,19 +54,10 @@ import com.unaj.senderos.presentation.registro.RegistroViewModel
 import com.unaj.senderos.presentation.senderos.SenderosPantalla
 import com.unaj.senderos.presentation.senderos.SenderosViewModel
 import com.unaj.senderos.presentation.tema.TemaSenderos
-
-sealed interface DestinoPantalla {
-    data object Login : DestinoPantalla
-    data object Registro : DestinoPantalla
-    data object Inicio : DestinoPantalla
-    data object Mapa : DestinoPantalla
-    data object Favoritos : DestinoPantalla
-    data object Perfil : DestinoPantalla
-    data class Detalle(val idSendero: String) : DestinoPantalla
-    data class Formulario(val idSendero: String?) : DestinoPantalla
-    data class Recorrido(val idSendero: String) : DestinoPantalla
-    data class HistorialDetalle(val idRecorrido: String) : DestinoPantalla
-}
+import com.unaj.senderos.presentation.navegacion.AlmacenDestinosViewModel
+import com.unaj.senderos.presentation.navegacion.DestinoPantalla
+import com.unaj.senderos.presentation.navegacion.claveDeAlmacen
+import com.unaj.senderos.presentation.navegacion.guardadorDeDestino
 
 class MainActivity : ComponentActivity() {
 
@@ -369,50 +359,3 @@ class MainActivity : ComponentActivity() {
         )
     }
 }
-
-private fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String? {
-    return when (destino) {
-        is DestinoPantalla.Login, is DestinoPantalla.Registro -> null
-        is DestinoPantalla.Inicio -> "inicio-$idUsuario"
-        is DestinoPantalla.Mapa -> "mapa-$idUsuario"
-        is DestinoPantalla.Favoritos -> "favoritos-$idUsuario"
-        is DestinoPantalla.Perfil -> "perfil-$idUsuario"
-        is DestinoPantalla.Detalle -> "detalle-$idUsuario-${destino.idSendero}"
-        is DestinoPantalla.Formulario -> "formulario-$idUsuario-${destino.idSendero ?: "nuevo"}"
-        is DestinoPantalla.Recorrido -> "recorrido-$idUsuario-${destino.idSendero}"
-        is DestinoPantalla.HistorialDetalle -> "historial-$idUsuario-${destino.idRecorrido}"
-    }
-}
-
-// rememberSaveable solo sabe guardar tipos simples, así que el destino viaja como texto al girar la pantalla
-private val guardadorDeDestino = Saver<DestinoPantalla, String>(
-    save = { destino ->
-        when (destino) {
-            is DestinoPantalla.Login -> "login"
-            is DestinoPantalla.Registro -> "registro"
-            is DestinoPantalla.Inicio -> "inicio"
-            is DestinoPantalla.Mapa -> "mapa"
-            is DestinoPantalla.Favoritos -> "favoritos"
-            is DestinoPantalla.Perfil -> "perfil"
-            is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
-            is DestinoPantalla.Formulario -> "formulario:${destino.idSendero.orEmpty()}"
-            is DestinoPantalla.Recorrido -> "recorrido:${destino.idSendero}"
-            is DestinoPantalla.HistorialDetalle -> "historial:${destino.idRecorrido}"
-        }
-    },
-    restore = { texto ->
-        when {
-            texto == "login" -> DestinoPantalla.Login
-            texto == "registro" -> DestinoPantalla.Registro
-            texto == "inicio" -> DestinoPantalla.Inicio
-            texto == "mapa" -> DestinoPantalla.Mapa
-            texto == "favoritos" -> DestinoPantalla.Favoritos
-            texto == "perfil" -> DestinoPantalla.Perfil
-            texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
-            texto.startsWith("formulario:") -> DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
-            texto.startsWith("recorrido:") -> DestinoPantalla.Recorrido(texto.removePrefix("recorrido:"))
-            texto.startsWith("historial:") -> DestinoPantalla.HistorialDetalle(texto.removePrefix("historial:"))
-            else -> null
-        }
-    }
-)
