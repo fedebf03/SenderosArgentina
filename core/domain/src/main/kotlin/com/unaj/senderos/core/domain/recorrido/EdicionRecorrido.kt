@@ -2,7 +2,7 @@ package com.unaj.senderos.domain.recorrido
 
 import com.unaj.senderos.domain.model.PuntoRecorrido
 
-// Los puntos van junto con la selección porque eliminar, insertar o invertir corre la posición del punto elegido
+// Los puntos van junto con la selección porque eliminar o invertir corre la posición del punto elegido
 data class EdicionRecorrido(val puntos: List<PuntoRecorrido>, val seleccion: Int?) {
 
     fun agregar(latitud: Double, longitud: Double): EdicionRecorrido {
@@ -26,19 +26,6 @@ data class EdicionRecorrido(val puntos: List<PuntoRecorrido>, val seleccion: Int
             else -> seleccion
         }
         return EdicionRecorrido(puntos.filterIndexed { posicion, _ -> posicion != indice }, nuevaSeleccion)
-    }
-
-    // Permite afinar un tramo largo con el punto medio
-    fun insertarAntes(indice: Int): EdicionRecorrido {
-        val anterior = puntos.getOrNull(indice - 1)
-        val siguiente = puntos.getOrNull(indice)
-        if (anterior == null || siguiente == null) return this
-        val puntoMedio = PuntoRecorrido(
-            latitud = (anterior.latitud + siguiente.latitud) / 2,
-            longitud = (anterior.longitud + siguiente.longitud) / 2
-        )
-        val nuevaSeleccion = if (seleccion != null && seleccion >= indice) seleccion + 1 else seleccion
-        return EdicionRecorrido(puntos.take(indice) + puntoMedio + puntos.drop(indice), nuevaSeleccion)
     }
 
     fun invertir(): EdicionRecorrido {

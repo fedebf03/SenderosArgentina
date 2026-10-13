@@ -82,11 +82,9 @@ sealed interface FormularioSenderoEvento {
     data class AlMoverPunto(val indice: Int, val latitud: Double, val longitud: Double) : FormularioSenderoEvento
     data class AlSeleccionarPunto(val indice: Int?) : FormularioSenderoEvento
     data class AlEliminarPunto(val indice: Int) : FormularioSenderoEvento
-    data class AlInsertarPuntoAntes(val indice: Int) : FormularioSenderoEvento
     data class AlCambiarTipoPunto(val indice: Int, val tipo: TipoPunto) : FormularioSenderoEvento
     data class AlCambiarNombrePunto(val indice: Int, val nombre: String) : FormularioSenderoEvento
     data object AlInvertirSentido : FormularioSenderoEvento
-    data object AlUsarDistanciaDelMapa : FormularioSenderoEvento
     data class AlSeleccionarFoto(val uri: String) : FormularioSenderoEvento
     data object AlQuitarFoto : FormularioSenderoEvento
 }
