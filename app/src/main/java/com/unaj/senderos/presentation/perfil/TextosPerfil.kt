@@ -2,7 +2,6 @@ package com.unaj.senderos.presentation.perfil
 
 import com.unaj.senderos.domain.model.CapacidadesDispositivo
 
-// Obtener el nombre visible de una función del equipo
 fun obtenerNombreFuncion(funcion: FuncionDispositivo): String {
     return when (funcion) {
         FuncionDispositivo.GPS -> "GPS"
@@ -12,7 +11,6 @@ fun obtenerNombreFuncion(funcion: FuncionDispositivo): String {
     }
 }
 
-// Explicar brevemente qué se pierde cuando el equipo no tiene la función
 fun explicarFuncionNoDisponible(funcion: FuncionDispositivo): String {
     return when (funcion) {
         FuncionDispositivo.GPS -> "Sin GPS, la ubicación sale del wifi o de la red móvil: es menos precisa y no funciona sin señal"
@@ -22,7 +20,6 @@ fun explicarFuncionNoDisponible(funcion: FuncionDispositivo): String {
     }
 }
 
-// Convertir las capacidades detectadas en la lista de funciones que se muestra en el perfil
 fun listarFuncionesDispositivo(capacidades: CapacidadesDispositivo): List<EstadoFuncion> {
     return listOf(
         EstadoFuncion(FuncionDispositivo.GPS, capacidades.tieneGps),

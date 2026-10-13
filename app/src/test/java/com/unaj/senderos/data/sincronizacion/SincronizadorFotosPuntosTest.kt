@@ -20,12 +20,10 @@ class SincronizadorFotosPuntosTest {
     private val fuenteRemota = FalsoSenderoFuenteRemota()
     private val subidor = FalsoSubidorFotos()
 
-    // Construir un punto del recorrido con la foto indicada
     private fun punto(nombre: String, foto: String): PuntoRecorridoEntidad {
         return PuntoRecorridoEntidad(-39.95, -71.07, "MIRADOR", nombre, foto)
     }
 
-    // Crear el sincronizador con el subidor y el verificador de archivos indicados y un reloj fijo
     private fun crearSincronizador(
         dao: FalsoSenderoDao,
         subidorFotos: SubidorFotos = subidor,
@@ -34,7 +32,6 @@ class SincronizadorFotosPuntosTest {
         return SincronizadorSenderos(dao, fuenteRemota, FalsoEjecutorTransacciones(), subidorFotos, existeArchivo) { ahora }
     }
 
-    // Verificar que las fotos locales de los puntos se suben y la entidad queda con las URL
     @Test
     fun `las fotos locales de los puntos se suben y se reemplazan por la URL`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
@@ -52,7 +49,6 @@ class SincronizadorFotosPuntosTest {
         assertEquals("SINCRONIZADO", guardada.estadoSincronizacion)
     }
 
-    // Verificar que el documento remoto lleva las URL y no las rutas locales
     @Test
     fun `el documento remoto lleva las URL de las fotos de los puntos`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
@@ -65,7 +61,6 @@ class SincronizadorFotosPuntosTest {
         assertEquals("https://imagenes.ejemplo//fotos/a.jpg", subido.recorrido.single().foto)
     }
 
-    // Verificar que los puntos sin foto o con URL no se suben
     @Test
     fun `los puntos sin foto o con URL no se suben`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L).copy(
@@ -79,14 +74,12 @@ class SincronizadorFotosPuntosTest {
         assertEquals("SINCRONIZADO", dao.entidades.value.single().estadoSincronizacion)
     }
 
-    // Verificar que si falla la foto de un punto el sendero queda con error y no se sube el documento
     @Test
     fun `si falla la foto de un punto el sendero queda con error`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
             .copy(recorrido = listOf(punto("uno", "/fotos/a.jpg")))
         val dao = FalsoSenderoDao(listOf(entidad))
         val subidorQueFalla = object : SubidorFotos {
-            // Lanzar siempre un error como si la nube rechazara la foto
             override suspend fun subir(rutaLocal: String): String = throw IllegalStateException("Cloudinary rechazó la foto")
         }
 
@@ -97,14 +90,12 @@ class SincronizadorFotosPuntosTest {
         assertTrue(fuenteRemota.senderosGuardados.isEmpty())
     }
 
-    // Verificar que lo ya subido antes del fallo queda guardado como URL para no repetir la subida
     @Test
     fun `lo subido antes de un fallo queda guardado como URL`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
             .copy(recorrido = listOf(punto("uno", "/fotos/a.jpg"), punto("dos", "/fotos/b.jpg")))
         val dao = FalsoSenderoDao(listOf(entidad))
         val subidorQueFallaEnLaSegunda = object : SubidorFotos {
-            // Subir la primera foto y fallar en la segunda como si se cortara la red
             override suspend fun subir(rutaLocal: String): String {
                 if (rutaLocal.endsWith("b.jpg")) throw IllegalStateException("sin red")
                 return "https://imagenes.ejemplo/subida.jpg"
@@ -117,7 +108,6 @@ class SincronizadorFotosPuntosTest {
         assertEquals(listOf("https://imagenes.ejemplo/subida.jpg", "/fotos/b.jpg"), fotos)
     }
 
-    // Verificar que la foto principal y las de los puntos se suben antes del documento
     @Test
     fun `se sube la foto principal y las de los puntos`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
@@ -129,7 +119,6 @@ class SincronizadorFotosPuntosTest {
         assertEquals(listOf("/fotos/principal.jpg", "/fotos/a.jpg"), subidor.rutasSubidas)
     }
 
-    // Verificar que un sendero eliminado lógico no sube fotos de puntos
     @Test
     fun `un sendero eliminado no sube las fotos de sus puntos`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L, estaEliminado = true)
@@ -141,7 +130,6 @@ class SincronizadorFotosPuntosTest {
         assertTrue(subidor.rutasSubidas.isEmpty())
     }
 
-    // Verificar que si falta el archivo de la foto de un punto se limpia la foto y el sendero se sincroniza
     @Test
     fun `si falta el archivo de la foto de un punto se limpia y el sendero se sincroniza`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
@@ -158,14 +146,12 @@ class SincronizadorFotosPuntosTest {
         assertEquals("", fuenteRemota.senderosGuardados.single().second.recorrido.first().foto)
     }
 
-    // Verificar que la actualización del recorrido no pisa una edición hecha durante la subida de la foto
     @Test
     fun `la URL de una foto no pisa una edicion hecha durante la subida`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
             .copy(recorrido = listOf(punto("original", "/fotos/a.jpg")))
         val dao = FalsoSenderoDao(listOf(entidad))
         val subidorQueEdita = object : SubidorFotos {
-            // Simular que el usuario edita el sendero mientras se sube la foto
             override suspend fun subir(rutaLocal: String): String {
                 dao.entidades.update { lista ->
                     lista.map { existente ->

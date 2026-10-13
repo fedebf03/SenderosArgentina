@@ -19,7 +19,7 @@ import kotlin.coroutines.cancellation.CancellationException
 private const val TAG = "SINCRONIZACION"
 private const val MAXIMO_PASADAS_SUBIDA = 3
 
-// Sincronizar la base local (fuente de verdad) con Firestore: pull, fusión por fecha y subida diferida
+// La base local es la fuente de verdad frente a Firestore
 class SincronizadorSenderos(
     private val senderoDao: SenderoDao,
     private val fuenteRemota: SenderoFuenteRemota,
@@ -53,7 +53,6 @@ class SincronizadorSenderos(
         return Result.success(subirPendientes(idUsuario))
     }
 
-    // Fusionar los documentos remotos con los locales aplicando que la última escritura prevalece
     private suspend fun fusionarRemotos(idUsuario: String, remotos: List<SenderoRed>) {
         remotos.forEach { remoto ->
             ejecutorTransacciones.ejecutar {
@@ -69,7 +68,6 @@ class SincronizadorSenderos(
         }
     }
 
-    // Subir los pendientes en hasta tres pasadas sin reintentar los fallidos; devolver el resumen de la subida
     private suspend fun subirPendientes(idUsuario: String): ResumenSincronizacion {
         val instanteInicio = reloj()
         val idsFallidos = mutableSetOf<String>()
@@ -99,7 +97,6 @@ class SincronizadorSenderos(
         return ResumenSincronizacion(senderosSubidos, senderosGuardadosSinConexion, idsFallidos.size, primerError)
     }
 
-    // Subir una entidad y transicionar su estado solo si no cambió durante la subida; devolver el error o null
     private suspend fun subirEntidad(idUsuario: String, entidad: SenderoEntidad): Throwable? {
         return try {
             val entidadConFotoRemota = subirFotosSiSonLocales(idUsuario, entidad)
@@ -137,7 +134,6 @@ class SincronizadorSenderos(
         senderoDao.actualizarFotoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, urlRemota)
         return entidad.copy(foto = urlRemota)
     }
-    // Subir las fotos locales del sendero y de sus puntos de interés antes que el documento
     private suspend fun subirFotosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
         val conFotoPrincipal = subirFotoSiEsLocal(idUsuario, entidad)
         return subirFotosDePuntosSiSonLocales(idUsuario, conFotoPrincipal)

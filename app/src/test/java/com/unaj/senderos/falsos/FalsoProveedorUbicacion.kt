@@ -14,12 +14,10 @@ class FalsoProveedorUbicacion(
     var cantidadConsultas: Int = 0
         private set
 
-    // Contar la consulta y devolver el resultado configurado
     override suspend fun obtenerUbicacionActual(): Result<Coordenada?> {
         cantidadConsultas++
         return resultado
     }
 
-    // Devolver el flujo de ubicaciones configurado
     override fun observarUbicaciones(): Flow<LecturaUbicacion> = ubicaciones
 }

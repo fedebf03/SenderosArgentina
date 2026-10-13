@@ -21,7 +21,6 @@ class RecorridoRepositorioOfflineFirstTest {
     private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "ana@correo.com", nombre = "Ana"))
     private val repositorio = RecorridoRepositorioOfflineFirst(dao, planificador, autenticacion) { 8_000L }
 
-    // Verificar que guardar escribe en Room como pendiente con la fecha del reloj y pide sincronizar
     @Test
     fun `guardar escribe pendiente en Room y pide sincronizacion`() = runTest {
         val resultado = repositorio.guardar(crearRecorridoDePrueba(estadoSincronizacion = EstadoSincronizacion.SINCRONIZADO))
@@ -32,7 +31,6 @@ class RecorridoRepositorioOfflineFirstTest {
         assertEquals(listOf("usuario-1"), planificador.solicitudes)
     }
 
-    // Verificar que un fallo local devuelve failure y no pide sincronización
     @Test
     fun `un fallo local devuelve failure y no pide sincronizacion`() = runTest {
         dao.errorAlGuardar = IllegalStateException("Disco lleno")
@@ -43,7 +41,6 @@ class RecorridoRepositorioOfflineFirstTest {
         assertTrue(planificador.solicitudes.isEmpty())
     }
 
-    // Verificar que observar la lista emite del más reciente al más viejo solo del usuario
     @Test
     fun `observar emite del mas reciente al mas viejo solo del usuario`() = runTest {
         repositorio.guardar(crearRecorridoDePrueba(id = "viejo", inicioMilisegundos = 1_000L, finMilisegundos = 2_000L))
@@ -55,7 +52,6 @@ class RecorridoRepositorioOfflineFirstTest {
         assertEquals(listOf("nuevo", "viejo"), lista.map { recorrido -> recorrido.id })
     }
 
-    // Verificar que observar la lista solicita la sincronización al empezar a recolectar
     @Test
     fun `observar la lista solicita la sincronizacion`() = runTest {
         repositorio.observarRecorridos("usuario-1").first()
@@ -63,7 +59,6 @@ class RecorridoRepositorioOfflineFirstTest {
         assertEquals(listOf("usuario-1"), planificador.solicitudes)
     }
 
-    // Verificar que observar un recorrido devuelve el dominio o null si no existe
     @Test
     fun `observar un recorrido devuelve el dominio o null`() = runTest {
         dao.guardar(crearEntidadRecorridoDePrueba())
@@ -72,7 +67,6 @@ class RecorridoRepositorioOfflineFirstTest {
         assertNull(repositorio.observarRecorrido("usuario-1", "otro").first())
     }
 
-    // Verificar que guardar sin la sesión del dueño deja el recorrido pendiente y no pide sincronización
     @Test
     fun `guardar sin sesion del duenio no pide sincronizacion`() = runTest {
         autenticacion.usuarioActual = null
@@ -84,7 +78,6 @@ class RecorridoRepositorioOfflineFirstTest {
         assertTrue(planificador.solicitudes.isEmpty())
     }
 
-    // Verificar que guardar con la sesión de otro usuario no pide sincronización
     @Test
     fun `guardar con sesion de otro usuario no pide sincronizacion`() = runTest {
         autenticacion.usuarioActual = Usuario(id = "usuario-2", email = "b@correo.com", nombre = "Beto")

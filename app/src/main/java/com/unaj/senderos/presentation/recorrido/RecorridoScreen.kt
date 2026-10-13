@@ -51,15 +51,12 @@ import kotlinx.coroutines.delay
 private const val TAG = "RECORRIDO"
 private const val INTERVALO_RELOJ_MILISEGUNDOS = 1_000L
 
-// Fracción del alto disponible que puede ocupar el panel cuando la pantalla está en vertical
 private const val FRACCION_ALTURA_PANEL = 0.45f
 
-// Fracción del ancho que ocupa el panel en horizontal, acotada entre un mínimo y un máximo
 private const val FRACCION_ANCHO_PANEL = 0.4f
 private val ANCHO_MINIMO_PANEL = 300.dp
 private val ANCHO_MAXIMO_PANEL = 420.dp
 
-// Mostrar la pantalla "Recorrido en curso" conectada a su ViewModel
 @Composable
 fun RecorridoPantalla(
     viewModel: RecorridoViewModel,
@@ -84,7 +81,7 @@ fun RecorridoPantalla(
         }
     }
 
-    // Abrir la confirmación de cancelación pedida desde la notificación; nunca cancela sin que el usuario confirme
+    // Nunca cancela sin que el usuario confirme
     LaunchedEffect(solicitarCancelacion) {
         if (solicitarCancelacion) {
             viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
@@ -117,7 +114,6 @@ fun RecorridoPantalla(
     )
 }
 
-// Renderizar el recorrido en curso a partir del estado visual; el reloj se lee solo en la celda de Tiempo
 @Composable
 fun RecorridoContenido(
     estadoVisual: RecorridoEstadoVisual,
@@ -232,7 +228,6 @@ fun RecorridoContenido(
     estadoVisual.resumen?.let { resumen -> DialogoResumen(resumen, estadoVisual.revision, alProcesarEvento) }
 }
 
-// Mostrar que no hay un recorrido activo con un botón para volver al detalle
 @Composable
 private fun MensajeRecorridoInactivo(alVolver: () -> Unit, modifier: Modifier = Modifier) {
     Column(
@@ -250,7 +245,6 @@ private fun MensajeRecorridoInactivo(alVolver: () -> Unit, modifier: Modifier = 
         }
     }
 }
-// Previsualizar la pantalla cuando no hay un recorrido activo
 @Preview(showBackground = true)
 @Composable
 private fun RecorridoInactivoPreview() {

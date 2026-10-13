@@ -19,7 +19,6 @@ private const val MENSAJE_ERROR_POR_DEFECTO = "No se pudieron actualizar los pun
 private const val MENSAJE_PUNTOS_AGREGADOS = "Puntos agregados al sendero"
 private const val MENSAJE_PUNTOS_DESCARTADOS = "Puntos descartados"
 
-// Puntos capturados pendientes de un sendero con su distancia al trazado y la elección del usuario sobre cuáles incorporar.
 // Cada punto parte marcado salvo que supere la distancia recomendada; idsAlternados guarda los que el usuario cambió respecto de ese valor inicial
 data class RevisionPuntosEstadoVisual(
     val puntosPendientes: List<PuntoCapturadoConDistancia> = emptyList(),
@@ -28,18 +27,15 @@ data class RevisionPuntosEstadoVisual(
     val esConfirmarDescartarTodosVisible: Boolean = false,
     val estaProcesando: Boolean = false
 ) {
-    // Identificadores de los puntos que se van a incorporar: los marcados por defecto más los que el usuario cambió
     val idsMarcados: Set<String>
         get() = puntosPendientes
             .filter { punto -> !punto.superaDistanciaRecomendada != (punto.punto.id in idsAlternados) }
             .map { punto -> punto.punto.id }
             .toSet()
 
-    // Identificadores de todos los puntos pendientes
     val idsTodos: Set<String>
         get() = puntosPendientes.map { punto -> punto.punto.id }.toSet()
 
-    // Indicar si hay algo que revisar
     val hayPuntosPorRevisar: Boolean
         get() = puntosPendientes.isNotEmpty()
 }
@@ -54,7 +50,7 @@ sealed interface RevisionPuntosEvento {
     data object AlCancelarDescartarTodos : RevisionPuntosEvento
 }
 
-// Gestionar la revisión de los puntos capturados de un sendero; la comparten el resumen del recorrido y el detalle
+// La comparten el resumen del recorrido y el detalle
 class ControladorRevisionPuntos(
     private val idSendero: String,
     observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
@@ -79,7 +75,6 @@ class ControladorRevisionPuntos(
         )
     }
 
-    // Procesar cada evento de la revisión
     fun procesarEvento(evento: RevisionPuntosEvento) {
         when (evento) {
             is RevisionPuntosEvento.AlAbrir -> {
@@ -104,7 +99,6 @@ class ControladorRevisionPuntos(
         }
     }
 
-    // Guardar los puntos emitidos conservando las desmarcas vigentes y cerrando lo que ya no tiene sentido
     private fun reflejarPuntos(puntos: List<PuntoCapturadoConDistancia>) {
         _estado.update { estadoActual ->
             val idsVigentes = puntos.map { punto -> punto.punto.id }.toSet()
@@ -117,7 +111,6 @@ class ControladorRevisionPuntos(
         }
     }
 
-    // Marcar o desmarcar un punto para incorporarlo al sendero
     private fun alternarPunto(id: String) {
         _estado.update { estadoActual ->
             val alternadosNuevos = if (id in estadoActual.idsAlternados) {
@@ -129,7 +122,6 @@ class ControladorRevisionPuntos(
         }
     }
 
-    // Incorporar los puntos marcados al sendero y descartar los desmarcados, ignorando toques mientras se procesa
     private fun agregarAlSendero() {
         val estadoActual = _estado.value
         if (estadoActual.estaProcesando || !estadoActual.hayPuntosPorRevisar) return
@@ -149,7 +141,7 @@ class ControladorRevisionPuntos(
         }
     }
 
-    // Descartar todos los puntos pendientes tras la confirmación del usuario
+    // Se invoca tras la confirmación del usuario
     private fun descartarTodos() {
         val estadoActual = _estado.value
         if (estadoActual.estaProcesando) return
@@ -165,7 +157,6 @@ class ControladorRevisionPuntos(
         }
     }
 
-    // Cerrar el procesamiento avisando el éxito o el motivo del fallo
     private fun terminarProcesamiento(falla: Throwable?, mensajeExito: String) {
         _estado.update { estadoActual ->
             estadoActual.copy(estaProcesando = false, esRevisionVisible = estadoActual.esRevisionVisible && falla != null)

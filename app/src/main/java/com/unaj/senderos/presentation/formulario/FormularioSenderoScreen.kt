@@ -70,7 +70,6 @@ private const val TAG = "FORMULARIO_SENDERO"
 private val ANCHO_MAXIMO_FORMULARIO = 480.dp
 
 
-// Renderizar el formulario de sendero conectando el ViewModel, la cámara y la galería
 @Composable
 fun FormularioSenderoPantalla(
     viewModel: FormularioSenderoViewModel,
@@ -129,7 +128,6 @@ fun FormularioSenderoPantalla(
     }
 }
 
-// Renderizar el contenido del formulario a partir del estado visual
 @Composable
 fun FormularioSenderoContenido(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -219,7 +217,6 @@ fun FormularioSenderoContenido(
     }
 }
 
-// Renderizar las secciones desplazables del formulario
 @Composable
 private fun CuerpoFormulario(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -264,7 +261,6 @@ private fun CuerpoFormulario(
     }
 }
 
-// Previsualizar el formulario con datos de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun FormularioSenderoContenidoPreview() {

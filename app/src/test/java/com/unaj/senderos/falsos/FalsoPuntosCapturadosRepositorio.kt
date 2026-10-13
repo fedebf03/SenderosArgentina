@@ -15,7 +15,6 @@ class FalsoPuntosCapturadosRepositorio(
     puntosIniciales: List<PuntoCapturado> = emptyList()
 ) : PuntosCapturadosRepositorio {
 
-    // Tabla local falsa: cualquier cambio se emite a los observadores
     val puntos: MutableStateFlow<List<PuntoCapturado>> = MutableStateFlow(puntosIniciales)
 
     var resultadoGuardar: Result<Unit> = Result.success(Unit)
@@ -28,7 +27,6 @@ class FalsoPuntosCapturadosRepositorio(
     val llamadasDescartar: MutableList<Pair<String, Collection<String>>> = mutableListOf()
     val llamadasIncorporar: MutableList<Triple<String, String, Set<String>>> = mutableListOf()
 
-    // Registrar la llamada y agregar el punto si el resultado configurado es exitoso
     override suspend fun guardar(punto: PuntoCapturado): Result<Unit> {
         llamadasGuardar.add(punto)
         if (resultadoGuardar.isSuccess) {
@@ -37,7 +35,6 @@ class FalsoPuntosCapturadosRepositorio(
         return resultadoGuardar
     }
 
-    // Observar los puntos del sendero ordenados por instante de captura
     override fun observarPendientes(idUsuario: String, idSendero: String): Flow<List<PuntoCapturado>> {
         return puntos.map { lista ->
             lista.filter { punto -> punto.idUsuario == idUsuario && punto.idSendero == idSendero }
@@ -45,7 +42,6 @@ class FalsoPuntosCapturadosRepositorio(
         }
     }
 
-    // Registrar la llamada y quitar los puntos si el resultado configurado es exitoso
     override suspend fun descartar(idUsuario: String, ids: Collection<String>): Result<Unit> {
         llamadasDescartar.add(idUsuario to ids)
         if (resultadoDescartar.isSuccess) {
@@ -54,7 +50,6 @@ class FalsoPuntosCapturadosRepositorio(
         return resultadoDescartar
     }
 
-    // Registrar la llamada y devolver el resultado configurado
     override suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         llamadasIncorporar.add(Triple(idUsuario, idSendero, idsElegidos))
         resultadoIncorporar?.let { configurado -> return configurado }

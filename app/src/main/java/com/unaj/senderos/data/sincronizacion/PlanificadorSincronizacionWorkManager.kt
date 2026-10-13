@@ -16,7 +16,6 @@ class PlanificadorSincronizacionWorkManager(
     private val workManager: WorkManager
 ) : PlanificadorSincronizacion {
 
-    // Solicitar la sincronización de los senderos del usuario
     override fun solicitarSincronizacion(idUsuario: String) {
         val restricciones = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -30,7 +29,6 @@ class PlanificadorSincronizacionWorkManager(
         workManager.enqueueUniqueWork("sincronizar-senderos-$idUsuario", ExistingWorkPolicy.KEEP, pedido)
     }
 
-    // Cancelar la sincronización de los senderos del usuario
     override fun cancelarSincronizacion(idUsuario: String) {
         Log.d(TAG, "Cancelando sincronización de senderos para el usuario $idUsuario")
         workManager.cancelUniqueWork("sincronizar-senderos-$idUsuario")

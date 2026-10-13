@@ -16,7 +16,6 @@ class ObservarRecorridosUseCaseTest {
     private val repositorio = FalsoRecorridoRepositorio()
     private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "ana@correo.com", nombre = "Ana"))
 
-    // Verificar que sin sesión activa la lista falla
     @Test
     fun `sin sesion la lista falla`() {
         autenticacion.usuarioActual = null
@@ -24,7 +23,6 @@ class ObservarRecorridosUseCaseTest {
         assertTrue(ObservarRecorridosUseCase(repositorio, autenticacion)().isFailure)
     }
 
-    // Verificar que con sesión activa emite solo los recorridos del usuario actual
     @Test
     fun `con sesion emite los recorridos del usuario actual`() = runTest {
         repositorio.recorridos.value = listOf(
@@ -37,7 +35,6 @@ class ObservarRecorridosUseCaseTest {
         assertEquals(listOf("propio"), lista.map { recorrido -> recorrido.id })
     }
 
-    // Verificar que sin sesión el detalle de un recorrido falla
     @Test
     fun `sin sesion el detalle falla`() {
         autenticacion.usuarioActual = null
@@ -45,7 +42,6 @@ class ObservarRecorridosUseCaseTest {
         assertTrue(ObservarRecorridoUseCase(repositorio, autenticacion)("recorrido-1").isFailure)
     }
 
-    // Verificar que el detalle emite el recorrido pedido o null si no existe
     @Test
     fun `el detalle emite el recorrido pedido o null`() = runTest {
         repositorio.recorridos.value = listOf(crearRecorridoDePrueba(id = "propio"))

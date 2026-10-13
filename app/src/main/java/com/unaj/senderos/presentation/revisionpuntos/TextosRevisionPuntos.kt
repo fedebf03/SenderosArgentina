@@ -3,17 +3,14 @@ package com.unaj.senderos.presentation.revisionpuntos
 import com.unaj.senderos.presentation.comun.formatearUnDecimal
 import kotlin.math.roundToInt
 
-// Describir cuántos puntos se capturaron en el recorrido, con singular y plural
 fun describirCantidadPuntosCapturados(cantidad: Int): String {
     return if (cantidad == 1) "1 punto capturado" else "$cantidad puntos capturados"
 }
 
-// Describir cuántos puntos capturados esperan que el usuario los revise, con singular y plural
 fun describirCantidadPuntosPorRevisar(cantidad: Int): String {
     return if (cantidad == 1) "1 punto por revisar" else "$cantidad puntos por revisar"
 }
 
-// Describir la distancia de un punto al trazado en metros, o en kilómetros con un decimal desde el kilómetro
 fun describirDistanciaAlTrazado(metros: Double): String {
     return if (metros < 1_000.0) {
         "a ${metros.roundToInt()} m del trazado"
@@ -22,7 +19,6 @@ fun describirDistanciaAlTrazado(metros: Double): String {
     }
 }
 
-// Describir cuántos segundos tenía la posición usada al guardar un punto con señal débil
 fun describirPuntoGuardadoConPosicionAntigua(antiguedadMilisegundos: Long): String {
     val segundos = (antiguedadMilisegundos / 1_000.0).roundToInt()
     return "Punto guardado con la posición de hace $segundos s (señal débil)"

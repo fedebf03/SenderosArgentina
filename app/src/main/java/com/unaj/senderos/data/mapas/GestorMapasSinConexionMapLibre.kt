@@ -40,7 +40,7 @@ import kotlin.coroutines.resumeWithException
 
 private const val TAG = "MAPAS_SIN_CONEXION"
 
-// Fotografía del estado interno de la región vigente de un sendero; la firma es nula si no hay región
+// La firma es nula si no hay región
 private data class InstantaneaRegion(
     val firma: String?,
     val progreso: ProgresoRegion?,
@@ -49,7 +49,6 @@ private data class InstantaneaRegion(
     val erroresSeguidos: Int = 0
 )
 
-// Región leída del dispositivo junto con sus metadatos y su avance
 private class RegionCargada(
     val region: OfflineRegion,
     val metadatos: MetadatosRegion,
@@ -81,7 +80,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
     private val exclusionOperaciones = Mutex()
     private var regionesCargadas = false
 
-    // Observar el estado del mapa de un sendero cargando antes las regiones ya guardadas en el dispositivo
     override fun observar(idUsuario: String, idSendero: String, firmaActual: String): Flow<EstadoMapaSinConexion> {
         val clave = crearClaveRegion(idUsuario, idSendero)
         return flow {
@@ -106,7 +104,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }.distinctUntilChanged()
     }
 
-    // Descargar el corredor del sendero: reactivar la región incompleta del mismo trazado o crear una nueva
     override suspend fun descargar(idUsuario: String, sendero: Sendero): Result<Unit> {
         return ejecutarProtegido("descargar ${sendero.id}") {
             asegurarRegionesCargadas()
@@ -129,7 +126,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Eliminar la región vigente y la anterior del sendero, si existen
     override suspend fun eliminar(idUsuario: String, idSendero: String): Result<Unit> {
         return ejecutarProtegido("eliminar $idSendero") {
             asegurarRegionesCargadas()
@@ -142,7 +138,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Reactivar una región incompleta del mismo trazado en lugar de borrarla y empezar de cero
     private fun reactivarRegion(clave: String, region: OfflineRegion?) {
         if (region == null) return
         actualizarInstantanea(clave) { instantanea ->
@@ -157,7 +152,7 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         Log.d(TAG, "Descarga reactivada: $clave")
     }
 
-    // Crear la región del trazado vigente; la vieja se conserva hasta que la nueva termine o se descarta según la acción
+    // La región vieja se conserva hasta que la nueva termine o se descarta según la acción
     private suspend fun crearRegionNueva(
         clave: String,
         idUsuario: String,
@@ -193,7 +188,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         regionADescartar?.let { region -> borrarMejorEsfuerzo(region) }
     }
 
-    // Ejecutar una operación serializada, en el hilo principal y sin cancelación, convirtiendo las excepciones en Result
     private suspend fun ejecutarProtegido(descripcion: String, bloque: suspend () -> Unit): Result<Unit> {
         return exclusionOperaciones.withLock {
             withContext(Dispatchers.Main + NonCancellable) {
@@ -210,18 +204,16 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Obtener el administrador de regiones de MapLibre, inicializando la biblioteca si hace falta
     private fun obtenerAdministrador(): OfflineManager {
         MapLibre.getInstance(contextoAplicacion)
         return OfflineManager.getInstance(contextoAplicacion)
     }
 
-    // Obtener el flujo de la fotografía de una región, creándolo vacío la primera vez
     private fun obtenerInstantanea(clave: String): MutableStateFlow<InstantaneaRegion> {
         return instantaneas.getOrPut(clave) { MutableStateFlow(InstantaneaRegion(null, null, null)) }
     }
 
-    // Actualizar la fotografía de una región leyendo y escribiendo solo desde el hilo principal
+    // Se lee y escribe solo desde el hilo principal
     private fun actualizarInstantanea(clave: String, transformar: (InstantaneaRegion) -> InstantaneaRegion) {
         val flujo = obtenerInstantanea(clave)
         flujo.value = transformar(flujo.value)
@@ -264,10 +256,8 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Crear el observador que traduce los avisos de MapLibre en la fotografía de la región
     private fun crearObservador(clave: String, region: OfflineRegion): OfflineRegion.OfflineRegionObserver {
         return object : OfflineRegion.OfflineRegionObserver {
-            // Actualizar el avance, salir de la espera si hubo progreso y pausar la región al completarse
             override fun onStatusChanged(status: OfflineRegionStatus) {
                 if (regiones[clave] !== region) return
                 val progreso = aProgreso(status)
@@ -286,7 +276,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
                 }
             }
 
-            // Esperar a MapLibre ante errores recuperables y detener la descarga ante los demás o tras demasiados seguidos
             override fun onError(error: OfflineRegionError) {
                 if (regiones[clave] !== region) return
                 Log.e(TAG, "Error de descarga en $clave: ${error.reason} ${error.message}")
@@ -309,14 +298,12 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
                 }
             }
 
-            // Registrar el aviso del límite de teselas, que solo aplica al servidor de Mapbox
             override fun mapboxTileCountLimitExceeded(limit: Long) {
                 Log.d(TAG, "Límite de teselas de Mapbox excedido ($limit); no aplica a OpenFreeMap")
             }
         }
     }
 
-    // Traducir el motivo de error de MapLibre a una categoría propia
     private fun categorizarMotivo(motivo: String): CategoriaErrorRegion {
         return when (motivo) {
             OfflineRegionError.REASON_CONNECTION -> CategoriaErrorRegion.CONEXION
@@ -326,7 +313,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Borrar en segundo plano la región anterior del sendero una vez completada la nueva
     private fun descartarRegionAnterior(clave: String) {
         alcanceProceso.launch {
             exclusionOperaciones.withLock {
@@ -337,7 +323,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Convertir el estado de MapLibre en el avance independiente de la biblioteca
     private fun aProgreso(estado: OfflineRegionStatus): ProgresoRegion {
         return ProgresoRegion(
             recursosCompletados = estado.completedResourceCount,
@@ -348,7 +333,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         )
     }
 
-    // Crear la geometría de la descarga como un MultiPolygon de los rectángulos
     private fun crearGeometria(rectangulos: List<Rectangulo>): MultiPolygon {
         val poligonos = rectangulos.map { rectangulo ->
             val anillo = listOf(
@@ -363,16 +347,13 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         return MultiPolygon.fromPolygons(poligonos)
     }
 
-    // Listar las regiones guardadas esperando el callback de MapLibre
     private suspend fun listarRegiones(): Array<OfflineRegion> {
         return suspendCancellableCoroutine { continuacion ->
             obtenerAdministrador().listOfflineRegions(object : OfflineManager.ListOfflineRegionsCallback {
-                // Entregar las regiones encontradas
                 override fun onList(offlineRegions: Array<OfflineRegion>?) {
                     continuacion.resume(offlineRegions ?: emptyArray())
                 }
 
-                // Fallar con un mensaje en español y dejar el detalle técnico en el registro
                 override fun onError(error: String) {
                     Log.e(TAG, "listOfflineRegions falló: $error")
                     continuacion.resumeWithException(IllegalStateException("No se pudieron leer los mapas guardados"))
@@ -381,16 +362,13 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Crear una región nueva esperando el callback de MapLibre
     private suspend fun crearRegion(definicion: OfflineRegionDefinition, metadatos: ByteArray): OfflineRegion {
         return suspendCancellableCoroutine { continuacion ->
             obtenerAdministrador().createOfflineRegion(definicion, metadatos, object : OfflineManager.CreateOfflineRegionCallback {
-                // Entregar la región creada
                 override fun onCreate(offlineRegion: OfflineRegion) {
                     continuacion.resume(offlineRegion)
                 }
 
-                // Fallar con un mensaje en español y dejar el detalle técnico en el registro
                 override fun onError(error: String) {
                     Log.e(TAG, "createOfflineRegion falló: $error")
                     continuacion.resumeWithException(IllegalStateException("No se pudo crear la descarga del mapa"))
@@ -399,11 +377,9 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Leer el avance actual de una región esperando el callback de MapLibre
     private suspend fun obtenerProgreso(region: OfflineRegion): ProgresoRegion {
         return suspendCancellableCoroutine { continuacion ->
             region.getStatus(object : OfflineRegion.OfflineRegionStatusCallback {
-                // Entregar el avance convertido
                 override fun onStatus(status: OfflineRegionStatus?) {
                     if (status == null) {
                         continuacion.resumeWithException(IllegalStateException("No se pudo leer el avance del mapa"))
@@ -412,7 +388,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
                     }
                 }
 
-                // Fallar con un mensaje en español y dejar el detalle técnico en el registro
                 override fun onError(error: String?) {
                     Log.e(TAG, "getStatus falló: $error")
                     continuacion.resumeWithException(IllegalStateException("No se pudo leer el avance del mapa"))
@@ -421,7 +396,6 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         }
     }
 
-    // Detener y borrar una región vigente, y limpiar su registro cuando MapLibre confirma el borrado
     private suspend fun borrarRegion(clave: String, region: OfflineRegion) {
         borrarRegionNativa(region)
         regiones.remove(clave, region)
@@ -429,17 +403,14 @@ class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion
         Log.d(TAG, "Región eliminada: $clave")
     }
 
-    // Detener y borrar una región en MapLibre esperando su confirmación
     private suspend fun borrarRegionNativa(region: OfflineRegion) {
         region.setDownloadState(OfflineRegion.STATE_INACTIVE)
         suspendCancellableCoroutine { continuacion ->
             region.delete(object : OfflineRegion.OfflineRegionDeleteCallback {
-                // Confirmar el borrado
                 override fun onDelete() {
                     continuacion.resume(Unit)
                 }
 
-                // Fallar con un mensaje en español y dejar el detalle técnico en el registro
                 override fun onError(error: String) {
                     Log.e(TAG, "delete falló: $error")
                     continuacion.resumeWithException(IllegalStateException("No se pudo eliminar el mapa descargado"))

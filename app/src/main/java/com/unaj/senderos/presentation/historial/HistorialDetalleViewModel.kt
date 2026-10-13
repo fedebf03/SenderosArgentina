@@ -20,7 +20,6 @@ private const val TAG = "HISTORIAL"
 private const val MENSAJE_NO_ENCONTRADO = "No se encontró el recorrido"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
 
-// Mostrar un recorrido terminado junto con el sendero planificado, si todavía existe
 class HistorialDetalleViewModel(
     private val idRecorrido: String,
     private val observarRecorridoUseCase: ObservarRecorridoUseCase,
@@ -40,13 +39,11 @@ class HistorialDetalleViewModel(
         observarRecorrido()
     }
 
-    // Registrar la destrucción del ViewModel
     override fun onCleared() {
         super.onCleared()
         Log.d(TAG, "ViewModel → onCleared")
     }
 
-    // Procesar cada evento de la pantalla del detalle del historial
     fun procesarEvento(evento: HistorialDetalleEvento) {
         when (evento) {
             is HistorialDetalleEvento.AlVolver -> {
@@ -55,7 +52,6 @@ class HistorialDetalleViewModel(
         }
     }
 
-    // Observar el recorrido y reflejar sus cambios en el estado visual
     private fun observarRecorrido() {
         observarRecorridoUseCase(idRecorrido).fold(
             onSuccess = { flujoRecorrido ->
@@ -69,7 +65,6 @@ class HistorialDetalleViewModel(
         )
     }
 
-    // Guardar el recorrido emitido o informar que no existe; al recibir el primero, observar su sendero
     private fun reflejarRecorrido(recorrido: RecorridoRealizado?) {
         if (recorrido == null) {
             mostrarError(MENSAJE_NO_ENCONTRADO)
@@ -99,12 +94,10 @@ class HistorialDetalleViewModel(
         )
     }
 
-    // Guardar el sendero planificado emitido, o nulo si ya no existe
     private fun reflejarSendero(sendero: Sendero?) {
         _estadoVisual.update { estadoActual -> estadoActual.copy(sendero = sendero) }
     }
 
-    // Registrar el error y mostrarlo en el estado visual
     private fun mostrarError(mensajeOriginal: String?) {
         val mensaje = mensajeOriginal?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO
         Log.e(TAG, "Error en el detalle del historial: $mensaje")

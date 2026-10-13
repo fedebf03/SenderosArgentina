@@ -11,12 +11,10 @@ class FalsoRecorridoDao(
     entidadesIniciales: List<RecorridoEntidad> = emptyList()
 ) : RecorridoDao {
 
-    // Tabla local falsa: cualquier cambio se emite a los observadores
     val entidades: MutableStateFlow<List<RecorridoEntidad>> = MutableStateFlow(entidadesIniciales)
 
     var errorAlGuardar: Throwable? = null
 
-    // Observar los recorridos del usuario del más reciente al más viejo
     override fun observarPorUsuario(idUsuario: String): Flow<List<RecorridoEntidad>> {
         return entidades.map { lista ->
             lista.filter { entidad -> entidad.idUsuario == idUsuario }
@@ -24,26 +22,22 @@ class FalsoRecorridoDao(
         }
     }
 
-    // Observar un recorrido del usuario o null si no existe
     override fun observarPorId(idUsuario: String, idRecorrido: String): Flow<RecorridoEntidad?> {
         return entidades.map { lista ->
             lista.firstOrNull { entidad -> entidad.idUsuario == idUsuario && entidad.id == idRecorrido }
         }
     }
 
-    // Obtener un recorrido del usuario o null si no existe
     override suspend fun obtenerPorId(idUsuario: String, idRecorrido: String): RecorridoEntidad? {
         return entidades.value.firstOrNull { entidad -> entidad.idUsuario == idUsuario && entidad.id == idRecorrido }
     }
 
-    // Obtener los recorridos del usuario cuyo estado no es SINCRONIZADO
     override suspend fun obtenerPendientes(idUsuario: String): List<RecorridoEntidad> {
         return entidades.value.filter { entidad ->
             entidad.idUsuario == idUsuario && entidad.estadoSincronizacion != "SINCRONIZADO"
         }
     }
 
-    // Insertar o reemplazar la entidad con la misma clave compuesta
     override suspend fun guardar(entidad: RecorridoEntidad) {
         errorAlGuardar?.let { error -> throw error }
         entidades.update { lista ->
@@ -51,7 +45,6 @@ class FalsoRecorridoDao(
         }
     }
 
-    // Actualizar el estado solo si la fecha de modificación coincide con la leída; devolver filas afectadas
     override suspend fun actualizarEstadoSiNoCambio(
         idUsuario: String,
         idRecorrido: String,

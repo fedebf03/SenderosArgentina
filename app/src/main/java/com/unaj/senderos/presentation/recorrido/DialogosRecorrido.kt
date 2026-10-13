@@ -18,7 +18,6 @@ import com.unaj.senderos.presentation.revisionpuntos.ContenidoRevisionPuntos
 import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEstadoVisual
 import com.unaj.senderos.presentation.revisionpuntos.describirCantidadPuntosCapturados
 
-// Avisar la llegada al final del sendero y ofrecer finalizar el recorrido o seguir caminando
 @Composable
 internal fun DialogoLlegadaAlFinal(nombreSendero: String, alProcesarEvento: (RecorridoEvento) -> Unit) {
     DialogoConfirmacion(
@@ -31,7 +30,6 @@ internal fun DialogoLlegadaAlFinal(nombreSendero: String, alProcesarEvento: (Rec
     )
 }
 
-// Pedir confirmación antes de finalizar el recorrido
 @Composable
 internal fun DialogoConfirmarFinalizar(alProcesarEvento: (RecorridoEvento) -> Unit) {
     DialogoConfirmacion(
@@ -44,7 +42,6 @@ internal fun DialogoConfirmarFinalizar(alProcesarEvento: (RecorridoEvento) -> Un
     )
 }
 
-// Pedir confirmación antes de descartar el recorrido sin guardarlo
 @Composable
 internal fun DialogoConfirmarCancelar(alProcesarEvento: (RecorridoEvento) -> Unit) {
     DialogoConfirmacion(
@@ -58,7 +55,6 @@ internal fun DialogoConfirmarCancelar(alProcesarEvento: (RecorridoEvento) -> Uni
     )
 }
 
-// Mostrar el resumen con la distancia y el tiempo, y si hay puntos capturados, su revisión con casillas
 @Composable
 internal fun DialogoResumen(
     resumen: ResumenRecorrido,

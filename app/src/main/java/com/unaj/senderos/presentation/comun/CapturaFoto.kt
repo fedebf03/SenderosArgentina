@@ -26,10 +26,9 @@ import java.io.IOException
 private const val TAG = "CAPTURA_FOTO"
 private const val UNA_HORA_EN_MILISEGUNDOS = 3_600_000L
 
-// Acciones para obtener una foto: sacarla con la cámara o elegirla de la galería
 class AccionesDeFoto(val sacarFoto: () -> Unit, val elegirDeGaleria: () -> Unit)
 
-// Recordar las acciones de foto: cámara con archivo temporal compartido por el proveedor de archivos propio, y galería de imágenes
+// La cámara usa un archivo temporal compartido por el proveedor de archivos propio
 @Composable
 fun recordarAccionesDeFoto(
     alSeleccionarFoto: (String) -> Unit,
@@ -93,14 +92,13 @@ fun recordarAccionesDeFoto(
     }
 }
 
-// Crear un archivo temporal en la caché para la foto de la cámara (debe llamarse fuera del hilo principal)
+// Debe llamarse fuera del hilo principal
 private fun crearArchivoTemporalDeFoto(contexto: Context): File {
     val carpeta = File(contexto.cacheDir, "fotos_camara")
     carpeta.mkdirs()
     return File.createTempFile("foto_", ".jpg", carpeta)
 }
 
-// Borrar, fuera del hilo principal, los temporales de la cámara con más de una hora de antigüedad
 suspend fun limpiarFotosTemporalesViejas(contexto: Context) {
     withContext(Dispatchers.IO) {
         val limite = System.currentTimeMillis() - UNA_HORA_EN_MILISEGUNDOS
@@ -110,12 +108,10 @@ suspend fun limpiarFotosTemporalesViejas(contexto: Context) {
     }
 }
 
-// Obtener la Uri de contenido del proveedor de archivos propio para un temporal de la cámara
 private fun obtenerUriDeFoto(contexto: Context, archivo: File): Uri {
     return FileProvider.getUriForFile(contexto, "${contexto.packageName}.proveedorarchivos", archivo)
 }
 
-// Borrar un archivo temporal por su ruta fuera del hilo principal
 private suspend fun borrarArchivo(ruta: String) {
     withContext(Dispatchers.IO) { File(ruta).delete() }
 }

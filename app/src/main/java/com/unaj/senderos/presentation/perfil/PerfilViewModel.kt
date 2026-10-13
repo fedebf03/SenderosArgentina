@@ -47,7 +47,6 @@ class PerfilViewModel(
         observarRecorridoEnCurso()
     }
 
-    // Procesar cada evento de la pantalla de perfil
     fun procesarEvento(evento: PerfilEvento) {
         when (evento) {
             is PerfilEvento.AlCambiarModoDemostracion -> {
@@ -68,7 +67,6 @@ class PerfilViewModel(
         }
     }
 
-    // Reflejar en el estado visual el modo demostración guardado en el dispositivo
     private fun observarModoDemostracion() {
         viewModelScope.launch {
             preferenciasAplicacion.esModoDemostracion.collect { activo ->
@@ -77,7 +75,6 @@ class PerfilViewModel(
         }
     }
 
-    // Reflejar en el estado visual el historial de recorridos, del más reciente al más viejo
     private fun observarRecorridos() {
         observarRecorridosUseCase().fold(
             onSuccess = { flujoRecorridos ->
@@ -101,7 +98,6 @@ class PerfilViewModel(
         )
     }
 
-    // Reflejar en el estado visual si hay un recorrido en curso, para avisarlo antes de cerrar la sesión
     private fun observarRecorridoEnCurso() {
         viewModelScope.launch {
             controlSeguimiento.estado.collect { estadoSeguimiento ->
@@ -112,7 +108,6 @@ class PerfilViewModel(
         }
     }
 
-    // Cerrar la sesión y pedir a la pantalla que vuelva al inicio de sesión
     private fun cerrarSesion() {
         Log.d(TAG, "Cerrando la sesión")
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoCerrarSesionVisible = false) }

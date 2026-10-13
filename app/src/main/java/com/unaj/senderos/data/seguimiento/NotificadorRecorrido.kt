@@ -42,13 +42,11 @@ private const val PROGRESO_MAXIMO = 100
 private const val LADO_ICONO_GRANDE_PIXELES = 128
 private const val MARGEN_GLIFO_PIXELES = 28
 
-// Extra de la intención que lleva el identificador del sendero en recorrido hacia MainActivity
 const val EXTRA_ID_SENDERO_RECORRIDO = "idSenderoRecorrido"
 
 // Extra que pide abrir la pantalla del recorrido con el diálogo de confirmación de cancelación abierto
 const val EXTRA_SOLICITAR_CANCELACION = "solicitarCancelacion"
 
-// Construir y mostrar las notificaciones del recorrido: la persistente del servicio y los avisos
 class NotificadorRecorrido(private val contexto: Context) {
 
     private val administrador: NotificationManager =
@@ -56,12 +54,10 @@ class NotificadorRecorrido(private val contexto: Context) {
     private var seCrearonCanales = false
     private var accionesCacheadas: AccionesRecorrido? = null
 
-    // Construir la notificación persistente del servicio según el estado actual del recorrido
     fun construirNotificacionEnCurso(idSendero: String, estado: EstadoSeguimiento?, esSimulado: Boolean): Notification {
         return construirNotificacionConContenido(idSendero, RedactorNotificacionRecorrido.redactarPersistente(estado, esSimulado))
     }
 
-    // Construir la notificación persistente con barra de progreso, texto expandido y acciones
     private fun construirNotificacionConContenido(idSendero: String, contenido: ContenidoNotificacionRecorrido): Notification {
         crearCanales()
         val acciones = obtenerAcciones(idSendero)
@@ -95,15 +91,12 @@ class NotificadorRecorrido(private val contexto: Context) {
         return constructor.build()
     }
 
-    // Actualizar la notificación persistente ya publicada por el servicio
     fun actualizarNotificacionEnCurso(idSendero: String, contenido: ContenidoNotificacionRecorrido) {
         administrador.notify(ID_NOTIFICACION_EN_CURSO, construirNotificacionConContenido(idSendero, contenido))
     }
 
-    // Obtener el identificador de la notificación persistente para iniciar el servicio en primer plano
     fun identificadorNotificacionEnCurso(): Int = ID_NOTIFICACION_EN_CURSO
 
-    // Mostrar un aviso de proximidad, desvío o llegada por el canal de importancia alta
     fun notificarAviso(idSendero: String, aviso: AvisoRecorrido, estado: EstadoSeguimiento?) {
         if (!tienePermisoDeNotificaciones()) {
             Log.d(TAG, "Aviso omitido: falta el permiso POST_NOTIFICATIONS")
@@ -138,7 +131,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         }
     }
 
-    // Elegir el ícono pequeño monocromo del aviso según su tipo
     @DrawableRes
     private fun elegirIconoPequeno(tipo: TipoAvisoVisual): Int {
         return when (tipo) {
@@ -153,7 +145,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         }
     }
 
-    // Elegir el color del aviso según su tipo
     @ColorRes
     private fun elegirColor(tipo: TipoAvisoVisual): Int {
         return when (tipo) {
@@ -168,7 +159,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         }
     }
 
-    // Crear el ícono grande del aviso: un círculo del color del tipo con el glifo en blanco
     private fun crearIconoGrande(tipo: TipoAvisoVisual): Bitmap {
         val mapaDeBits = Bitmap.createBitmap(LADO_ICONO_GRANDE_PIXELES, LADO_ICONO_GRANDE_PIXELES, Bitmap.Config.ARGB_8888)
         val lienzo = Canvas(mapaDeBits)
@@ -187,7 +177,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         return mapaDeBits
     }
 
-    // Cancelar los avisos que el recorrido dejó visibles al finalizar
     fun cancelarAvisos() {
         administrador.cancel(ID_NOTIFICACION_DESVIO)
         administrador.cancel(ID_NOTIFICACION_LLEGADA)
@@ -196,7 +185,6 @@ class NotificadorRecorrido(private val contexto: Context) {
             .forEach { notificacion -> administrador.cancel(notificacion.id) }
     }
 
-    // Verificar si la aplicación puede publicar avisos (requiere permiso desde API 33)
     private fun tienePermisoDeNotificaciones(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(
@@ -205,8 +193,7 @@ class NotificadorRecorrido(private val contexto: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Crear los canales: uno silencioso para la persistente y otro de importancia alta, con vibración, para los avisos;
-    // borra el canal anterior de avisos (Android ignora los cambios de un canal existente) y repetirlo es inofensivo
+    // Android ignora los cambios de un canal existente, por eso se borra el canal anterior de avisos; repetirlo es inofensivo
     private fun crearCanales() {
         if (seCrearonCanales) return
         seCrearonCanales = true
@@ -219,7 +206,7 @@ class NotificadorRecorrido(private val contexto: Context) {
         administrador.createNotificationChannel(canalAvisos)
     }
 
-    // Obtener las acciones del sendero, creándolas solo cuando cambia el sendero (evita rehacer PendingIntent en cada actualización)
+    // Se recrean solo cuando cambia el sendero, para no rehacer los PendingIntent en cada actualización
     private fun obtenerAcciones(idSendero: String): AccionesRecorrido {
         accionesCacheadas?.takeIf { acciones -> acciones.idSendero == idSendero }?.let { acciones -> return acciones }
         val acciones = AccionesRecorrido(
@@ -232,7 +219,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         return acciones
     }
 
-    // Crear la intención pendiente (inmutable y explícita) que abre el recorrido en curso, con la confirmación de cancelación si se pide
     private fun crearAccionAbrirRecorrido(
         idSendero: String,
         codigoPedido: Int,
@@ -250,7 +236,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         )
     }
 
-    // Crear la intención pendiente que pide al servicio finalizar el recorrido guardándolo
     private fun crearAccionFinalizar(): PendingIntent {
         return PendingIntent.getService(
             contexto,
@@ -260,7 +245,6 @@ class NotificadorRecorrido(private val contexto: Context) {
         )
     }
 
-    // Acciones de las notificaciones de un sendero en recorrido, reutilizadas entre actualizaciones
     private class AccionesRecorrido(
         val idSendero: String,
         val abrir: PendingIntent,

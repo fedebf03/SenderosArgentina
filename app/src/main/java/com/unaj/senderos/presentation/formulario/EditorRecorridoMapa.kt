@@ -52,10 +52,8 @@ import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Ancho del panel del punto cuando el editor está en horizontal y el panel va al costado del mapa
 private val ANCHO_PANEL_PUNTO_HORIZONTAL = 340.dp
 
-// Renderizar el editor de pantalla completa para trazar el recorrido sobre el mapa
 @Composable
 fun EditorRecorridoMapa(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -117,7 +115,6 @@ fun EditorRecorridoMapa(
     }
 }
 
-// Mostrar la ayuda del editor, que se puede ocultar y no vuelve a molestar durante la edición
 @Composable
 private fun AyudaDelEditor(alOcultar: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
@@ -137,7 +134,6 @@ private fun AyudaDelEditor(alOcultar: () -> Unit) {
     }
 }
 
-// Mostrar la barra inferior con las acciones del recorrido y su distancia
 @Composable
 private fun BarraInferiorEditor(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -173,7 +169,6 @@ private fun BarraInferiorEditor(
     }
 }
 
-// Mostrar el panel para editar el tipo y el nombre del punto seleccionado
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PanelPuntoSeleccionado(
@@ -236,7 +231,6 @@ private fun PanelPuntoSeleccionado(
     }
 }
 
-// Obtener el texto en español de un tipo de punto
 internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
     return when (tipo) {
         TipoPunto.PASO -> "Paso"
@@ -248,7 +242,6 @@ internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
     }
 }
 
-// Previsualizar el panel de un punto seleccionado
 @Preview(showBackground = true)
 @Composable
 private fun PrevisualizacionPanelPuntoSeleccionado() {

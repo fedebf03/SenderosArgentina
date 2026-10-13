@@ -129,7 +129,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // Convertir un punto capturado en punto del recorrido: el nombre es la nota completa recortada de espacios
+    // El nombre es la nota completa recortada de espacios
     private fun convertirEnPuntoDelRecorrido(punto: PuntoCapturado): PuntoRecorrido {
         return PuntoRecorrido(
             latitud = punto.latitud,

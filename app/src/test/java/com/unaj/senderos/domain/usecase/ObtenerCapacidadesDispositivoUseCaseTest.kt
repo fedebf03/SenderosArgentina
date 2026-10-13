@@ -7,7 +7,6 @@ import org.junit.Test
 
 class ObtenerCapacidadesDispositivoUseCaseTest {
 
-    // Verificar que el caso de uso devuelve lo que detecta el dispositivo
     @Test
     fun `devuelve las capacidades detectadas`() {
         val capacidades = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = false, tieneCamara = true)

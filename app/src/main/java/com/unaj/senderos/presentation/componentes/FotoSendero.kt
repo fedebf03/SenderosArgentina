@@ -9,7 +9,6 @@ import coil.compose.AsyncImage
 import com.unaj.senderos.domain.model.esFotoLocal
 import java.io.File
 
-// Renderizar la foto de un sendero o, si no tiene, la ilustración de montañas
 @Composable
 fun FotoSendero(foto: String, modifier: Modifier = Modifier, espejada: Boolean = false) {
     if (foto.isEmpty()) {

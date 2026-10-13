@@ -16,7 +16,6 @@ interface ControlSeguimiento {
     // Motivo del último fin no pedido por el usuario (p. ej. permiso revocado); null si no hubo o si se inició otro recorrido
     val motivoFin: StateFlow<MotivoFinSeguimiento?>
 
-    // Avisos de proximidad y desvío generados durante el recorrido activo
     val avisos: SharedFlow<AvisoRecorrido>
 
     // Iniciar el seguimiento de un sendero, real o simulado; finaliza el recorrido anterior si había uno
@@ -28,7 +27,6 @@ interface ControlSeguimiento {
     // Desplazar la posición simulada fuera del trazado unos segundos; no hace nada si el recorrido no es simulado
     fun simularDesvio()
 
-    // Detener el seguimiento activo guardando el recorrido realizado en el historial
     fun detener()
 
     // Cancelar el seguimiento activo descartando lo recorrido: no se guarda nada en el historial

@@ -19,12 +19,9 @@ import androidx.room.TypeConverters
 @TypeConverters(ConvertidoresSendero::class)
 abstract class BaseDatosSenderos : RoomDatabase() {
 
-    // Obtener el DAO de senderos
     abstract fun senderoDao(): SenderoDao
 
-    // Obtener el DAO de recorridos realizados
     abstract fun recorridoDao(): RecorridoDao
 
-    // Obtener el DAO de puntos de interés capturados
     abstract fun puntoCapturadoDao(): PuntoCapturadoDao
 }

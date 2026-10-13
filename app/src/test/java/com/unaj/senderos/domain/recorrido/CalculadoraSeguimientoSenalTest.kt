@@ -24,12 +24,10 @@ class CalculadoraSeguimientoSenalTest {
         )
     ).copy(tipoRecorrido = TipoRecorrido.LINEAL)
 
-    // Construir una lectura al sur del origen con velocidad y precisión
     private fun lectura(gradosAlSur: Double, velocidad: Float?, precision: Float?): LecturaUbicacion {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, velocidad, precision)
     }
 
-    // Construir un estado que ya tiene una lectura válida aceptada en el instante indicado
     private fun estadoConLecturaValida(instante: Long) =
         CalculadoraSeguimiento.actualizar(
             CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL),
@@ -37,7 +35,6 @@ class CalculadoraSeguimientoSenalTest {
             instante
         ).estado
 
-    // Verificar que una lectura imprecisa toma la velocidad del GPS mientras la señal sigue buena
     @Test
     fun `una lectura imprecisa toma la velocidad del GPS`() {
         val estado = estadoConLecturaValida(2_000L)
@@ -49,7 +46,6 @@ class CalculadoraSeguimientoSenalTest {
         assertEquals(estado.posicionActual, resultado.posicionActual)
     }
 
-    // Verificar que si la calidad pasa a DEBIL la velocidad queda desconocida
     @Test
     fun `una lectura imprecisa con senal debil deja la velocidad desconocida`() {
         val estado = estadoConLecturaValida(2_000L)
@@ -60,7 +56,6 @@ class CalculadoraSeguimientoSenalTest {
         assertNull(resultado.velocidadMetrosPorSegundo)
     }
 
-    // Verificar que reevaluar la señal anula la velocidad al pasar a DEBIL
     @Test
     fun `reevaluar la senal anula la velocidad al pasar a debil`() {
         val estado = estadoConLecturaValida(2_000L)
@@ -71,7 +66,6 @@ class CalculadoraSeguimientoSenalTest {
         assertNull(debil.velocidadMetrosPorSegundo)
     }
 
-    // Verificar que reevaluar con señal buena conserva la velocidad
     @Test
     fun `reevaluar la senal buena conserva la velocidad`() {
         val estado = estadoConLecturaValida(2_000L)
@@ -82,7 +76,6 @@ class CalculadoraSeguimientoSenalTest {
         assertNotNull(buena.velocidadMetrosPorSegundo)
     }
 
-    // Verificar que con el umbral por defecto una lectura de 50 m se descarta
     @Test
     fun `con el umbral por defecto una lectura de cincuenta metros se descarta`() {
         val inicial = CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)
@@ -92,7 +85,6 @@ class CalculadoraSeguimientoSenalTest {
         assertNull(resultado.posicionActual)
     }
 
-    // Verificar que con un umbral de 100 m una lectura de 50 m se acepta
     @Test
     fun `con umbral de cien metros una lectura de cincuenta metros se acepta`() {
         val inicial = CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)
@@ -102,7 +94,6 @@ class CalculadoraSeguimientoSenalTest {
         assertNotNull(resultado.posicionActual)
     }
 
-    // Verificar que exactamente el umbral se acepta y apenas por encima se descarta
     @Test
     fun `el umbral de cien metros incluye el limite y descarta lo que lo supera`() {
         val inicial = CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)

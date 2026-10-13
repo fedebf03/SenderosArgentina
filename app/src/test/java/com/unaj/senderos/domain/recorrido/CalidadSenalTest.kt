@@ -17,19 +17,16 @@ private const val INSTANTE_INICIAL = 1_000L
 
 class CalidadSenalTest {
 
-    // Construir el estado inicial de un sendero lineal de tres puntos separados 0,001 grados
     private fun estadoInicial(): EstadoSeguimiento {
         val puntos = listOf(0.0, 0.001, 0.002).map { grados -> PuntoRecorrido(LATITUD_BASE - grados, LONGITUD_BASE) }
         val sendero = crearSenderoDePrueba(recorrido = puntos).copy(tipoRecorrido = TipoRecorrido.LINEAL)
         return CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)
     }
 
-    // Construir una lectura al sur del origen con la precisión indicada
     private fun lectura(gradosAlSur: Double, precision: Float?): LecturaUbicacion {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, null, precision)
     }
 
-    // Verificar que el estado inicial busca señal y no tiene lectura válida
     @Test
     fun `el estado inicial esta buscando senal`() {
         val estado = estadoInicial()
@@ -38,7 +35,6 @@ class CalidadSenalTest {
         assertNull(estado.instanteUltimaLecturaValidaMilisegundos)
     }
 
-    // Verificar la transición de BUSCANDO a BUENA con la primera lectura válida
     @Test
     fun `la primera lectura valida pasa de buscando a buena`() {
         val resultado = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 10f), INSTANTE_INICIAL + 3_000L)
@@ -47,7 +43,6 @@ class CalidadSenalTest {
         assertEquals(INSTANTE_INICIAL + 3_000L, resultado.estado.instanteUltimaLecturaValidaMilisegundos)
     }
 
-    // Verificar que una lectura sin precisión informada y una de exactamente 30 m son válidas
     @Test
     fun `una lectura sin precision o de treinta metros es valida`() {
         val sinPrecision = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, null), INSTANTE_INICIAL + 1_000L)
@@ -57,7 +52,6 @@ class CalidadSenalTest {
         assertEquals(CalidadSenal.BUENA, treintaMetros.estado.calidadSenal)
     }
 
-    // Verificar que a los 15 s exactos de la última lectura válida la señal sigue buena y pasado ese tiempo es débil
     @Test
     fun `la senal pasa de buena a debil pasados quince segundos`() {
         val estado = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 10f), INSTANTE_INICIAL + 1_000L).estado
@@ -67,7 +61,6 @@ class CalidadSenalTest {
         assertEquals(CalidadSenal.DEBIL, CalculadoraSeguimiento.evaluarCalidad(estado, ultima + 15_001L))
     }
 
-    // Verificar que sin ninguna lectura válida busca hasta los 30 s del inicio y después es débil
     @Test
     fun `sin lecturas validas busca 30 segundos y luego es debil`() {
         val estado = estadoInicial()
@@ -76,7 +69,6 @@ class CalidadSenalTest {
         assertEquals(CalidadSenal.DEBIL, CalculadoraSeguimiento.evaluarCalidad(estado, INSTANTE_INICIAL + 30_001L))
     }
 
-    // Verificar que una lectura válida devuelve la señal a buena desde débil
     @Test
     fun `una lectura valida vuelve de debil a buena`() {
         val debil = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 10f), INSTANTE_INICIAL + 1_000L).estado
@@ -87,7 +79,7 @@ class CalidadSenalTest {
         assertEquals(CalidadSenal.BUENA, resultado.estado.calidadSenal)
     }
 
-    // Verificar que una lectura imprecisa no mueve la posición ni suma distancia, aunque dentro del doble del umbral sí se agrega al trazado caminado
+    // Dentro del doble del umbral de precisión, la lectura imprecisa sí se agrega al trazado caminado
     @Test
     fun `una lectura imprecisa no mueve la posicion`() {
         val primera = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 10f), INSTANTE_INICIAL + 1_000L).estado
@@ -100,7 +92,6 @@ class CalidadSenalTest {
         assertEquals(primera.instanteUltimaLecturaValidaMilisegundos, imprecisa.instanteUltimaLecturaValidaMilisegundos)
     }
 
-    // Verificar que las lecturas imprecisas no renuevan la señal: pasados 15 s queda débil
     @Test
     fun `las lecturas imprecisas dejan la senal debil pasados quince segundos`() {
         val primera = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 10f), INSTANTE_INICIAL + 1_000L).estado
@@ -110,7 +101,6 @@ class CalidadSenalTest {
         assertEquals(CalidadSenal.DEBIL, imprecisa.calidadSenal)
     }
 
-    // Verificar que una lectura imprecisa temprana sigue buscando y no sale de BUSCANDO
     @Test
     fun `una lectura imprecisa al comienzo sigue buscando`() {
         val resultado = CalculadoraSeguimiento.actualizar(estadoInicial(), lectura(0.0, 80f), INSTANTE_INICIAL + 5_000L)
@@ -119,7 +109,6 @@ class CalidadSenalTest {
         assertNull(resultado.estado.posicionActual)
     }
 
-    // Verificar que un recorrido simulado siempre tiene buena señal
     @Test
     fun `un recorrido simulado siempre tiene buena senal`() {
         val simulado = estadoInicial().copy(esSimulado = true)

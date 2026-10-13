@@ -8,13 +8,12 @@ import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.RecorridoRealizado
 
-// Resolver el estado de sincronización por nombre; un valor desconocido se toma como sincronizado
+// Un valor desconocido se toma como sincronizado
 private fun resolverEstadoDelRecorrido(nombre: String): EstadoSincronizacion {
     return EstadoSincronizacion.entries.firstOrNull { valor -> valor.name == nombre }
         ?: EstadoSincronizacion.SINCRONIZADO
 }
 
-// Convertir la fila local en el modelo de dominio
 fun RecorridoEntidad.aDominio(): RecorridoRealizado {
     return RecorridoRealizado(
         id = id,
@@ -35,7 +34,6 @@ fun RecorridoEntidad.aDominio(): RecorridoRealizado {
     )
 }
 
-// Convertir el modelo de dominio en fila local con la fecha de modificación y el estado indicados
 fun RecorridoRealizado.aEntidad(
     fechaModificacion: Long,
     estadoSincronizacion: EstadoSincronizacion
@@ -80,7 +78,6 @@ fun RecorridoEntidad.aRed(): RecorridoRed {
     )
 }
 
-// Convertir el documento remoto en fila local sincronizada del usuario indicado
 fun RecorridoRed.aEntidad(idUsuario: String): RecorridoEntidad {
     return RecorridoEntidad(
         id = id,

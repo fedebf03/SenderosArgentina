@@ -32,13 +32,11 @@ private val TAMANO_ICONO_BOTON = 20.dp
 private val TAMANO_INDICADOR_BOTON = 22.dp
 private val SEPARACION_ICONO_TEXTO = 12.dp
 
-// Renderizar el ícono de 20 dp de un botón a partir de un vector decorativo
 @Composable
 fun IconoDeBoton(imagen: ImageVector) {
     Icon(imageVector = imagen, contentDescription = null, modifier = Modifier.size(TAMANO_ICONO_BOTON))
 }
 
-// Renderizar el contenido de un botón: ícono opcional, separación y texto, o un indicador mientras carga
 @Composable
 private fun RowScope.ContenidoDeBoton(
     texto: String,
@@ -61,7 +59,6 @@ private fun RowScope.ContenidoDeBoton(
     }
 }
 
-// Renderizar el botón de la acción principal de una pantalla: azul sólido del tema, con ícono e indicador de carga opcionales
 @Composable
 fun BotonPrincipal(
     texto: String,
@@ -85,7 +82,6 @@ fun BotonPrincipal(
     }
 }
 
-// Renderizar el botón de una acción secundaria: contorno del tema, con ícono opcional y color de error si es destructiva
 @Composable
 fun BotonSecundario(
     texto: String,
@@ -110,7 +106,6 @@ fun BotonSecundario(
     }
 }
 
-// Previsualizar los botones principal y secundario con y sin ícono
 @Preview(showBackground = true)
 @Composable
 private fun BotonesPreview() {

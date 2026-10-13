@@ -47,7 +47,6 @@ class ControlSeguimientoSenalTest {
     private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "ana@correo.com", nombre = "Ana"))
     private var instante = 5_000L
 
-    // Construir el control con las capacidades indicadas, alcance inmediato y reloj de la prueba
     private fun TestScope.crearControl(capacidades: CapacidadesDispositivo): ControlSeguimientoEnMemoria {
         return ControlSeguimientoEnMemoria(
             proveedor,
@@ -60,7 +59,6 @@ class ControlSeguimientoSenalTest {
         ) { instante }
     }
 
-    // Construir una lectura al sur del origen con la precisión y velocidad indicadas
     private fun lectura(gradosAlSur: Double, precision: Float?, velocidad: Float? = null): LecturaUbicacion {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, velocidad, precision)
     }
@@ -68,7 +66,6 @@ class ControlSeguimientoSenalTest {
     private val conGps = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = false, tieneBrujula = false, tieneCamara = false)
     private val sinGps = CapacidadesDispositivo(tieneGps = false, tieneAcelerometro = false, tieneBrujula = false, tieneCamara = false)
 
-    // Verificar que un equipo con GPS descarta las lecturas de más de 30 m
     @Test
     fun `con GPS una lectura de cincuenta metros se descarta`() = runTest {
         val control = crearControl(conGps)
@@ -79,7 +76,6 @@ class ControlSeguimientoSenalTest {
         assertNull(control.estado.value?.posicionActual)
     }
 
-    // Verificar que un equipo sin GPS acepta lecturas de hasta 100 m
     @Test
     fun `sin GPS una lectura de cincuenta metros se acepta`() = runTest {
         val control = crearControl(sinGps)
@@ -90,7 +86,6 @@ class ControlSeguimientoSenalTest {
         assertNotNull(control.estado.value?.posicionActual)
     }
 
-    // Verificar que un equipo sin GPS descarta las lecturas de más de 100 m
     @Test
     fun `sin GPS una lectura de ciento cincuenta metros se descarta`() = runTest {
         val control = crearControl(sinGps)
@@ -101,7 +96,6 @@ class ControlSeguimientoSenalTest {
         assertNull(control.estado.value?.posicionActual)
     }
 
-    // Verificar que sin acelerómetro y con señal débil la velocidad es desconocida y el usuario figura detenido
     @Test
     fun `con senal debil y sin acelerometro la velocidad es desconocida y esta detenido`() = runTest {
         val control = crearControl(conGps)

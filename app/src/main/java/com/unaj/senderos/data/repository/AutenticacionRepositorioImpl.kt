@@ -22,17 +22,14 @@ private const val TAG = "AUTH"
 
 class AutenticacionRepositorioImpl : AutenticacionRepositorio {
 
-    // Iniciar sesión con correo y contraseña
     override suspend fun iniciarSesion(email: String, clave: String): Result<Usuario> {
         return esperarResultado { FirebaseAuth.getInstance().signInWithEmailAndPassword(email, clave) }
     }
 
-    // Registrar un usuario nuevo con correo y contraseña
     override suspend fun registrar(email: String, clave: String): Result<Usuario> {
         return esperarResultado { FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, clave) }
     }
 
-    // Iniciar sesión con el token de identidad de Google
     override suspend fun iniciarSesionConGoogle(idToken: String): Result<Usuario> {
         val credencialGoogle = GoogleAuthProvider.getCredential(idToken, null)
         return esperarResultado { FirebaseAuth.getInstance().signInWithCredential(credencialGoogle) }
@@ -59,17 +56,14 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         }
     }
 
-    // Obtener el usuario con sesión activa, si existe
     override fun obtenerUsuarioActual(): Usuario? {
         return FirebaseAuth.getInstance().currentUser?.aUsuario()
     }
 
-    // Cerrar la sesión del usuario actual
     override fun cerrarSesion() {
         FirebaseAuth.getInstance().signOut()
     }
 
-    // Esperar el resultado de la operación de autenticación y convertirlo en Result
     private suspend fun esperarResultado(operacion: () -> Task<AuthResult>): Result<Usuario> {
         return suspendCancellableCoroutine { continuacion ->
             operacion()
@@ -89,7 +83,6 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         }
     }
 
-    // Convertir el usuario de Firebase en el modelo de dominio
     private fun FirebaseUser.aUsuario() = Usuario(
         id = uid,
         email = email ?: "",
@@ -97,7 +90,6 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         fotoUrl = photoUrl?.toString() ?: ""
     )
 
-    // Traducir el error de Firebase a un mensaje en español
     private fun traducirError(error: Exception): Exception {
         Log.e(TAG, "Error de Firebase Auth", error)
         val mensaje = when (error) {

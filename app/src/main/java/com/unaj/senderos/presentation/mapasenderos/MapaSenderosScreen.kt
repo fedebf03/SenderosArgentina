@@ -38,7 +38,6 @@ import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
 import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.presentation.componentes.mapa.MapaDeSenderos
 
-// Renderizar la sección Mapa conectando el ViewModel y el permiso de ubicación
 @Composable
 fun MapaSenderosPantalla(
     viewModel: MapaSenderosViewModel,
@@ -94,7 +93,6 @@ fun MapaSenderosPantalla(
     )
 }
 
-// Renderizar el mapa de senderos y la tarjeta del sendero seleccionado
 @Composable
 fun MapaSenderosContenido(
     estadoVisual: MapaSenderosEstadoVisual,

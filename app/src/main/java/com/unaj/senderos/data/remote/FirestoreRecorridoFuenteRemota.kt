@@ -12,18 +12,15 @@ class FirestoreRecorridoFuenteRemota(
     private val firestore: FirebaseFirestore
 ) : RecorridoFuenteRemota {
 
-    // Obtener el documento del usuario, que contiene la subcolección de recorridos
     private fun documentoUsuario(idUsuario: String): DocumentReference {
         return firestore.collection(COLECCION_USUARIOS).document(idUsuario)
     }
 
-    // Leer del servidor todos los recorridos del usuario
     override suspend fun obtenerRecorridos(idUsuario: String): List<RecorridoRed> {
         val instantanea = documentoUsuario(idUsuario).collection(COLECCION_RECORRIDOS).get(Source.SERVER).await()
         return instantanea.documents.mapNotNull { documento -> documento.toObject(RecorridoRed::class.java) }
     }
 
-    // Escribir el recorrido completo en /usuarios/{idUsuario}/recorridos/{id}
     override suspend fun guardarRecorrido(idUsuario: String, recorrido: RecorridoRed) {
         documentoUsuario(idUsuario).collection(COLECCION_RECORRIDOS).document(recorrido.id).set(recorrido).await()
     }

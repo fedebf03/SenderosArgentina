@@ -27,7 +27,6 @@ import kotlin.coroutines.cancellation.CancellationException
 private const val TAG = "UBICACION"
 private const val INTERVALO_UBICACION_MILISEGUNDOS = 5_000L
 
-// Obtener la ubicación del dispositivo con el proveedor combinado de Google Play Services
 class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbicacion {
 
     // Obtener la ubicación actual; éxito con null si falta el permiso o no hay ubicación disponible
@@ -57,7 +56,6 @@ class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbic
         }
     }
 
-    // Observar las ubicaciones continuas de alta precisión (GPS primero) y quitar el escucha al cancelar la recolección
     override fun observarUbicaciones(): Flow<LecturaUbicacion> = callbackFlow {
         if (!tienePermisoDeUbicacionPrecisa()) {
             val error = SecurityException("Se requiere el permiso de ubicación precisa (ACCESS_FINE_LOCATION) para seguir el recorrido")
@@ -90,7 +88,6 @@ class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbic
         }
     }
 
-    // Convertir una ubicación del sistema en lectura de dominio; rumbo y velocidad solo si el sistema los informa
     private fun convertirALectura(posicion: Location): LecturaUbicacion {
         return LecturaUbicacion(
             coordenada = Coordenada(posicion.latitude, posicion.longitude),
@@ -100,13 +97,11 @@ class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbic
         )
     }
 
-    // Verificar si hay permiso de ubicación precisa, necesario para el seguimiento con GPS
     private fun tienePermisoDeUbicacionPrecisa(): Boolean {
         return ContextCompat.checkSelfPermission(contexto, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
     }
 
-    // Verificar si hay permiso de ubicación precisa o aproximada
     private fun tienePermisoDeUbicacion(): Boolean {
         val permisos = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         return permisos.any { permiso ->

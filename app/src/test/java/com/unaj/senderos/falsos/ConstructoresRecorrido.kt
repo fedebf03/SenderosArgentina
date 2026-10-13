@@ -8,7 +8,6 @@ import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.RecorridoRealizado
 
-// Construir un recorrido realizado de dominio con valores por defecto sobreescribibles
 fun crearRecorridoDePrueba(
     id: String = "recorrido-1",
     idUsuario: String = "usuario-1",
@@ -40,7 +39,6 @@ fun crearRecorridoDePrueba(
     )
 }
 
-// Construir una entidad local de recorrido con valores por defecto sobreescribibles
 fun crearEntidadRecorridoDePrueba(
     id: String = "recorrido-1",
     idUsuario: String = "usuario-1",
@@ -67,7 +65,6 @@ fun crearEntidadRecorridoDePrueba(
     )
 }
 
-// Construir un documento remoto de recorrido con valores por defecto sobreescribibles
 fun crearRecorridoRedDePrueba(
     id: String = "recorrido-1",
     fechaModificacion: Long = 1_000L

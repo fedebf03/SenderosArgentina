@@ -52,10 +52,8 @@ import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
 
 private const val LONGITUD_MAXIMA_NOTA = 200
 
-// Tipos que se pueden marcar en el camino: todos menos el simple paso
 private val TIPOS_DE_PUNTO_CAPTURABLES: List<TipoPunto> = TipoPunto.entries.filter { tipo -> tipo != TipoPunto.PASO }
 
-// Mostrar la hoja inferior para marcar un punto de interés con tipo, nota y foto opcionales
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HojaCapturaPunto(
@@ -128,7 +126,6 @@ fun HojaCapturaPunto(
     }
 }
 
-// Mostrar la vista previa de la foto elegida y los botones para sacar otra o elegirla de la galería
 @Composable
 private fun SeccionFotoDelPunto(
     estadoVisual: RecorridoEstadoVisual,

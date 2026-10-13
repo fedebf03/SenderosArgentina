@@ -41,7 +41,6 @@ internal data class Proyeccion(val distanciaMetros: Double, val fraccion: Double
 
 object CalculadoraSeguimiento {
 
-    // Crear el estado inicial del seguimiento de un sendero con el trazado completo y la distancia restante total
     fun iniciar(sendero: Sendero, ahora: Long): EstadoSeguimiento {
         val trazado = construirTrazado(sendero.recorrido, sendero.tipoRecorrido)
         return EstadoSeguimiento(
@@ -56,7 +55,6 @@ object CalculadoraSeguimiento {
         )
     }
 
-    // Procesar una nueva lectura de ubicación y devolver el estado actualizado con los avisos generados
     fun actualizar(
         estado: EstadoSeguimiento,
         lectura: LecturaUbicacion,
@@ -214,7 +212,6 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Cerrar el trazado caminado para guardarlo: agrega la última posición conocida si dista 5 m o más de la última del trazado
     fun cerrarTrazadoCaminado(estado: EstadoSeguimiento): List<Coordenada> {
         val ultimaConocida = estado.ultimaPosicionConocida ?: return estado.trazadoCaminado
         val ultimoDelTrazado = estado.trazadoCaminado.lastOrNull() ?: return estado.trazadoCaminado
@@ -236,7 +233,7 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Reevaluar la señal con el reloj: actualiza la calidad y, si pasa a DEBIL, deja la velocidad desconocida porque ya no es confiable
+    // Si pasa a DEBIL, deja la velocidad desconocida porque ya no es confiable
     fun reevaluarSenal(estado: EstadoSeguimiento, ahora: Long): EstadoSeguimiento {
         val calidad = evaluarCalidad(estado, ahora)
         return estado.copy(
@@ -245,14 +242,12 @@ object CalculadoraSeguimiento {
         )
     }
 
-    // Calcular el desplazamiento máximo plausible en kilómetros desde la lectura anterior con una velocidad de caminata
     private fun desplazamientoPlausibleKilometros(estado: EstadoSeguimiento, ahora: Long): Double {
         val instanteAnterior = estado.instanteUltimaLecturaMilisegundos ?: return Double.POSITIVE_INFINITY
         val segundos = ((ahora - instanteAnterior) / 1000.0).coerceAtLeast(0.0)
         return VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO * segundos * estado.multiplicadorSimulacion / METROS_POR_KILOMETRO
     }
 
-    // Calcular el umbral de llegada en kilómetros: el mayor entre 20 m y la precisión de la lectura, con tope de 40 m
     private fun umbralDeLlegadaKilometros(lectura: LecturaUbicacion): Double {
         val metros = maxOf(UMBRAL_LLEGADA_METROS, (lectura.precisionMetros ?: 0f).toDouble())
         return minOf(metros, UMBRAL_LLEGADA_MAXIMO_METROS) / METROS_POR_KILOMETRO
@@ -276,7 +271,6 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Construir el trazado a seguir: circular cierra al origen e ida y vuelta agrega el regreso invertido
     private fun construirTrazado(puntos: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): List<PuntoRecorrido> {
         if (puntos.size < 2) return puntos
         return when (tipoRecorrido) {
@@ -286,7 +280,6 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Construir la correspondencia entre cada punto del trazado y su índice en el recorrido del sendero
     private fun construirIndicesDelRecorrido(cantidadPuntos: Int, tipoRecorrido: TipoRecorrido, largoTrazado: Int): List<Int> {
         if (cantidadPuntos < 2) return (0 until largoTrazado).toList()
         return (0 until largoTrazado).map { indice ->
@@ -298,23 +291,19 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Calcular el largo total del trazado en kilómetros
     private fun longitudTotal(trazado: List<PuntoRecorrido>): Double {
         return (0 until (trazado.size - 1).coerceAtLeast(0)).sumOf { indice -> largoDelTramo(trazado, indice) }
     }
 
-    // Calcular el largo en kilómetros de un tramo reutilizando el Haversine de la calculadora de recorrido
     private fun largoDelTramo(trazado: List<PuntoRecorrido>, indiceTramo: Int): Double {
         val origen = trazado[indiceTramo]
         return CalculadoraRecorrido.distanciaEntre(Coordenada(origen.latitud, origen.longitud), trazado[indiceTramo + 1])
     }
 
-    // Calcular la distancia en metros entre una coordenada y un punto con Haversine
     private fun distanciaEnMetros(desde: Coordenada, hasta: PuntoRecorrido): Double {
         return CalculadoraRecorrido.distanciaEntre(desde, hasta) * METROS_POR_KILOMETRO
     }
 
-    // Calcular la distancia en metros entre dos coordenadas con Haversine
     private fun distanciaEnMetros(desde: Coordenada, hasta: Coordenada): Double {
         return distanciaEnMetros(desde, PuntoRecorrido(hasta.latitud, hasta.longitud))
     }
@@ -342,7 +331,7 @@ object CalculadoraSeguimiento {
         return mejorIndice to mejorProyeccion
     }
 
-    // Proyectar la posición sobre un tramo con una aproximación equirectangular local
+    // Usa una aproximación equirectangular local
     internal fun proyectarSobreTramo(posicion: Coordenada, origen: PuntoRecorrido, destino: PuntoRecorrido): Proyeccion {
         val factorLongitud = cos(Math.toRadians(origen.latitud))
         val destinoX = (destino.longitud - origen.longitud) * factorLongitud

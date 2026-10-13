@@ -22,7 +22,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
-// Renderizar un campo de texto del formulario con su mensaje de error opcional
 @Composable
 internal fun CampoTexto(
     valor: String,
@@ -54,7 +53,6 @@ internal fun CampoTexto(
     )
 }
 
-// Renderizar una ficha que se puede seleccionar entre varias opciones
 @Composable
 internal fun FichaSeleccionable(
     texto: String,
@@ -72,7 +70,6 @@ internal fun FichaSeleccionable(
     )
 }
 
-// Renderizar una fila de texto con un botón para quitarla de la lista
 @Composable
 internal fun FilaElementoQuitable(
     texto: String,
@@ -94,7 +91,6 @@ internal fun FilaElementoQuitable(
     }
 }
 
-// Renderizar un campo de texto con un botón para agregar su contenido a una lista
 @Composable
 internal fun CampoConBotonAgregar(
     valor: String,

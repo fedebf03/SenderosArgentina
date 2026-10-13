@@ -14,9 +14,7 @@ class FalsoMonitorConectividad(hayConexionInicial: Boolean = true) : MonitorCone
             conexion.value = valor
         }
 
-    // Devolver la conexión configurada por la prueba
     override fun hayConexion(): Boolean = conexion.value
 
-    // Emitir la conexión actual y cada cambio que la prueba provoque
     override fun observarConexion(): Flow<Boolean> = conexion
 }

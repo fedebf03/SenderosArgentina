@@ -32,26 +32,22 @@ class SenderosViewModelTest {
     private val proveedorUbicacion = FalsoProveedorUbicacion()
     private val monitorConectividad = FalsoMonitorConectividad()
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel con un usuario activo y el proveedor de ubicación falso
     private fun crearViewModel(): SenderosViewModel {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val casoDeUso = ObservarSenderosDelUsuarioUseCase(FalsoSenderoRepositorio(), autenticacion)
         return SenderosViewModel(casoDeUso, proveedorUbicacion, monitorConectividad)
     }
 
-    // Verificar que al informar el permiso el ViewModel guarda la ubicación obtenida
     @Test
     fun `al obtener la ubicacion con exito la guarda en el estado`() = runTest(despachadorPrueba) {
         val ubicacion = Coordenada(latitud = -34.6, longitud = -58.4)
@@ -65,7 +61,6 @@ class SenderosViewModelTest {
         assertEquals(1, proveedorUbicacion.cantidadConsultas)
     }
 
-    // Verificar que una ubicación nula deja el estado sin ubicación
     @Test
     fun `al obtener una ubicacion nula el estado queda sin ubicacion`() = runTest(despachadorPrueba) {
         proveedorUbicacion.resultado = Result.success(null)
@@ -78,7 +73,6 @@ class SenderosViewModelTest {
         assertEquals(1, proveedorUbicacion.cantidadConsultas)
     }
 
-    // Verificar que un fallo del proveedor no rompe el ViewModel ni deja una ubicación
     @Test
     fun `al fallar la ubicacion no se rompe y el estado queda sin ubicacion`() = runTest(despachadorPrueba) {
         proveedorUbicacion.resultado = Result.failure(IllegalStateException("GPS apagado"))
@@ -91,7 +85,6 @@ class SenderosViewModelTest {
         assertEquals(1, proveedorUbicacion.cantidadConsultas)
     }
 
-    // Verificar que el ViewModel no consulta la ubicación hasta que la interfaz informa el permiso
     @Test
     fun `no consulta la ubicacion antes de recibir el evento`() = runTest(despachadorPrueba) {
         crearViewModel()
@@ -100,7 +93,6 @@ class SenderosViewModelTest {
         assertEquals(0, proveedorUbicacion.cantidadConsultas)
     }
 
-    // Verificar que el evento activa y desactiva el orden por cercanía
     @Test
     fun `al cambiar el orden por cercania se actualiza el estado`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -113,14 +105,12 @@ class SenderosViewModelTest {
         assertFalse(viewModel.estadoVisual.value.ordenarPorCercania)
     }
 
-    // Recolectar en segundo plano los efectos únicos que emite el ViewModel
     private fun TestScope.recolectarEfectos(viewModel: SenderosViewModel): List<SenderosEfecto> {
         val efectos = mutableListOf<SenderosEfecto>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.efectoVisual.collect { efecto -> efectos.add(efecto) } }
         return efectos
     }
 
-    // Verificar que una ubicación nula posterior no reemplaza una ubicación válida ya obtenida
     @Test
     fun `una ubicacion nula no reemplaza una ubicacion valida`() = runTest(despachadorPrueba) {
         val ubicacion = Coordenada(latitud = -34.6, longitud = -58.4)
@@ -136,7 +126,6 @@ class SenderosViewModelTest {
         assertEquals(ubicacion, viewModel.estadoVisual.value.ubicacionActual)
     }
 
-    // Verificar que un pedido de ubicación se ignora mientras hay otro en curso
     @Test
     fun `ignora el pedido de ubicacion si ya hay uno en curso`() = runTest(despachadorPrueba) {
         proveedorUbicacion.resultado = Result.success(Coordenada(latitud = 1.0, longitud = 1.0))
@@ -149,7 +138,6 @@ class SenderosViewModelTest {
         assertEquals(1, proveedorUbicacion.cantidadConsultas)
     }
 
-    // Verificar que sin ubicación y con el orden por cercanía activo se emite un aviso
     @Test
     fun `sin ubicacion y con orden por cercania activo emite un aviso`() = runTest(despachadorPrueba) {
         proveedorUbicacion.resultado = Result.success(null)
@@ -163,7 +151,6 @@ class SenderosViewModelTest {
         assertEquals(listOf<SenderosEfecto>(SenderosEfecto.MostrarAviso("No pudimos obtener tu ubicación")), efectos)
     }
 
-    // Verificar que un fallo del proveedor con el orden activo también emite el aviso
     @Test
     fun `un fallo de ubicacion con orden por cercania activo emite un aviso`() = runTest(despachadorPrueba) {
         proveedorUbicacion.resultado = Result.failure(IllegalStateException("GPS apagado"))
@@ -177,7 +164,6 @@ class SenderosViewModelTest {
         assertEquals(listOf<SenderosEfecto>(SenderosEfecto.MostrarAviso("No pudimos obtener tu ubicación")), efectos)
     }
 
-    // Verificar que sin el orden activo no se emite ningún aviso aunque falte la ubicación
     @Test
     fun `sin orden por cercania no emite aviso si falta la ubicacion`() = runTest(despachadorPrueba) {
         proveedorUbicacion.resultado = Result.success(null)
@@ -190,7 +176,6 @@ class SenderosViewModelTest {
         assertEquals(emptyList<SenderosEfecto>(), efectos)
     }
 
-    // Verificar que el ViewModel recuerda que ya se solicitó el permiso de notificaciones
     @Test
     fun `al solicitar el permiso de notificaciones queda registrado en el estado`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -201,7 +186,6 @@ class SenderosViewModelTest {
         assertTrue(viewModel.estadoVisual.value.seSolicitoPermisoNotificaciones)
     }
 
-    // Verificar que el estado indica cuando no hay conexión y se corrige al volver
     @Test
     fun `el estado refleja la falta de conexion`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()

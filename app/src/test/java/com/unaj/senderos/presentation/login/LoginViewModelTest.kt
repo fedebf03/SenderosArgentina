@@ -28,19 +28,16 @@ class LoginViewModelTest {
     private val despachadorPrueba = StandardTestDispatcher()
     private val autenticacion = FalsoAutenticacionRepositorio()
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel del inicio de sesión con la autenticación falsa
     private fun crearViewModel(): LoginViewModel {
         return LoginViewModel(
             IniciarSesionUseCase(autenticacion),
@@ -49,7 +46,6 @@ class LoginViewModelTest {
         )
     }
 
-    // Verificar que olvidar la contraseña abre el diálogo con el correo ya escrito
     @Test
     fun `olvidar la clave abre el dialogo con el correo precargado`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -63,7 +59,7 @@ class LoginViewModelTest {
         assertEquals("ana@correo.com", estado.emailRecuperacion)
     }
 
-    // Verificar que enviar el enlace con éxito cierra el diálogo y avisa sin revelar si el correo existe
+    // El aviso no revela si el correo existe
     @Test
     fun `enviar el enlace con exito cierra el dialogo y avisa`() = runTest(despachadorPrueba) {
         val efectos = mutableListOf<LoginEfecto>()
@@ -86,7 +82,6 @@ class LoginViewModelTest {
         )
     }
 
-    // Verificar que el correo editado en el diálogo es el que se envía
     @Test
     fun `se envia el correo editado en el dialogo`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -99,7 +94,6 @@ class LoginViewModelTest {
         assertEquals(listOf("otra@correo.com"), autenticacion.correosDeRecuperacion)
     }
 
-    // Verificar que un fallo del dominio queda en el diálogo con su mensaje y sin cerrarlo
     @Test
     fun `un correo invalido muestra el mensaje del dominio y mantiene el dialogo`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -116,7 +110,6 @@ class LoginViewModelTest {
         assertTrue(autenticacion.correosDeRecuperacion.isEmpty())
     }
 
-    // Verificar que un fallo del repositorio también se muestra dentro del diálogo
     @Test
     fun `un fallo del repositorio se muestra en el dialogo`() = runTest(despachadorPrueba) {
         autenticacion.resultadoRecuperacion = Result.failure(Exception("Sin conexión a internet"))
@@ -131,7 +124,6 @@ class LoginViewModelTest {
         assertEquals("Sin conexión a internet", viewModel.estadoVisual.value.mensajeErrorRecuperacion)
     }
 
-    // Verificar que cerrar el diálogo limpia el error y lo oculta
     @Test
     fun `cerrar el dialogo limpia el error`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -147,7 +139,6 @@ class LoginViewModelTest {
         assertNull(viewModel.estadoVisual.value.mensajeErrorRecuperacion)
     }
 
-    // Verificar que cerrar el diálogo durante el envío cancela el envío en curso y no cierra un diálogo reabierto
     @Test
     fun `cerrar el dialogo durante el envio cancela el envio y no cierra el dialogo reabierto`() = runTest(despachadorPrueba) {
         val efectos = mutableListOf<LoginEfecto>()
@@ -166,7 +157,6 @@ class LoginViewModelTest {
         assertTrue(efectos.isEmpty())
     }
 
-    // Verificar que un segundo envío tras cerrar y reabrir no duplica el correo del primero
     @Test
     fun `cerrar y reabrir durante el envio no permite enviar dos correos`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()

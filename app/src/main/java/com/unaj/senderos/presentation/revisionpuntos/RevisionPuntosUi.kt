@@ -41,7 +41,7 @@ import java.io.File
 private val ALTURA_MAXIMA_LISTA_REVISION = 280.dp
 private val TAMANO_MINIATURA_REVISION = 48.dp
 
-// Mostrar una foto de punto a partir de una ruta local, una Uri de contenido o una URL remota
+// La foto puede ser una ruta local, una Uri de contenido o una URL remota
 @Composable
 fun FotoDePunto(
     foto: String,
@@ -61,7 +61,6 @@ fun FotoDePunto(
     )
 }
 
-// Listar los puntos capturados con casilla, ícono, nota y miniatura, más los botones para agregarlos o descartarlos
 @Composable
 fun ContenidoRevisionPuntos(
     estado: RevisionPuntosEstadoVisual,
@@ -109,7 +108,6 @@ fun ContenidoRevisionPuntos(
     }
 }
 
-// Mostrar una fila tocable con la casilla, el tipo, la nota y la miniatura del punto capturado
 @Composable
 private fun FilaPuntoCapturado(puntoConDistancia: PuntoCapturadoConDistancia, estaMarcado: Boolean, alAlternar: () -> Unit) {
     val punto = puntoConDistancia.punto
@@ -161,7 +159,6 @@ private fun FilaPuntoCapturado(puntoConDistancia: PuntoCapturadoConDistancia, es
     }
 }
 
-// Pedir confirmación antes de descartar todos los puntos capturados
 @Composable
 private fun DialogoConfirmarDescartarTodos(alProcesarEvento: (RevisionPuntosEvento) -> Unit) {
     DialogoConfirmacion(
@@ -176,7 +173,6 @@ private fun DialogoConfirmarDescartarTodos(alProcesarEvento: (RevisionPuntosEven
     )
 }
 
-// Mostrar la revisión de los puntos capturados en un diálogo propio
 @Composable
 fun DialogoRevisionPuntos(
     estado: RevisionPuntosEstadoVisual,
@@ -201,7 +197,6 @@ fun DialogoRevisionPuntos(
     )
 }
 
-// Mostrar una foto ampliada en un diálogo que se cierra al tocarla
 @Composable
 fun DialogoFotoAmpliada(foto: String, alCerrar: () -> Unit) {
     AlertDialog(

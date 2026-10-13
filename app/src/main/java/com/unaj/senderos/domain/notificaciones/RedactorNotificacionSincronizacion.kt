@@ -1,9 +1,7 @@
 package com.unaj.senderos.domain.notificaciones
 
-// Redactor puro (sin Android) del contenido de las notificaciones de sincronización
 object RedactorNotificacionSincronizacion {
 
-    // Redactar el título y el texto de la notificación de sincronización, y si ofrece reintentar
     fun redactar(mensaje: MensajeNotificacion): ContenidoNotificacionSincronizacion {
         return when (mensaje) {
             is MensajeNotificacion.SenderosSubidos -> ContenidoNotificacionSincronizacion(

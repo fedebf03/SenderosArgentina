@@ -8,7 +8,6 @@ import org.junit.Test
 
 class MapeoPuntoCapturadoTest {
 
-    // Verificar que el dominio pasa a entidad con todos sus campos
     @Test
     fun `el punto capturado se mapea a entidad`() {
         val punto = crearPuntoCapturadoDePrueba(tipo = TipoPunto.AGUA, nota = "Arroyo", foto = "/fotos/a.jpg", instanteMilisegundos = 5_000L)
@@ -24,7 +23,6 @@ class MapeoPuntoCapturadoTest {
         assertEquals(5_000L, entidad.instanteMilisegundos)
     }
 
-    // Verificar que la entidad vuelve al dominio sin perder datos
     @Test
     fun `la entidad se mapea de vuelta al dominio`() {
         val punto = crearPuntoCapturadoDePrueba(tipo = TipoPunto.REFUGIO, nota = "Refugio techado", foto = "/fotos/b.jpg")
@@ -32,7 +30,6 @@ class MapeoPuntoCapturadoTest {
         assertEquals(punto, punto.aEntidad().aDominio())
     }
 
-    // Verificar que un tipo desconocido en la fila vuelve como PASO
     @Test
     fun `un tipo desconocido se resuelve como paso`() {
         val entidad = PuntoCapturadoEntidad("p", "u", "s", 0.0, 0.0, "INEXISTENTE", "", "", 1L)

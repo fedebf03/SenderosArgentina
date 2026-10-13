@@ -24,37 +24,30 @@ private const val INSTANTE_INICIAL = 1_000L
 
 class CalculadoraSeguimientoTest {
 
-    // Construir un punto del trazado al sur del origen según los grados de latitud indicados
     private fun puntoAlSur(grados: Double, tipo: TipoPunto = TipoPunto.PASO): PuntoRecorrido {
         return PuntoRecorrido(latitud = LATITUD_BASE - grados, longitud = LONGITUD_BASE, tipo = tipo)
     }
 
-    // Construir una coordenada al sur del origen con un desplazamiento opcional hacia el este
     private fun posicionAlSur(grados: Double, gradosAlEste: Double = 0.0): Coordenada {
         return Coordenada(latitud = LATITUD_BASE - grados, longitud = LONGITUD_BASE + gradosAlEste)
     }
 
-    // Construir un sendero de prueba con el recorrido y el tipo indicados
     private fun construirSendero(puntos: List<PuntoRecorrido>, tipo: TipoRecorrido = TipoRecorrido.LINEAL): Sendero {
         return crearSenderoDePrueba(recorrido = puntos).copy(tipoRecorrido = tipo)
     }
 
-    // Construir un sendero lineal de tres puntos de paso separados 0,001 grados de latitud
     private fun senderoLinealCorto(): Sendero {
         return construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.001), puntoAlSur(0.002)))
     }
 
-    // Construir un sendero lineal largo de dos puntos para las pruebas de desvío
     private fun senderoParaDesvio(): Sendero {
         return construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.004)))
     }
 
-    // Actualizar el seguimiento con una posición sin rumbo ni velocidad informados
     private fun actualizarConPosicion(estado: EstadoSeguimiento, posicion: Coordenada, ahora: Long): ResultadoSeguimiento {
         return CalculadoraSeguimiento.actualizar(estado, LecturaUbicacion(posicion, null, null, null), ahora)
     }
 
-    // Aplicar varias posiciones en orden y devolver el último estado
     private fun recorrer(estadoInicial: EstadoSeguimiento, posiciones: List<Coordenada>): EstadoSeguimiento {
         var estado = estadoInicial
         posiciones.forEachIndexed { indice, posicion ->
@@ -63,7 +56,6 @@ class CalculadoraSeguimientoTest {
         return estado
     }
 
-    // Verificar que la distancia restante al iniciar es el largo total del trazado lineal
     @Test
     fun `al iniciar un sendero lineal la distancia restante es el largo total del trazado`() {
         val estado = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -72,7 +64,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0, estado.distanciaRecorridaKilometros, 0.0001)
     }
 
-    // Verificar que el recorrido circular suma el tramo de cierre al largo total
     @Test
     fun `al iniciar un sendero circular el largo total incluye el tramo de cierre`() {
         val triangulo = listOf(
@@ -88,7 +79,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.distanciaRestanteKilometros > 0.3)
     }
 
-    // Verificar que el recorrido de ida y vuelta duplica el largo total
     @Test
     fun `al iniciar un sendero de ida y vuelta el largo total se duplica`() {
         val estado = CalculadoraSeguimiento.iniciar(
@@ -99,7 +89,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.4448, estado.distanciaRestanteKilometros, TOLERANCIA_KILOMETROS)
     }
 
-    // Verificar que avanzar sobre el trazado reduce la distancia restante y aumenta la recorrida
     @Test
     fun `avanzar sobre el trazado reduce la distancia restante y aumenta la recorrida`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -110,7 +99,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.1112, estado.distanciaRestanteKilometros, TOLERANCIA_KILOMETROS)
     }
 
-    // Verificar que un movimiento menor a 5 metros no suma distancia recorrida
     @Test
     fun `un movimiento menor a 5 metros no suma distancia recorrida`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -120,7 +108,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0, estado.distanciaRecorridaKilometros, 0.0001)
     }
 
-    // Verificar que un movimiento de unos 11 metros sí suma distancia recorrida
     @Test
     fun `un movimiento de once metros suma distancia recorrida`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -130,7 +117,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0111, estado.distanciaRecorridaKilometros, 0.002)
     }
 
-    // Verificar que el índice de tramo no retrocede cuando la vuelta se superpone con la ida
     @Test
     fun `el indice de tramo nunca retrocede en un recorrido de ida y vuelta`() {
         val sendero = construirSendero(senderoLinealCorto().recorrido, TipoRecorrido.IDA_Y_VUELTA)
@@ -150,7 +136,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.distanciaRestanteKilometros < 0.005)
     }
 
-    // Verificar que la distancia al trazado es la perpendicular al tramo más cercano
     @Test
     fun `la distancia al trazado es la perpendicular aproximada al tramo`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -160,7 +145,7 @@ class CalculadoraSeguimientoTest {
         assertEquals(85.2, estado.distanciaAlTrazadoMetros, 3.0)
     }
 
-    // Verificar que se avisa una sola vez al acercarse a menos de 50 metros de un punto que no es de paso
+    // Avisa al acercarse a menos de 50 metros del punto
     @Test
     fun `avisa una sola vez al acercarse a un punto que no es de paso`() {
         val mirador = puntoAlSur(0.002, TipoPunto.MIRADOR)
@@ -180,7 +165,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(avisosPorPosicion[3].isEmpty())
     }
 
-    // Verificar que los puntos de paso nunca generan aviso de proximidad
     @Test
     fun `no avisa al acercarse a puntos de paso`() {
         val sendero = construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.002), puntoAlSur(0.004)))
@@ -195,7 +179,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(avisos.filter { aviso -> aviso != AvisoRecorrido.LlegadaAlFinal }.isEmpty())
     }
 
-    // Verificar que el aviso de desvío se emite al superar 100 metros y no se repite mientras siga desviado
     @Test
     fun `avisa el desvio al superar cien metros y no lo repite mientras siga desviado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoParaDesvio(), INSTANTE_INICIAL)
@@ -211,7 +194,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(segundoDesvio.estado.estaDesviado)
     }
 
-    // Verificar que el desvío se rearma solo tras volver a menos de 50 metros del trazado
     @Test
     fun `el desvio se rearma al volver a menos de cincuenta metros del trazado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoParaDesvio(), INSTANTE_INICIAL)
@@ -229,7 +211,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.Desvio), nuevoDesvio.avisos)
     }
 
-    // Verificar que el próximo punto avanza al pasar por un punto del trazado
     @Test
     fun `el proximo punto avanza al pasar un punto`() {
         val sendero = construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.002), puntoAlSur(0.004)))
@@ -242,7 +223,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(2, despuesDelPunto.indiceProximoPunto)
     }
 
-    // Verificar que el tiempo transcurrido es la diferencia entre el instante actual y el de inicio
     @Test
     fun `el tiempo transcurrido es la diferencia entre ahora y el inicio`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -252,7 +232,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(60_000L, resultado.estado.tiempoTranscurridoMilisegundos)
     }
 
-    // Verificar que cerca del origen de un circular el usuario sigue en el primer tramo y no salta al cierre
     @Test
     fun `en un circular cerca del origen sigue en el primer tramo y no salta al cierre`() {
         val triangulo = listOf(
@@ -269,7 +248,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(inicial.distanciaRestanteKilometros, estado.distanciaRestanteKilometros, 0.01)
     }
 
-    // Verificar que cortar la esquina en un vértice con giro no salta al tramo de la vuelta
     @Test
     fun `en ida y vuelta cortar la esquina de un giro no salta a la vuelta`() {
         val sendero = construirSendero(
@@ -294,7 +272,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(1, estado.indiceTramoActual)
     }
 
-    // Verificar que un punto de giro no de paso genera un solo aviso
     @Test
     fun `un punto de giro que no es de paso genera un solo aviso en ida y vuelta`() {
         val giro = PuntoRecorrido(LATITUD_BASE - 0.002, LONGITUD_BASE + 0.002, TipoPunto.MIRADOR)
@@ -319,7 +296,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.CercaDePunto(indice = 2, punto = giro)), avisos)
     }
 
-    // Verificar que un punto del recorrido no se avisa de nuevo al pasar por él en la vuelta
     @Test
     fun `un punto no se vuelve a avisar en la vuelta de un recorrido de ida y vuelta`() {
         val mirador = puntoAlSur(0.002, TipoPunto.MIRADOR)
@@ -338,7 +314,6 @@ class CalculadoraSeguimientoTest {
         )
     }
 
-    // Verificar que un camino lento con pasos de 3 metros suma distancia acumulada
     @Test
     fun `un camino lento con pasos de tres metros suma distancia`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -349,7 +324,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.distanciaRecorridaKilometros >= 0.02)
     }
 
-    // Verificar que oscilar sin moverse no suma distancia
     @Test
     fun `oscilar sin moverse no suma distancia`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -360,7 +334,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0, estado.distanciaRecorridaKilometros, 0.0001)
     }
 
-    // Verificar que cada posición aceptada se agrega al trazado caminado en orden
     @Test
     fun `cada posicion aceptada se agrega al trazado caminado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -371,7 +344,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(posiciones, estado.trazadoCaminado)
     }
 
-    // Verificar que un movimiento menor a 5 metros no se agrega al trazado caminado
     @Test
     fun `un movimiento menor a cinco metros no se agrega al trazado caminado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -382,7 +354,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(listOf(posicionAlSur(0.0)), estado.trazadoCaminado)
     }
 
-    // Verificar que el estado inicial no tiene trazado caminado ni velocidad máxima
     @Test
     fun `el estado inicial no tiene trazado caminado ni velocidad maxima`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -391,7 +362,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0f, inicial.velocidadMaximaMetrosPorSegundo, 0f)
     }
 
-    // Verificar que la velocidad máxima conserva el mayor valor reportado por las lecturas
     @Test
     fun `la velocidad maxima conserva el mayor valor reportado`() {
         var estado = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -406,7 +376,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(3.5f, estado.velocidadMaximaMetrosPorSegundo, 0f)
     }
 
-    // Verificar que una lectura sin velocidad no modifica la velocidad máxima
     @Test
     fun `una lectura sin velocidad no modifica la velocidad maxima`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -419,12 +388,11 @@ class CalculadoraSeguimientoTest {
         assertEquals(2.5f, sinVelocidad.velocidadMaximaMetrosPorSegundo, 0f)
     }
 
-    // Construir una lectura con rumbo y velocidad opcionales
     private fun lectura(coordenada: Coordenada, rumbo: Float? = null, velocidad: Float? = null): LecturaUbicacion {
         return LecturaUbicacion(coordenada, rumbo, velocidad, precisionMetros = null)
     }
 
-    // Verificar que el rumbo del GPS se toma cuando la velocidad es de al menos 0,5 m/s
+    // Velocidad suficiente: al menos 0,5 m/s
     @Test
     fun `el rumbo del GPS se actualiza con velocidad suficiente`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -435,7 +403,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(1.5f, estado.velocidadMetrosPorSegundo)
     }
 
-    // Verificar que detenido se conserva el último rumbo conocido
     @Test
     fun `detenido se conserva el ultimo rumbo conocido`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -446,7 +413,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(90f, detenido.rumboGrados)
     }
 
-    // Verificar que el rumbo queda sin definir hasta que haya movimiento o rumbo informado
     @Test
     fun `sin rumbo ni desplazamiento el rumbo queda sin definir`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -456,7 +422,6 @@ class CalculadoraSeguimientoTest {
         assertNull(estado.rumboGrados)
     }
 
-    // Verificar que sin rumbo del GPS se calcula el rumbo geodésico del desplazamiento hacia el norte
     @Test
     fun `sin rumbo del GPS se calcula el rumbo hacia el norte`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -466,7 +431,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0, estado.rumboGrados?.toDouble() ?: -999.0, 1.0)
     }
 
-    // Verificar que sin rumbo del GPS se calcula el rumbo geodésico del desplazamiento hacia el este
     @Test
     fun `sin rumbo del GPS se calcula el rumbo hacia el este`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -476,7 +440,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(90.0, estado.rumboGrados?.toDouble() ?: -999.0, 1.0)
     }
 
-    // Verificar que el rumbo del GPS se normaliza a [0, 360)
     @Test
     fun `el rumbo del GPS se normaliza al intervalo de 0 a 360`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -488,7 +451,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(270f, negativo.rumboGrados ?: -1f, 0.001f)
     }
 
-    // Verificar que en una simulación desviada no se suma distancia, ni en el salto de ida ni en el de regreso
     @Test
     fun `en una simulacion desviada no se suma distancia`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoParaDesvio(), INSTANTE_INICIAL).copy(esSimulado = true)
@@ -501,7 +463,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0.0, estado.distanciaRecorridaKilometros, 0.0001)
     }
 
-    // Verificar que en un recorrido real desviado la distancia sí se suma
     @Test
     fun `en un recorrido real desviado la distancia se suma`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoParaDesvio(), INSTANTE_INICIAL)
@@ -511,7 +472,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.distanciaRecorridaKilometros > 0.1)
     }
 
-    // Verificar que un desplazamiento de 7 metros sin rumbo no alcanza para calcular el rumbo
     @Test
     fun `un desplazamiento menor a diez metros no calcula el rumbo`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -521,7 +481,6 @@ class CalculadoraSeguimientoTest {
         assertNull(estado.rumboGrados)
     }
 
-    // Verificar que la imprecisión de la lectura eleva el umbral para calcular el rumbo
     @Test
     fun `un desplazamiento menor a la precision de la lectura no calcula el rumbo`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -542,7 +501,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(180.0, preciso.rumboGrados?.toDouble() ?: -999.0, 1.0)
     }
 
-    // Verificar que con rumbo del GPS y velocidad desconocida se acepta el rumbo
     @Test
     fun `con rumbo del GPS y velocidad desconocida se acepta el rumbo`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -552,7 +510,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(45f, estado.rumboGrados)
     }
 
-    // Aplicar posiciones al sur y devolver, por cada una, los avisos generados
     private fun avisosPorPosicion(estadoInicial: EstadoSeguimiento, posiciones: List<Coordenada>): Pair<List<List<AvisoRecorrido>>, EstadoSeguimiento> {
         var estado = estadoInicial
         val avisos = posiciones.mapIndexed { indice, posicion ->
@@ -563,7 +520,7 @@ class CalculadoraSeguimientoTest {
         return avisos to estado
     }
 
-    // Verificar que en un lineal se avisa la llegada una sola vez al estar a menos de 20 metros del final
+    // La llegada se avisa a menos de 20 metros del final
     @Test
     fun `en un lineal avisa la llegada al final una sola vez`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -579,7 +536,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.llegoAlFinal)
     }
 
-    // Verificar que en ida y vuelta no se avisa en el punto de giro y sí al volver al inicio
     @Test
     fun `en ida y vuelta no avisa en el giro y si al volver`() {
         val sendero = construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.002)), TipoRecorrido.IDA_Y_VUELTA)
@@ -595,7 +551,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.llegoAlFinal)
     }
 
-    // Verificar que en un circular no se avisa al arrancar cerca del inicio y sí al cerrar la vuelta
     @Test
     fun `en un circular no avisa al arrancar y si al cerrar la vuelta`() {
         val triangulo = listOf(
@@ -621,7 +576,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.llegoAlFinal)
     }
 
-    // Verificar que en un circular chico (lados de 111 m y 85 m) arrancar cerca del inicio no salta al tramo de cierre
     @Test
     fun `en un circular chico arrancar cerca del inicio sigue en el primer tramo sin avisar llegada`() {
         val triangulo = listOf(
@@ -639,7 +593,6 @@ class CalculadoraSeguimientoTest {
         assertFalse(resultado.estado.llegoAlFinal)
     }
 
-    // Generar posiciones caminando por los vértices, una cada pasoMetros aproximadamente
     private fun caminar(vertices: List<Coordenada>, pasoMetros: Double): List<Coordenada> {
         val posiciones = mutableListOf(vertices.first())
         vertices.zipWithNext().forEach { (origen, destino) ->
@@ -658,7 +611,6 @@ class CalculadoraSeguimientoTest {
         return posiciones
     }
 
-    // Verificar que un circular de unos 365 m recorrido completo avisa la llegada una sola vez, al cerrar la vuelta
     @Test
     fun `un circular de 365 metros recorrido completo avisa la llegada una vez al cerrar`() {
         val esquinas = listOf(
@@ -687,7 +639,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.distanciaRecorridaKilometros > 0.3)
     }
 
-    // Construir un circular chico de unos 335 m con lados de 111 m, 85 m y el cierre
     private fun trianguloCircularChico(): Sendero {
         return construirSendero(
             listOf(
@@ -699,12 +650,10 @@ class CalculadoraSeguimientoTest {
         )
     }
 
-    // Construir un sendero lineal de tres tramos de 111 m cada uno
     private fun senderoLinealDeTresTramos(): Sendero {
         return construirSendero(listOf(puntoAlSur(0.0), puntoAlSur(0.001), puntoAlSur(0.002), puntoAlSur(0.003)))
     }
 
-    // Verificar que un salto espurio de 200 m en un circular chico no adelanta el tramo ni dispara la llegada
     @Test
     fun `un salto espurio de doscientos metros no adelanta el tramo ni dispara la llegada`() {
         val inicial = CalculadoraSeguimiento.iniciar(trianguloCircularChico(), INSTANTE_INICIAL)
@@ -721,7 +670,7 @@ class CalculadoraSeguimientoTest {
         assertFalse(AvisoRecorrido.LlegadaAlFinal in salto.avisos)
     }
 
-    // Verificar que una lectura con precisión peor a 30 m no suma distancia ni se agrega al trazado caminado
+    // Lectura imprecisa: precisión peor a 30 m
     @Test
     fun `una lectura imprecisa no suma distancia ni se agrega al trazado caminado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
@@ -737,7 +686,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(1, imprecisa.trazadoCaminado.size)
     }
 
-    // Verificar que una lectura imprecisa no amplía la ventana de búsqueda del tramo
     @Test
     fun `una lectura imprecisa no amplia la ventana de busqueda`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealDeTresTramos(), INSTANTE_INICIAL)
@@ -752,13 +700,11 @@ class CalculadoraSeguimientoTest {
         assertTrue(imprecisa.indiceTramoActual <= 1)
     }
 
-    // Construir un estado de un lineal corto con las lecturas previas necesarias para probar la llegada
     private fun estadoCercaDelFinalLineal(): EstadoSeguimiento {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealCorto(), INSTANTE_INICIAL)
         return recorrer(inicial, listOf(posicionAlSur(0.0), posicionAlSur(0.001), posicionAlSur(0.0015)))
     }
 
-    // Verificar que la precisión de la lectura eleva el umbral de llegada por encima de 20 m
     @Test
     fun `la precision eleva el umbral de llegada`() {
         val estado = estadoCercaDelFinalLineal()
@@ -776,7 +722,7 @@ class CalculadoraSeguimientoTest {
         assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.LlegadaAlFinal), conPrecision.avisos)
     }
 
-    // Verificar que el umbral de llegada nunca supera los 30 m (la precisión máxima válida): a 39 m del final no se llega aunque la precisión sea de 30 m
+    // A 39 m del final no se llega aunque la precisión sea de 30 m, la máxima válida
     @Test
     fun `el umbral de llegada se acota a la precision maxima valida`() {
         val estado = estadoCercaDelFinalLineal()
@@ -797,7 +743,6 @@ class CalculadoraSeguimientoTest {
         assertFalse(aTreintaYNueveMetros.estado.llegoAlFinal)
     }
 
-    // Verificar que la primera lectura busca el tramo más cercano en todo el trazado
     @Test
     fun `la primera lectura lejos del inicio busca el tramo mas cercano en todo el trazado`() {
         val inicial = CalculadoraSeguimiento.iniciar(senderoLinealDeTresTramos(), INSTANTE_INICIAL)
@@ -808,7 +753,6 @@ class CalculadoraSeguimientoTest {
         assertTrue(estado.distanciaRestanteKilometros < 0.05)
     }
 
-    // Verificar que en un circular la primera lectura cerca del inicio elige el tramo 0 aunque el cierre sea más cercano
     @Test
     fun `en un circular la primera lectura cerca del inicio elige el primer tramo`() {
         val inicial = CalculadoraSeguimiento.iniciar(trianguloCircularChico(), INSTANTE_INICIAL)
@@ -822,7 +766,6 @@ class CalculadoraSeguimientoTest {
         assertEquals(0, estado.indiceTramoActual)
     }
 
-    // Verificar que en un circular la primera lectura sobre el cierre y lejos del tramo 0 elige el cierre
     @Test
     fun `en un circular la primera lectura sobre el cierre y lejos del primer tramo elige el cierre`() {
         val inicial = CalculadoraSeguimiento.iniciar(trianguloCircularChico(), INSTANTE_INICIAL)

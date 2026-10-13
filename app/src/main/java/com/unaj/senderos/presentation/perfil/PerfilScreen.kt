@@ -46,7 +46,6 @@ import com.unaj.senderos.presentation.tema.TemaSenderos
 
 private const val TAG = "PERFIL"
 
-// Mostrar el perfil conectado a su ViewModel y atender la navegación al inicio de sesión
 @Composable
 fun PerfilPantalla(
     viewModel: PerfilViewModel,
@@ -80,7 +79,6 @@ fun PerfilPantalla(
     )
 }
 
-// Renderizar el perfil con su cabecera y la botonera inferior
 @Composable
 fun PerfilContenido(
     estadoVisual: PerfilEstadoVisual,
@@ -112,7 +110,6 @@ fun PerfilContenido(
     }
 }
 
-// Mostrar los datos del usuario, el modo demostración y el cierre de sesión
 @Composable
 private fun CuerpoPerfil(
     estadoVisual: PerfilEstadoVisual,
@@ -189,7 +186,6 @@ private fun CuerpoPerfil(
     }
 }
 
-// Previsualizar el perfil de un usuario de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun PerfilContenidoPreview() {

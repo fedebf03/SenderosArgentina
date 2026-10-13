@@ -7,7 +7,6 @@ import java.time.format.DateTimeFormatter
 
 private val FORMATO_FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm", LOCALIDAD_ARGENTINA)
 
-// Dar formato "12/10/2026 · 01:33" a un instante en milisegundos según la zona indicada
 fun formatearFechaHora(milisegundos: Long, zona: ZoneId = ZoneId.systemDefault()): String {
     return FORMATO_FECHA_HORA.format(Instant.ofEpochMilli(milisegundos).atZone(zona))
 }

@@ -32,19 +32,16 @@ class HistorialDetalleViewModelTest {
     private val repositorioRecorridos = FalsoRecorridoRepositorio()
     private val efectosRecibidos = mutableListOf<HistorialDetalleEfecto>()
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel con los senderos indicados y recolectar sus efectos
     private fun crearViewModel(idRecorrido: String, idsSenderosExistentes: List<String>): HistorialDetalleViewModel {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val repositorioSenderos = FalsoSenderoRepositorio(
@@ -61,7 +58,6 @@ class HistorialDetalleViewModelTest {
         return viewModel
     }
 
-    // Verificar que se cargan el recorrido y el sendero planificado
     @Test
     fun `carga el recorrido y el sendero planificado`() = runTest(despachadorPrueba) {
         repositorioRecorridos.recorridos.value = listOf(crearRecorridoDePrueba(id = "r1", idSendero = "sendero-1"))
@@ -75,7 +71,6 @@ class HistorialDetalleViewModelTest {
         assertNotNull(estado.sendero)
     }
 
-    // Verificar que si el sendero ya no existe se muestra solo el trazado caminado
     @Test
     fun `si el sendero no existe queda sin sendero planificado`() = runTest(despachadorPrueba) {
         repositorioRecorridos.recorridos.value = listOf(crearRecorridoDePrueba(id = "r1", idSendero = "borrado"))
@@ -88,7 +83,6 @@ class HistorialDetalleViewModelTest {
         assertNull(estado.mensajeError)
     }
 
-    // Verificar que un recorrido inexistente informa el error
     @Test
     fun `un recorrido inexistente informa que no se encontro`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel("no-existe", listOf("sendero-1"))
@@ -100,7 +94,6 @@ class HistorialDetalleViewModelTest {
         assertEquals("No se encontró el recorrido", estado.mensajeError)
     }
 
-    // Verificar que volver emite el efecto de regreso al perfil
     @Test
     fun `volver emite el efecto de regreso al perfil`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel("r1", emptyList())

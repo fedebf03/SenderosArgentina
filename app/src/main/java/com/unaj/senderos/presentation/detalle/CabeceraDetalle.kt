@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.presentation.componentes.FotoSendero
 
-// Renderizar la cabecera del detalle con la foto, las acciones y el nombre del sendero
 @Composable
 internal fun CabeceraDetalle(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -124,7 +123,6 @@ internal fun CabeceraDetalle(
     }
 }
 
-// Renderizar el menú con las opciones de editar y eliminar el sendero
 @Composable
 internal fun MenuOpciones(
     esVisible: Boolean,
@@ -154,7 +152,6 @@ internal fun MenuOpciones(
     }
 }
 
-// Renderizar un botón de ícono circular que se apoya sobre la foto
 @Composable
 internal fun BotonCircular(
     icono: ImageVector,

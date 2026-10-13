@@ -11,16 +11,13 @@ class CalculadoraCorredorTest {
 
     private val gradosPorMil = 1000.0 / 111195.0
 
-    // Crear un punto de recorrido de prueba con la latitud y la longitud indicadas
     private fun punto(latitud: Double, longitud: Double) = PuntoRecorrido(latitud = latitud, longitud = longitud)
 
-    // Verificar que sin puntos válidos no hay rectángulos
     @Test
     fun `sin puntos no hay rectangulos`() {
         assertTrue(CalculadoraCorredor.rectangulos(emptyList(), 1000.0).isEmpty())
     }
 
-    // Verificar que un solo punto genera un rectángulo centrado con el ancho en cada lado
     @Test
     fun `un punto genera un rectangulo alrededor del punto`() {
         val rectangulos = CalculadoraCorredor.rectangulos(listOf(punto(0.0, 0.0)), 1000.0)
@@ -32,7 +29,6 @@ class CalculadoraCorredorTest {
         assertEquals(gradosPorMil, rectangulos[0].este, 1e-9)
     }
 
-    // Verificar que cada tramo genera un rectángulo ampliado en el ancho pedido
     @Test
     fun `dos puntos en el ecuador generan un rectangulo ampliado`() {
         val rectangulos = CalculadoraCorredor.rectangulos(listOf(punto(0.0, 0.0), punto(0.0, 0.01)), 1000.0)
@@ -44,7 +40,6 @@ class CalculadoraCorredorTest {
         assertEquals(0.01 + gradosPorMil, rectangulos[0].este, 1e-9)
     }
 
-    // Verificar que tres puntos generan dos rectángulos, uno por tramo
     @Test
     fun `tres puntos generan un rectangulo por tramo`() {
         val rectangulos = CalculadoraCorredor.rectangulos(
@@ -56,7 +51,6 @@ class CalculadoraCorredorTest {
         assertEquals(0.01 + gradosPorMil, rectangulos[1].norte, 1e-9)
     }
 
-    // Verificar que la longitud se amplía dividiendo por el coseno de la latitud
     @Test
     fun `a sesenta grados de latitud la longitud se duplica`() {
         val rectangulos = CalculadoraCorredor.rectangulos(listOf(punto(60.0, 10.0), punto(60.0, 10.01)), 1000.0)
@@ -66,7 +60,6 @@ class CalculadoraCorredorTest {
         assertEquals(60.0 + gradosPorMil, rectangulos[0].norte, 1e-9)
     }
 
-    // Verificar que los puntos con coordenadas inválidas se ignoran
     @Test
     fun `los puntos invalidos se ignoran`() {
         val rectangulos = CalculadoraCorredor.rectangulos(
@@ -78,7 +71,7 @@ class CalculadoraCorredorTest {
         assertEquals(0.01 + gradosPorMil, rectangulos[0].este, 1e-9)
     }
 
-    // Verificar que un tramo diagonal de unos 20 km se subdivide para no cubrir un área enorme
+    // Un tramo largo se subdivide para no cubrir un área enorme con un solo rectángulo
     @Test
     fun `un tramo diagonal de veinte kilometros se subdivide en rectangulos chicos`() {
         val rectangulos = CalculadoraCorredor.rectangulos(listOf(punto(0.0, 0.0), punto(0.127, 0.127)), 1000.0)
@@ -90,7 +83,6 @@ class CalculadoraCorredorTest {
         assertEquals(0.127 + gradosPorMil, rectangulos.last().norte, 1e-9)
     }
 
-    // Verificar que cerca de los polos y del antimeridiano los límites quedan acotados
     @Test
     fun `los limites quedan dentro del rango geografico`() {
         val rectangulo = CalculadoraCorredor.rectangulos(listOf(punto(89.999, 179.999)), 100000.0)[0]
@@ -99,7 +91,6 @@ class CalculadoraCorredorTest {
         assertTrue(rectangulo.este <= 180.0)
     }
 
-    // Verificar que la firma es la misma para el mismo trazado
     @Test
     fun `la firma es determinista`() {
         val trazado = listOf(punto(-40.5, -71.3), punto(-40.6, -71.4))
@@ -107,7 +98,6 @@ class CalculadoraCorredorTest {
         assertEquals(CalculadoraCorredor.firmaTrazado(trazado), CalculadoraCorredor.firmaTrazado(trazado.toList()))
     }
 
-    // Verificar que la firma cambia al mover un punto, cambiar el orden o agregar un punto
     @Test
     fun `la firma cambia cuando cambia el trazado`() {
         val base = listOf(punto(-40.5, -71.3), punto(-40.6, -71.4))
@@ -118,7 +108,6 @@ class CalculadoraCorredorTest {
         assertNotEquals(firmaBase, CalculadoraCorredor.firmaTrazado(base + punto(-40.7, -71.5)))
     }
 
-    // Verificar que diferencias menores a seis decimales no cambian la firma
     @Test
     fun `la firma ignora diferencias menores a seis decimales`() {
         val uno = listOf(punto(-40.5000001, -71.3000001))
@@ -127,7 +116,6 @@ class CalculadoraCorredorTest {
         assertEquals(CalculadoraCorredor.firmaTrazado(uno), CalculadoraCorredor.firmaTrazado(otro))
     }
 
-    // Verificar que el nombre y el tipo del punto no alteran la firma del trazado
     @Test
     fun `la firma ignora el nombre del punto`() {
         val sinNombre = listOf(punto(-40.5, -71.3))

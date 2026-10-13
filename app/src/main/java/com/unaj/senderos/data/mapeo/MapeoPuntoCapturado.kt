@@ -4,7 +4,7 @@ import com.unaj.senderos.data.local.PuntoCapturadoEntidad
 import com.unaj.senderos.domain.model.PuntoCapturado
 import com.unaj.senderos.domain.model.TipoPunto
 
-// Convertir la fila de Room en punto capturado de dominio; un tipo desconocido se resuelve como PASO
+// Un tipo desconocido se resuelve como PASO
 fun PuntoCapturadoEntidad.aDominio(): PuntoCapturado {
     return PuntoCapturado(
         id = id,
@@ -19,7 +19,6 @@ fun PuntoCapturadoEntidad.aDominio(): PuntoCapturado {
     )
 }
 
-// Convertir el punto capturado de dominio en fila de Room
 fun PuntoCapturado.aEntidad(): PuntoCapturadoEntidad {
     return PuntoCapturadoEntidad(
         id = id,

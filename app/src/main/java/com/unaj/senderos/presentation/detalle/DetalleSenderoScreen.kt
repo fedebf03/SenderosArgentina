@@ -74,7 +74,6 @@ private const val TAG = "DETALLE_SENDERO"
 // Posición del recuadro del mapa dentro de la lista del detalle
 private const val INDICE_ELEMENTO_MAPA = 2
 
-// Mostrar el detalle del sendero conectado a su ViewModel y gestionar los permisos del recorrido
 @Composable
 fun DetalleSenderoPantalla(
     viewModel: DetalleSenderoViewModel,
@@ -103,7 +102,6 @@ fun DetalleSenderoPantalla(
         }
         viewModel.procesarEvento(DetalleSenderoEvento.AlConcederPermisoUbicacion)
     }
-    // Pedir las notificaciones en Android 13 o superior si faltan; si no, iniciar el recorrido
     val continuarTrasUbicacionPrecisa: () -> Unit = {
         val faltaPermisoNotificaciones = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(contextoActual, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -133,7 +131,6 @@ fun DetalleSenderoPantalla(
                 is DetalleSenderoEfecto.NavegarAEdicion -> navegarAEdicionActual(efecto.idSendero)
                 is DetalleSenderoEfecto.NavegarARecorrido -> navegarARecorridoActual(efecto.idSendero)
                 is DetalleSenderoEfecto.SolicitarPermisoUbicacion -> {
-                    // Con la ubicación precisa ya concedida se sigue directo; si falta, se pide al sistema
                     if (tienePermisoDeUbicacionPrecisa(contextoActual)) {
                         continuarTrasUbicacionPrecisa()
                     } else {
@@ -159,7 +156,6 @@ fun DetalleSenderoPantalla(
     )
 }
 
-// Renderizar el detalle del sendero a partir del estado visual
 @Composable
 fun DetalleSenderoContenido(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -293,7 +289,6 @@ fun DetalleSenderoContenido(
     }
 }
 
-// Mostrar el botón inferior que inicia, simula o retoma el recorrido según el caso
 @Composable
 private fun BotonIniciarRecorrido(
     hayRecorridoEnCurso: Boolean,
@@ -320,7 +315,6 @@ private fun BotonIniciarRecorrido(
     }
 }
 
-// Renderizar la lista con todas las secciones del sendero
 @Composable
 private fun CuerpoDetalle(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -331,7 +325,6 @@ private fun CuerpoDetalle(
     val estadoLista = rememberLazyListState()
     // Recordar la última clave desplazada para no repetir el desplazamiento al recrear la pantalla
     var ultimaClaveDesplazada by rememberSaveable { mutableIntStateOf(0) }
-    // Desplazar la lista hasta el mapa cada vez que se elige un punto de interés
     LaunchedEffect(estadoVisual.contadorEnfoque) {
         if (estadoVisual.contadorEnfoque > ultimaClaveDesplazada) {
             ultimaClaveDesplazada = estadoVisual.contadorEnfoque
@@ -443,7 +436,6 @@ private fun CuerpoDetalle(
     }
 }
 
-// Previsualizar el detalle de un sendero de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun DetalleSenderoContenidoPreview() {

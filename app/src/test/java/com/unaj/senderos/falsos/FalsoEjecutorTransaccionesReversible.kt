@@ -7,7 +7,7 @@ class FalsoEjecutorTransaccionesReversible(
     private val puntoCapturadoDao: FalsoPuntoCapturadoDao
 ) : EjecutorTransacciones {
 
-    // Ejecutar el bloque y, si lanza una excepción, restaurar las dos tablas falsas como lo hace la reversión de Room
+    // Emula la reversión de Room: si el bloque lanza una excepción, restaura las dos tablas falsas
     override suspend fun <T> ejecutar(bloque: suspend () -> T): T {
         val senderosAntes = senderoDao.entidades.value
         val puntosAntes = puntoCapturadoDao.entidades.value

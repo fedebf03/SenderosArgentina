@@ -27,7 +27,6 @@ class DetectorPasos(
     private var instanteUltimoPaso: Long? = null
     private var estaArmado = true
 
-    // Procesar una muestra y devolver verdadero si con ella se confirmó un paso
     fun procesar(muestra: MuestraAcelerometro): Boolean {
         val magnitud = sqrt((muestra.x * muestra.x + muestra.y * muestra.y + muestra.z * muestra.z).toDouble())
         val gravedad = gravedadEstimada
@@ -46,13 +45,11 @@ class DetectorPasos(
         return evaluarPico(suavizada, muestra.instanteMilisegundos)
     }
 
-    // Calcular el coeficiente de un filtro paso bajo de primer orden para el intervalo y la frecuencia de corte dados
     private fun coeficiente(intervaloSegundos: Double, frecuenciaCorteHercios: Double): Double {
         val constanteDeTiempo = 1.0 / (2.0 * Math.PI * frecuenciaCorteHercios)
         return intervaloSegundos / (constanteDeTiempo + intervaloSegundos)
     }
 
-    // Evaluar si la muestra anterior fue un pico confirmado por la muestra actual y registrar el paso
     private fun evaluarPico(actual: Double, instanteActual: Long): Boolean {
         val candidato = anterior
         val previo = anteanterior

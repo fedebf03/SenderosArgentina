@@ -56,7 +56,6 @@ import com.unaj.senderos.presentation.tema.TemaSenderos
 
 private const val TAG = "SENDEROS"
 
-// Renderizar Mis Senderos conectando el ViewModel, los permisos y los avisos
 @Composable
 fun SenderosPantalla(
     viewModel: SenderosViewModel,
@@ -116,7 +115,6 @@ fun SenderosPantalla(
         alProcesarEvento = { evento ->
             viewModel.procesarEvento(evento)
             if (evento is SenderosEvento.AlCambiarOrdenCercania && evento.activado) {
-                // Al activar el orden se pide el permiso si falta, o se refresca la ubicación si ya está otorgado
                 if (tienePermisoUbicacion) {
                     viewModel.procesarEvento(SenderosEvento.AlObtenerUbicacion)
                 } else {
@@ -129,7 +127,6 @@ fun SenderosPantalla(
     )
 }
 
-// Renderizar el contenido de Mis Senderos a partir del estado visual
 @Composable
 fun SenderosContenido(
     estadoVisual: SenderosEstadoVisual,
@@ -206,7 +203,6 @@ fun SenderosContenido(
     }
 }
 
-// Previsualizar Mis Senderos con senderos de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun SenderosContenidoPreview() {

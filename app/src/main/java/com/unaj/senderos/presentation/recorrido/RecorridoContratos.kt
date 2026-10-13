@@ -8,16 +8,12 @@ import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEstadoVisual
 import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
 
-// Tipo de punto que propone la hoja de captura
 val TIPO_PUNTO_INICIAL: TipoPunto = TipoPunto.MIRADOR
 
-// Velocidades de avance que admite la simulación
 val MULTIPLICADORES_SIMULACION: List<Int> = listOf(1, 5, 20)
 
-// Fase de la pantalla: esperando al servicio, recorrido activo o sin recorrido activo
 enum class FaseRecorrido { INICIANDO, EN_CURSO, NO_ACTIVO }
 
-// Distancia y tiempo capturados al finalizar el recorrido
 data class ResumenRecorrido(
     val distanciaRecorridaKilometros: Double,
     val tiempoTranscurridoMilisegundos: Long
@@ -59,19 +55,16 @@ data class RecorridoEstadoVisual(
     val mensajeErrorPunto: String? = null,
     val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual()
 ) {
-    // Indicar si se puede marcar un punto de interés: con el recorrido activo y quieto, o siempre en simulación
     val puedeAgregarPunto: Boolean
         get() = fase == FaseRecorrido.EN_CURSO && (estaDetenido || esSimulado)
 
-    // Cantidad de puntos capturados de este sendero que todavía no se incorporaron ni descartaron
     val cantidadPuntosCapturados: Int
         get() = revision.puntosPendientes.size
 
-    // Indicar si las distancias y velocidades merecen confianza: solo con buena señal
     val sonConfiablesLosDatosDeDistancia: Boolean
         get() = calidadSenal == CalidadSenal.BUENA
 
-    // Indicar que no hay acelerómetro que medir; en simulación los pasos los estima el control
+    // En simulación los pasos los estima el control
     val faltaAcelerometro: Boolean
         get() = !tieneAcelerometro && !esSimulado
 }

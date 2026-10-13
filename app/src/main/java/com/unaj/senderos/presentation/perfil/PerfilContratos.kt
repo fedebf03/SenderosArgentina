@@ -3,10 +3,8 @@ package com.unaj.senderos.presentation.perfil
 import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.Usuario
 
-// Funciones del equipo que la app informa al usuario
 enum class FuncionDispositivo { GPS, ACELEROMETRO, BRUJULA, CAMARA }
 
-// Disponibilidad de una función del equipo
 data class EstadoFuncion(val funcion: FuncionDispositivo, val estaDisponible: Boolean)
 
 data class PerfilEstadoVisual(

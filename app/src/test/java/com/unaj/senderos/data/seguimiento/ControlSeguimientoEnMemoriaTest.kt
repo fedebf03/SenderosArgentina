@@ -57,12 +57,10 @@ class ControlSeguimientoEnMemoriaTest {
     private val repositorioRecorridos = FalsoRecorridoRepositorio()
     private var instante = 1_000L
 
-    // Construir un sendero lineal de prueba con el recorrido indicado
     private fun construirSendero(id: String, recorrido: List<PuntoRecorrido>): Sendero {
         return crearSenderoDePrueba(id = id, recorrido = recorrido).copy(tipoRecorrido = TipoRecorrido.LINEAL)
     }
 
-    // Construir el control con un alcance que ejecuta de inmediato y un reloj controlado por la prueba
     private fun TestScope.crearControl(): ControlSeguimientoEnMemoria {
         return ControlSeguimientoEnMemoria(
             proveedor,
@@ -74,12 +72,10 @@ class ControlSeguimientoEnMemoriaTest {
         ) { instante }
     }
 
-    // Construir una coordenada al sur del origen
     private fun alSur(grados: Double, rumbo: Float? = null, velocidad: Float? = null): LecturaUbicacion {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - grados, LONGITUD_BASE), rumbo, velocidad, precisionMetros = null)
     }
 
-    // Verificar que iniciar publica el estado inicial con la distancia total restante
     @Test
     fun `iniciar publica el estado inicial del sendero`() = runTest {
         val control = crearControl()
@@ -90,7 +86,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(0.4448, control.estado.value?.distanciaRestanteKilometros ?: -1.0, 0.004)
     }
 
-    // Verificar que un sendero con menos de dos puntos falla con una excepción clara
     @Test
     fun `iniciar un sendero con menos de dos puntos falla y no deja estado`() = runTest {
         val control = crearControl()
@@ -104,7 +99,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que un sendero inexistente falla con una excepción
     @Test
     fun `iniciar un sendero inexistente falla`() = runTest {
         val control = crearControl()
@@ -118,7 +112,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que cada ubicación recibida actualiza el estado
     @Test
     fun `las ubicaciones actualizan el estado con el reloj inyectado`() = runTest {
         val control = crearControl()
@@ -132,7 +125,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(60_000L, control.estado.value?.tiempoTranscurridoMilisegundos)
     }
 
-    // Verificar que los avisos del cálculo se emiten por el flujo de avisos
     @Test
     fun `los avisos de proximidad se emiten por el flujo de avisos`() = runTest {
         val control = crearControl()
@@ -150,7 +142,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(listOf<AvisoRecorrido>(AvisoRecorrido.CercaDePunto(indice = 1, punto = mirador)), avisosRecibidos)
     }
 
-    // Verificar que detener deja el estado en null e ignora las ubicaciones siguientes
     @Test
     fun `detener deja el estado en null e ignora nuevas ubicaciones`() = runTest {
         val control = crearControl()
@@ -162,7 +153,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que iniciar otro sendero reemplaza al anterior y deja una sola recolección activa
     @Test
     fun `iniciar otro sendero finaliza el anterior`() = runTest {
         val control = crearControl()
@@ -176,7 +166,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1, ubicaciones.subscriptionCount.value)
     }
 
-    // Verificar que un error del proveedor de ubicación finaliza el seguimiento
     @Test
     fun `un error del proveedor de ubicacion deja el estado en null`() = runTest {
         proveedor.ubicaciones = flow { throw SecurityException("Sin permiso") }
@@ -187,7 +176,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que reemplazar un recorrido activo nunca publica un estado null intermedio
     @Test
     fun `iniciar otro sendero con uno activo nunca publica null`() = runTest {
         val control = crearControl()
@@ -202,7 +190,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(listOf<String?>("con-recorrido", "otro"), estadosRecibidos)
     }
 
-    // Verificar que el rumbo y la velocidad de la lectura llegan al estado publicado
     @Test
     fun `el rumbo y la velocidad de la lectura llegan al estado`() = runTest {
         val control = crearControl()
@@ -214,7 +201,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1.2f, control.estado.value?.velocidadMetrosPorSegundo)
     }
 
-    // Verificar que un recorrido simulado marca el estado y avanza solo, sin usar el GPS
     @Test
     fun `un recorrido simulado marca el estado y avanza con el tiempo virtual`() = runTest {
         val control = crearControl()
@@ -227,7 +213,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(0, ubicaciones.subscriptionCount.value)
     }
 
-    // Verificar que un recorrido real no está marcado como simulado
     @Test
     fun `un recorrido real no esta marcado como simulado`() = runTest {
         val control = crearControl()
@@ -238,7 +223,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1, ubicaciones.subscriptionCount.value)
     }
 
-    // Verificar que el multiplicador de la simulación acelera el avance
     @Test
     fun `el multiplicador de la simulacion acelera el avance`() = runTest {
         val control = crearControl()
@@ -250,7 +234,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertTrue((control.estado.value?.distanciaRecorridaKilometros ?: 0.0) >= 0.1)
     }
 
-    // Verificar que simular el desvío produce el aviso de desvío
     @Test
     fun `simular el desvio emite el aviso de desvio`() = runTest {
         val control = crearControl()
@@ -266,7 +249,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertTrue(avisosRecibidos.contains(AvisoRecorrido.Desvio))
     }
 
-    // Verificar que las acciones de simulación no hacen nada en un recorrido real
     @Test
     fun `las acciones de simulacion no afectan a un recorrido real`() = runTest {
         val control = crearControl()
@@ -280,7 +262,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(0.0, control.estado.value?.distanciaRecorridaKilometros ?: -1.0, 0.0001)
     }
 
-    // Verificar que el estado refleja el multiplicador vigente y que las ubicaciones no lo pisan
     @Test
     fun `el estado refleja el multiplicador vigente`() = runTest {
         val control = crearControl()
@@ -293,7 +274,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(20, control.estado.value?.multiplicadorSimulacion)
     }
 
-    // Verificar que un multiplicador inválido se rechaza y no cambia el estado
     @Test
     fun `un multiplicador invalido se rechaza`() = runTest {
         val control = crearControl()
@@ -308,7 +288,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1, control.estado.value?.multiplicadorSimulacion)
     }
 
-    // Verificar que un permiso revocado se expone como motivo de fin
     @Test
     fun `un permiso revocado se expone como motivo de fin`() = runTest {
         proveedor.ubicaciones = flow { throw SecurityException("Sin permiso") }
@@ -320,7 +299,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(MotivoFinSeguimiento.PERMISO_DE_UBICACION_REVOCADO, control.motivoFin.value)
     }
 
-    // Verificar que otro fallo se expone como error de ubicación y que iniciar de nuevo limpia el motivo
     @Test
     fun `otro fallo se expone como error de ubicacion y se limpia al reiniciar`() = runTest {
         proveedor.ubicaciones = flow { throw IllegalStateException("Fallo") }
@@ -334,7 +312,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.motivoFin.value)
     }
 
-    // Verificar que detener por pedido del usuario no deja motivo de fin
     @Test
     fun `detener por pedido del usuario no deja motivo de fin`() = runTest {
         val control = crearControl()
@@ -345,7 +322,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.motivoFin.value)
     }
 
-    // Verificar que detener un recorrido con posiciones lo guarda con todos sus datos calculados
     @Test
     fun `detener guarda el recorrido realizado con sus datos`() = runTest {
         val control = crearControl()
@@ -376,7 +352,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(EstadoSincronizacion.PENDIENTE, recorrido.estadoSincronizacion)
     }
 
-    // Verificar que detener agrega al trazado guardado la última posición recibida aunque fuera imprecisa
     @Test
     fun `detener cierra el trazado guardado en la ultima posicion recibida`() = runTest {
         val control = crearControl()
@@ -391,7 +366,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(listOf(Coordenada(LATITUD_BASE, LONGITUD_BASE), Coordenada(LATITUD_BASE - 0.0003, LONGITUD_BASE)), trazado)
     }
 
-    // Verificar que detener sin ninguna posición recibida no guarda nada
     @Test
     fun `detener sin posiciones no guarda recorrido`() = runTest {
         val control = crearControl()
@@ -402,7 +376,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertTrue(repositorioRecorridos.guardados.isEmpty())
     }
 
-    // Verificar que detener dos veces guarda el recorrido una sola vez
     @Test
     fun `detener dos veces guarda una sola vez`() = runTest {
         val control = crearControl()
@@ -415,7 +388,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1, repositorioRecorridos.guardados.size)
     }
 
-    // Verificar que un error del proveedor tras recibir posiciones guarda el recorrido hasta ahí
     @Test
     fun `un error de ubicacion con posiciones guarda el recorrido`() = runTest {
         proveedor.ubicaciones = flow {
@@ -432,7 +404,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(2, repositorioRecorridos.guardados.single().trazadoCaminado.size)
     }
 
-    // Verificar que iniciar otro sendero guarda el recorrido anterior si tenía posiciones
     @Test
     fun `iniciar otro sendero guarda el recorrido anterior`() = runTest {
         val control = crearControl()
@@ -445,7 +416,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals("con-recorrido", repositorioRecorridos.guardados.single().idSendero)
     }
 
-    // Verificar que un resultado fallido del repositorio no rompe la detención
     @Test
     fun `un guardado fallido no rompe la detencion`() = runTest {
         repositorioRecorridos.resultadoGuardar = Result.failure(IllegalStateException("Sin espacio"))
@@ -459,7 +429,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(1, repositorioRecorridos.guardados.size)
     }
 
-    // Verificar que una excepción del repositorio no rompe la detención
     @Test
     fun `una excepcion al guardar no rompe la detencion`() = runTest {
         repositorioRecorridos.errorAlGuardar = IllegalStateException("Fallo inesperado")
@@ -472,7 +441,7 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que cerrar sesión con un recorrido activo lo guarda con el usuario que lo inició
+    // Se guarda con el usuario que lo inició
     @Test
     fun `cerrar sesion con recorrido activo guarda el recorrido`() = runTest {
         val control = crearControl()
@@ -487,7 +456,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que un recorrido simulado se guarda marcado como simulado
     @Test
     fun `un recorrido simulado se guarda marcado como simulado`() = runTest {
         val control = crearControl()
@@ -500,7 +468,6 @@ class ControlSeguimientoEnMemoriaTest {
         assertEquals(true, repositorioRecorridos.guardados.single().esSimulado)
     }
 
-    // Verificar que la simulación que termina el trazado dispara la llegada una sola vez
     @Test
     fun `la simulacion que llega al final avisa la llegada una sola vez`() = runTest {
         val control = crearControl()

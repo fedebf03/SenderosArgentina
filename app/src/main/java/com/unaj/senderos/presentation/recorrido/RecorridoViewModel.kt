@@ -32,7 +32,6 @@ private const val PLAZO_INICIO_MILISEGUNDOS = 5_000L
 private const val MENSAJE_PUNTO_GUARDADO = "Punto guardado"
 private const val MENSAJE_ERROR_PUNTO = "No se pudo guardar el punto"
 
-// Mostrar el recorrido en curso a partir del control de seguimiento de ámbito de proceso
 class RecorridoViewModel(
     private val idSendero: String,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
@@ -79,13 +78,12 @@ class RecorridoViewModel(
         esperarInicioDelServicio()
     }
 
-    // Registrar la destrucción del ViewModel; el seguimiento sigue en el servicio
+    // El seguimiento sigue en el servicio
     override fun onCleared() {
         super.onCleared()
         Log.d(TAG, "ViewModel → onCleared")
     }
 
-    // Procesar cada evento de la pantalla del recorrido
     fun procesarEvento(evento: RecorridoEvento) {
         when (evento) {
             is RecorridoEvento.AlVolver, is RecorridoEvento.AlCerrarResumen -> {
@@ -143,7 +141,6 @@ class RecorridoViewModel(
         }
     }
 
-    // Reflejar en el estado visual los puntos capturados pendientes y su revisión
     private fun observarRevisionDePuntos() {
         viewModelScope.launch {
             controladorRevision.estado.collect { revision ->
@@ -152,7 +149,6 @@ class RecorridoViewModel(
         }
     }
 
-    // Abrir la hoja de captura con el formulario limpio, solo si el recorrido permite marcar puntos
     private fun abrirHojaPunto() {
         if (!_estadoVisual.value.puedeAgregarPunto) return
         _estadoVisual.update { estadoActual ->
@@ -166,12 +162,10 @@ class RecorridoViewModel(
         }
     }
 
-    // Cerrar la hoja de captura descartando lo escrito
     private fun cerrarHojaPunto() {
         _estadoVisual.update { estadoActual -> estadoActual.copy(esHojaPuntoVisible = false, mensajeErrorPunto = null) }
     }
 
-    // Capturar el punto con los datos de la hoja; si sale bien se cierra y se avisa, si no se muestra el motivo en la hoja
     private fun guardarPunto() {
         if (estaCapturandoPunto) return
         val estadoActual = _estadoVisual.value
@@ -206,7 +200,6 @@ class RecorridoViewModel(
         }
     }
 
-    // Observar el sendero para dibujar su recorrido en el mapa
     private fun observarSendero() {
         observarDetalleSenderoUseCase(idSendero).fold(
             onSuccess = { flujoSendero ->
@@ -220,19 +213,16 @@ class RecorridoViewModel(
         )
     }
 
-    // Guardar el sendero emitido en el estado visual
     private fun reflejarSendero(senderoEmitido: Sendero?) {
         _estadoVisual.update { estadoActual -> estadoActual.copy(sendero = senderoEmitido) }
     }
 
-    // Observar el estado del control de seguimiento
     private fun observarSeguimiento() {
         viewModelScope.launch {
             controlSeguimiento.estado.collect { estado -> reflejarSeguimiento(estado) }
         }
     }
 
-    // Reflejar el estado del seguimiento si es de este sendero; si se apaga por fuera, pasar a no activo
     private fun reflejarSeguimiento(estado: EstadoSeguimiento?) {
         val estadoDelSendero = estado?.takeIf { estadoEmitido -> estadoEmitido.idSendero == idSendero }
         if (estadoDelSendero != null) {
@@ -283,14 +273,13 @@ class RecorridoViewModel(
         }
     }
 
-    // Pedir al control la velocidad elegida; la pantalla muestra la que el control publica en su estado
+    // La pantalla muestra la velocidad que el control publica en su estado
     private fun seleccionarMultiplicador(valor: Int) {
         if (!_estadoVisual.value.esSimulado || valor !in MULTIPLICADORES_SIMULACION) return
         Log.d(TAG, "Velocidad de la simulación: x$valor")
         controlSeguimiento.cambiarMultiplicadorSimulacion(valor)
     }
 
-    // Observar los avisos de proximidad y desvío para mostrarlos en pantalla
     private fun observarAvisos() {
         viewModelScope.launch {
             controlSeguimiento.avisos.collect { aviso ->
@@ -305,7 +294,6 @@ class RecorridoViewModel(
         }
     }
 
-    // Mostrar el diálogo de llegada salvo que ya se haya descartado o se esté finalizando
     private fun mostrarDialogoDeLlegada() {
         if (estaFinalizando) return
         _estadoVisual.update { estadoActual ->
@@ -326,7 +314,6 @@ class RecorridoViewModel(
         }
     }
 
-    // Detener el seguimiento y mostrar el resumen del último estado conocido
     private fun finalizar() {
         val estadoFinal = ultimoEstadoSeguimiento
         if (estaFinalizando || estadoFinal == null) {
@@ -337,7 +324,6 @@ class RecorridoViewModel(
         mostrarResumen(estadoFinal)
     }
 
-    // Descartar el recorrido sin guardarlo ni mostrar resumen y volver al detalle
     private fun cancelarRecorrido() {
         _estadoVisual.update { estadoActual ->
             estadoActual.copy(
@@ -356,7 +342,6 @@ class RecorridoViewModel(
         emitirEfecto(RecorridoEfecto.VolverAlDetalle)
     }
 
-    // Capturar distancia y tiempo del estado indicado y mostrarlos en el diálogo de resumen
     private fun mostrarResumen(estadoFinal: EstadoSeguimiento) {
         estaFinalizando = true
         val resumen = ResumenRecorrido(
@@ -375,7 +360,6 @@ class RecorridoViewModel(
         }
     }
 
-    // Enviar un efecto único a la pantalla
     private fun emitirEfecto(efecto: RecorridoEfecto) {
         viewModelScope.launch {
             canalEfectos.send(efecto)

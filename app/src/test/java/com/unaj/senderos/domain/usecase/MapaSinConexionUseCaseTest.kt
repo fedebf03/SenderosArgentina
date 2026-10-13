@@ -21,7 +21,6 @@ class MapaSinConexionUseCaseTest {
         recorrido = listOf(PuntoRecorrido(-40.0, -71.0), PuntoRecorrido(-40.1, -71.1))
     )
 
-    // Verificar que sin sesión observar, descargar y eliminar fallan
     @Test
     fun `sin sesion los casos de uso fallan`() = runTest {
         autenticacion.usuarioActual = null
@@ -31,7 +30,6 @@ class MapaSinConexionUseCaseTest {
         assertTrue(EliminarMapaSinConexionUseCase(gestor, autenticacion)("sendero-1").isFailure)
     }
 
-    // Verificar que observar pasa al gestor el usuario actual y la firma del trazado vigente
     @Test
     fun `observar usa el usuario actual y la firma del trazado`() = runTest {
         gestor.estado.value = EstadoMapaSinConexion.Disponible(10)
@@ -45,7 +43,6 @@ class MapaSinConexionUseCaseTest {
         )
     }
 
-    // Verificar que descargar y eliminar delegan en el gestor con el usuario actual
     @Test
     fun `descargar y eliminar delegan en el gestor`() = runTest {
         assertTrue(DescargarMapaSinConexionUseCase(gestor, autenticacion)(sendero).isSuccess)

@@ -19,7 +19,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Renderizar la barra superior de las pantallas de detalle: flecha para volver, título y acciones opcionales
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarraSuperior(
@@ -56,7 +55,6 @@ fun BarraSuperior(
     )
 }
 
-// Previsualizar la barra superior con una acción
 @Preview(showBackground = true)
 @Composable
 private fun BarraSuperiorPreview() {

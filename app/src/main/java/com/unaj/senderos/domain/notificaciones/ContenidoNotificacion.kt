@@ -1,6 +1,6 @@
 package com.unaj.senderos.domain.notificaciones
 
-// Contenido de la notificación persistente del recorrido; progresoPorcentaje nulo significa progreso indeterminado
+// progresoPorcentaje nulo significa progreso indeterminado
 data class ContenidoNotificacionRecorrido(
     val titulo: String,
     val textoCorto: String,
@@ -10,7 +10,6 @@ data class ContenidoNotificacionRecorrido(
     val instanteInicioMilisegundos: Long? = null
 )
 
-// Contenido de un aviso del recorrido (cercanía a un punto, desvío o llegada)
 data class ContenidoAvisoRecorrido(
     val titulo: String,
     val texto: String,
@@ -18,7 +17,6 @@ data class ContenidoAvisoRecorrido(
     val permiteFinalizar: Boolean = false
 )
 
-// Contenido de una notificación de sincronización; permiteReintentar agrega la acción "Reintentar"
 data class ContenidoNotificacionSincronizacion(
     val titulo: String,
     val texto: String,

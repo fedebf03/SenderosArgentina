@@ -16,22 +16,18 @@ class CerrarSesionUseCaseTest {
     private val lanzador = FalsoLanzadorSeguimiento()
     private val notificador = FalsoNotificador()
 
-    // Verificar que cerrar sesión detiene el seguimiento antes de cerrar la sesión
     @Test
     fun `cerrar sesion detiene el seguimiento antes de cerrar la sesion`() {
         val eventos = mutableListOf<String>()
         senderos.alDetenerSincronizacion = { eventos.add("sincronizacion") }
         val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, object : com.unaj.senderos.domain.port.LanzadorSeguimiento {
-            // Registrar el orden en que se pidió detener el seguimiento
             override fun iniciar(idSendero: String, esSimulado: Boolean) = Unit
 
-            // Registrar la detención del seguimiento
             override fun detener() {
                 eventos.add("seguimiento")
                 lanzador.detener()
             }
 
-            // Ignorar la cancelación: esta prueba no la usa
             override fun cancelar() = Unit
         }, notificador)
 
@@ -42,7 +38,6 @@ class CerrarSesionUseCaseTest {
         assertEquals(1, autenticacion.cantidadCierresSesion)
     }
 
-    // Verificar que cerrar sesión cancela el aviso de error de sincronización del usuario saliente
     @Test
     fun `cerrar sesion cancela el aviso de error de sincronizacion`() {
         val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, lanzador, notificador)

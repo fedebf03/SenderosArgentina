@@ -10,7 +10,6 @@ class FalsoPreferenciasAplicacion(modoInicial: Boolean = false) : PreferenciasAp
 
     override val esModoDemostracion: StateFlow<Boolean> = modo
 
-    // Guardar el valor en memoria
     override fun cambiarModoDemostracion(activo: Boolean) {
         modo.value = activo
     }

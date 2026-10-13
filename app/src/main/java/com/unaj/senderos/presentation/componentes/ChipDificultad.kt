@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.presentation.tema.obtenerColoresDificultad
 
-// Renderizar la etiqueta de color que indica la dificultad de un sendero
 @Composable
 fun ChipDificultad(dificultad: Dificultad, modifier: Modifier = Modifier) {
     val colores = obtenerColoresDificultad(dificultad)

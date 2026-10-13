@@ -18,7 +18,6 @@ class ObservarPuntosCapturadosUseCase(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Observar los puntos capturados pendientes de un sendero del usuario con sesión activa, en orden de captura
     operator fun invoke(idSendero: String): Result<Flow<List<PuntoCapturado>>> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
@@ -42,7 +41,7 @@ class ObservarPuntosCapturadosConDistanciaUseCase(
         return Result.success(flujo)
     }
 
-    // Asociar a cada punto su distancia al trazado del sendero; sin sendero o sin recorrido la distancia queda desconocida
+    // Sin sendero o sin recorrido la distancia queda desconocida
     private fun asociarDistancias(sendero: Sendero?, puntos: List<PuntoCapturado>): List<PuntoCapturadoConDistancia> {
         val distancias = CalculadoraInsercionPuntos.distanciasAlTrazadoMetros(
             sendero?.recorrido.orEmpty(),
@@ -57,7 +56,6 @@ class DescartarPuntosCapturadosUseCase(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Descartar los puntos capturados indicados del usuario con sesión activa
     suspend operator fun invoke(ids: Set<String>): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
@@ -69,7 +67,7 @@ class IncorporarPuntosCapturadosUseCase(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Incorporar los puntos elegidos al sendero del usuario con sesión activa de forma atómica; el sendero queda pendiente de sincronizar
+    // Atómica; el sendero queda pendiente de sincronizar
     suspend operator fun invoke(idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))

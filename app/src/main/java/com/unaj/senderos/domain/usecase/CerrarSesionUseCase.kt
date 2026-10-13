@@ -11,7 +11,6 @@ class CerrarSesionUseCase(
     private val lanzadorSeguimiento: LanzadorSeguimiento,
     private val notificador: Notificador
 ) {
-    // Cerrar la sesión deteniendo antes el seguimiento y la sincronización, y quitando el aviso de error del usuario saliente
     operator fun invoke() {
         lanzadorSeguimiento.detener()
         autenticacionRepositorio.obtenerUsuarioActual()?.let { usuario ->

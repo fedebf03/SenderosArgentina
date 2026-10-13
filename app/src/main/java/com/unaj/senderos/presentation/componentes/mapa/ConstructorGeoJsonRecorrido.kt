@@ -9,7 +9,6 @@ import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
-// Verificar que las coordenadas del punto sean finitas y estén en rango
 fun PuntoRecorrido.tieneCoordenadasValidas(): Boolean {
     return Coordenada(latitud, longitud).tieneCoordenadasValidas()
 }
@@ -32,7 +31,6 @@ object RolesPunto {
 
 object ConstructorGeoJsonRecorrido {
 
-    // Crear la línea GeoJSON del recorrido, cerrándola si es circular
     fun crearLinea(puntos: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): FeatureCollection {
         val puntosValidos = puntos.filter { punto -> punto.tieneCoordenadasValidas() }
         if (puntosValidos.size < 2) return FeatureCollection.fromFeatures(emptyList<Feature>())
@@ -45,7 +43,6 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(coordenadasConCierre)))
     }
 
-    // Crear la línea GeoJSON del trazado caminado, ignorando las coordenadas inválidas
     fun crearTrazadoCaminado(trazado: List<Coordenada>): FeatureCollection {
         val validas = trazado.filter { coordenada -> coordenada.tieneCoordenadasValidas() }
         if (validas.size < 2) return FeatureCollection.fromFeatures(emptyList<Feature>())
@@ -53,7 +50,6 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(coordenadas)))
     }
 
-    // Crear los puntos GeoJSON numerados con su tipo, rol y estado de selección
     fun crearPuntos(
         puntos: List<PuntoRecorrido>,
         tipoRecorrido: TipoRecorrido,
@@ -72,7 +68,6 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeatures(elementos)
     }
 
-    // Crear el punto destacado de la posición del usuario; sin posición válida la colección queda vacía
     fun crearPosicion(posicion: Coordenada?, rumboGrados: Float? = null): FeatureCollection {
         if (posicion == null || !posicion.tieneCoordenadasValidas()) return FeatureCollection.fromFeatures(emptyList<Feature>())
         val elemento = Feature.fromGeometry(Point.fromLngLat(posicion.longitud, posicion.latitud))
@@ -82,7 +77,6 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeature(elemento)
     }
 
-    // Obtener el rol de un punto: inicio, fin, inicio y fin, o intermedio
     fun obtenerRol(indice: Int, cantidad: Int, tipoRecorrido: TipoRecorrido): String {
         return when {
             cantidad >= 2 && tipoRecorrido == TipoRecorrido.CIRCULAR && indice == 0 -> RolesPunto.INICIO_Y_FIN

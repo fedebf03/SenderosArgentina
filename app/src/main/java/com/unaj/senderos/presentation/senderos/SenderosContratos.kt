@@ -17,17 +17,16 @@ data class SenderosEstadoVisual(
     val seSolicitoPermisoNotificaciones: Boolean = false,
     val estaSinConexion: Boolean = false
 ) {
-    // Calcular la distancia en kilómetros al primer punto del recorrido; null sin recorrido o sin ubicación
+    // Devuelve null sin recorrido o sin ubicación
     fun distanciaKilometrosA(sendero: Sendero): Double? {
         val ubicacion = ubicacionActual ?: return null
         val primerPunto = sendero.recorrido.firstOrNull() ?: return null
         return CalculadoraRecorrido.distanciaEntre(ubicacion, primerPunto)
     }
 
-    // Senderos filtrados por búsqueda y, si corresponde, ordenados por cercanía; se calcula una sola vez por estado
+    // Se calcula una sola vez por estado
     val senderosFiltrados: List<Sendero> = calcularSenderosFiltrados()
 
-    // Calcular la lista filtrada y ordenada dejando al final los senderos sin distancia
     private fun calcularSenderosFiltrados(): List<Sendero> {
         val filtrados = filtrarSenderosPorTexto(senderos, textoBusqueda)
         if (!ordenarPorCercania) return filtrados

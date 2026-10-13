@@ -13,7 +13,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SINCRONIZACION_RECORRIDOS"
 
-// Sincronizar los recorridos locales (fuente de verdad) con Firestore: pull, fusión por fecha y subida de pendientes
+// La base local es la fuente de verdad frente a Firestore
 class SincronizadorRecorridos(
     private val recorridoDao: RecorridoDao,
     private val fuenteRemota: RecorridoFuenteRemota,
@@ -34,7 +34,6 @@ class SincronizadorRecorridos(
         }
     }
 
-    // Fusionar los documentos remotos con los locales aplicando que la última escritura prevalece
     private suspend fun fusionarRemotos(idUsuario: String, remotos: List<RecorridoRed>) {
         remotos.forEach { remoto ->
             ejecutorTransacciones.ejecutar {
