@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.componentes
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -100,6 +101,11 @@ fun BotonSecundario(
         onClick = alTocar,
         enabled = estaHabilitado,
         colors = colores,
+        border = if (esDestructivo) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+        } else {
+            ButtonDefaults.outlinedButtonBorder(estaHabilitado)
+        },
         modifier = modifier.heightIn(min = ALTURA_MINIMA_BOTON)
     ) {
         ContenidoDeBoton(texto, icono, false, MaterialTheme.colorScheme.primary)

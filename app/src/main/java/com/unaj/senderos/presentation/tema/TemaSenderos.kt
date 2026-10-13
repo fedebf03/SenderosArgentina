@@ -43,12 +43,10 @@ fun TemaSenderos(contenido: @Composable () -> Unit) {
     MaterialTheme(colorScheme = esquemaClaro, content = contenido)
 }
 
-data class ColoresDificultad(val fondo: Color, val texto: Color)
-
-fun obtenerColoresDificultad(dificultad: Dificultad): ColoresDificultad {
+fun obtenerColorDificultad(dificultad: Dificultad): Color {
     return when (dificultad) {
-        Dificultad.BAJA -> ColoresDificultad(Color(0xFFD9F2E3), Color(0xFF14532D))
-        Dificultad.MEDIA -> ColoresDificultad(Color(0xFFFDECC8), Color(0xFF7A4A00))
-        Dificultad.ALTA -> ColoresDificultad(Color(0xFFFBDADA), Color(0xFF8C1D18))
+        Dificultad.BAJA -> Color(0xFF2E7D4F)
+        Dificultad.MEDIA -> Color(0xFFC77700)
+        Dificultad.ALTA -> Color(0xFFBA1A1A)
     }
 }

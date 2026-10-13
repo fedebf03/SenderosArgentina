@@ -199,7 +199,7 @@ fun TarjetaSendero(
                         DatoTarjeta(Icons.Outlined.Schedule, sendero.duracionEstimada)
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    ChipDificultad(sendero.dificultad)
+                    IndicadorDificultad(sendero.dificultad)
                 }
             }
         }

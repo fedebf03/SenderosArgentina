@@ -45,6 +45,7 @@ import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.FotoSendero
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
+import com.unaj.senderos.presentation.componentes.IndicadorDificultad
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
@@ -218,7 +219,8 @@ internal fun SeccionDatosTecnicos(
             FichaSeleccionable(
                 texto = obtenerTextoDificultad(dificultad),
                 estaSeleccionada = estadoVisual.dificultad == dificultad,
-                alSeleccionar = { alProcesarEvento(FormularioSenderoEvento.AlSeleccionarDificultad(dificultad)) }
+                alSeleccionar = { alProcesarEvento(FormularioSenderoEvento.AlSeleccionarDificultad(dificultad)) },
+                iconoInicial = { IndicadorDificultad(dificultad, mostrarTexto = false) }
             )
         }
     }

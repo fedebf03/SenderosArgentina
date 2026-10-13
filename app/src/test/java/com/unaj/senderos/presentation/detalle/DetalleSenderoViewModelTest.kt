@@ -72,8 +72,7 @@ class DetalleSenderoViewModelTest {
     private var capacidades = CapacidadesDispositivo(
         tieneGps = true,
         tieneAcelerometro = true,
-        tieneBrujula = true,
-        tieneCamara = true
+        tieneBrujula = true
     )
 
     @Test

@@ -1,6 +1,7 @@
 package com.unaj.senderos.presentation.senderos
 
 import com.unaj.senderos.domain.model.Coordenada
+import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
@@ -103,6 +104,19 @@ class SenderosViewModelTest {
 
         viewModel.procesarEvento(SenderosEvento.AlCambiarOrdenCercania(activado = false))
         assertFalse(viewModel.estadoVisual.value.ordenarPorCercania)
+    }
+
+    @Test
+    fun `alternar una dificultad la agrega y al repetirla la quita`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        assertTrue(viewModel.estadoVisual.value.dificultadesSeleccionadas.isEmpty())
+
+        viewModel.procesarEvento(SenderosEvento.AlAlternarDificultad(Dificultad.MEDIA))
+        viewModel.procesarEvento(SenderosEvento.AlAlternarDificultad(Dificultad.ALTA))
+        assertEquals(setOf(Dificultad.MEDIA, Dificultad.ALTA), viewModel.estadoVisual.value.dificultadesSeleccionadas)
+
+        viewModel.procesarEvento(SenderosEvento.AlAlternarDificultad(Dificultad.MEDIA))
+        assertEquals(setOf(Dificultad.ALTA), viewModel.estadoVisual.value.dificultadesSeleccionadas)
     }
 
     private fun TestScope.recolectarEfectos(viewModel: SenderosViewModel): List<SenderosEfecto> {

@@ -20,8 +20,7 @@ class DetectorCapacidadesAndroid(private val contexto: Context) : DetectorCapaci
             tieneGps = paquetes.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS),
             tieneAcelerometro = gestor?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null,
             tieneBrujula = gestor?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null ||
-                gestor?.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR) != null,
-            tieneCamara = paquetes.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
+                gestor?.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR) != null
         )
         Log.d(TAG, "Capacidades detectadas: $capacidades")
         return capacidades

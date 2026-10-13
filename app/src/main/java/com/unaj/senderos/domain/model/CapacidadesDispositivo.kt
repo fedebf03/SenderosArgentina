@@ -4,15 +4,13 @@ package com.unaj.senderos.domain.model
 data class CapacidadesDispositivo(
     val tieneGps: Boolean,
     val tieneAcelerometro: Boolean,
-    val tieneBrujula: Boolean,
-    val tieneCamara: Boolean
+    val tieneBrujula: Boolean
 ) {
     companion object {
         val SIN_FUNCIONES = CapacidadesDispositivo(
             tieneGps = false,
             tieneAcelerometro = false,
-            tieneBrujula = false,
-            tieneCamara = false
+            tieneBrujula = false
         )
     }
 }

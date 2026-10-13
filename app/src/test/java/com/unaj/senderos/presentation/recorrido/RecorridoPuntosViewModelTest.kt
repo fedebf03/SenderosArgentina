@@ -76,8 +76,7 @@ class RecorridoPuntosViewModelTest {
             capacidadesDispositivo = CapacidadesDispositivo(
                 tieneGps = true,
                 tieneAcelerometro = true,
-                tieneBrujula = true,
-                tieneCamara = true
+                tieneBrujula = true
             ),
             observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorioSenderos, repositorioPuntos, autenticacion),
             incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),

@@ -1,9 +1,6 @@
 package com.unaj.senderos.presentation.perfil
 
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.usecase.ObtenerCapacidadesDispositivoUseCase
-import com.unaj.senderos.falsos.FalsoDetectorCapacidades
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
@@ -53,20 +50,12 @@ class PerfilViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun crearViewModel(
-        capacidades: CapacidadesDispositivo = CapacidadesDispositivo(
-            tieneGps = true,
-            tieneAcelerometro = true,
-            tieneBrujula = true,
-            tieneCamara = true
-        )
-    ): PerfilViewModel {
+    private fun crearViewModel(): PerfilViewModel {
         return PerfilViewModel(
             obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacion),
             cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento(), FalsoNotificador()),
             preferenciasAplicacion = preferencias,
             observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion),
-            obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(FalsoDetectorCapacidades(capacidades)),
             controlSeguimiento = controlSeguimiento
         )
     }
@@ -121,39 +110,6 @@ class PerfilViewModelTest {
         advanceUntilIdle()
 
         assertTrue(viewModel.estadoVisual.value.recorridos.isEmpty())
-    }
-
-    @Test
-    fun `las funciones del dispositivo reflejan las capacidades detectadas`() = runTest(despachadorPrueba) {
-        val viewModel = crearViewModel(
-            CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = false, tieneBrujula = false, tieneCamara = true)
-        )
-        advanceUntilIdle()
-
-        assertEquals(
-            listOf(
-                EstadoFuncion(FuncionDispositivo.GPS, estaDisponible = true),
-                EstadoFuncion(FuncionDispositivo.ACELEROMETRO, estaDisponible = false),
-                EstadoFuncion(FuncionDispositivo.BRUJULA, estaDisponible = false),
-                EstadoFuncion(FuncionDispositivo.CAMARA, estaDisponible = true)
-            ),
-            viewModel.estadoVisual.value.funcionesDispositivo
-        )
-    }
-
-    @Test
-    fun `cada funcion explica que se pierde si falta`() {
-        assertEquals(
-            "Sin brújula, la dirección se calcula solo mientras caminás",
-            explicarFuncionNoDisponible(FuncionDispositivo.BRUJULA)
-        )
-        assertEquals(
-            "Sin GPS, la ubicación sale del wifi o de la red móvil: es menos precisa y no funciona sin señal",
-            explicarFuncionNoDisponible(FuncionDispositivo.GPS)
-        )
-        FuncionDispositivo.entries.forEach { funcion ->
-            assertTrue(explicarFuncionNoDisponible(funcion).isNotBlank())
-        }
     }
 
     @Test

@@ -17,10 +17,14 @@ class SenderosEstadoVisualTest {
         region = "Neuquén", distanciaKilometros = 8.0, dificultad = Dificultad.BAJA
     )
 
-    private fun crearEstado(textoBusqueda: String): SenderosEstadoVisual {
+    private fun crearEstado(
+        textoBusqueda: String,
+        dificultades: Set<Dificultad> = emptySet()
+    ): SenderosEstadoVisual {
         return SenderosEstadoVisual(
             senderos = listOf(huellaAndina, huellaNeuquina),
-            textoBusqueda = textoBusqueda
+            textoBusqueda = textoBusqueda,
+            dificultadesSeleccionadas = dificultades
         )
     }
 
@@ -43,6 +47,27 @@ class SenderosEstadoVisualTest {
         val estado = crearEstado("  hUeLLa aNdInA  ")
 
         assertEquals(listOf(huellaAndina), estado.senderosFiltrados)
+    }
+
+    @Test
+    fun `filtra los senderos por dificultad`() {
+        val estado = crearEstado("", setOf(Dificultad.ALTA))
+
+        assertEquals(listOf(huellaAndina), estado.senderosFiltrados)
+    }
+
+    @Test
+    fun `con varias dificultades muestra las que coinciden con alguna`() {
+        val estado = crearEstado("", setOf(Dificultad.ALTA, Dificultad.BAJA))
+
+        assertEquals(listOf(huellaAndina, huellaNeuquina), estado.senderosFiltrados)
+    }
+
+    @Test
+    fun `la dificultad se combina con la busqueda`() {
+        val estado = crearEstado("Neuqu", setOf(Dificultad.ALTA))
+
+        assertTrue(estado.senderosFiltrados.isEmpty())
     }
 
     @Test

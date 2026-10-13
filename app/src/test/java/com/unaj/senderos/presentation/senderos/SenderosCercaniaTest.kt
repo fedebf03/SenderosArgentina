@@ -1,6 +1,7 @@
 package com.unaj.senderos.presentation.senderos
 
 import com.unaj.senderos.domain.model.Coordenada
+import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.falsos.crearSenderoDePrueba
@@ -67,6 +68,30 @@ class SenderosCercaniaTest {
     @Test
     fun `sin ubicacion ningun sendero tiene distancia`() {
         assertNull(crearEstado(ubicacion = null).distanciaKilometrosA(cercano))
+    }
+
+    @Test
+    fun `la dificultad se combina con el orden por cercania`() {
+        val facilLejano = crearSenderoDePrueba(
+            id = "facil-lejano", dificultad = Dificultad.BAJA,
+            recorrido = listOf(PuntoRecorrido(latitud = 0.0, longitud = 3.0))
+        )
+        val facilCercano = crearSenderoDePrueba(
+            id = "facil-cercano", dificultad = Dificultad.BAJA,
+            recorrido = listOf(PuntoRecorrido(latitud = 0.0, longitud = 1.0))
+        )
+        val exigenteCercano = crearSenderoDePrueba(
+            id = "exigente-cercano", dificultad = Dificultad.ALTA,
+            recorrido = listOf(PuntoRecorrido(latitud = 0.0, longitud = 0.5))
+        )
+        val estado = SenderosEstadoVisual(
+            senderos = listOf(facilLejano, exigenteCercano, facilCercano),
+            ubicacionActual = usuario,
+            ordenarPorCercania = true,
+            dificultadesSeleccionadas = setOf(Dificultad.BAJA)
+        )
+
+        assertEquals(listOf(facilCercano, facilLejano), estado.senderosFiltrados)
     }
 
     @Test

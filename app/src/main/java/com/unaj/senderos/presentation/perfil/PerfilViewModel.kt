@@ -7,7 +7,6 @@ import com.unaj.senderos.domain.port.PreferenciasAplicacion
 import com.unaj.senderos.domain.port.ControlSeguimiento
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObservarRecorridosUseCase
-import com.unaj.senderos.domain.usecase.ObtenerCapacidadesDispositivoUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,14 +25,12 @@ class PerfilViewModel(
     private val cerrarSesionUseCase: CerrarSesionUseCase,
     private val preferenciasAplicacion: PreferenciasAplicacion,
     private val observarRecorridosUseCase: ObservarRecorridosUseCase,
-    obtenerCapacidadesDispositivoUseCase: ObtenerCapacidadesDispositivoUseCase,
     private val controlSeguimiento: ControlSeguimiento
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(
         PerfilEstadoVisual(
-            usuario = obtenerUsuarioActualUseCase(),
-            funcionesDispositivo = listarFuncionesDispositivo(obtenerCapacidadesDispositivoUseCase())
+            usuario = obtenerUsuarioActualUseCase()
         )
     )
     val estadoVisual: StateFlow<PerfilEstadoVisual> = _estadoVisual.asStateFlow()

@@ -69,6 +69,18 @@ class SenderosViewModel(
                 Log.d(TAG, "Orden por cercanía: ${evento.activado}")
                 _estadoVisual.update { estado -> estado.copy(ordenarPorCercania = evento.activado) }
             }
+            is SenderosEvento.AlAlternarDificultad -> {
+                _estadoVisual.update { estado ->
+                    val seleccionadas = estado.dificultadesSeleccionadas
+                    estado.copy(
+                        dificultadesSeleccionadas = if (evento.dificultad in seleccionadas) {
+                            seleccionadas - evento.dificultad
+                        } else {
+                            seleccionadas + evento.dificultad
+                        }
+                    )
+                }
+            }
             is SenderosEvento.AlObtenerUbicacion -> obtenerUbicacion()
             is SenderosEvento.AlSolicitarPermisoNotificaciones -> {
                 _estadoVisual.update { estado -> estado.copy(seSolicitoPermisoNotificaciones = true) }

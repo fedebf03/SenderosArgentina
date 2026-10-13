@@ -3,15 +3,10 @@ package com.unaj.senderos.presentation.perfil
 import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.Usuario
 
-enum class FuncionDispositivo { GPS, ACELEROMETRO, BRUJULA, CAMARA }
-
-data class EstadoFuncion(val funcion: FuncionDispositivo, val estaDisponible: Boolean)
-
 data class PerfilEstadoVisual(
     val usuario: Usuario? = null,
     val esModoDemostracion: Boolean = false,
     val recorridos: List<RecorridoRealizado> = emptyList(),
-    val funcionesDispositivo: List<EstadoFuncion> = emptyList(),
     val mensajeError: String? = null,
     val hayRecorridoEnCurso: Boolean = false,
     val esDialogoCerrarSesionVisible: Boolean = false

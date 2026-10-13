@@ -63,7 +63,7 @@ import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.componentes.ChipDificultad
+import com.unaj.senderos.presentation.componentes.IndicadorDificultad
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.presentation.revisionpuntos.FotoDePunto
@@ -110,7 +110,7 @@ internal fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) 
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = "Dificultad", style = MaterialTheme.typography.bodyMedium)
-            ChipDificultad(sendero.dificultad)
+            IndicadorDificultad(sendero.dificultad, estiloTexto = MaterialTheme.typography.bodyMedium)
         }
 
         FilaConIcono(Icons.Outlined.Flag, "Punto de inicio: ${sendero.puntoInicio}")

@@ -220,7 +220,6 @@ class MainActivity : ComponentActivity() {
                                     dependencias.cerrarSesionUseCase,
                                     dependencias.preferenciasAplicacion,
                                     dependencias.observarRecorridosUseCase,
-                                    dependencias.obtenerCapacidadesDispositivoUseCase,
                                     dependencias.controlSeguimiento
                                 )
                             },
