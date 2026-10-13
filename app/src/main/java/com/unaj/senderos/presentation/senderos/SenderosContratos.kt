@@ -1,10 +1,10 @@
 package com.unaj.senderos.presentation.senderos
 
-import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.model.filtrarSenderosPorTexto
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 
 data class SenderosEstadoVisual(
     val usuario: Usuario? = null,

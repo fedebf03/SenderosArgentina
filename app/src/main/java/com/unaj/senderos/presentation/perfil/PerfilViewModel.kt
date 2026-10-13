@@ -3,8 +3,8 @@ package com.unaj.senderos.presentation.perfil
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.repository.PreferenciasAplicacion
-import com.unaj.senderos.domain.repository.ControlSeguimiento
+import com.unaj.senderos.domain.port.PreferenciasAplicacion
+import com.unaj.senderos.domain.port.ControlSeguimiento
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObservarRecorridosUseCase
 import com.unaj.senderos.domain.usecase.ObtenerCapacidadesDispositivoUseCase

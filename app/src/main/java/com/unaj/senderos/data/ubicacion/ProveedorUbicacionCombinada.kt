@@ -13,10 +13,10 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-import com.unaj.senderos.domain.CalculadoraRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.LecturaUbicacion
-import com.unaj.senderos.domain.repository.ProveedorUbicacion
+import com.unaj.senderos.domain.port.ProveedorUbicacion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose

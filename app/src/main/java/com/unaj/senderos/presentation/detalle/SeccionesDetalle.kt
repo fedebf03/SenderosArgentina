@@ -66,9 +66,9 @@ import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.componentes.ChipDificultad
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
-import com.unaj.senderos.presentation.comun.FotoDePunto
-import com.unaj.senderos.presentation.comun.describirCantidadPuntosPorRevisar
-import com.unaj.senderos.presentation.mapa.MapaRecorrido
+import com.unaj.senderos.presentation.revisionpuntos.FotoDePunto
+import com.unaj.senderos.presentation.revisionpuntos.describirCantidadPuntosPorRevisar
+import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
 
 private val TAMANO_MINIATURA_PUNTO = 48.dp
 

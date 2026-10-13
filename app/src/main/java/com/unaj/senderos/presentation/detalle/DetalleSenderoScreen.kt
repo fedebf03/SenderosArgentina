@@ -62,10 +62,10 @@ import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.comun.DialogoFotoAmpliada
-import com.unaj.senderos.presentation.comun.DialogoRevisionPuntos
+import com.unaj.senderos.presentation.revisionpuntos.DialogoFotoAmpliada
+import com.unaj.senderos.presentation.revisionpuntos.DialogoRevisionPuntos
 import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
-import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
+import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
 import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.presentation.tema.TemaSenderos
 

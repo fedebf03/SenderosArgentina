@@ -45,7 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.mapa.MapaRecorrido
+import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
 import com.unaj.senderos.presentation.tema.TemaSenderos
 

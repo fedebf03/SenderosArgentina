@@ -1,6 +1,6 @@
 package com.unaj.senderos.domain.usecase
 
-import com.unaj.senderos.domain.DISTANCIA_MAXIMA_RECOMENDADA_METROS
+import com.unaj.senderos.domain.model.DISTANCIA_MAXIMA_RECOMENDADA_METROS
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.domain.model.Usuario

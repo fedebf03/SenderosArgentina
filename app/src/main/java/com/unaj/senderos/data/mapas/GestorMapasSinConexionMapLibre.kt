@@ -2,12 +2,12 @@ package com.unaj.senderos.data.mapas
 
 import android.content.Context
 import android.util.Log
-import com.unaj.senderos.domain.CalculadoraCorredor
+import com.unaj.senderos.domain.recorrido.CalculadoraCorredor
 import com.unaj.senderos.domain.configuracion.ConfiguracionEstiloMapa
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Rectangulo
 import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.repository.GestorMapasSinConexion
+import com.unaj.senderos.domain.port.GestorMapasSinConexion
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

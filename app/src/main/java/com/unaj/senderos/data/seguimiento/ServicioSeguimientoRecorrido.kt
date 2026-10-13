@@ -10,9 +10,9 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.example.senderosargentina.SenderosAplicacion
-import com.unaj.senderos.domain.RedactorNotificacionRecorrido
-import com.unaj.senderos.domain.model.ContenidoNotificacionRecorrido
-import com.unaj.senderos.domain.repository.ControlSeguimiento
+import com.unaj.senderos.domain.notificaciones.RedactorNotificacionRecorrido
+import com.unaj.senderos.domain.notificaciones.ContenidoNotificacionRecorrido
+import com.unaj.senderos.domain.port.ControlSeguimiento
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

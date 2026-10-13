@@ -1,11 +1,11 @@
 package com.unaj.senderos.domain.usecase
 
-import com.unaj.senderos.domain.CalculadoraInsercionPuntos
 import com.unaj.senderos.domain.model.PuntoCapturado
 import com.unaj.senderos.domain.model.PuntoCapturadoConDistancia
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraInsercionPuntos
 import com.unaj.senderos.domain.repository.AutenticacionRepositorio
 import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
 import com.unaj.senderos.domain.repository.SenderoRepositorio

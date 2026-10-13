@@ -19,7 +19,7 @@ import com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio
 import com.unaj.senderos.falsos.FalsoSenderoRepositorio
 import com.unaj.senderos.falsos.crearPuntoCapturadoDePrueba
 import com.unaj.senderos.falsos.crearSenderoDePrueba
-import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
+import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

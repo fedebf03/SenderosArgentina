@@ -9,8 +9,8 @@ import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
-import com.unaj.senderos.domain.repository.FuenteAcelerometro
-import com.unaj.senderos.domain.repository.ProveedorDeclinacion
+import com.unaj.senderos.domain.port.FuenteAcelerometro
+import com.unaj.senderos.domain.port.ProveedorDeclinacion
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoFuenteAcelerometro

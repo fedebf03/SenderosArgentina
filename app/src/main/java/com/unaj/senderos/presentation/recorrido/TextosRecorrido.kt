@@ -1,10 +1,10 @@
 package com.unaj.senderos.presentation.recorrido
 
-import com.unaj.senderos.domain.CalculadoraRecorrido
-import com.unaj.senderos.domain.CalculadoraRumbo
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRumbo
 import com.unaj.senderos.presentation.comun.TEXTO_SIN_DATO
 import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
 import java.util.Locale

@@ -1,6 +1,6 @@
 package com.unaj.senderos.falsos
 
-import com.unaj.senderos.domain.repository.AlmacenFotos
+import com.unaj.senderos.domain.port.AlmacenFotos
 
 class FalsoAlmacenFotos : AlmacenFotos {
 

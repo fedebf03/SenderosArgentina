@@ -1,6 +1,6 @@
 package com.unaj.senderos.falsos
 
-import com.unaj.senderos.domain.repository.MonitorConectividad
+import com.unaj.senderos.domain.port.MonitorConectividad
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.Flow
 

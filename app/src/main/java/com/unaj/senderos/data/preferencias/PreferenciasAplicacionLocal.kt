@@ -2,7 +2,7 @@ package com.unaj.senderos.data.preferencias
 
 import android.content.Context
 import android.util.Log
-import com.unaj.senderos.domain.repository.PreferenciasAplicacion
+import com.unaj.senderos.domain.port.PreferenciasAplicacion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

@@ -3,12 +3,12 @@ package com.unaj.senderos.presentation.formulario
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.EdicionRecorrido
+import com.unaj.senderos.domain.recorrido.EdicionRecorrido
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.SenderoInvalidoException
-import com.unaj.senderos.domain.repository.AlmacenFotos
+import com.unaj.senderos.domain.port.AlmacenFotos
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.presentation.comun.formatearDecimalEditable
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase

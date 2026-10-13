@@ -49,7 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.mapa.MapaRecorrido
+import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
 // Ancho del panel del punto cuando el editor está en horizontal y el panel va al costado del mapa

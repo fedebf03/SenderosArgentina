@@ -14,9 +14,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.senderosargentina.MainActivity
 import com.example.senderosargentina.R
-import com.unaj.senderos.domain.RedactorNotificacionSincronizacion
-import com.unaj.senderos.domain.model.MensajeNotificacion
-import com.unaj.senderos.domain.repository.Notificador
+import com.unaj.senderos.domain.notificaciones.MensajeNotificacion
+import com.unaj.senderos.domain.notificaciones.RedactorNotificacionSincronizacion
+import com.unaj.senderos.domain.port.Notificador
 
 private const val TAG = "NOTIFICACIONES"
 private const val ID_CANAL_SINCRONIZACION = "sincronizacion"
