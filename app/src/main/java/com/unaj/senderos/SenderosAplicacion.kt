@@ -1,4 +1,4 @@
-package com.example.senderosargentina
+package com.unaj.senderos
 
 import android.app.Application
 

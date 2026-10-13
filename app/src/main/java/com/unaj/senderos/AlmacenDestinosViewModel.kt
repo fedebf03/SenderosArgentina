@@ -1,4 +1,4 @@
-package com.example.senderosargentina
+package com.unaj.senderos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore

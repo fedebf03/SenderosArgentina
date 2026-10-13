@@ -4,8 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.senderosargentina.SenderosAplicacion
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.unaj.senderos.SenderosAplicacion
 import com.unaj.senderos.domain.model.ResumenSincronizacion
 import com.unaj.senderos.domain.notificaciones.DecisorNotificacionSincronizacion
 import com.unaj.senderos.domain.notificaciones.MensajeNotificacion

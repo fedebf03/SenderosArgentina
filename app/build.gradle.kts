@@ -15,7 +15,7 @@ val propiedadesLocales = Properties().apply {
 }
 
 android {
-    namespace = "com.example.senderosargentina"
+    namespace = "com.unaj.senderos"
     compileSdk {
         version = release(37)
     }
