@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.port.MonitorConectividad
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderosPublicosUseCase
 import com.unaj.senderos.presentation.comun.observarSenderos
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ private const val TAG = "SENDEROS_MAPA"
 
 class MapaSenderosViewModel(
     observarSenderosDelUsuarioUseCase: ObservarSenderosDelUsuarioUseCase,
+    observarSenderosPublicosUseCase: ObservarSenderosPublicosUseCase,
     monitorConectividad: MonitorConectividad
 ) : ViewModel() {
 
@@ -30,6 +32,7 @@ class MapaSenderosViewModel(
 
     init {
         observarConexion(monitorConectividad)
+        observarPublicos(observarSenderosPublicosUseCase)
         observarSenderos(
             observarSenderosDelUsuarioUseCase,
             alRecibir = { datos ->
@@ -41,6 +44,18 @@ class MapaSenderosViewModel(
                 _estadoVisual.update { estado -> estado.copy(estaCargando = false, mensajeError = mensaje) }
             }
         )
+    }
+
+    private fun observarPublicos(casoDeUso: ObservarSenderosPublicosUseCase) {
+        casoDeUso().onSuccess { flujo ->
+            viewModelScope.launch {
+                flujo
+                    .catch { error -> Log.e(TAG, "No se pudieron cargar los senderos públicos", error) }
+                    .collect { publicos ->
+                        _estadoVisual.update { estado -> estado.copy(senderosPublicos = publicos) }
+                    }
+            }
+        }
     }
 
     private fun observarConexion(monitorConectividad: MonitorConectividad) {
@@ -62,7 +77,12 @@ class MapaSenderosViewModel(
                 _estadoVisual.update { estado -> estado.copy(seSolicitoUbicacion = true) }
             }
             is MapaSenderosEvento.AlAbrirDetalle -> {
-                viewModelScope.launch { canalEfectos.send(MapaSenderosEfecto.NavegarADetalle(evento.idSendero)) }
+                val efecto = if (_estadoVisual.value.esPublicoDeOtro(evento.idSendero)) {
+                    MapaSenderosEfecto.NavegarADetallePublico(evento.idSendero)
+                } else {
+                    MapaSenderosEfecto.NavegarADetalle(evento.idSendero)
+                }
+                viewModelScope.launch { canalEfectos.send(efecto) }
             }
         }
     }

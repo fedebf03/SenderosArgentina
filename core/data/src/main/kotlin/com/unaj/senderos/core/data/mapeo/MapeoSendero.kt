@@ -62,7 +62,8 @@ fun SenderoEntidad.aDominio(): Sendero {
             PuntoRecorrido(punto.latitud, punto.longitud, resolverTipoPunto(punto.tipo), punto.nombre, punto.foto)
         },
         foto = foto,
-        bioma = resolverBioma(bioma)
+        bioma = resolverBioma(bioma),
+        idOrigen = idOrigen
     )
 }
 
@@ -97,7 +98,8 @@ fun Sendero.aEntidad(
             PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo.name, punto.nombre, punto.foto)
         },
         foto = foto,
-        bioma = bioma.name
+        bioma = bioma.name,
+        idOrigen = idOrigen
     )
 }
 
@@ -124,7 +126,8 @@ fun SenderoEntidad.aRed(): SenderoRed {
         eliminado = estaEliminado,
         recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto) },
         foto = foto,
-        bioma = bioma
+        bioma = bioma,
+        idOrigen = idOrigen
     )
 }
 
@@ -155,6 +158,7 @@ fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
             PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto)
         },
         foto = foto,
-        bioma = resolverBioma(bioma).name
+        bioma = resolverBioma(bioma).name,
+        idOrigen = idOrigen
     )
 }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Hiking
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material3.FilterChip
@@ -39,25 +40,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.SenderoPublico
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.presentation.componentes.BotoneraInferior
 import com.unaj.senderos.presentation.componentes.BuscadorSenderos
 import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
 import com.unaj.senderos.presentation.componentes.CargandoCentrado
-import com.unaj.senderos.presentation.componentes.IndicadorDificultad
+import com.unaj.senderos.presentation.componentes.ChipsDificultad
 import com.unaj.senderos.presentation.componentes.ListaSenderos
 import com.unaj.senderos.presentation.componentes.MensajeCentrado
 import com.unaj.senderos.presentation.componentes.MensajeVacio
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
-import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
 import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.presentation.tema.TemaSenderos
@@ -68,11 +67,13 @@ private const val TAG = "SENDEROS"
 fun SenderosPantalla(
     viewModel: SenderosViewModel,
     alNavegarADetalle: (String) -> Unit = {},
+    alNavegarADetallePublico: (String) -> Unit = {},
     alNavegarACreacion: () -> Unit = {},
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
+    val navegarADetallePublicoActual by rememberUpdatedState(alNavegarADetallePublico)
     val navegarACreacionActual by rememberUpdatedState(alNavegarACreacion)
     val contexto = LocalContext.current
     var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
@@ -112,6 +113,7 @@ fun SenderosPantalla(
         viewModel.efectoVisual.collect { efecto ->
             when (efecto) {
                 is SenderosEfecto.NavegarADetalle -> navegarADetalleActual(efecto.idSendero)
+                is SenderosEfecto.NavegarADetallePublico -> navegarADetallePublicoActual(efecto.idSendero)
                 is SenderosEfecto.NavegarACreacion -> navegarACreacionActual()
                 is SenderosEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
@@ -143,6 +145,7 @@ fun SenderosContenido(
     estadoAvisos: SnackbarHostState = remember { SnackbarHostState() },
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
 ) {
+    val esExplorar = estadoVisual.modo == ModoListado.EXPLORAR
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = estadoAvisos) },
@@ -156,21 +159,32 @@ fun SenderosContenido(
                 }
             }
         },
-        bottomBar = { BotoneraInferior(SeccionPrincipal.INICIO, alNavegarASeccion) },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { alProcesarEvento(SenderosEvento.AlTocarCrearSendero) },
-                icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Nuevo sendero") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+        bottomBar = {
+            BotoneraInferior(
+                if (esExplorar) SeccionPrincipal.EXPLORAR else SeccionPrincipal.MIS_SENDEROS,
+                alNavegarASeccion
             )
+        },
+        floatingActionButton = {
+            if (!esExplorar) {
+                ExtendedFloatingActionButton(
+                    onClick = { alProcesarEvento(SenderosEvento.AlTocarCrearSendero) },
+                    icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
+                    text = { Text("Nuevo sendero") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     ) { espaciadoInterno ->
         Column(modifier = Modifier.padding(espaciadoInterno)) {
             AnimatedVisibility(visible = estadoVisual.estaSinConexion) {
                 BannerAviso(
-                    texto = "Sin conexión: los cambios se sincronizarán después",
+                    texto = if (esExplorar) {
+                        "Sin conexión: puede que veas senderos desactualizados"
+                    } else {
+                        "Sin conexión: los cambios se sincronizarán después"
+                    },
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                 )
             }
@@ -178,29 +192,44 @@ fun SenderosContenido(
             when {
                 estadoVisual.estaCargando -> CargandoCentrado(modificadorCuerpo)
                 estadoVisual.mensajeError != null -> MensajeCentrado(estadoVisual.mensajeError, modificadorCuerpo, esError = true)
-                estadoVisual.senderos.isEmpty() -> MensajeVacio(
-                    icono = Icons.Outlined.Hiking,
-                    titulo = "Todavía no agregaste senderos",
-                    detalle = "Tocá «Nuevo sendero» para cargar el primero.",
-                    modifier = modificadorCuerpo
+                esExplorar && estadoVisual.hayErrorEnPublicos && estadoVisual.estaVacio -> MensajeCentrado(
+                    "No pudimos cargar los senderos públicos",
+                    modificadorCuerpo,
+                    esError = true
                 )
+                estadoVisual.estaVacio -> if (esExplorar) {
+                    MensajeVacio(
+                        icono = Icons.Outlined.Explore,
+                        titulo = "Todavía no hay senderos publicados",
+                        detalle = "Los senderos que se publiquen aparecen acá.",
+                        modifier = modificadorCuerpo
+                    )
+                } else {
+                    MensajeVacio(
+                        icono = Icons.Outlined.Hiking,
+                        titulo = "Todavía no agregaste senderos",
+                        detalle = "Tocá «Nuevo sendero» para cargar el primero.",
+                        modifier = modificadorCuerpo
+                    )
+                }
                 else -> Column(modifier = modificadorCuerpo) {
                     FiltrosSenderos(estadoVisual, alProcesarEvento)
                     if (estadoVisual.senderosFiltrados.isEmpty()) {
                         MensajeCentrado(
-                            if (estadoVisual.textoBusqueda.isBlank()) "No hay senderos con esa dificultad" else "No se encontraron senderos",
+                            if (estadoVisual.textoBusqueda.isBlank()) "No hay senderos con esos filtros" else "No se encontraron senderos",
                             Modifier.weight(1f)
                         )
                     } else {
                         ListaSenderos(
-                            titulo = "Mis senderos",
+                            titulo = if (esExplorar) "Senderos públicos" else "Mis senderos",
                             senderos = estadoVisual.senderosFiltrados,
                             alSeleccionarSendero = { idSendero ->
                                 alProcesarEvento(SenderosEvento.AlSeleccionarSendero(idSendero))
                             },
                             modifier = Modifier.weight(1f),
                             espacioInferior = PaddingValues(bottom = 96.dp),
-                            distanciaKilometrosDe = estadoVisual::distanciaKilometrosA
+                            distanciaKilometrosDe = estadoVisual::distanciaKilometrosA,
+                            autorDe = estadoVisual::nombreAutorDe
                         )
                     }
                 }
@@ -217,6 +246,18 @@ private fun FiltrosSenderos(estadoVisual: SenderosEstadoVisual, alProcesarEvento
             .padding(horizontal = 24.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        if (estadoVisual.modo == ModoListado.MIS_SENDEROS) {
+            FilterChip(
+                selected = estadoVisual.soloFavoritos,
+                onClick = { alProcesarEvento(SenderosEvento.AlAlternarFavoritos) },
+                label = { Text("Favoritos") }
+            )
+            FilterChip(
+                selected = estadoVisual.soloGuardados,
+                onClick = { alProcesarEvento(SenderosEvento.AlAlternarGuardados) },
+                label = { Text("Guardados") }
+            )
+        }
         FilterChip(
             selected = estadoVisual.ordenarPorCercania,
             onClick = { alProcesarEvento(SenderosEvento.AlCambiarOrdenCercania(!estadoVisual.ordenarPorCercania)) },
@@ -225,17 +266,10 @@ private fun FiltrosSenderos(estadoVisual: SenderosEstadoVisual, alProcesarEvento
                 Icon(imageVector = Icons.Outlined.NearMe, contentDescription = null, modifier = Modifier.size(18.dp))
             }
         )
-        Dificultad.entries.forEach { dificultad ->
-            val estaSeleccionada = dificultad in estadoVisual.dificultadesSeleccionadas
-            val texto = obtenerTextoDificultad(dificultad)
-            FilterChip(
-                selected = estaSeleccionada,
-                onClick = { alProcesarEvento(SenderosEvento.AlAlternarDificultad(dificultad)) },
-                label = { Text(texto) },
-                leadingIcon = { IndicadorDificultad(dificultad, mostrarTexto = false) },
-                modifier = Modifier.semantics { contentDescription = "Dificultad ${texto.lowercase()}" }
-            )
-        }
+        ChipsDificultad(
+            seleccionadas = estadoVisual.dificultadesSeleccionadas,
+            alAlternar = { dificultad -> alProcesarEvento(SenderosEvento.AlAlternarDificultad(dificultad)) }
+        )
     }
 }
 
@@ -249,6 +283,27 @@ private fun SenderosContenidoPreview() {
                 senderos = listOf(
                     Sendero("huella-andina", "usuario-1", "Huella Andina", "Neuquén, Río Negro y Chubut", 570.0, Dificultad.MEDIA, esFavorito = true),
                     Sendero("huella-neuquina", "usuario-1", "Huella Neuquina", "Neuquén", 120.0, Dificultad.BAJA)
+                ),
+                estaCargando = false
+            ),
+            alProcesarEvento = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ExplorarContenidoPreview() {
+    TemaSenderos {
+        SenderosContenido(
+            estadoVisual = SenderosEstadoVisual(
+                modo = ModoListado.EXPLORAR,
+                usuario = Usuario(id = "usuario-1", email = "ana@correo.com", nombre = "Ana"),
+                senderosPublicos = listOf(
+                    SenderoPublico(
+                        Sendero("puerto-canoa", "senderosargentina", "Puerto Canoa - Aila", "Neuquén", 8.2, Dificultad.BAJA),
+                        nombreAutor = "SenderosArgentina"
+                    )
                 ),
                 estaCargando = false
             ),

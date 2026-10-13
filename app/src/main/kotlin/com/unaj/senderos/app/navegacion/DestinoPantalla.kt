@@ -5,11 +5,12 @@ import androidx.compose.runtime.saveable.Saver
 sealed interface DestinoPantalla {
     data object Login : DestinoPantalla
     data object Registro : DestinoPantalla
-    data object Inicio : DestinoPantalla
+    data object Explorar : DestinoPantalla
     data object Mapa : DestinoPantalla
-    data object Favoritos : DestinoPantalla
+    data object MisSenderos : DestinoPantalla
     data object Perfil : DestinoPantalla
     data class Detalle(val idSendero: String) : DestinoPantalla
+    data class DetallePublico(val idSendero: String) : DestinoPantalla
     data class Formulario(val idSendero: String?) : DestinoPantalla
     data class Recorrido(val idSendero: String) : DestinoPantalla
     data class HistorialDetalle(val idRecorrido: String) : DestinoPantalla
@@ -18,11 +19,12 @@ sealed interface DestinoPantalla {
 internal fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String? {
     return when (destino) {
         is DestinoPantalla.Login, is DestinoPantalla.Registro -> null
-        is DestinoPantalla.Inicio -> "inicio-$idUsuario"
+        is DestinoPantalla.Explorar -> "explorar-$idUsuario"
         is DestinoPantalla.Mapa -> "mapa-$idUsuario"
-        is DestinoPantalla.Favoritos -> "favoritos-$idUsuario"
+        is DestinoPantalla.MisSenderos -> "mis-senderos-$idUsuario"
         is DestinoPantalla.Perfil -> "perfil-$idUsuario"
         is DestinoPantalla.Detalle -> "detalle-$idUsuario-${destino.idSendero}"
+        is DestinoPantalla.DetallePublico -> "detallepublico-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.Formulario -> "formulario-$idUsuario-${destino.idSendero ?: "nuevo"}"
         is DestinoPantalla.Recorrido -> "recorrido-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.HistorialDetalle -> "historial-$idUsuario-${destino.idRecorrido}"
@@ -35,11 +37,12 @@ internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
         when (destino) {
             is DestinoPantalla.Login -> "login"
             is DestinoPantalla.Registro -> "registro"
-            is DestinoPantalla.Inicio -> "inicio"
+            is DestinoPantalla.Explorar -> "explorar"
             is DestinoPantalla.Mapa -> "mapa"
-            is DestinoPantalla.Favoritos -> "favoritos"
+            is DestinoPantalla.MisSenderos -> "mis-senderos"
             is DestinoPantalla.Perfil -> "perfil"
             is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
+            is DestinoPantalla.DetallePublico -> "detallepublico:${destino.idSendero}"
             is DestinoPantalla.Formulario -> "formulario:${destino.idSendero.orEmpty()}"
             is DestinoPantalla.Recorrido -> "recorrido:${destino.idSendero}"
             is DestinoPantalla.HistorialDetalle -> "historial:${destino.idRecorrido}"
@@ -49,11 +52,12 @@ internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
         when {
             texto == "login" -> DestinoPantalla.Login
             texto == "registro" -> DestinoPantalla.Registro
-            texto == "inicio" -> DestinoPantalla.Inicio
+            texto == "explorar" -> DestinoPantalla.Explorar
             texto == "mapa" -> DestinoPantalla.Mapa
-            texto == "favoritos" -> DestinoPantalla.Favoritos
+            texto == "mis-senderos" -> DestinoPantalla.MisSenderos
             texto == "perfil" -> DestinoPantalla.Perfil
             texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
+            texto.startsWith("detallepublico:") -> DestinoPantalla.DetallePublico(texto.removePrefix("detallepublico:"))
             texto.startsWith("formulario:") -> DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
             texto.startsWith("recorrido:") -> DestinoPantalla.Recorrido(texto.removePrefix("recorrido:"))
             texto.startsWith("historial:") -> DestinoPantalla.HistorialDetalle(texto.removePrefix("historial:"))

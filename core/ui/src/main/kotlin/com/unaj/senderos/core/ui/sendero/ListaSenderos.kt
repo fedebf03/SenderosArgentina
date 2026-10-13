@@ -58,7 +58,8 @@ fun ListaSenderos(
     alSeleccionarSendero: (String) -> Unit,
     modifier: Modifier = Modifier,
     espacioInferior: PaddingValues = PaddingValues(bottom = 16.dp),
-    distanciaKilometrosDe: (Sendero) -> Double? = { null }
+    distanciaKilometrosDe: (Sendero) -> Double? = { null },
+    autorDe: (Sendero) -> String? = { null }
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = ANCHO_MINIMO_TARJETA),
@@ -85,7 +86,8 @@ fun ListaSenderos(
                 sendero = sendero,
                 miniaturaEspejada = indice % 2 == 1,
                 alSeleccionar = { alSeleccionarSendero(sendero.id) },
-                distanciaKilometros = distanciaKilometrosDe(sendero)
+                distanciaKilometros = distanciaKilometrosDe(sendero),
+                autor = autorDe(sendero)
             )
         }
     }
@@ -147,7 +149,8 @@ fun TarjetaSendero(
     sendero: Sendero,
     alSeleccionar: () -> Unit,
     miniaturaEspejada: Boolean = false,
-    distanciaKilometros: Double? = null
+    distanciaKilometros: Double? = null,
+    autor: String? = null
 ) {
     OutlinedCard(
         onClick = alSeleccionar,
@@ -158,7 +161,7 @@ fun TarjetaSendero(
             if (sendero.bioma != Bioma.SIN_DEFINIR) {
                 FranjaBioma(sendero.bioma)
             }
-            ContenidoTarjetaSendero(sendero, miniaturaEspejada, distanciaKilometros, Modifier.weight(1f))
+            ContenidoTarjetaSendero(sendero, miniaturaEspejada, distanciaKilometros, autor, Modifier.weight(1f))
         }
     }
 }
@@ -180,6 +183,7 @@ private fun ContenidoTarjetaSendero(
     sendero: Sendero,
     miniaturaEspejada: Boolean,
     distanciaKilometros: Double?,
+    autor: String?,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -222,6 +226,15 @@ private fun ContenidoTarjetaSendero(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (autor != null) {
+                Text(
+                    text = "Por $autor",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             if (sendero.bioma != Bioma.SIN_DEFINIR) {
                 EtiquetaBioma(sendero.bioma)
             }

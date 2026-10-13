@@ -31,5 +31,7 @@ data class SenderoEntidad(
     @ColumnInfo(defaultValue = "")
     val foto: String = "",
     @ColumnInfo(defaultValue = "SIN_DEFINIR")
-    val bioma: String = "SIN_DEFINIR"
+    val bioma: String = "SIN_DEFINIR",
+    @ColumnInfo(defaultValue = "")
+    val idOrigen: String = ""
 )

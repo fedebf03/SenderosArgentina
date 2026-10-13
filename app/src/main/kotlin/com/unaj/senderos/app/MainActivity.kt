@@ -35,8 +35,8 @@ import com.unaj.senderos.data.seguimiento.EXTRA_SOLICITAR_CANCELACION
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.detalle.DetalleSenderoPantalla
 import com.unaj.senderos.presentation.detalle.DetalleSenderoViewModel
-import com.unaj.senderos.presentation.favoritos.FavoritosPantalla
-import com.unaj.senderos.presentation.favoritos.FavoritosViewModel
+import com.unaj.senderos.presentation.detallepublico.DetallePublicoPantalla
+import com.unaj.senderos.presentation.detallepublico.DetallePublicoViewModel
 import com.unaj.senderos.presentation.formulario.FormularioSenderoPantalla
 import com.unaj.senderos.presentation.formulario.FormularioSenderoViewModel
 import com.unaj.senderos.presentation.historial.HistorialDetallePantalla
@@ -51,6 +51,7 @@ import com.unaj.senderos.presentation.recorrido.RecorridoPantalla
 import com.unaj.senderos.presentation.recorrido.RecorridoViewModel
 import com.unaj.senderos.presentation.registro.RegistroPantalla
 import com.unaj.senderos.presentation.registro.RegistroViewModel
+import com.unaj.senderos.presentation.senderos.ModoListado
 import com.unaj.senderos.presentation.senderos.SenderosPantalla
 import com.unaj.senderos.presentation.senderos.SenderosViewModel
 import com.unaj.senderos.presentation.tema.TemaSenderos
@@ -119,16 +120,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             var pantallaActual by rememberSaveable(stateSaver = guardadorDeDestino) {
                 val hayUsuario = dependencias.obtenerUsuarioActualUseCase() != null
-                mutableStateOf(if (hayUsuario) DestinoPantalla.Inicio else DestinoPantalla.Login)
+                mutableStateOf(if (hayUsuario) DestinoPantalla.Explorar else DestinoPantalla.Login)
             }
             var listadoDeOrigen by rememberSaveable(stateSaver = guardadorDeDestino) {
-                mutableStateOf<DestinoPantalla>(DestinoPantalla.Inicio)
+                mutableStateOf<DestinoPantalla>(DestinoPantalla.Explorar)
             }
             val navegarASeccion: (SeccionPrincipal) -> Unit = { seccion ->
                 pantallaActual = when (seccion) {
-                    SeccionPrincipal.INICIO -> DestinoPantalla.Inicio
+                    SeccionPrincipal.EXPLORAR -> DestinoPantalla.Explorar
                     SeccionPrincipal.MAPA -> DestinoPantalla.Mapa
-                    SeccionPrincipal.FAVORITOS -> DestinoPantalla.Favoritos
+                    SeccionPrincipal.MIS_SENDEROS -> DestinoPantalla.MisSenderos
                     SeccionPrincipal.PERFIL -> DestinoPantalla.Perfil
                 }
             }
@@ -163,44 +164,55 @@ class MainActivity : ComponentActivity() {
                     when (val destino = pantallaActual) {
                         is DestinoPantalla.Login -> LoginPantalla(
                             viewModel = loginViewModel,
-                            alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                            alNavegarAInicio = { pantallaActual = DestinoPantalla.Explorar },
                             alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
                         )
                         is DestinoPantalla.Registro -> RegistroPantalla(
                             viewModel = registroViewModel,
-                            alNavegarAInicio = { pantallaActual = DestinoPantalla.Inicio },
+                            alNavegarAInicio = { pantallaActual = DestinoPantalla.Explorar },
                             alVolverALogin = { pantallaActual = DestinoPantalla.Login }
                         )
-                        is DestinoPantalla.Inicio -> SenderosPantalla(
-                            viewModel = viewModelDeDestino("inicio-$idUsuario") {
+                        is DestinoPantalla.Explorar -> SenderosPantalla(
+                            viewModel = viewModelDeDestino("explorar-$idUsuario") {
                                 SenderosViewModel(
+                                    ModoListado.EXPLORAR,
                                     dependencias.observarSenderosDelUsuarioUseCase,
+                                    dependencias.observarSenderosPublicosUseCase,
                                     dependencias.proveedorUbicacion,
                                     dependencias.monitorConectividad
                                 )
                             },
-                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Inicio),
-                            alNavegarACreacion = {
-                                listadoDeOrigen = DestinoPantalla.Inicio
-                                pantallaActual = DestinoPantalla.Formulario(null)
-                            },
+                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Explorar),
+                            alNavegarADetallePublico = { idSendero -> pantallaActual = DestinoPantalla.DetallePublico(idSendero) },
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.Mapa -> MapaSenderosPantalla(
                             viewModel = viewModelDeDestino("mapa-$idUsuario") {
                                 MapaSenderosViewModel(
                                     dependencias.observarSenderosDelUsuarioUseCase,
+                                    dependencias.observarSenderosPublicosUseCase,
                                     dependencias.monitorConectividad
                                 )
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Mapa),
+                            alNavegarADetallePublico = { idSendero -> pantallaActual = DestinoPantalla.DetallePublico(idSendero) },
                             alNavegarASeccion = navegarASeccion
                         )
-                        is DestinoPantalla.Favoritos -> FavoritosPantalla(
-                            viewModel = viewModelDeDestino("favoritos-$idUsuario") {
-                                FavoritosViewModel(dependencias.observarSenderosDelUsuarioUseCase)
+                        is DestinoPantalla.MisSenderos -> SenderosPantalla(
+                            viewModel = viewModelDeDestino("mis-senderos-$idUsuario") {
+                                SenderosViewModel(
+                                    ModoListado.MIS_SENDEROS,
+                                    dependencias.observarSenderosDelUsuarioUseCase,
+                                    dependencias.observarSenderosPublicosUseCase,
+                                    dependencias.proveedorUbicacion,
+                                    dependencias.monitorConectividad
+                                )
                             },
-                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Favoritos),
+                            alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.MisSenderos),
+                            alNavegarACreacion = {
+                                listadoDeOrigen = DestinoPantalla.MisSenderos
+                                pantallaActual = DestinoPantalla.Formulario(null)
+                            },
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.Perfil -> PerfilPantalla(
@@ -215,7 +227,7 @@ class MainActivity : ComponentActivity() {
                             },
                             alNavegarALogin = {
                                 pantallaActual = DestinoPantalla.Login
-                                listOf("inicio", "mapa", "favoritos", "perfil").forEach { seccion ->
+                                listOf("explorar", "mis-senderos", "mapa", "perfil").forEach { seccion ->
                                     almacenDestinos.liberarDestino("$seccion-$idUsuario")
                                 }
                             },
@@ -259,7 +271,10 @@ class MainActivity : ComponentActivity() {
                                         capacidadesDispositivo = dependencias.capacidadesDispositivo,
                                         observarPuntosCapturadosConDistanciaUseCase = dependencias.observarPuntosCapturadosConDistanciaUseCase,
                                         incorporarPuntosCapturadosUseCase = dependencias.incorporarPuntosCapturadosUseCase,
-                                        descartarPuntosCapturadosUseCase = dependencias.descartarPuntosCapturadosUseCase
+                                        descartarPuntosCapturadosUseCase = dependencias.descartarPuntosCapturadosUseCase,
+                                        observarSenderoPublicadoUseCase = dependencias.observarSenderoPublicadoUseCase,
+                                        publicarSenderoUseCase = dependencias.publicarSenderoUseCase,
+                                        despublicarSenderoUseCase = dependencias.despublicarSenderoUseCase
                                     )
                                 },
                                 alVolverAlListado = {
@@ -268,6 +283,29 @@ class MainActivity : ComponentActivity() {
                                 },
                                 alNavegarAEdicion = { idSendero -> pantallaActual = DestinoPantalla.Formulario(idSendero) },
                                 alNavegarARecorrido = { idSendero -> pantallaActual = DestinoPantalla.Recorrido(idSendero) }
+                            )
+                        }
+                        is DestinoPantalla.DetallePublico -> {
+                            val clave = "detallepublico-$idUsuario-${destino.idSendero}"
+                            DetallePublicoPantalla(
+                                viewModel = viewModelDeDestino(clave) {
+                                    DetallePublicoViewModel(
+                                        idSendero = destino.idSendero,
+                                        observarSenderoPublicoUseCase = dependencias.observarSenderoPublicoUseCase,
+                                        observarSenderosDelUsuarioUseCase = dependencias.observarSenderosDelUsuarioUseCase,
+                                        obtenerUsuarioActualUseCase = dependencias.obtenerUsuarioActualUseCase,
+                                        guardarCopiaSenderoPublicoUseCase = dependencias.guardarCopiaSenderoPublicoUseCase
+                                    )
+                                },
+                                alVolverAExplorar = {
+                                    pantallaActual = DestinoPantalla.Explorar
+                                    almacenDestinos.liberarDestino(clave)
+                                },
+                                alNavegarAMiSendero = { idCopia ->
+                                    listadoDeOrigen = DestinoPantalla.MisSenderos
+                                    pantallaActual = DestinoPantalla.Detalle(idCopia)
+                                    almacenDestinos.liberarDestino(clave)
+                                }
                             )
                         }
                         is DestinoPantalla.Recorrido -> {

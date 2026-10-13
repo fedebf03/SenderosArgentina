@@ -3,8 +3,8 @@ package com.unaj.senderos.presentation.componentes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.Hiking
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.HorizontalDivider
@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-enum class SeccionPrincipal { INICIO, MAPA, FAVORITOS, PERFIL }
+enum class SeccionPrincipal { EXPLORAR, MAPA, MIS_SENDEROS, PERFIL }
 
 @Composable
 fun BotoneraInferior(
@@ -35,9 +35,9 @@ fun BotoneraInferior(
     Column {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-            ItemBotonera(SeccionPrincipal.INICIO, "Inicio", Icons.Outlined.Home, seccionActual, coloresItem, alSeleccionarSeccion)
+            ItemBotonera(SeccionPrincipal.EXPLORAR, "Explorar", Icons.Outlined.Explore, seccionActual, coloresItem, alSeleccionarSeccion)
             ItemBotonera(SeccionPrincipal.MAPA, "Mapa", Icons.Outlined.Map, seccionActual, coloresItem, alSeleccionarSeccion)
-            ItemBotonera(SeccionPrincipal.FAVORITOS, "Favoritos", Icons.Outlined.FavoriteBorder, seccionActual, coloresItem, alSeleccionarSeccion)
+            ItemBotonera(SeccionPrincipal.MIS_SENDEROS, "Mis senderos", Icons.Outlined.Hiking, seccionActual, coloresItem, alSeleccionarSeccion)
             ItemBotonera(SeccionPrincipal.PERFIL, "Perfil", Icons.Outlined.Person, seccionActual, coloresItem, alSeleccionarSeccion)
         }
     }

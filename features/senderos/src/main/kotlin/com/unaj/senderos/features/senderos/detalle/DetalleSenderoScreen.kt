@@ -276,6 +276,30 @@ fun DetalleSenderoContenido(
         )
     }
 
+    if (estadoVisual.esDialogoPublicarVisible && estadoVisual.sendero != null) {
+        DialogoConfirmacion(
+            titulo = "Publicar sendero",
+            texto = "Cualquiera que use la app va a poder ver ${estadoVisual.sendero.nombre} y su recorrido, " +
+                "incluido dónde empieza. Si después se edita, hay que volver a publicarlo.",
+            textoConfirmar = "Publicar",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarPublicar) },
+            textoDescartar = "Cancelar",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarPublicar) }
+        )
+    }
+
+    if (estadoVisual.esDialogoHacerPrivadoVisible && estadoVisual.sendero != null) {
+        DialogoConfirmacion(
+            titulo = "Hacer privado",
+            texto = "${estadoVisual.sendero.nombre} deja de aparecer en Explorar. " +
+                "Las copias que otros ya guardaron se quedan.",
+            textoConfirmar = "Hacer privado",
+            alConfirmar = { alProcesarEvento(DetalleSenderoEvento.AlConfirmarHacerPrivado) },
+            textoDescartar = "Seguir publicado",
+            alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarHacerPrivado) }
+        )
+    }
+
     if (estadoVisual.esDialogoEliminarVisible && estadoVisual.sendero != null) {
         DialogoConfirmacion(
             titulo = "Eliminar sendero",

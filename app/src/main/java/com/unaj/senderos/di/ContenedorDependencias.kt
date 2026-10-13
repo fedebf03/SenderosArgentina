@@ -9,10 +9,12 @@ import com.unaj.senderos.data.local.BaseDatosSenderos
 import com.unaj.senderos.data.local.EjecutorTransaccionesRoom
 import com.unaj.senderos.data.remote.FirestoreRecorridoFuenteRemota
 import com.unaj.senderos.data.remote.FirestoreSenderoFuenteRemota
+import com.unaj.senderos.data.remote.FirestoreSenderoPublicoFuenteRemota
 import com.unaj.senderos.data.remote.SubidorFotosCloudinary
 import com.unaj.senderos.data.repository.AutenticacionRepositorioImpl
 import com.unaj.senderos.data.repository.RecorridoRepositorioOfflineFirst
 import com.unaj.senderos.data.repository.PuntosCapturadosRepositorioOfflineFirst
+import com.unaj.senderos.data.repository.SenderoPublicoRepositorioImpl
 import com.unaj.senderos.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacion
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacionWorkManager
@@ -43,23 +45,30 @@ import com.unaj.senderos.domain.port.Notificador
 import com.unaj.senderos.domain.port.PreferenciasAplicacion
 import com.unaj.senderos.domain.repository.RecorridoRepositorio
 import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
+import com.unaj.senderos.domain.repository.SenderoPublicoRepositorio
 import com.unaj.senderos.domain.port.ProveedorUbicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.DespublicarSenderoUseCase
 import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
 import com.unaj.senderos.domain.usecase.EnviarCorreoRecuperacionUseCase
 import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
 import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.GuardarCopiaSenderoPublicoUseCase
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
 import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarRecorridoUseCase
 import com.unaj.senderos.domain.usecase.ObservarRecorridosUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderoPublicadoUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderoPublicoUseCase
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderosPublicosUseCase
 import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
+import com.unaj.senderos.domain.usecase.PublicarSenderoUseCase
 import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -131,6 +140,17 @@ class ContenedorDependencias(contexto: Context) {
     val alternarFavoritoUseCase = AlternarFavoritoUseCase(senderoRepositorio, autenticacionRepositorio)
     val eliminarSenderoUseCase = EliminarSenderoUseCase(senderoRepositorio, autenticacionRepositorio)
     val guardarSenderoUseCase = GuardarSenderoUseCase(senderoRepositorio, autenticacionRepositorio)
+
+    private val senderoPublicoRepositorio: SenderoPublicoRepositorio =
+        SenderoPublicoRepositorioImpl(FirestoreSenderoPublicoFuenteRemota(FirebaseFirestore.getInstance()))
+    val observarSenderosPublicosUseCase =
+        ObservarSenderosPublicosUseCase(senderoPublicoRepositorio, autenticacionRepositorio)
+    val observarSenderoPublicoUseCase = ObservarSenderoPublicoUseCase(senderoPublicoRepositorio, autenticacionRepositorio)
+    val observarSenderoPublicadoUseCase =
+        ObservarSenderoPublicadoUseCase(senderoPublicoRepositorio, autenticacionRepositorio)
+    val publicarSenderoUseCase = PublicarSenderoUseCase(senderoPublicoRepositorio, autenticacionRepositorio)
+    val despublicarSenderoUseCase = DespublicarSenderoUseCase(senderoPublicoRepositorio, autenticacionRepositorio)
+    val guardarCopiaSenderoPublicoUseCase = GuardarCopiaSenderoPublicoUseCase(guardarSenderoUseCase)
     val observarRecorridosUseCase = ObservarRecorridosUseCase(recorridoRepositorio, autenticacionRepositorio)
     val observarRecorridoUseCase = ObservarRecorridoUseCase(recorridoRepositorio, autenticacionRepositorio)
     val observarPuntosCapturadosUseCase = ObservarPuntosCapturadosUseCase(puntosCapturadosRepositorio, autenticacionRepositorio)

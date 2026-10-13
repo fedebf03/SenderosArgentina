@@ -30,7 +30,8 @@ data class SenderoRed(
     val eliminado: Boolean = false,
     val recorrido: List<PuntoRecorridoRed> = emptyList(),
     val foto: String = "",
-    val bioma: String = "SIN_DEFINIR"
+    val bioma: String = "SIN_DEFINIR",
+    val idOrigen: String = ""
 )
 
 // Punto del recorrido como se guarda en Firestore (valores por defecto requeridos por el deserializador)
