@@ -1,6 +1,6 @@
 package com.unaj.senderos.domain.model
 
-enum class TipoPunto { PASO, MIRADOR, AGUA, REFUGIO, CAMPING, PELIGRO }
+enum class TipoPunto { PASO, MIRADOR, AGUA, REFUGIO, CAMPING, PELIGRO, OTRO }
 
 // Punto georreferenciado del recorrido; el orden de la lista de puntos define el sentido
 data class PuntoRecorrido(

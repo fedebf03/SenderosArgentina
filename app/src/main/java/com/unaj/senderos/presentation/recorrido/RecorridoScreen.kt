@@ -30,6 +30,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import com.unaj.senderos.presentation.detalle.TarjetaPuntoSeleccionado
+import com.unaj.senderos.presentation.detalle.obtenerPuntosDeInteres
+import com.unaj.senderos.presentation.revisionpuntos.DialogoFotoAmpliada
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -127,6 +131,7 @@ fun RecorridoContenido(
 ) {
     BackHandler { alProcesarEvento(RecorridoEvento.AlVolver) }
 
+    var fotoAmpliada by remember { mutableStateOf<String?>(null) }
     val sigueActivo = estadoVisual.fase == FaseRecorrido.EN_CURSO
     Scaffold(
         modifier = modifier,
@@ -166,12 +171,26 @@ fun RecorridoContenido(
                             modifier = Modifier.fillMaxSize(),
                             colorLinea = obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary),
                             posicionUsuario = estadoVisual.posicionUsuario,
+                            indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
+                            alSeleccionarPunto = { indice -> alProcesarEvento(RecorridoEvento.AlSeleccionarPuntoEnMapa(indice)) },
                             modoNavegacion = ModoNavegacion(
                                 rumboGrados = estadoVisual.rumboGrados,
                                 estaSiguiendo = estadoVisual.estaSiguiendo,
                                 alMoverConGesto = { alProcesarEvento(RecorridoEvento.AlMoverMapaConGesto) }
                             )
                         )
+                        obtenerPuntosDeInteres(sendero)
+                            .firstOrNull { punto -> punto.indice == estadoVisual.indicePuntoSeleccionado }
+                            ?.let { punto ->
+                                Box(modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)) {
+                                    TarjetaPuntoSeleccionado(
+                                        punto = punto,
+                                        alAmpliarFoto = { foto -> fotoAmpliada = foto },
+                                        alCerrar = { alProcesarEvento(RecorridoEvento.AlSeleccionarPuntoEnMapa(null)) },
+                                        alturaFoto = 110.dp
+                                    )
+                                }
+                            }
                         if (!estadoVisual.estaSiguiendo) {
                             ExtendedFloatingActionButton(
                                 onClick = { alProcesarEvento(RecorridoEvento.AlTocarCentrar) },
@@ -228,6 +247,7 @@ fun RecorridoContenido(
         )
     }
     estadoVisual.resumen?.let { resumen -> DialogoResumen(resumen, estadoVisual.revision, alProcesarEvento) }
+    fotoAmpliada?.let { foto -> DialogoFotoAmpliada(foto = foto, alCerrar = { fotoAmpliada = null }) }
 }
 
 @Composable

@@ -19,6 +19,7 @@ object PropiedadesPunto {
     const val TIPO = "tipo"
     const val ROL = "rol"
     const val SELECCIONADO = "seleccionado"
+    const val FOTO = "foto"
     const val RUMBO = "rumbo"
 }
 
@@ -63,6 +64,7 @@ object ConstructorGeoJsonRecorrido {
             elemento.addStringProperty(PropiedadesPunto.TIPO, punto.tipo.name)
             elemento.addStringProperty(PropiedadesPunto.ROL, obtenerRol(indice, puntos.size, tipoRecorrido))
             elemento.addBooleanProperty(PropiedadesPunto.SELECCIONADO, indice == indiceSeleccionado)
+            elemento.addBooleanProperty(PropiedadesPunto.FOTO, punto.foto.isNotEmpty())
             elemento
         }
         return FeatureCollection.fromFeatures(elementos)

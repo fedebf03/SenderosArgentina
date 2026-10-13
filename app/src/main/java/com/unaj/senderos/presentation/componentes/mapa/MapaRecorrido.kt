@@ -75,6 +75,7 @@ private const val ID_CAPA_CIRCULOS = "capa-circulos-recorrido"
 private const val ID_CAPA_NUMEROS = "capa-numeros-recorrido"
 private const val ID_CAPA_TIPOS = "capa-tipos-recorrido"
 private const val ID_CAPA_ROLES = "capa-roles-recorrido"
+private const val ID_CAPA_FOTOS = "capa-fotos-recorrido"
 
 @Composable
 fun MapaRecorrido(
@@ -225,7 +226,10 @@ private class ControladorMapaRecorrido(
             datos.alAgregarPunto(posicion.latitude, posicion.longitude)
             true
         } else {
-            false
+            val enPantalla = mapa?.projection?.toScreenLocation(posicion)
+            val indice = enPantalla?.let { punto -> buscarMarcadorCercano(punto.x, punto.y) }
+            datos.alSeleccionarPunto(indice)
+            indice != null
         }
     }
 
@@ -394,6 +398,17 @@ private class ControladorMapaRecorrido(
                     ),
                     PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM),
                     PropertyFactory.iconOffset(arrayOf(0f, -14f)),
+                    PropertyFactory.iconAllowOverlap(true),
+                    PropertyFactory.iconIgnorePlacement(true)
+                )
+        )
+        estiloBase.addLayer(
+            SymbolLayer(ID_CAPA_FOTOS, ID_FUENTE_PUNTOS)
+                .withFilter(Expression.eq(Expression.get(PropiedadesPunto.FOTO), true))
+                .withProperties(
+                    PropertyFactory.iconImage(NombresImagenMapa.FOTO),
+                    PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM_LEFT),
+                    PropertyFactory.iconOffset(arrayOf(8f, -8f)),
                     PropertyFactory.iconAllowOverlap(true),
                     PropertyFactory.iconIgnorePlacement(true)
                 )

@@ -20,6 +20,7 @@ data class DetalleSenderoEstadoVisual(
     val nombreSenderoEnCursoAReemplazar: String? = null,
     val esModoDemostracion: Boolean = false,
     val puntoEnfocado: Coordenada? = null,
+    val indicePuntoSeleccionado: Int? = null,
     val contadorEnfoque: Int = 0,
     val puntosDeInteres: List<PuntoDeInteres> = emptyList(),
     val estadoMapaSinConexion: EstadoMapaSinConexion = EstadoMapaSinConexion.NoDescargado,
@@ -44,6 +45,7 @@ sealed interface DetalleSenderoEvento {
     data object AlCompartir : DetalleSenderoEvento
     data class AlAlternarSeccion(val seccion: SeccionDetalle) : DetalleSenderoEvento
     data class AlSeleccionarPuntoDeInteres(val indice: Int) : DetalleSenderoEvento
+    data class AlSeleccionarPuntoEnMapa(val indice: Int?) : DetalleSenderoEvento
     data object AlTocarIniciarRecorrido : DetalleSenderoEvento
     data object AlTocarDescargarMapa : DetalleSenderoEvento
     data object AlTocarEliminarMapa : DetalleSenderoEvento

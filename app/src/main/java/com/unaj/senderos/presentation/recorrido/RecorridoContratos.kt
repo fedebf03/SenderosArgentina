@@ -48,6 +48,7 @@ data class RecorridoEstadoVisual(
     val esDialogoCancelarVisible: Boolean = false,
     val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO,
     val esHojaPuntoVisible: Boolean = false,
+    val indicePuntoSeleccionado: Int? = null,
     val tipoPuntoElegido: TipoPunto = TIPO_PUNTO_INICIAL,
     val notaPunto: String = "",
     val fotoPunto: String? = null,
@@ -81,6 +82,7 @@ sealed interface RecorridoEvento {
     data object AlSeguirCaminando : RecorridoEvento
     data object AlMoverMapaConGesto : RecorridoEvento
     data object AlTocarCentrar : RecorridoEvento
+    data class AlSeleccionarPuntoEnMapa(val indice: Int?) : RecorridoEvento
     data class AlSeleccionarMultiplicador(val valor: Int) : RecorridoEvento
     data object AlTocarSimularDesvio : RecorridoEvento
     data object AlTocarAgregarPunto : RecorridoEvento

@@ -22,17 +22,20 @@ object NombresImagenMapa {
     const val FLECHA_NAVEGACION = "imagen-flecha-navegacion"
     const val PREFIJO_TIPO = "imagen-tipo-"
     const val PREFIJO_ROL = "imagen-rol-"
+    const val FOTO = "imagen-foto"
 }
 
 object IconosMapa {
     private const val TAMANO_INSIGNIA_DP = 22f
     private const val TAMANO_FLECHA_DP = 14f
+    private const val TAMANO_INSIGNIA_FOTO_DP = 16f
     private const val TAMANO_FLECHA_NAVEGACION_DP = 44f
 
     fun crearTodos(paleta: PaletaMapa, densidad: Float): Map<String, Bitmap> {
         val imagenes = mutableMapOf<String, Bitmap>()
         imagenes[NombresImagenMapa.FLECHA] = crearFlecha(paleta, densidad)
         imagenes[NombresImagenMapa.FLECHA_NAVEGACION] = crearFlechaNavegacion(paleta, densidad)
+        imagenes[NombresImagenMapa.FOTO] = crearInsigniaDeFoto(paleta, densidad)
         TipoPunto.entries.filter { tipo -> tipo != TipoPunto.PASO }.forEach { tipo ->
             imagenes[NombresImagenMapa.PREFIJO_TIPO + tipo.name] = crearInsigniaDeTipo(tipo, paleta, densidad)
         }
@@ -87,6 +90,19 @@ object IconosMapa {
         return mapaDeBits
     }
 
+    private fun crearInsigniaDeFoto(paleta: PaletaMapa, densidad: Float): Bitmap {
+        val (mapaDeBits, lienzo) = crearLienzo(TAMANO_INSIGNIA_FOTO_DP, densidad)
+        val lado = lienzo.width.toFloat()
+        val centro = lado / 2f
+        lienzo.drawCircle(centro, centro, centro * 0.92f, crearPincel(paleta.primario))
+        lienzo.drawCircle(centro, centro, centro * 0.92f, crearPincel(paleta.sobrePrimario, esRelleno = false, grosor = lado * 0.08f))
+        val relleno = crearPincel(paleta.sobrePrimario)
+        lienzo.drawRect(RectF(lado * 0.4f, lado * 0.26f, lado * 0.6f, lado * 0.38f), relleno)
+        lienzo.drawRoundRect(RectF(lado * 0.24f, lado * 0.36f, lado * 0.76f, lado * 0.7f), lado * 0.06f, lado * 0.06f, relleno)
+        lienzo.drawCircle(centro, lado * 0.53f, lado * 0.1f, crearPincel(paleta.primario))
+        return mapaDeBits
+    }
+
     private fun crearInsigniaDeTipo(tipo: TipoPunto, paleta: PaletaMapa, densidad: Float): Bitmap {
         val (mapaDeBits, lienzo) = crearLienzo(TAMANO_INSIGNIA_DP, densidad)
         val lado = lienzo.width.toFloat()
@@ -107,9 +123,24 @@ object IconosMapa {
                 crearPincel(colorFondo, esRelleno = false, grosor = lado * 0.07f)
             )
             TipoPunto.PELIGRO -> dibujarAdmiracion(lienzo, lado, relleno)
+            TipoPunto.OTRO -> dibujarEstrella(lienzo, lado, relleno)
             TipoPunto.PASO -> lienzo.drawCircle(centro, centro, lado * 0.12f, relleno)
         }
         return mapaDeBits
+    }
+
+    private fun dibujarEstrella(lienzo: Canvas, lado: Float, pincel: Paint) {
+        val centro = lado / 2f
+        val contorno = Path()
+        for (vertice in 0 until 10) {
+            val radio = if (vertice % 2 == 0) lado * 0.3f else lado * 0.13f
+            val angulo = Math.PI / 5 * vertice - Math.PI / 2
+            val x = centro + (radio * kotlin.math.cos(angulo)).toFloat()
+            val y = centro + (radio * kotlin.math.sin(angulo)).toFloat()
+            if (vertice == 0) contorno.moveTo(x, y) else contorno.lineTo(x, y)
+        }
+        contorno.close()
+        lienzo.drawPath(contorno, pincel)
     }
 
     private fun dibujarMontana(lienzo: Canvas, lado: Float, pincel: Paint) {

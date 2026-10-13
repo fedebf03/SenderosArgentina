@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Cabin
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Park
@@ -46,7 +47,9 @@ import androidx.compose.material3.MaterialTheme
 import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
@@ -57,6 +60,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Coordenada
@@ -166,6 +170,8 @@ internal fun RecuadroMapa(
     modifier: Modifier = Modifier,
     puntoEnfocado: Coordenada? = null,
     claveEnfoque: Int = 0,
+    indiceSeleccionado: Int? = null,
+    alSeleccionarPunto: (Int?) -> Unit = {},
     alDescargarMapa: (() -> Unit)? = null
 ) {
     Card(
@@ -200,6 +206,8 @@ internal fun RecuadroMapa(
                 colorLinea = obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary),
                 puntoEnfocado = puntoEnfocado,
                 claveEnfoque = claveEnfoque,
+                indiceSeleccionado = indiceSeleccionado,
+                alSeleccionarPunto = alSeleccionarPunto,
                 alDescargarMapa = alDescargarMapa
             )
         }
@@ -388,6 +396,51 @@ internal fun ListaDePuntosDeInteres(
 }
 
 @Composable
+internal fun TarjetaPuntoSeleccionado(
+    punto: PuntoDeInteres,
+    alAmpliarFoto: (String) -> Unit,
+    alCerrar: () -> Unit,
+    alturaFoto: Dp = 180.dp
+) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+        Column(
+            modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 4.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(
+                    imageVector = obtenerIconoTipoPunto(punto.tipo),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(text = punto.texto(), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text(
+                    text = formatearKilometrosDesdeInicio(punto.distanciaDesdeInicioKilometros),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                IconButton(onClick = alCerrar) {
+                    Icon(imageVector = Icons.Filled.Close, contentDescription = "Cerrar")
+                }
+            }
+            if (punto.foto.isNotEmpty()) {
+                FotoDePunto(
+                    foto = punto.foto,
+                    descripcion = "Foto de ${punto.texto()}",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 8.dp)
+                        .height(alturaFoto)
+                        .clip(RoundedCornerShape(12.dp))
+                        .accionable("Ampliar la foto") { alAmpliarFoto(punto.foto) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 internal fun TarjetaPuntosPorRevisar(cantidad: Int, alRevisar: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -423,6 +476,7 @@ internal fun obtenerIconoTipoPunto(tipo: TipoPunto): ImageVector {
         TipoPunto.REFUGIO -> Icons.Outlined.Cabin
         TipoPunto.CAMPING -> Icons.Outlined.Park
         TipoPunto.PELIGRO -> Icons.Outlined.Warning
+        TipoPunto.OTRO -> Icons.Outlined.Star
     }
 }
 

@@ -109,6 +109,12 @@ class DetalleSenderoViewModel(
             is DetalleSenderoEvento.AlCompartir -> compartir()
             is DetalleSenderoEvento.AlAlternarSeccion -> alternarSeccion(evento.seccion)
             is DetalleSenderoEvento.AlSeleccionarPuntoDeInteres -> enfocarPuntoDeInteres(evento.indice)
+            is DetalleSenderoEvento.AlSeleccionarPuntoEnMapa -> {
+                _estadoVisual.update { estadoActual ->
+                    val esDeInteres = estadoActual.puntosDeInteres.any { punto -> punto.indice == evento.indice }
+                    estadoActual.copy(indicePuntoSeleccionado = evento.indice.takeIf { esDeInteres })
+                }
+            }
             is DetalleSenderoEvento.AlTocarIniciarRecorrido -> pedirPermisoParaIniciarRecorrido()
             is DetalleSenderoEvento.AlConcederPermisoUbicacion -> iniciarRecorrido()
             is DetalleSenderoEvento.AlDenegarPermisoUbicacion -> {
@@ -364,7 +370,11 @@ class DetalleSenderoViewModel(
         val coordenada = _estadoVisual.value.coordenadaDelPunto(indice) ?: return
         Log.d(TAG, "Enfocando el punto de interés $indice del sendero $idSendero")
         _estadoVisual.update { estadoActual ->
-            estadoActual.copy(puntoEnfocado = coordenada, contadorEnfoque = estadoActual.contadorEnfoque + 1)
+            estadoActual.copy(
+                puntoEnfocado = coordenada,
+                contadorEnfoque = estadoActual.contadorEnfoque + 1,
+                indicePuntoSeleccionado = indice
+            )
         }
     }
 

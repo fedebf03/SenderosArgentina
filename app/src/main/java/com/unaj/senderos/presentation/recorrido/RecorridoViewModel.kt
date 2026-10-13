@@ -8,6 +8,7 @@ import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.port.ControlSeguimiento
 import com.unaj.senderos.domain.port.LanzadorSeguimiento
 import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
@@ -111,6 +112,12 @@ class RecorridoViewModel(
             }
             is RecorridoEvento.AlMoverMapaConGesto -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(estaSiguiendo = false) }
+            }
+            is RecorridoEvento.AlSeleccionarPuntoEnMapa -> {
+                _estadoVisual.update { estadoActual ->
+                    val punto = evento.indice?.let { indice -> estadoActual.sendero?.recorrido?.getOrNull(indice) }
+                    estadoActual.copy(indicePuntoSeleccionado = evento.indice.takeIf { punto != null && punto.tipo != TipoPunto.PASO })
+                }
             }
             is RecorridoEvento.AlSeleccionarMultiplicador -> seleccionarMultiplicador(evento.valor)
             is RecorridoEvento.AlTocarSimularDesvio -> {

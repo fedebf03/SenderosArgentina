@@ -253,6 +253,7 @@ internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
         TipoPunto.REFUGIO -> "Refugio"
         TipoPunto.CAMPING -> "Camping"
         TipoPunto.PELIGRO -> "Peligro"
+        TipoPunto.OTRO -> "Otro"
     }
 }
 
