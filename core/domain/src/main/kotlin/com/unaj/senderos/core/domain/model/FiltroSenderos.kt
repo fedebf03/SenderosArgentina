@@ -8,3 +8,8 @@ fun filtrarSenderosPorTexto(senderos: List<Sendero>, texto: String): List<Sender
             sendero.region.contains(textoNormalizado, ignoreCase = true)
     }
 }
+
+fun filtrarSenderosPorDificultad(senderos: List<Sendero>, dificultades: Set<Dificultad>): List<Sendero> {
+    if (dificultades.isEmpty()) return senderos
+    return senderos.filter { sendero -> sendero.dificultad in dificultades }
+}

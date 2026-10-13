@@ -15,18 +15,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.outlined.AddLocationAlt
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -141,13 +140,13 @@ private fun AccionesDelPanel(estadoVisual: RecorridoEstadoVisual, alProcesarEven
                 }
             }
         }
-        TextButton(
-            onClick = { alProcesarEvento(RecorridoEvento.AlTocarCancelarRecorrido) },
+        BotonSecundario(
+            texto = "Cancelar recorrido",
+            alTocar = { alProcesarEvento(RecorridoEvento.AlTocarCancelarRecorrido) },
+            icono = { IconoDeBoton(Icons.Filled.Close) },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-        ) {
-            Text("Cancelar recorrido")
-        }
+            esDestructivo = true
+        )
     }
 }
 

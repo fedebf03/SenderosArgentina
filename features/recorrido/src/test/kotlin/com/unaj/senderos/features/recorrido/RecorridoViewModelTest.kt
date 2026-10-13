@@ -57,8 +57,7 @@ class RecorridoViewModelTest {
     private val capacidadesCompletas = CapacidadesDispositivo(
         tieneGps = true,
         tieneAcelerometro = true,
-        tieneBrujula = true,
-        tieneCamara = true
+        tieneBrujula = true
     )
     private val trazado = listOf(PuntoRecorrido(latitud = -41.10, longitud = -71.30), mirador)
 

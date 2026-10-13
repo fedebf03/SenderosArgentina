@@ -63,8 +63,8 @@ class ControlSeguimientoSenalTest {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, velocidad, precision)
     }
 
-    private val conGps = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = false, tieneBrujula = false, tieneCamara = false)
-    private val sinGps = CapacidadesDispositivo(tieneGps = false, tieneAcelerometro = false, tieneBrujula = false, tieneCamara = false)
+    private val conGps = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = false, tieneBrujula = false)
+    private val sinGps = CapacidadesDispositivo(tieneGps = false, tieneAcelerometro = false, tieneBrujula = false)
 
     @Test
     fun `con GPS una lectura de cincuenta metros se descarta`() = runTest {

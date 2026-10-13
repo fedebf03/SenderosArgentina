@@ -57,12 +57,14 @@ internal fun CampoTexto(
 internal fun FichaSeleccionable(
     texto: String,
     estaSeleccionada: Boolean,
-    alSeleccionar: () -> Unit
+    alSeleccionar: () -> Unit,
+    iconoInicial: (@Composable () -> Unit)? = null
 ) {
     FilterChip(
         selected = estaSeleccionada,
         onClick = alSeleccionar,
         label = { Text(texto) },
+        leadingIcon = iconoInicial,
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer

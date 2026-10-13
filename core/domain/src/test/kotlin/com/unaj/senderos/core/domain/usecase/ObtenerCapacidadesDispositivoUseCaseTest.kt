@@ -9,7 +9,7 @@ class ObtenerCapacidadesDispositivoUseCaseTest {
 
     @Test
     fun `devuelve las capacidades detectadas`() {
-        val capacidades = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = false, tieneCamara = true)
+        val capacidades = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = false)
         val detector = FalsoDetectorCapacidades(capacidades)
 
         val resultado = ObtenerCapacidadesDispositivoUseCase(detector)()

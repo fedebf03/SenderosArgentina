@@ -125,7 +125,7 @@ fun MapaDeSenderos(
                 when {
                     !mostrarUbicacion -> alPedirUbicacion()
                     !controlador.centrarEnUbicacion() -> {
-                        alMostrarAviso("Todavía no se conoce tu ubicación")
+                        alMostrarAviso("No pudimos obtener tu ubicación. Revisá que el GPS esté activado")
                     }
                 }
             },

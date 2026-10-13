@@ -166,8 +166,6 @@ private fun CuerpoPerfil(
             Switch(checked = estadoVisual.esModoDemostracion, onCheckedChange = null)
         }
 
-        SeccionFuncionesDispositivo(funciones = estadoVisual.funcionesDispositivo)
-
         HistorialDeRecorridos(
             recorridos = estadoVisual.recorridos,
             mensajeError = estadoVisual.mensajeError,

@@ -1,8 +1,10 @@
 package com.unaj.senderos.presentation.senderos
 
 import com.unaj.senderos.domain.model.Coordenada
+import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.domain.model.filtrarSenderosPorDificultad
 import com.unaj.senderos.domain.model.filtrarSenderosPorTexto
 import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 
@@ -14,6 +16,7 @@ data class SenderosEstadoVisual(
     val mensajeError: String? = null,
     val ubicacionActual: Coordenada? = null,
     val ordenarPorCercania: Boolean = false,
+    val dificultadesSeleccionadas: Set<Dificultad> = emptySet(),
     val seSolicitoPermisoNotificaciones: Boolean = false,
     val estaSinConexion: Boolean = false
 ) {
@@ -28,7 +31,10 @@ data class SenderosEstadoVisual(
     val senderosFiltrados: List<Sendero> = calcularSenderosFiltrados()
 
     private fun calcularSenderosFiltrados(): List<Sendero> {
-        val filtrados = filtrarSenderosPorTexto(senderos, textoBusqueda)
+        val filtrados = filtrarSenderosPorDificultad(
+            filtrarSenderosPorTexto(senderos, textoBusqueda),
+            dificultadesSeleccionadas
+        )
         if (!ordenarPorCercania) return filtrados
         return filtrados
             .map { sendero -> sendero to (distanciaKilometrosA(sendero) ?: Double.MAX_VALUE) }
@@ -40,6 +46,7 @@ data class SenderosEstadoVisual(
 sealed interface SenderosEvento {
     data class AlCambiarBusqueda(val texto: String) : SenderosEvento
     data class AlCambiarOrdenCercania(val activado: Boolean) : SenderosEvento
+    data class AlAlternarDificultad(val dificultad: Dificultad) : SenderosEvento
     data object AlObtenerUbicacion : SenderosEvento
     data object AlSolicitarPermisoNotificaciones : SenderosEvento
     data object AlTocarCrearSendero : SenderosEvento

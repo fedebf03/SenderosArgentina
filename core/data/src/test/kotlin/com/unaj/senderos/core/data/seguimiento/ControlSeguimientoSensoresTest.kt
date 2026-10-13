@@ -58,7 +58,7 @@ class ControlSeguimientoSensoresTest {
     private val repositorioRecorridos = FalsoRecorridoRepositorio()
     private var instante = 1_000L
 
-    private val todasLasCapacidades = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = true, tieneCamara = true)
+    private val todasLasCapacidades = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = true)
 
     private fun TestScope.crearControl(
         capacidades: CapacidadesDispositivo = todasLasCapacidades,

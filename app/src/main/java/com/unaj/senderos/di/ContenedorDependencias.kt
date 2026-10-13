@@ -148,7 +148,7 @@ class ContenedorDependencias(contexto: Context) {
 
     // Capacidades del equipo: no cambian durante la vida del proceso, por eso se detectan una sola vez
     private val detectorCapacidades: DetectorCapacidades = DetectorCapacidadesAndroid(contexto.applicationContext)
-    val obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(detectorCapacidades)
+    private val obtenerCapacidadesDispositivoUseCase = ObtenerCapacidadesDispositivoUseCase(detectorCapacidades)
     val capacidadesDispositivo: CapacidadesDispositivo = obtenerCapacidadesDispositivoUseCase()
 
     // Ámbito de proceso del seguimiento: vive tanto como la aplicación; el hilo principal serializa las actualizaciones del estado

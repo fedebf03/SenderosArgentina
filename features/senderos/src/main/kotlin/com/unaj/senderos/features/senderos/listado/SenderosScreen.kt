@@ -10,7 +10,11 @@ import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -46,10 +52,12 @@ import com.unaj.senderos.presentation.componentes.BotoneraInferior
 import com.unaj.senderos.presentation.componentes.BuscadorSenderos
 import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
 import com.unaj.senderos.presentation.componentes.CargandoCentrado
+import com.unaj.senderos.presentation.componentes.IndicadorDificultad
 import com.unaj.senderos.presentation.componentes.ListaSenderos
 import com.unaj.senderos.presentation.componentes.MensajeCentrado
 import com.unaj.senderos.presentation.componentes.MensajeVacio
 import com.unaj.senderos.presentation.componentes.SeccionPrincipal
+import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
 import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.presentation.tema.TemaSenderos
@@ -176,29 +184,57 @@ fun SenderosContenido(
                     detalle = "Tocá «Nuevo sendero» para cargar el primero.",
                     modifier = modificadorCuerpo
                 )
-                estadoVisual.senderosFiltrados.isEmpty() -> MensajeCentrado("No se encontraron senderos", modificadorCuerpo)
                 else -> Column(modifier = modificadorCuerpo) {
-                    FilterChip(
-                        selected = estadoVisual.ordenarPorCercania,
-                        onClick = { alProcesarEvento(SenderosEvento.AlCambiarOrdenCercania(!estadoVisual.ordenarPorCercania)) },
-                        label = { Text("Más cercanos") },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Outlined.NearMe, contentDescription = null, modifier = Modifier.size(18.dp))
-                        },
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
-                    )
-                    ListaSenderos(
-                        titulo = "Mis senderos",
-                        senderos = estadoVisual.senderosFiltrados,
-                        alSeleccionarSendero = { idSendero ->
-                            alProcesarEvento(SenderosEvento.AlSeleccionarSendero(idSendero))
-                        },
-                        modifier = Modifier.weight(1f),
-                        espacioInferior = PaddingValues(bottom = 96.dp),
-                        distanciaKilometrosDe = estadoVisual::distanciaKilometrosA
-                    )
+                    FiltrosSenderos(estadoVisual, alProcesarEvento)
+                    if (estadoVisual.senderosFiltrados.isEmpty()) {
+                        MensajeCentrado(
+                            if (estadoVisual.textoBusqueda.isBlank()) "No hay senderos con esa dificultad" else "No se encontraron senderos",
+                            Modifier.weight(1f)
+                        )
+                    } else {
+                        ListaSenderos(
+                            titulo = "Mis senderos",
+                            senderos = estadoVisual.senderosFiltrados,
+                            alSeleccionarSendero = { idSendero ->
+                                alProcesarEvento(SenderosEvento.AlSeleccionarSendero(idSendero))
+                            },
+                            modifier = Modifier.weight(1f),
+                            espacioInferior = PaddingValues(bottom = 96.dp),
+                            distanciaKilometrosDe = estadoVisual::distanciaKilometrosA
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FiltrosSenderos(estadoVisual: SenderosEstadoVisual, alProcesarEvento: (SenderosEvento) -> Unit) {
+    Row(
+        modifier = Modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterChip(
+            selected = estadoVisual.ordenarPorCercania,
+            onClick = { alProcesarEvento(SenderosEvento.AlCambiarOrdenCercania(!estadoVisual.ordenarPorCercania)) },
+            label = { Text("Más cercanos") },
+            leadingIcon = {
+                Icon(imageVector = Icons.Outlined.NearMe, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+        )
+        Dificultad.entries.forEach { dificultad ->
+            val estaSeleccionada = dificultad in estadoVisual.dificultadesSeleccionadas
+            val texto = obtenerTextoDificultad(dificultad)
+            FilterChip(
+                selected = estaSeleccionada,
+                onClick = { alProcesarEvento(SenderosEvento.AlAlternarDificultad(dificultad)) },
+                label = { Text(texto) },
+                leadingIcon = { IndicadorDificultad(dificultad, mostrarTexto = false) },
+                modifier = Modifier.semantics { contentDescription = "Dificultad ${texto.lowercase()}" }
+            )
         }
     }
 }
