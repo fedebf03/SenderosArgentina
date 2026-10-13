@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.repository
+package com.unaj.senderos.domain.port
 
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.LecturaUbicacion

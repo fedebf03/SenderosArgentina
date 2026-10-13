@@ -1,7 +1,4 @@
-package com.unaj.senderos.domain
-
-import com.unaj.senderos.domain.model.ContenidoNotificacionSincronizacion
-import com.unaj.senderos.domain.model.MensajeNotificacion
+package com.unaj.senderos.domain.notificaciones
 
 // Redactor puro (sin Android) del contenido de las notificaciones de sincronización
 object RedactorNotificacionSincronizacion {

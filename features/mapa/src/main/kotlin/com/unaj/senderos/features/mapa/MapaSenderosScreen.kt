@@ -36,7 +36,7 @@ import com.unaj.senderos.presentation.componentes.SeccionPrincipal
 import com.unaj.senderos.presentation.componentes.TarjetaSendero
 import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
 import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
-import com.unaj.senderos.presentation.mapa.MapaDeSenderos
+import com.unaj.senderos.presentation.componentes.mapa.MapaDeSenderos
 
 // Renderizar la sección Mapa conectando el ViewModel y el permiso de ubicación
 @Composable

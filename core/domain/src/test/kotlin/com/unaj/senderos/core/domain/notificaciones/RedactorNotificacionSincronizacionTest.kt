@@ -1,6 +1,5 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.notificaciones
 
-import com.unaj.senderos.domain.model.MensajeNotificacion
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

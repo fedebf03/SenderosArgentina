@@ -6,7 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.util.Log
 import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.domain.repository.DetectorCapacidades
+import com.unaj.senderos.domain.port.DetectorCapacidades
 
 private const val TAG = "CAPACIDADES"
 

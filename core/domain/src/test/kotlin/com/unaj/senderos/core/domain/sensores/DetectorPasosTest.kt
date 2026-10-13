@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.sensores
 
 import com.unaj.senderos.domain.model.MuestraAcelerometro
 import org.junit.Assert.assertEquals

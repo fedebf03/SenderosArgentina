@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.mapa
+package com.unaj.senderos.presentation.componentes.mapa
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

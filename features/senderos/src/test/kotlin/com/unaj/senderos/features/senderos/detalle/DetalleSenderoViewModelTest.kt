@@ -17,7 +17,7 @@ import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
 import com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio
 import com.unaj.senderos.falsos.crearPuntoCapturadoDePrueba
-import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
+import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoControlSeguimiento

@@ -1,10 +1,10 @@
 package com.unaj.senderos.data.seguimiento
 
-import com.unaj.senderos.domain.CalculadoraRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.LecturaUbicacion
 import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.repository.ProveedorUbicacion
+import com.unaj.senderos.domain.port.ProveedorUbicacion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

@@ -47,7 +47,7 @@ import com.unaj.senderos.presentation.componentes.FotoSendero
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
-import com.unaj.senderos.presentation.mapa.MapaRecorrido
+import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
 
 // Renderizar la sección de la foto del sendero con sus acciones
 @Composable

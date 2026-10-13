@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.domain.notificaciones
 
 // Mensaje que la aplicación puede mostrar al usuario como notificación tras sincronizar
 sealed interface MensajeNotificacion {

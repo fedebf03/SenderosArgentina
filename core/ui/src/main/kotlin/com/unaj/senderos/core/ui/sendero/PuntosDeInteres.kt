@@ -2,12 +2,12 @@ package com.unaj.senderos.presentation.detalle
 
 import com.unaj.senderos.presentation.comun.formatearKilometros
 import com.unaj.senderos.presentation.comun.formatearUnDecimal
-import com.unaj.senderos.domain.CalculadoraRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
-import com.unaj.senderos.presentation.mapa.tieneCoordenadasValidas
+import com.unaj.senderos.presentation.componentes.mapa.tieneCoordenadasValidas
 
 // Punto del recorrido que no es un simple paso, con su posición original y su distancia desde el inicio
 data class PuntoDeInteres(

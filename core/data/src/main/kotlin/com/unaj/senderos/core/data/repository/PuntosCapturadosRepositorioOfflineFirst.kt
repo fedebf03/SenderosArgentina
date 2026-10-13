@@ -7,13 +7,13 @@ import com.unaj.senderos.data.local.SenderoDao
 import com.unaj.senderos.data.mapeo.aDominio
 import com.unaj.senderos.data.mapeo.aEntidad
 import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacion
-import com.unaj.senderos.domain.CalculadoraInsercionPuntos
-import com.unaj.senderos.domain.CalculadoraRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraInsercionPuntos
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.PuntoCapturado
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.repository.AlmacenFotos
+import com.unaj.senderos.domain.port.AlmacenFotos
 import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async

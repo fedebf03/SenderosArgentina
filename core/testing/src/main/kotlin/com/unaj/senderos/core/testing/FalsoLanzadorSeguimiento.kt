@@ -1,6 +1,6 @@
 package com.unaj.senderos.falsos
 
-import com.unaj.senderos.domain.repository.LanzadorSeguimiento
+import com.unaj.senderos.domain.port.LanzadorSeguimiento
 
 class FalsoLanzadorSeguimiento(private val registro: MutableList<String> = mutableListOf()) : LanzadorSeguimiento {
 

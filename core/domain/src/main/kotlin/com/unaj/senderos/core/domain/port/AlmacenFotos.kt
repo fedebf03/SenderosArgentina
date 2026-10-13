@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.repository
+package com.unaj.senderos.domain.port
 
 interface AlmacenFotos {
     // Guardar una copia local de la imagen y devolver su ruta

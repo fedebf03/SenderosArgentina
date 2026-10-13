@@ -1,5 +1,6 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.presentation.revisionpuntos
 
+import com.unaj.senderos.presentation.comun.formatearUnDecimal
 import kotlin.math.roundToInt
 
 // Describir cuántos puntos se capturaron en el recorrido, con singular y plural

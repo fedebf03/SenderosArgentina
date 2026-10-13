@@ -11,9 +11,9 @@ import android.os.HandlerThread
 import android.util.Log
 import android.view.Display
 import android.view.Surface
-import com.unaj.senderos.domain.CalculadoraRecorrido
-import com.unaj.senderos.domain.CalculadoraRumbo
-import com.unaj.senderos.domain.repository.FuenteBrujula
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRumbo
+import com.unaj.senderos.domain.port.FuenteBrujula
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow

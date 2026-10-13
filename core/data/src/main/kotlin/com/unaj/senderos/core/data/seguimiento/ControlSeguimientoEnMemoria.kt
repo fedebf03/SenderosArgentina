@@ -1,16 +1,16 @@
 package com.unaj.senderos.data.seguimiento
 
 import android.util.Log
-import com.unaj.senderos.domain.CalculadoraSeguimiento
-import com.unaj.senderos.domain.CalculadoraRecorrido
-import com.unaj.senderos.domain.DetectorMovimiento
-import com.unaj.senderos.domain.DetectorPasos
-import com.unaj.senderos.domain.VentanaRitmoPasos
+import com.unaj.senderos.domain.recorrido.CalculadoraSeguimiento
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.domain.sensores.DetectorMovimiento
+import com.unaj.senderos.domain.sensores.DetectorPasos
+import com.unaj.senderos.domain.sensores.VentanaRitmoPasos
 import com.unaj.senderos.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.repository.FuenteAcelerometro
-import com.unaj.senderos.domain.repository.FuenteBrujula
-import com.unaj.senderos.domain.repository.ProveedorDeclinacion
+import com.unaj.senderos.domain.port.FuenteAcelerometro
+import com.unaj.senderos.domain.port.FuenteBrujula
+import com.unaj.senderos.domain.port.ProveedorDeclinacion
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.CalidadSenal
 import com.unaj.senderos.domain.model.EstadoSeguimiento
@@ -21,9 +21,9 @@ import com.unaj.senderos.domain.model.ResultadoCaptura
 import com.unaj.senderos.domain.model.RecorridoRealizado
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.domain.repository.AlmacenFotos
-import com.unaj.senderos.domain.repository.ControlSeguimiento
-import com.unaj.senderos.domain.repository.ProveedorUbicacion
+import com.unaj.senderos.domain.port.AlmacenFotos
+import com.unaj.senderos.domain.port.ControlSeguimiento
+import com.unaj.senderos.domain.port.ProveedorUbicacion
 import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
 import com.unaj.senderos.domain.repository.RecorridoRepositorio
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase

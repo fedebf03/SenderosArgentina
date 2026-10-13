@@ -1,5 +1,6 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.recorrido
 
+import com.unaj.senderos.domain.model.DISTANCIA_MAXIMA_RECOMENDADA_METROS
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido

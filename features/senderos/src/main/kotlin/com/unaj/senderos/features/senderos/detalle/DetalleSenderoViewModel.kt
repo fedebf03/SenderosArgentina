@@ -9,10 +9,10 @@ import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.repository.ControlSeguimiento
-import com.unaj.senderos.domain.repository.LanzadorSeguimiento
-import com.unaj.senderos.domain.repository.MonitorConectividad
-import com.unaj.senderos.domain.repository.PreferenciasAplicacion
+import com.unaj.senderos.domain.port.ControlSeguimiento
+import com.unaj.senderos.domain.port.LanzadorSeguimiento
+import com.unaj.senderos.domain.port.MonitorConectividad
+import com.unaj.senderos.domain.port.PreferenciasAplicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
@@ -23,7 +23,7 @@ import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
-import com.unaj.senderos.presentation.comun.ControladorRevisionPuntos
+import com.unaj.senderos.presentation.revisionpuntos.ControladorRevisionPuntos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel

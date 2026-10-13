@@ -10,7 +10,7 @@ import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Log
 import com.unaj.senderos.domain.model.MuestraAcelerometro
-import com.unaj.senderos.domain.repository.FuenteAcelerometro
+import com.unaj.senderos.domain.port.FuenteAcelerometro
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer

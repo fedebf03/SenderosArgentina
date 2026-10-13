@@ -3,7 +3,7 @@ package com.unaj.senderos.presentation.mapasenderos
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.repository.MonitorConectividad
+import com.unaj.senderos.domain.port.MonitorConectividad
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.presentation.comun.observarSenderos
 import kotlinx.coroutines.channels.Channel

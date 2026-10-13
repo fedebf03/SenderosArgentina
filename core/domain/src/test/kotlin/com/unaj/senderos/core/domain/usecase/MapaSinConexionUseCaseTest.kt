@@ -1,9 +1,9 @@
 package com.unaj.senderos.domain.usecase
 
-import com.unaj.senderos.domain.CalculadoraCorredor
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.domain.recorrido.CalculadoraCorredor
 import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
 import com.unaj.senderos.falsos.FalsoGestorMapasSinConexion
 import com.unaj.senderos.falsos.crearSenderoDePrueba

@@ -9,7 +9,7 @@ import android.net.Uri
 import android.util.Log
 import android.os.Build
 import androidx.exifinterface.media.ExifInterface
-import com.unaj.senderos.domain.repository.AlmacenFotos
+import com.unaj.senderos.domain.port.AlmacenFotos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

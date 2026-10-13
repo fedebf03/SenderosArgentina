@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.recorrido
 
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoSeguimiento

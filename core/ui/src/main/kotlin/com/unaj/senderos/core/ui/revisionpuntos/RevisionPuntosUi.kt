@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.presentation.revisionpuntos
 
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role

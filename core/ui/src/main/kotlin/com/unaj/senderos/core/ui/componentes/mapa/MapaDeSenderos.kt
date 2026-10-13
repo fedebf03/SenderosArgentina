@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.mapa
+package com.unaj.senderos.presentation.componentes.mapa
 
 import com.unaj.senderos.presentation.componentes.BannerAviso
 import androidx.compose.animation.AnimatedVisibility

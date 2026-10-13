@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.mapa
+package com.unaj.senderos.presentation.componentes.mapa
 
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido

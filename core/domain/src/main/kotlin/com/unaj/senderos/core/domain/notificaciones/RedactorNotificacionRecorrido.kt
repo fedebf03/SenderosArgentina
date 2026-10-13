@@ -1,13 +1,11 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.notificaciones
 
 import com.unaj.senderos.domain.model.AvisoRecorrido
 import com.unaj.senderos.domain.model.CalidadSenal
-import com.unaj.senderos.domain.model.ContenidoAvisoRecorrido
-import com.unaj.senderos.domain.model.ContenidoNotificacionRecorrido
 import com.unaj.senderos.domain.model.EstadoSeguimiento
 import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoAvisoVisual
 import com.unaj.senderos.domain.model.TipoPunto
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import java.util.Locale
 import kotlin.math.roundToInt
 

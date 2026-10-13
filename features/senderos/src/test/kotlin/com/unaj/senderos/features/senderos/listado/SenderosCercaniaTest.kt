@@ -1,8 +1,8 @@
 package com.unaj.senderos.presentation.senderos
 
-import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.falsos.crearSenderoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

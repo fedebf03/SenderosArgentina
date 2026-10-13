@@ -3,7 +3,7 @@ package com.unaj.senderos.data.seguimiento
 import android.content.Context
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.unaj.senderos.domain.repository.LanzadorSeguimiento
+import com.unaj.senderos.domain.port.LanzadorSeguimiento
 
 private const val TAG = "LANZADOR_SEGUIMIENTO"
 

@@ -2,7 +2,7 @@ package com.unaj.senderos.falsos
 
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.LecturaUbicacion
-import com.unaj.senderos.domain.repository.ProveedorUbicacion
+import com.unaj.senderos.domain.port.ProveedorUbicacion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 

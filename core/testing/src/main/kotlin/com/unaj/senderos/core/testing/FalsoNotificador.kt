@@ -1,7 +1,7 @@
 package com.unaj.senderos.falsos
 
-import com.unaj.senderos.domain.model.MensajeNotificacion
-import com.unaj.senderos.domain.repository.Notificador
+import com.unaj.senderos.domain.notificaciones.MensajeNotificacion
+import com.unaj.senderos.domain.port.Notificador
 
 class FalsoNotificador : Notificador {
 

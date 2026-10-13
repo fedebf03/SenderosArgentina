@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.presentation.revisionpuntos
 
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto

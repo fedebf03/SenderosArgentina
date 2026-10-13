@@ -2,11 +2,11 @@ package com.unaj.senderos.data.repository
 
 import com.unaj.senderos.data.local.PuntoRecorridoEntidad
 import com.unaj.senderos.data.mapeo.aEntidad
-import com.unaj.senderos.domain.CalculadoraRecorrido
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.falsos.FalsoAlmacenFotos
 import com.unaj.senderos.falsos.FalsoEjecutorTransaccionesReversible
 import com.unaj.senderos.falsos.FalsoPlanificadorSincronizacion

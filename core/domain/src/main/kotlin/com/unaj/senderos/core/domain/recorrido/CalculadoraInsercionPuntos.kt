@@ -1,11 +1,8 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.recorrido
 
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.TipoRecorrido
-
-// Distancia al trazado a partir de la cual la UI debería advertir al usuario y dejar el punto desmarcado
-const val DISTANCIA_MAXIMA_RECOMENDADA_METROS = 100.0
 
 private const val METROS_POR_KILOMETRO = 1000.0
 

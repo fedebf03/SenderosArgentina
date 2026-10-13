@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.sensores
 
 private const val VELOCIDAD_MINIMA_METROS_POR_SEGUNDO = 0.5f
 private const val ESPERA_SIN_PASOS_MILISEGUNDOS = 10_000L

@@ -21,7 +21,7 @@ class CerrarSesionUseCaseTest {
     fun `cerrar sesion detiene el seguimiento antes de cerrar la sesion`() {
         val eventos = mutableListOf<String>()
         senderos.alDetenerSincronizacion = { eventos.add("sincronizacion") }
-        val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, object : com.unaj.senderos.domain.repository.LanzadorSeguimiento {
+        val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, object : com.unaj.senderos.domain.port.LanzadorSeguimiento {
             // Registrar el orden en que se pidió detener el seguimiento
             override fun iniciar(idSendero: String, esSimulado: Boolean) = Unit
 

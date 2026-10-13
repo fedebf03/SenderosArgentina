@@ -6,9 +6,9 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.senderosargentina.SenderosAplicacion
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.unaj.senderos.domain.DecisorNotificacionSincronizacion
-import com.unaj.senderos.domain.model.MensajeNotificacion
 import com.unaj.senderos.domain.model.ResumenSincronizacion
+import com.unaj.senderos.domain.notificaciones.DecisorNotificacionSincronizacion
+import com.unaj.senderos.domain.notificaciones.MensajeNotificacion
 
 private const val TAG = "SINCRONIZACION"
 private const val MAXIMO_REINTENTOS = 5

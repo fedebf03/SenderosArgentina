@@ -3,8 +3,8 @@ package com.unaj.senderos.presentation.detalle
 import com.unaj.senderos.domain.model.Coordenada
 import com.unaj.senderos.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.presentation.comun.RevisionPuntosEstadoVisual
-import com.unaj.senderos.presentation.comun.RevisionPuntosEvento
+import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEstadoVisual
+import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
 
 enum class SeccionDetalle { PUNTOS_DE_INTERES, RECOMENDACIONES, SERVICIOS, ETAPAS }
 

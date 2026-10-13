@@ -1,8 +1,8 @@
 package com.unaj.senderos.domain.usecase
 
+import com.unaj.senderos.domain.port.LanzadorSeguimiento
+import com.unaj.senderos.domain.port.Notificador
 import com.unaj.senderos.domain.repository.AutenticacionRepositorio
-import com.unaj.senderos.domain.repository.LanzadorSeguimiento
-import com.unaj.senderos.domain.repository.Notificador
 import com.unaj.senderos.domain.repository.SenderoRepositorio
 
 class CerrarSesionUseCase(

@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.domain.notificaciones
 
 // Contenido de la notificación persistente del recorrido; progresoPorcentaje nulo significa progreso indeterminado
 data class ContenidoNotificacionRecorrido(

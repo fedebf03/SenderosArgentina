@@ -46,7 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.comun.FotoDePunto
+import com.unaj.senderos.presentation.revisionpuntos.FotoDePunto
 import com.unaj.senderos.presentation.detalle.obtenerIconoTipoPunto
 import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
 

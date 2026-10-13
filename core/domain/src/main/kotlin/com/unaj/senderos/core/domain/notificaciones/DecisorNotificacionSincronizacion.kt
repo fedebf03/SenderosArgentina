@@ -1,6 +1,5 @@
-package com.unaj.senderos.domain
+package com.unaj.senderos.domain.notificaciones
 
-import com.unaj.senderos.domain.model.MensajeNotificacion
 import com.unaj.senderos.domain.model.ResumenSincronizacion
 
 object DecisorNotificacionSincronizacion {

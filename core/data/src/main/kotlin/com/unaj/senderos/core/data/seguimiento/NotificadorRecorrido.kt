@@ -19,11 +19,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.senderosargentina.MainActivity
 import com.example.senderosargentina.R
-import com.unaj.senderos.domain.RedactorNotificacionRecorrido
 import com.unaj.senderos.domain.model.AvisoRecorrido
-import com.unaj.senderos.domain.model.ContenidoNotificacionRecorrido
 import com.unaj.senderos.domain.model.EstadoSeguimiento
-import com.unaj.senderos.domain.model.TipoAvisoVisual
+import com.unaj.senderos.domain.notificaciones.ContenidoNotificacionRecorrido
+import com.unaj.senderos.domain.notificaciones.RedactorNotificacionRecorrido
+import com.unaj.senderos.domain.notificaciones.TipoAvisoVisual
 
 private const val TAG = "NOTIFICACION_RECORRIDO"
 private const val ID_CANAL_EN_CURSO = "recorrido_en_curso"
