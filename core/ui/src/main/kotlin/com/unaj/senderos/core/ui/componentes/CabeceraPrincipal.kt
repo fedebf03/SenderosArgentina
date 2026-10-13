@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.senderosargentina.R
+import com.unaj.senderos.R
 import com.unaj.senderos.domain.model.Usuario
 
 @Composable

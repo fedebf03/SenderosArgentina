@@ -54,7 +54,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.senderosargentina.R
+import com.unaj.senderos.R
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
 @Composable

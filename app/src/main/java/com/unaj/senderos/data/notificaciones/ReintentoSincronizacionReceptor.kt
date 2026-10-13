@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.example.senderosargentina.SenderosAplicacion
+import com.unaj.senderos.SenderosAplicacion
 
 private const val TAG = "NOTIFICACIONES"
 

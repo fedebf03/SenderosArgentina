@@ -1,4 +1,4 @@
-package com.example.senderosargentina
+package com.unaj.senderos
 
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment

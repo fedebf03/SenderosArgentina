@@ -1,4 +1,4 @@
-package com.example.senderosargentina
+package com.unaj.senderos
 
 import android.content.Context
 import androidx.room.Room
