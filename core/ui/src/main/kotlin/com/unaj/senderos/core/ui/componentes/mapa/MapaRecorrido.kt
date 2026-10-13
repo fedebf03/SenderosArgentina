@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -90,6 +91,7 @@ fun MapaRecorrido(
     puntoEnfocado: Coordenada? = null,
     claveEnfoque: Int = 0,
     trazadoCaminado: List<Coordenada> = emptyList(),
+    colorLinea: Color? = null,
     alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
     alSeleccionarPunto: (Int?) -> Unit = {},
@@ -132,6 +134,7 @@ fun MapaRecorrido(
                 puntoEnfocado = puntoEnfocado,
                 claveEnfoque = claveEnfoque,
                 trazadoCaminado = trazadoCaminado,
+                colorLinea = colorLinea?.toArgb(),
                 alAgregarPunto = alAgregarPunto,
                 alMoverPunto = alMoverPunto,
                 alSeleccionarPunto = alSeleccionarPunto
@@ -174,6 +177,7 @@ private data class DatosMapa(
     val puntoEnfocado: Coordenada? = null,
     val claveEnfoque: Int = 0,
     val trazadoCaminado: List<Coordenada> = emptyList(),
+    val colorLinea: Int? = null,
     val alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     val alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
     val alSeleccionarPunto: (Int?) -> Unit = {}
@@ -191,6 +195,7 @@ private class ControladorMapaRecorrido(
     private var mapa: MapLibreMap? = null
     private var estilo: Style? = null
     private var datos = DatosMapa()
+    private var colorLineaAplicado: Int? = null
     private var fueEncuadrado = false
     private var seSuspendioSeguimiento = false
     private var puntosEncuadrados: List<PuntoRecorrido>? = null
@@ -244,6 +249,7 @@ private class ControladorMapaRecorrido(
     fun actualizar(nuevosDatos: DatosMapa) {
         val hayCambios = nuevosDatos.puntos != datos.puntos ||
             nuevosDatos.trazadoCaminado != datos.trazadoCaminado ||
+            nuevosDatos.colorLinea != datos.colorLinea ||
             nuevosDatos.tipoRecorrido != datos.tipoRecorrido ||
             nuevosDatos.indiceSeleccionado != datos.indiceSeleccionado ||
             nuevosDatos.esEditable != datos.esEditable ||
@@ -297,6 +303,7 @@ private class ControladorMapaRecorrido(
     }
 
     private fun agregarImagenesFuentesYCapas(estiloBase: Style) {
+        colorLineaAplicado = datos.colorLinea ?: paleta.primario
         IconosMapa.crearTodos(paleta, densidad).forEach { (nombre, imagen) -> estiloBase.addImage(nombre, imagen) }
 
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_LINEA))
@@ -306,7 +313,7 @@ private class ControladorMapaRecorrido(
 
         estiloBase.addLayer(
             LineLayer(ID_CAPA_LINEA, ID_FUENTE_LINEA).withProperties(
-                PropertyFactory.lineColor(paleta.primario),
+                PropertyFactory.lineColor(datos.colorLinea ?: paleta.primario),
                 PropertyFactory.lineWidth(5f),
                 PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
                 PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND)
@@ -429,6 +436,11 @@ private class ControladorMapaRecorrido(
     private fun refrescar() {
         val estiloActual = estilo ?: return
         val puntosVisibles = puntosEnArrastre ?: datos.puntos
+        val colorLineaDeseado = datos.colorLinea ?: paleta.primario
+        if (colorLineaDeseado != colorLineaAplicado) {
+            estiloActual.getLayerAs<LineLayer>(ID_CAPA_LINEA)?.setProperties(PropertyFactory.lineColor(colorLineaDeseado))
+            colorLineaAplicado = colorLineaDeseado
+        }
         estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_LINEA)
             ?.setGeoJson(ConstructorGeoJsonRecorrido.crearLinea(puntosVisibles, datos.tipoRecorrido))
         estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_PUNTOS)

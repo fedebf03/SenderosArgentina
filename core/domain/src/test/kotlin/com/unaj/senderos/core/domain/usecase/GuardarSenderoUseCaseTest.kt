@@ -1,5 +1,6 @@
 package com.unaj.senderos.domain.usecase
 
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.PuntoRecorrido
 import com.unaj.senderos.domain.model.SenderoInvalidoException
@@ -106,5 +107,13 @@ class GuardarSenderoUseCaseTest {
         assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultadoNorte))
         assertEquals(setOf(CampoSendero.RECORRIDO), camposInvalidosDe(resultadoSur))
         assertTrue(falsoSendero.llamadasGuardarSendero.isEmpty())
+    }
+
+    @Test
+    fun `guardar conserva el bioma del sendero`() = runTest {
+        val resultado = crearCasoDeUso()(crearSenderoDePrueba(bioma = Bioma.YUNGAS))
+
+        assertTrue(resultado.isSuccess)
+        assertEquals(Bioma.YUNGAS, falsoSendero.llamadasGuardarSendero.last().second.bioma)
     }
 }

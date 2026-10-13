@@ -36,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,6 +91,7 @@ fun EditorRecorridoMapa(
                     tipoRecorrido = estadoVisual.tipoRecorrido,
                     modifier = Modifier.fillMaxSize(),
                     esEditable = true,
+                    colorLinea = obtenerColorLineaBioma(estadoVisual.bioma, MaterialTheme.colorScheme.primary),
                     mostrarControlesDeZoom = true,
                     indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
                     alAgregarPunto = { latitud, longitud ->

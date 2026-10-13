@@ -2,6 +2,7 @@ package com.unaj.senderos.falsos
 
 import com.unaj.senderos.data.local.EtapaEntidad
 import com.unaj.senderos.data.local.SenderoEntidad
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Etapa
@@ -22,7 +23,8 @@ fun crearSenderoDePrueba(
     alturaMinimaMetros: Int = 1400,
     esFavorito: Boolean = false,
     estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
-    recorrido: List<PuntoRecorrido> = emptyList()
+    recorrido: List<PuntoRecorrido> = emptyList(),
+    bioma: Bioma = Bioma.SIN_DEFINIR
 ): Sendero {
     return Sendero(
         id = id,
@@ -44,7 +46,8 @@ fun crearSenderoDePrueba(
         etapas = listOf(Etapa(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
         esFavorito = esFavorito,
         estadoSincronizacion = estadoSincronizacion,
-        recorrido = recorrido
+        recorrido = recorrido,
+        bioma = bioma
     )
 }
 
@@ -54,7 +57,8 @@ fun crearEntidadDePrueba(
     nombre: String = "Cerro Catedral",
     fechaModificacion: Long = 1_000L,
     estadoSincronizacion: String = "PENDIENTE",
-    estaEliminado: Boolean = false
+    estaEliminado: Boolean = false,
+    bioma: String = "SIN_DEFINIR"
 ): SenderoEntidad {
     return SenderoEntidad(
         id = id,
@@ -77,6 +81,7 @@ fun crearEntidadDePrueba(
         esFavorito = false,
         fechaModificacion = fechaModificacion,
         estadoSincronizacion = estadoSincronizacion,
-        estaEliminado = estaEliminado
+        estaEliminado = estaEliminado,
+        bioma = bioma
     )
 }

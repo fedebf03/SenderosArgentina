@@ -4,6 +4,19 @@ enum class Dificultad { BAJA, MEDIA, ALTA }
 
 enum class TipoRecorrido { CIRCULAR, IDA_Y_VUELTA, LINEAL }
 
+enum class Bioma {
+    ALTA_MONTANIA,
+    BOSQUE_ANDINO_PATAGONICO,
+    ESTEPA_PATAGONICA,
+    PUNA,
+    YUNGAS,
+    MONTE,
+    SIERRAS,
+    LITORAL,
+    COSTA_MARITIMA,
+    SIN_DEFINIR
+}
+
 enum class EstadoSincronizacion { PENDIENTE, SINCRONIZADO, CON_ERROR }
 
 data class Etapa(
@@ -33,5 +46,6 @@ data class Sendero(
     val esFavorito: Boolean = false,
     val estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
     val recorrido: List<PuntoRecorrido> = emptyList(),
-    val foto: String = ""
+    val foto: String = "",
+    val bioma: Bioma = Bioma.SIN_DEFINIR
 )

@@ -29,5 +29,7 @@ data class SenderoEntidad(
     @ColumnInfo(defaultValue = "[]")
     val recorrido: List<PuntoRecorridoEntidad> = emptyList(),
     @ColumnInfo(defaultValue = "")
-    val foto: String = ""
+    val foto: String = "",
+    @ColumnInfo(defaultValue = "SIN_DEFINIR")
+    val bioma: String = "SIN_DEFINIR"
 )

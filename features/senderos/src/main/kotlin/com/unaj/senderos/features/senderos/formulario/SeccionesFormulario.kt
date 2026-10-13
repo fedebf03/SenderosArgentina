@@ -40,12 +40,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.domain.model.CampoSendero
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
 import com.unaj.senderos.domain.model.TipoRecorrido
 import com.unaj.senderos.presentation.componentes.FotoSendero
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
+import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import com.unaj.senderos.presentation.componentes.IndicadorDificultad
+import com.unaj.senderos.presentation.componentes.PuntoBioma
+import com.unaj.senderos.presentation.componentes.obtenerTextoBioma
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
@@ -95,7 +99,7 @@ internal fun SeccionFoto(
                 )
             }
         } else {
-            FotoSendero(foto = estadoVisual.foto, modifier = Modifier.fillMaxSize())
+            FotoSendero(foto = estadoVisual.foto, bioma = estadoVisual.bioma, modifier = Modifier.fillMaxSize())
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -225,6 +229,18 @@ internal fun SeccionDatosTecnicos(
         }
     }
 
+    Text(text = "Bioma", style = MaterialTheme.typography.bodyMedium)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Bioma.entries.forEach { bioma ->
+            FichaSeleccionable(
+                texto = obtenerTextoBioma(bioma),
+                estaSeleccionada = estadoVisual.bioma == bioma,
+                alSeleccionar = { alProcesarEvento(FormularioSenderoEvento.AlSeleccionarBioma(bioma)) },
+                iconoInicial = { PuntoBioma(bioma) }
+            )
+        }
+    }
+
     Text(text = "Tipo de recorrido", style = MaterialTheme.typography.bodyMedium)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         TipoRecorrido.entries.forEach { tipoRecorrido ->
@@ -265,7 +281,8 @@ internal fun SeccionRecorrido(
                     tipoRecorrido = estadoVisual.tipoRecorrido,
                     modifier = Modifier.fillMaxSize(),
                     sonGestosHabilitados = false,
-                    usarModoTextura = true
+                    usarModoTextura = true,
+                    colorLinea = obtenerColorLineaBioma(estadoVisual.bioma, MaterialTheme.colorScheme.primary)
                 )
             }
         }

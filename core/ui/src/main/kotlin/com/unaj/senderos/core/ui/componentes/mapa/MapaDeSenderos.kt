@@ -31,9 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.doOnLayout
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.presentation.tema.CelesteArgentino
+import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -55,6 +56,7 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
+import java.util.Locale
 
 private const val TAG = "MAPA_SENDEROS"
 
@@ -67,6 +69,7 @@ private const val ID_CAPA_NOMBRES = "capa-nombres-senderos"
 private const val PROPIEDAD_ID = "id"
 private const val PROPIEDAD_NOMBRE = "nombre"
 private const val PROPIEDAD_SELECCIONADO = "seleccionado"
+private const val PROPIEDAD_COLOR = "color"
 private const val MARGEN_CONTROLES_DP = 40
 private const val ALTO_TARJETA_DP = 120
 private const val ZOOM_MI_UBICACION = 12.0
@@ -96,7 +99,9 @@ fun MapaDeSenderos(
             vistaMapa = vistaMapa,
             colores = ColoresMapaDeSenderos(
                 linea = esquemaDeColores.primary.toArgb(),
-                inicio = CelesteArgentino.toArgb(),
+                lineaPorBioma = Bioma.entries.associateWith { bioma ->
+                    obtenerColorLineaBioma(bioma, esquemaDeColores.primary).toArgb()
+                },
                 borde = esquemaDeColores.surface.toArgb(),
                 texto = esquemaDeColores.onSurface.toArgb()
             ),
@@ -157,7 +162,17 @@ private fun ControlesDeMapa(
 }
 
 // Colores ya convertidos a enteros ARGB, que es lo que esperan las capas de MapLibre
-private data class ColoresMapaDeSenderos(val linea: Int, val inicio: Int, val borde: Int, val texto: Int)
+private data class ColoresMapaDeSenderos(
+    val linea: Int,
+    val lineaPorBioma: Map<Bioma, Int>,
+    val borde: Int,
+    val texto: Int
+) {
+    /** Obtener el color de línea de un bioma como texto hexadecimal para las expresiones del mapa. */
+    fun obtenerColorHexadecimal(bioma: Bioma): String {
+        return String.format(Locale.ROOT, "#%06X", (lineaPorBioma[bioma] ?: linea) and 0xFFFFFF)
+    }
+}
 
 private class ControladorMapaDeSenderos(
     private val vistaMapa: MapView,
@@ -227,7 +242,7 @@ private class ControladorMapaDeSenderos(
         val estaSeleccionado = Expression.eq(Expression.get(PROPIEDAD_SELECCIONADO), true)
         estiloBase.addLayer(
             LineLayer(ID_CAPA_LINEAS, ID_FUENTE_LINEAS).withProperties(
-                PropertyFactory.lineColor(colores.linea),
+                PropertyFactory.lineColor(Expression.toColor(Expression.get(PROPIEDAD_COLOR))),
                 PropertyFactory.lineWidth(Expression.switchCase(estaSeleccionado, Expression.literal(7f), Expression.literal(4f))),
                 PropertyFactory.lineOpacity(Expression.switchCase(estaSeleccionado, Expression.literal(1f), Expression.literal(0.75f))),
                 PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
@@ -237,9 +252,7 @@ private class ControladorMapaDeSenderos(
         estiloBase.addLayer(
             CircleLayer(ID_CAPA_INICIOS, ID_FUENTE_INICIOS).withProperties(
                 PropertyFactory.circleRadius(Expression.switchCase(estaSeleccionado, Expression.literal(12f), Expression.literal(9f))),
-                PropertyFactory.circleColor(
-                    Expression.switchCase(estaSeleccionado, Expression.color(colores.linea), Expression.color(colores.inicio))
-                ),
+                PropertyFactory.circleColor(Expression.toColor(Expression.get(PROPIEDAD_COLOR))),
                 PropertyFactory.circleStrokeColor(colores.borde),
                 PropertyFactory.circleStrokeWidth(3f)
             )
@@ -286,6 +299,7 @@ private class ControladorMapaDeSenderos(
             }
             Feature.fromGeometry(LineString.fromLngLats(coordenadasConCierre)).apply {
                 addStringProperty(PROPIEDAD_ID, sendero.id)
+                addStringProperty(PROPIEDAD_COLOR, colores.obtenerColorHexadecimal(sendero.bioma))
                 addBooleanProperty(PROPIEDAD_SELECCIONADO, sendero.id == idSeleccionado)
             }
         }
@@ -298,6 +312,7 @@ private class ControladorMapaDeSenderos(
             Feature.fromGeometry(Point.fromLngLat(inicio.longitud, inicio.latitud)).apply {
                 addStringProperty(PROPIEDAD_ID, sendero.id)
                 addStringProperty(PROPIEDAD_NOMBRE, sendero.nombre)
+                addStringProperty(PROPIEDAD_COLOR, colores.obtenerColorHexadecimal(sendero.bioma))
                 addBooleanProperty(PROPIEDAD_SELECCIONADO, sendero.id == idSeleccionado)
             }
         }

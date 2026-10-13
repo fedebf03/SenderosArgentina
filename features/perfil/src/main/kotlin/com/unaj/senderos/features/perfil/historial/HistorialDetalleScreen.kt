@@ -26,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -140,6 +141,9 @@ private fun CuerpoHistorial(
                 tipoRecorrido = estadoVisual.sendero?.tipoRecorrido ?: TipoRecorrido.LINEAL,
                 modifier = Modifier.fillMaxSize(),
                 usarModoTextura = true,
+                colorLinea = estadoVisual.sendero?.let { sendero ->
+                    obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary)
+                },
                 trazadoCaminado = recorrido.trazadoCaminado
             )
         }

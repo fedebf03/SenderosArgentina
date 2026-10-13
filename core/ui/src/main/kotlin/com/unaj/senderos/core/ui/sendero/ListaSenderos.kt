@@ -5,13 +5,18 @@ import com.unaj.senderos.presentation.comun.formatearDistanciaSendero
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -38,8 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
 
 // Ancho mínimo de una tarjeta: en pantallas angostas hay una columna y en tablets se reparten en varias
 private val ANCHO_MINIMO_TARJETA = 360.dp
@@ -147,60 +154,91 @@ fun TarjetaSendero(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FotoSendero(
-                foto = sendero.foto,
-                espejada = miniaturaEspejada,
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            )
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = sendero.nombre,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconoSincronizacion(sendero.estadoSincronizacion)
-                    if (sendero.esFavorito) {
-                        Icon(
-                            imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Favorito",
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            if (sendero.bioma != Bioma.SIN_DEFINIR) {
+                FranjaBioma(sendero.bioma)
+            }
+            ContenidoTarjetaSendero(sendero, miniaturaEspejada, distanciaKilometros, Modifier.weight(1f))
+        }
+    }
+}
+
+/** Dibujar la franja vertical con el color del bioma en el borde izquierdo de la tarjeta; es decorativa. */
+@Composable
+private fun FranjaBioma(bioma: Bioma) {
+    Box(
+        modifier = Modifier
+            .width(6.dp)
+            .fillMaxHeight()
+            .background(obtenerColoresDelBioma(bioma).principal)
+    )
+}
+
+/** Renderizar la foto y los datos de un sendero dentro de su tarjeta. */
+@Composable
+private fun ContenidoTarjetaSendero(
+    sendero: Sendero,
+    miniaturaEspejada: Boolean,
+    distanciaKilometros: Double?,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FotoSendero(
+            foto = sendero.foto,
+            espejada = miniaturaEspejada,
+            bioma = sendero.bioma,
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(12.dp))
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = sendero.region,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = sendero.nombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-                if (distanciaKilometros != null) {
-                    DatoTarjeta(Icons.Outlined.NearMe, formatearDistanciaAlUsuario(distanciaKilometros))
+                IconoSincronizacion(sendero.estadoSincronizacion)
+                if (sendero.esFavorito) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Favorito",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    DatoTarjeta(Icons.Outlined.Straighten, formatearDistanciaSendero(sendero.distanciaKilometros))
-                    if (sendero.duracionEstimada.isNotBlank()) {
-                        DatoTarjeta(Icons.Outlined.Schedule, sendero.duracionEstimada)
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IndicadorDificultad(sendero.dificultad)
+            }
+            Text(
+                text = sendero.region,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (sendero.bioma != Bioma.SIN_DEFINIR) {
+                EtiquetaBioma(sendero.bioma)
+            }
+            if (distanciaKilometros != null) {
+                DatoTarjeta(Icons.Outlined.NearMe, formatearDistanciaAlUsuario(distanciaKilometros))
+            }
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DatoTarjeta(Icons.Outlined.Straighten, formatearDistanciaSendero(sendero.distanciaKilometros))
+                if (sendero.duracionEstimada.isNotBlank()) {
+                    DatoTarjeta(Icons.Outlined.Schedule, sendero.duracionEstimada)
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                IndicadorDificultad(sendero.dificultad)
             }
         }
     }
