@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.Usuario
 import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
@@ -16,6 +17,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -88,5 +91,96 @@ class FormularioSenderoViewModelTest {
         advanceUntilIdle()
 
         assertEquals("12,5", viewModel.estadoVisual.value.distancia)
+    }
+
+    // Completar los campos obligatorios del formulario con valores válidos
+    private fun completarCamposObligatorios(viewModel: FormularioSenderoViewModel) {
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "Cerro Nuevo"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, "Jujuy"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESCRIPCION, "Camino de altura"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "8"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "300"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MAXIMA, "4000"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MINIMA, "3500"))
+    }
+
+    @Test
+    fun `un formulario nuevo arranca con el bioma sin definir`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
+
+        assertEquals(Bioma.SIN_DEFINIR, viewModel.estadoVisual.value.bioma)
+    }
+
+    @Test
+    fun `seleccionar un bioma lo guarda en el estado y marca cambios sin guardar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarBioma(Bioma.PUNA))
+
+        assertEquals(Bioma.PUNA, viewModel.estadoVisual.value.bioma)
+        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    @Test
+    fun `crear un sendero con bioma lo envia al repositorio`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio()
+        val viewModel = crearViewModel(null, repositorio)
+        completarCamposObligatorios(viewModel)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarBioma(Bioma.YUNGAS))
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        assertEquals(1, repositorio.llamadasGuardarSendero.size)
+        assertEquals(Bioma.YUNGAS, repositorio.llamadasGuardarSendero.single().second.bioma)
+    }
+
+    @Test
+    fun `crear un sendero sin elegir bioma lo guarda como sin definir`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio()
+        val viewModel = crearViewModel(null, repositorio)
+        completarCamposObligatorios(viewModel)
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        assertEquals(Bioma.SIN_DEFINIR, repositorio.llamadasGuardarSendero.single().second.bioma)
+    }
+
+    @Test
+    fun `editar un sendero carga su bioma en el estado`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(bioma = Bioma.MONTE)))
+        val viewModel = crearViewModel("sendero-1", repositorio)
+
+        advanceUntilIdle()
+
+        assertEquals(Bioma.MONTE, viewModel.estadoVisual.value.bioma)
+        assertFalse(viewModel.estadoVisual.value.hayCambiosSinGuardar)
+    }
+
+    @Test
+    fun `editar un sendero sin tocar el bioma lo conserva al guardar`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(bioma = Bioma.SIERRAS)))
+        val viewModel = crearViewModel("sendero-1", repositorio)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "Otro nombre"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        assertEquals(Bioma.SIERRAS, repositorio.llamadasGuardarSendero.single().second.bioma)
+    }
+
+    @Test
+    fun `editar un sendero y cambiar el bioma guarda el nuevo`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(bioma = Bioma.SIERRAS)))
+        val viewModel = crearViewModel("sendero-1", repositorio)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarBioma(Bioma.COSTA_MARITIMA))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        assertEquals(Bioma.COSTA_MARITIMA, repositorio.llamadasGuardarSendero.single().second.bioma)
     }
 }

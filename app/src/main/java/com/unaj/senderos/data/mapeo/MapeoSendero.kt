@@ -6,6 +6,7 @@ import com.unaj.senderos.data.local.SenderoEntidad
 import com.unaj.senderos.data.remote.EtapaRed
 import com.unaj.senderos.data.remote.PuntoRecorridoRed
 import com.unaj.senderos.data.remote.SenderoRed
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.EstadoSincronizacion
 import com.unaj.senderos.domain.model.Etapa
@@ -20,6 +21,11 @@ private fun resolverDificultad(nombre: String): Dificultad {
 
 private fun resolverTipoRecorrido(nombre: String): TipoRecorrido {
     return TipoRecorrido.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoRecorrido.LINEAL
+}
+
+// Resolver el nombre guardado a un bioma, usando SIN_DEFINIR si es desconocido
+private fun resolverBioma(nombre: String): Bioma {
+    return Bioma.entries.firstOrNull { valor -> valor.name == nombre } ?: Bioma.SIN_DEFINIR
 }
 
 private fun resolverTipoPunto(nombre: String): TipoPunto {
@@ -55,7 +61,8 @@ fun SenderoEntidad.aDominio(): Sendero {
         recorrido = recorrido.map { punto ->
             PuntoRecorrido(punto.latitud, punto.longitud, resolverTipoPunto(punto.tipo), punto.nombre, punto.foto)
         },
-        foto = foto
+        foto = foto,
+        bioma = resolverBioma(bioma)
     )
 }
 
@@ -89,7 +96,8 @@ fun Sendero.aEntidad(
         recorrido = recorrido.map { punto ->
             PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo.name, punto.nombre, punto.foto)
         },
-        foto = foto
+        foto = foto,
+        bioma = bioma.name
     )
 }
 
@@ -115,7 +123,8 @@ fun SenderoEntidad.aRed(): SenderoRed {
         fechaModificacion = fechaModificacion,
         eliminado = estaEliminado,
         recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto) },
-        foto = foto
+        foto = foto,
+        bioma = bioma
     )
 }
 
@@ -145,6 +154,7 @@ fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
         recorrido = recorrido.map { punto ->
             PuntoRecorridoEntidad(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto)
         },
-        foto = foto
+        foto = foto,
+        bioma = resolverBioma(bioma).name
     )
 }

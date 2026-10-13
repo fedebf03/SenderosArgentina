@@ -1,5 +1,6 @@
 package com.unaj.senderos.presentation.formulario
 
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.CampoSendero
 import com.unaj.senderos.domain.model.Dificultad
 import com.unaj.senderos.domain.model.Etapa
@@ -41,6 +42,7 @@ data class FormularioSenderoEstadoVisual(
     val mejorEpoca: String = "",
     val dificultad: Dificultad = Dificultad.MEDIA,
     val tipoRecorrido: TipoRecorrido = TipoRecorrido.LINEAL,
+    val bioma: Bioma = Bioma.SIN_DEFINIR,
     val recomendaciones: List<String> = emptyList(),
     val servicios: List<String> = emptyList(),
     val etapas: List<Etapa> = emptyList(),
@@ -65,6 +67,7 @@ data class FormularioSenderoEstadoVisual(
 sealed interface FormularioSenderoEvento {
     data class AlCambiarTexto(val campo: CampoFormulario, val texto: String) : FormularioSenderoEvento
     data class AlSeleccionarDificultad(val dificultad: Dificultad) : FormularioSenderoEvento
+    data class AlSeleccionarBioma(val bioma: Bioma) : FormularioSenderoEvento
     data class AlSeleccionarTipoRecorrido(val tipoRecorrido: TipoRecorrido) : FormularioSenderoEvento
     data object AlAgregarRecomendacion : FormularioSenderoEvento
     data class AlQuitarRecomendacion(val indice: Int) : FormularioSenderoEvento

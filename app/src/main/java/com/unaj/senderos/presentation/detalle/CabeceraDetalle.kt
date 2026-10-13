@@ -2,6 +2,7 @@ package com.unaj.senderos.presentation.detalle
 
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +37,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.presentation.componentes.EtiquetaBioma
+import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
 import com.unaj.senderos.presentation.componentes.FotoSendero
 
 @Composable
@@ -45,12 +49,26 @@ internal fun CabeceraDetalle(
     sendero: Sendero,
     alProcesarEvento: (DetalleSenderoEvento) -> Unit
 ) {
+    val tieneBioma = sendero.bioma != Bioma.SIN_DEFINIR
+    val coloresBioma = obtenerColoresDelBioma(sendero.bioma)
+    val colorFondoPanel = if (tieneBioma) coloresBioma.contenedor.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+    val colorTitulo = if (tieneBioma) coloresBioma.sobreContenedor else MaterialTheme.colorScheme.primary
+    val colorTexto = if (tieneBioma) coloresBioma.sobreContenedor else MaterialTheme.colorScheme.onSurface
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(240.dp)
     ) {
-        FotoSendero(foto = sendero.foto, modifier = Modifier.fillMaxSize())
+        FotoSendero(foto = sendero.foto, bioma = sendero.bioma, modifier = Modifier.fillMaxSize())
+        if (tieneBioma) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .background(coloresBioma.principal)
+            )
+        }
 
         Row(
             modifier = Modifier
@@ -91,7 +109,7 @@ internal fun CabeceraDetalle(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            color = colorFondoPanel,
             shape = MaterialTheme.shapes.medium
         ) {
             Column(
@@ -102,7 +120,7 @@ internal fun CabeceraDetalle(
                     text = sendero.nombre,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = colorTitulo,
                     modifier = Modifier.semantics { heading() }
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -110,13 +128,16 @@ internal fun CabeceraDetalle(
                         imageVector = Icons.Outlined.Place,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = colorTexto
                     )
                     Text(
                         text = sendero.region,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = colorTexto
                     )
+                }
+                if (tieneBioma) {
+                    EtiquetaBioma(sendero.bioma, conFondo = false)
                 }
             }
         }

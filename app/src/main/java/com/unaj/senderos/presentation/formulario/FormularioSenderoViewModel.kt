@@ -59,6 +59,11 @@ class FormularioSenderoViewModel(
                     estadoActual.copy(dificultad = evento.dificultad, hayCambiosSinGuardar = true)
                 }
             }
+            is FormularioSenderoEvento.AlSeleccionarBioma -> {
+                _estadoVisual.update { estadoActual ->
+                    estadoActual.copy(bioma = evento.bioma, hayCambiosSinGuardar = true)
+                }
+            }
             is FormularioSenderoEvento.AlSeleccionarTipoRecorrido -> {
                 _estadoVisual.update { estadoActual ->
                     estadoActual.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true)
@@ -162,6 +167,7 @@ class FormularioSenderoViewModel(
                     mejorEpoca = senderoEncontrado.mejorEpoca,
                     dificultad = senderoEncontrado.dificultad,
                     tipoRecorrido = senderoEncontrado.tipoRecorrido,
+                    bioma = senderoEncontrado.bioma,
                     recomendaciones = senderoEncontrado.recomendaciones,
                     servicios = senderoEncontrado.servicios,
                     etapas = senderoEncontrado.etapas,
@@ -360,6 +366,7 @@ class FormularioSenderoViewModel(
             mejorEpoca = estadoActual.mejorEpoca,
             dificultad = estadoActual.dificultad,
             tipoRecorrido = estadoActual.tipoRecorrido,
+            bioma = estadoActual.bioma,
             recomendaciones = estadoActual.recomendaciones,
             servicios = estadoActual.servicios,
             etapas = estadoActual.etapas,

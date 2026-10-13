@@ -43,6 +43,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -196,6 +197,7 @@ internal fun RecuadroMapa(
                 tipoRecorrido = sendero.tipoRecorrido,
                 modifier = Modifier.fillMaxSize(),
                 usarModoTextura = true,
+                colorLinea = obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary),
                 puntoEnfocado = puntoEnfocado,
                 claveEnfoque = claveEnfoque,
                 alDescargarMapa = alDescargarMapa

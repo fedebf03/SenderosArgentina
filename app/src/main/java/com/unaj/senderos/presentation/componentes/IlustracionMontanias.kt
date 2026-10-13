@@ -7,16 +7,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.scale
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.presentation.tema.CelesteArgentino
+import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
 
 @Composable
-fun IlustracionMontanias(modifier: Modifier = Modifier, espejada: Boolean = false) {
+fun IlustracionMontanias(
+    modifier: Modifier = Modifier,
+    espejada: Boolean = false,
+    bioma: Bioma = Bioma.SIN_DEFINIR
+) {
+    val coloresBioma = obtenerColoresDelBioma(bioma)
+    val colorCieloSuperior = if (bioma == Bioma.SIN_DEFINIR) CelesteArgentino else coloresBioma.contenedor
     val colorCieloInferior = MaterialTheme.colorScheme.background
-    val colorMontaniaLejana = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
-    val colorMontaniaCercana = MaterialTheme.colorScheme.primary
+    val colorBase = coloresBioma.principal
+    val colorMontaniaLejana = colorBase.copy(alpha = 0.55f)
+    val colorMontaniaCercana = colorBase
 
     Canvas(modifier = modifier) {
-        drawRect(brush = Brush.verticalGradient(listOf(CelesteArgentino, colorCieloInferior)))
+        drawRect(brush = Brush.verticalGradient(listOf(colorCieloSuperior, colorCieloInferior)))
 
         val ancho = size.width
         val alto = size.height

@@ -3,6 +3,8 @@ package com.unaj.senderos.presentation.tema
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import com.unaj.senderos.domain.model.Dificultad
 
@@ -38,9 +40,14 @@ private val esquemaClaro = lightColorScheme(
     onError = Color.White
 )
 
+/** Indicar si el tema vigente es oscuro; hoy la app solo tiene tema claro. */
+val LocalEsTemaOscuro = staticCompositionLocalOf { false }
+
 @Composable
 fun TemaSenderos(contenido: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = esquemaClaro, content = contenido)
+    CompositionLocalProvider(LocalEsTemaOscuro provides false) {
+        MaterialTheme(colorScheme = esquemaClaro, content = contenido)
+    }
 }
 
 fun obtenerColorDificultad(dificultad: Dificultad): Color {

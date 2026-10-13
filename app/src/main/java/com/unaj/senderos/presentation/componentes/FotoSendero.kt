@@ -6,13 +6,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.unaj.senderos.domain.model.Bioma
 import com.unaj.senderos.domain.model.esFotoLocal
 import java.io.File
 
 @Composable
-fun FotoSendero(foto: String, modifier: Modifier = Modifier, espejada: Boolean = false) {
+fun FotoSendero(
+    foto: String,
+    modifier: Modifier = Modifier,
+    espejada: Boolean = false,
+    bioma: Bioma = Bioma.SIN_DEFINIR
+) {
     if (foto.isEmpty()) {
-        IlustracionMontanias(modifier = modifier, espejada = espejada)
+        IlustracionMontanias(modifier = modifier, espejada = espejada, bioma = bioma)
         return
     }
     val relleno = ColorPainter(MaterialTheme.colorScheme.surfaceContainerHigh)

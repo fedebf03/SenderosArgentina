@@ -21,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -163,6 +164,7 @@ fun RecorridoContenido(
                             puntos = sendero.recorrido,
                             tipoRecorrido = sendero.tipoRecorrido,
                             modifier = Modifier.fillMaxSize(),
+                            colorLinea = obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary),
                             posicionUsuario = estadoVisual.posicionUsuario,
                             modoNavegacion = ModoNavegacion(
                                 rumboGrados = estadoVisual.rumboGrados,
