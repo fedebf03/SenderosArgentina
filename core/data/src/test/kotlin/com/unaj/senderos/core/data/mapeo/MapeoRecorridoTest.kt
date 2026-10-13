@@ -12,7 +12,6 @@ import org.junit.Test
 
 class MapeoRecorridoTest {
 
-    // Verificar que el dominio pasa a entidad con la fecha y el estado indicados
     @Test
     fun `el dominio se mapea a entidad con fecha y estado`() {
         val recorrido = crearRecorridoDePrueba(pasos = 4000, ritmoPasosPorMinuto = 98.5, esSimulado = true)
@@ -31,7 +30,6 @@ class MapeoRecorridoTest {
         assertEquals(-39.96, entidad.trazadoCaminado[1].latitud, 0.0)
     }
 
-    // Verificar que la entidad vuelve al mismo dominio, ida y vuelta
     @Test
     fun `dominio entidad dominio conserva todos los datos`() {
         val recorrido = crearRecorridoDePrueba(pasos = 10, ritmoPasosPorMinuto = 90.0)
@@ -41,7 +39,6 @@ class MapeoRecorridoTest {
         assertEquals(recorrido, devuelto)
     }
 
-    // Verificar que los nulos de pasos y ritmo se conservan
     @Test
     fun `pasos y ritmo nulos se conservan`() {
         val devuelto = crearEntidadRecorridoDePrueba().aDominio()
@@ -50,7 +47,6 @@ class MapeoRecorridoTest {
         assertNull(devuelto.ritmoPasosPorMinuto)
     }
 
-    // Verificar que un estado de sincronización desconocido se resuelve como sincronizado
     @Test
     fun `un estado desconocido se resuelve como sincronizado`() {
         val devuelto = crearEntidadRecorridoDePrueba(estadoSincronizacion = "OTRO").aDominio()
@@ -58,7 +54,6 @@ class MapeoRecorridoTest {
         assertEquals(EstadoSincronizacion.SINCRONIZADO, devuelto.estadoSincronizacion)
     }
 
-    // Verificar que la entidad pasa a documento remoto sin el idUsuario
     @Test
     fun `la entidad se mapea a red`() {
         val red = crearEntidadRecorridoDePrueba(fechaModificacion = 5_000L).aRed()
@@ -69,7 +64,6 @@ class MapeoRecorridoTest {
         assertEquals(-71.07, red.trazadoCaminado[0].longitud, 0.0)
     }
 
-    // Verificar que el documento remoto pasa a entidad sincronizada del usuario indicado
     @Test
     fun `la red se mapea a entidad sincronizada`() {
         val entidad = crearRecorridoRedDePrueba(fechaModificacion = 9_000L).aEntidad("usuario-2")
@@ -80,7 +74,6 @@ class MapeoRecorridoTest {
         assertEquals(Coordenada(-39.95, -71.07), entidad.aDominio().trazadoCaminado[0])
     }
 
-    // Verificar que entidad a red a entidad conserva el contenido
     @Test
     fun `entidad red entidad conserva el contenido`() {
         val original = crearEntidadRecorridoDePrueba(estadoSincronizacion = "SINCRONIZADO")
@@ -90,7 +83,6 @@ class MapeoRecorridoTest {
         assertEquals(original, devuelta)
     }
 
-    // Verificar que el convertidor de Room serializa y recupera el trazado caminado
     @Test
     fun `el convertidor de Room conserva el trazado caminado`() {
         val convertidor = ConvertidoresSendero()

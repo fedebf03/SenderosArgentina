@@ -3,7 +3,6 @@ package com.unaj.senderos.falsos
 import com.unaj.senderos.domain.model.PuntoCapturado
 import com.unaj.senderos.domain.model.TipoPunto
 
-// Construir un punto capturado de prueba con valores por defecto sobreescribibles
 fun crearPuntoCapturadoDePrueba(
     id: String = "punto-1",
     idUsuario: String = "usuario-1",

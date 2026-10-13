@@ -46,7 +46,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         PuntoRecorrido(LATITUD_BASE - 0.008, LONGITUD_BASE, TipoPunto.PASO, "C")
     )
 
-    // Construir el repositorio con el ejecutor reversible y el alcance indicado
     private fun TestScope.crearRepositorio(alcance: CoroutineScope = backgroundScope + SupervisorJob()): PuntosCapturadosRepositorioOfflineFirst {
         return PuntosCapturadosRepositorioOfflineFirst(
             puntoDao,
@@ -58,7 +57,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         ) { AHORA }
     }
 
-    // Guardar en la tabla falsa un sendero con el recorrido, tipo y distancia indicados
     private fun guardarSendero(
         recorrido: List<PuntoRecorrido> = recorridoBase,
         tipo: TipoRecorrido = TipoRecorrido.LINEAL,
@@ -69,7 +67,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         senderoDao.entidades.value = listOf(sendero.aEntidad(1_000L, EstadoSincronizacion.SINCRONIZADO, false))
     }
 
-    // Guardar en la tabla falsa un punto capturado cerca del segundo tramo
     private fun guardarCapturado(
         id: String,
         nota: String,
@@ -89,12 +86,10 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         puntoDao.entidades.value = puntoDao.entidades.value + punto.aEntidad()
     }
 
-    // Obtener los nombres del recorrido guardado del sendero
     private fun nombresGuardados(): List<String> {
         return senderoDao.entidades.value.single().recorrido.map { punto -> punto.nombre }
     }
 
-    // Verificar que un punto guardado se observa solo para su usuario y su sendero
     @Test
     fun `un punto guardado se observa por usuario y sendero`() = runTest {
         val repositorio = crearRepositorio()
@@ -107,7 +102,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("a"), observados.map { punto -> punto.id })
     }
 
-    // Verificar que los puntos salen en orden de captura
     @Test
     fun `los puntos se observan en orden de captura`() = runTest {
         val repositorio = crearRepositorio()
@@ -119,7 +113,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("temprano", "tarde"), observados.map { punto -> punto.id })
     }
 
-    // Verificar que un error del DAO se devuelve como failure con mensaje propio en español
     @Test
     fun `un error al guardar se devuelve como failure con mensaje propio`() = runTest {
         puntoDao.errorAlGuardar = IllegalStateException("SQLITE_FULL")
@@ -130,7 +123,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals("No se pudo guardar el punto", resultado.exceptionOrNull()?.message)
     }
 
-    // Verificar que descartar borra solo los identificadores indicados
     @Test
     fun `descartar borra solo los puntos indicados`() = runTest {
         val repositorio = crearRepositorio()
@@ -143,7 +135,7 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("b"), repositorio.observarPendientes("usuario-1", "sendero-1").first().map { punto -> punto.id })
     }
 
-    // Verificar que descartar borra los archivos de foto de los puntos descartados después de borrar en la base
+    // Los archivos se borran después de borrar en la base
     @Test
     fun `descartar borra los archivos de foto de los descartados`() = runTest {
         val repositorio = crearRepositorio()
@@ -156,7 +148,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("/fotos/a.jpg"), almacenFotos.rutasBorradas)
     }
 
-    // Verificar que si falla el borrado en la base no se borra ningún archivo y el mensaje es propio
     @Test
     fun `descartar no borra archivos si falla el borrado en la base`() = runTest {
         val repositorio = crearRepositorio()
@@ -170,7 +161,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals("No se pudieron descartar los puntos", resultado.exceptionOrNull()?.message)
     }
 
-    // Verificar que los puntos se aislan por usuario y se conservan para el mismo usuario
     @Test
     fun `los puntos se aislan por usuario y se conservan para el mismo usuario`() = runTest {
         val repositorio = crearRepositorio()
@@ -180,7 +170,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(0, repositorio.observarPendientes("beto", "sendero-1").first().size)
     }
 
-    // Verificar que incorporar inserta el punto en el tramo cercano con tipo, nombre y foto, y guarda el sendero como pendiente
     @Test
     fun `incorporar inserta el punto en el tramo cercano con tipo nombre y foto`() = runTest {
         guardarSendero()
@@ -201,7 +190,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("usuario-1"), planificador.solicitudes)
     }
 
-    // Verificar que incorporar borra solo los puntos elegidos y no sus archivos de foto
     @Test
     fun `incorporar borra solo los elegidos y conserva sus fotos`() = runTest {
         guardarSendero()
@@ -214,7 +202,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertTrue(almacenFotos.rutasBorradas.isEmpty())
     }
 
-    // Verificar que varios puntos del mismo tramo quedan ordenados a lo largo del tramo
     @Test
     fun `incorporar varios puntos del mismo tramo los ordena a lo largo del tramo`() = runTest {
         guardarSendero()
@@ -226,7 +213,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("A", "B", "cerca", "lejos", "C"), nombresGuardados())
     }
 
-    // Verificar que un circular recibe un punto cercano al cierre al final del recorrido
     @Test
     fun `incorporar en un circular agrega al final un punto cercano al cierre`() = runTest {
         val cuadrado = listOf(
@@ -243,7 +229,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("P0", "P1", "P2", "P3", "cierre"), nombresGuardados())
     }
 
-    // Verificar que un sendero sin recorrido recibe los puntos en orden de captura
     @Test
     fun `incorporar en un sendero sin recorrido agrega los puntos en orden de captura`() = runTest {
         guardarSendero(recorrido = emptyList())
@@ -255,7 +240,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(listOf("primero", "segundo"), nombresGuardados())
     }
 
-    // Verificar que la nota completa se conserva como nombre, solo recortada de espacios
     @Test
     fun `incorporar conserva la nota completa recortada de espacios`() = runTest {
         guardarSendero()
@@ -267,7 +251,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(notaLarga, senderoDao.entidades.value.single().recorrido[2].nombre)
     }
 
-    // Verificar que si la distancia coincidía con la calculada del mapa se recalcula con los puntos nuevos
     @Test
     fun `incorporar recalcula la distancia si coincidia con la calculada del mapa`() = runTest {
         val calculadaAntes = Math.round(CalculadoraRecorrido.distanciaKilometros(recorridoBase, TipoRecorrido.LINEAL) * 10) / 10.0
@@ -279,7 +262,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertTrue(senderoDao.entidades.value.single().distanciaKilometros > calculadaAntes)
     }
 
-    // Verificar que si la distancia fue escrita a mano no se recalcula
     @Test
     fun `incorporar no recalcula la distancia escrita a mano`() = runTest {
         guardarSendero(distanciaKilometros = 12.0)
@@ -290,7 +272,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(12.0, senderoDao.entidades.value.single().distanciaKilometros, 0.0)
     }
 
-    // Verificar que es todo o nada: si falla el borrado de los capturados, el sendero queda sin modificar
     @Test
     fun `incorporar es atomico y si falla el borrado el sendero no cambia`() = runTest {
         guardarSendero()
@@ -307,7 +288,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals("No se pudieron incorporar los puntos al sendero", resultado.exceptionOrNull()?.message)
     }
 
-    // Verificar que un sendero inexistente falla con mensaje en español sin tocar nada
     @Test
     fun `incorporar en un sendero inexistente falla sin tocar nada`() = runTest {
         guardarCapturado("p1", "uno")
@@ -319,7 +299,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals(1, puntoDao.entidades.value.size)
     }
 
-    // Verificar que una selección vacía no modifica nada ni pide sincronizar
     @Test
     fun `incorporar sin puntos elegidos no modifica nada`() = runTest {
         guardarSendero()
@@ -333,7 +312,6 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertTrue(planificador.solicitudes.isEmpty())
     }
 
-    // Verificar que la incorporación se completa aunque se cancele la corrutina de la pantalla
     @Test
     fun `incorporar no se cancela con la pantalla`() = runTest {
         guardarSendero()

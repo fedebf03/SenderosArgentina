@@ -24,7 +24,6 @@ class SenderosCercaniaTest {
     )
     private val sinRecorrido = crearSenderoDePrueba(id = "sin-recorrido", nombre = "Cerro Sin Trazado", region = "Sur")
 
-    // Crear un estado con los tres senderos en un orden de lista fijo
     private fun crearEstado(
         ubicacion: Coordenada? = usuario,
         ordenar: Boolean = false,
@@ -38,7 +37,6 @@ class SenderosCercaniaTest {
         )
     }
 
-    // Verificar que la función pública de la calculadora devuelve la distancia de Haversine
     @Test
     fun `la calculadora mide la distancia desde una coordenada a un punto del recorrido`() {
         val distancia = CalculadoraRecorrido.distanciaEntre(usuario, PuntoRecorrido(latitud = 0.0, longitud = 1.0))
@@ -46,7 +44,6 @@ class SenderosCercaniaTest {
         assertEquals(kilometrosPorGradoEcuatorial, distancia, 0.05)
     }
 
-    // Verificar que la distancia entre una coordenada y un punto con otra latitud y longitud es positiva y correcta
     @Test
     fun `la calculadora mide la distancia en diagonal`() {
         val distancia = CalculadoraRecorrido.distanciaEntre(usuario, PuntoRecorrido(latitud = 1.0, longitud = 1.0))
@@ -54,7 +51,6 @@ class SenderosCercaniaTest {
         assertEquals(157.25, distancia, 0.1)
     }
 
-    // Verificar que la distancia de un sendero se mide al primer punto del recorrido
     @Test
     fun `la distancia de un sendero se mide al primer punto de su recorrido`() {
         val distancia = crearEstado().distanciaKilometrosA(cercano)
@@ -63,19 +59,16 @@ class SenderosCercaniaTest {
         assertEquals(kilometrosPorGradoEcuatorial, distancia ?: 0.0, 0.05)
     }
 
-    // Verificar que un sendero sin recorrido no tiene distancia
     @Test
     fun `un sendero sin recorrido no tiene distancia`() {
         assertNull(crearEstado().distanciaKilometrosA(sinRecorrido))
     }
 
-    // Verificar que sin ubicación ningún sendero tiene distancia
     @Test
     fun `sin ubicacion ningun sendero tiene distancia`() {
         assertNull(crearEstado(ubicacion = null).distanciaKilometrosA(cercano))
     }
 
-    // Verificar que sin ordenar por cercanía se conserva el orden de la lista
     @Test
     fun `sin ordenar por cercania se conserva el orden original`() {
         val estado = crearEstado(ordenar = false)
@@ -83,7 +76,6 @@ class SenderosCercaniaTest {
         assertEquals(listOf(sinRecorrido, lejano, cercano), estado.senderosFiltrados)
     }
 
-    // Verificar que al ordenar por cercanía los más cercanos van primero y los nulos al final
     @Test
     fun `al ordenar por cercania los senderos sin distancia quedan al final`() {
         val estado = crearEstado(ordenar = true)
@@ -91,7 +83,6 @@ class SenderosCercaniaTest {
         assertEquals(listOf(cercano, lejano, sinRecorrido), estado.senderosFiltrados)
     }
 
-    // Verificar que ordenar sin ubicación conserva el orden original porque todas las distancias son nulas
     @Test
     fun `ordenar por cercania sin ubicacion conserva el orden original`() {
         val estado = crearEstado(ubicacion = null, ordenar = true)
@@ -99,7 +90,6 @@ class SenderosCercaniaTest {
         assertEquals(listOf(sinRecorrido, lejano, cercano), estado.senderosFiltrados)
     }
 
-    // Verificar que el orden por cercanía respeta el filtro de búsqueda
     @Test
     fun `el orden por cercania se combina con el filtro de busqueda`() {
         val estado = crearEstado(ordenar = true, texto = "Norte")
@@ -107,7 +97,6 @@ class SenderosCercaniaTest {
         assertEquals(listOf(cercano, lejano), estado.senderosFiltrados)
     }
 
-    // Verificar que el filtro sin coincidencias devuelve lista vacía aun ordenando por cercanía
     @Test
     fun `el orden por cercania con busqueda sin coincidencias devuelve lista vacia`() {
         val estado = crearEstado(ordenar = true, texto = "Inexistente")

@@ -3,7 +3,6 @@ package com.unaj.senderos.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 
-// Fila de Room que representa un sendero de un usuario (fuente única de verdad)
 @Entity(tableName = "senderos", primaryKeys = ["idUsuario", "id"])
 data class SenderoEntidad(
     val id: String,

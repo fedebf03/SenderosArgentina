@@ -170,12 +170,10 @@ class ControlSeguimientoEnMemoria(
         proveedorSimulado?.simularDesvio()
     }
 
-    // Detener el seguimiento activo guardando el recorrido realizado y dejar el estado en null
     override fun detener() {
         finalizarSeguimiento(guardar = true)
     }
 
-    // Cancelar el seguimiento activo sin guardar nada en el historial y dejar el estado en null
     override fun cancelar() {
         finalizarSeguimiento(guardar = false)
     }
@@ -232,7 +230,7 @@ class ControlSeguimientoEnMemoria(
         return estadoActual.instanteUltimaLecturaValidaMilisegundos?.let { instanteLectura -> (instante - instanteLectura).coerceAtLeast(0L) }
     }
 
-    // Borrar la copia de la foto que quedó huérfana porque el punto no se guardó
+    // Evita dejar huérfana la copia de una foto cuyo punto no se guardó
     private suspend fun borrarCopiaDeFoto(rutaFoto: String) {
         if (rutaFoto.isNotEmpty()) almacenFotos.borrar(rutaFoto)
     }
@@ -264,7 +262,6 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Lanzar la recolección del acelerómetro y de la brújula según lo que ofrece el equipo
     private fun lanzarRecoleccionDeSensores(): List<Job> {
         val trabajos = mutableListOf<Job>()
         val acelerometro = fuenteAcelerometro
@@ -278,7 +275,7 @@ class ControlSeguimientoEnMemoria(
         return trabajos
     }
 
-    // Recolectar las muestras del acelerómetro y registrar cada paso detectado; si el sensor falla o termina se dejan de medir pasos sin cortar el seguimiento
+    // Si el sensor falla o termina se dejan de medir pasos sin cortar el seguimiento
     private suspend fun recolectarPasos(fuente: FuenteAcelerometro) {
         try {
             fuente.observarMuestras().collect { muestra ->
@@ -299,14 +296,14 @@ class ControlSeguimientoEnMemoria(
         actualizarConSensores(reloj()) { estadoActual -> estadoActual }
     }
 
-    // Registrar un paso en la ventana de ritmo con el instante en que el sensor lo midió (no el de llegada, que puede venir por lotes) y reflejarlo en el estado
+    // Se usa el instante en que el sensor midió el paso, no el de llegada, que puede venir por lotes
     private fun registrarPaso(instantePasoMilisegundos: Long) {
         ventanaRitmo.registrarPaso(instantePasoMilisegundos)
         instanteUltimoPaso = maxOf(instanteUltimoPaso ?: instantePasoMilisegundos, instantePasoMilisegundos)
         actualizarConSensores(reloj()) { estadoActual -> estadoActual.copy(pasos = (estadoActual.pasos ?: 0) + 1) }
     }
 
-    // Recolectar el rumbo de la brújula solo mientras el usuario está detenido (en movimiento manda el GPS) y reflejarlo en el estado
+    // Solo mientras el usuario está detenido: en movimiento manda el GPS
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun recolectarBrujula(fuente: FuenteBrujula) {
         try {
@@ -325,7 +322,7 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Aplicar un cambio al estado activo y completar los datos de sensores; el efecto sobre el último paso simulado se resuelve fuera del estado publicado
+    // El efecto sobre el último paso simulado se resuelve fuera del estado publicado
     private fun actualizarConSensores(ahora: Long, transformar: (EstadoSeguimiento) -> EstadoSeguimiento) {
         val anterior = estadoInterno.value ?: return
         val transformado = transformar(anterior)
@@ -335,12 +332,10 @@ class ControlSeguimientoEnMemoria(
         estadoInterno.value = completarSensores(transformado, ahora, instanteUltimoPaso)
     }
 
-    // Calcular los pasos simulados: uno cada 0,75 m de la distancia recorrida
     private fun calcularPasosSimulados(estado: EstadoSeguimiento): Int {
         return (estado.distanciaRecorridaKilometros * METROS_POR_KILOMETRO / METROS_POR_PASO_SIMULADO).toInt()
     }
 
-    // Completar sin efectos secundarios los datos derivados de sensores: pasos, ritmo, detenido y rumbo de brújula verdadero
     private fun completarSensores(estado: EstadoSeguimiento, ahora: Long, ultimoPaso: Long?): EstadoSeguimiento {
         val pasos: Int?
         val ritmo: Double?
@@ -374,7 +369,7 @@ class ControlSeguimientoEnMemoria(
         )
     }
 
-    // Convertir el último rumbo magnético a norte verdadero sumando la declinación de la última posición conocida (sin posición o sin proveedor queda magnético)
+    // Sin posición o sin proveedor de declinación el rumbo queda magnético
     private fun calcularRumboVerdadero(posicion: Coordenada?, ahora: Long): Float? {
         val magnetico = rumboMagneticoGrados ?: return null
         val declinacion = if (posicion == null || proveedorDeclinacion == null) {
@@ -392,7 +387,6 @@ class ControlSeguimientoEnMemoria(
         return CalculadoraRecorrido.normalizarRumbo(magnetico + declinacion)
     }
 
-    // Obtener el sendero del usuario con sesión activa o fallar con un mensaje claro
     private suspend fun obtenerSendero(idSendero: String): Sendero {
         val flujoSendero = observarDetalleSendero(idSendero).getOrElse { error ->
             throw IllegalStateException("No se puede iniciar el recorrido: ${error.message}", error)
@@ -400,7 +394,6 @@ class ControlSeguimientoEnMemoria(
         return flujoSendero.first() ?: throw IllegalStateException("No se encontró el sendero $idSendero")
     }
 
-    // Recolectar las ubicaciones y aplicar cada una al estado, finalizando el seguimiento si el proveedor falla
     private suspend fun recolectarUbicaciones(proveedorActivo: ProveedorUbicacion) {
         try {
             proveedorActivo.observarUbicaciones().collect { lectura ->

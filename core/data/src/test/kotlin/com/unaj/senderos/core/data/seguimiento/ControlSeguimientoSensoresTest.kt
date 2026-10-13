@@ -60,7 +60,6 @@ class ControlSeguimientoSensoresTest {
 
     private val todasLasCapacidades = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = true, tieneCamara = true)
 
-    // Construir el control con las capacidades y fuentes indicadas, un alcance inmediato y el reloj de la prueba
     private fun TestScope.crearControl(
         capacidades: CapacidadesDispositivo = todasLasCapacidades,
         fuenteAcelerometro: FuenteAcelerometro? = acelerometro,
@@ -80,12 +79,11 @@ class ControlSeguimientoSensoresTest {
         ) { instante }
     }
 
-    // Construir una lectura de GPS al sur del origen
     private fun lectura(gradosAlSur: Double, velocidad: Float? = null, precision: Float? = null): LecturaUbicacion {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, velocidad, precisionMetros = precision)
     }
 
-    // Emitir una caminata sintética de 2 pasos por segundo avanzando el reloj del control con las muestras
+    // 2 pasos por segundo, avanzando el reloj del control con las muestras
     private suspend fun caminar(duracionMilisegundos: Long) {
         val inicio = instante
         var transcurrido = 0L
@@ -97,7 +95,6 @@ class ControlSeguimientoSensoresTest {
         }
     }
 
-    // Verificar que sin acelerómetro los pasos y el ritmo son null
     @Test
     fun `sin acelerometro los pasos y el ritmo son null`() = runTest {
         val control = crearControl(capacidades = todasLasCapacidades.copy(tieneAcelerometro = false))
@@ -110,7 +107,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(0, acelerometro.muestras.subscriptionCount.value)
     }
 
-    // Verificar que con acelerómetro una caminata suma pasos y ritmo y no queda detenido
     @Test
     fun `una caminata suma pasos y ritmo`() = runTest {
         val control = crearControl()
@@ -132,15 +128,13 @@ class ControlSeguimientoSensoresTest {
         ubicaciones.emit(lectura(0.0, velocidad = 0.0f))
     }
 
-    // Construir una declinación fija de ocho grados al oeste
+    // Declinación fija de 8 grados al oeste (negativa)
     private fun declinacionAlOeste(): ProveedorDeclinacion {
         return object : ProveedorDeclinacion {
-            // Devolver la declinación fija de la prueba
             override fun obtenerDeclinacionGrados(coordenada: Coordenada, instanteMilisegundos: Long): Float = -8f
         }
     }
 
-    // Verificar que estando detenido la brújula actualiza el rumbo de brújula del estado
     @Test
     fun `detenido la brujula actualiza el rumbo de brujula`() = runTest {
         val control = crearControl()
@@ -152,7 +146,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(200f, control.estado.value?.rumboBrujulaGrados)
     }
 
-    // Verificar que la brújula solo está registrada mientras el usuario está detenido
     @Test
     fun `la brujula solo se registra mientras esta detenido`() = runTest {
         val control = crearControl()
@@ -167,7 +160,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(0, brujula.rumbos.subscriptionCount.value)
     }
 
-    // Verificar que el rumbo de la brújula se corrige con la declinación de la última posición conocida
     @Test
     fun `el rumbo de brujula se corrige con la declinacion magnetica`() = runTest {
         val control = crearControl(proveedorDeclinacion = declinacionAlOeste())
@@ -180,7 +172,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(192f, control.estado.value?.rumboEfectivoGrados)
     }
 
-    // Verificar que la declinación normaliza el resultado al intervalo de 0 a 360
     @Test
     fun `la declinacion normaliza el rumbo`() = runTest {
         val control = crearControl(proveedorDeclinacion = declinacionAlOeste())
@@ -192,7 +183,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(356f, control.estado.value?.rumboBrujulaGrados)
     }
 
-    // Verificar que los pasos usan el instante de la muestra y no el reloj de llegada (entrega por lotes)
     @Test
     fun `el ritmo usa el instante de las muestras aunque lleguen juntas`() = runTest {
         val control = crearControl()
@@ -213,12 +203,10 @@ class ControlSeguimientoSensoresTest {
         assertEquals(false, control.estado.value?.estaDetenido)
     }
 
-    // Verificar que si el acelerómetro falla durante el recorrido los pasos y el ritmo pasan a null
     @Test
     fun `si el acelerometro falla en pleno recorrido pasos y ritmo pasan a null`() = runTest {
         val origen = MutableSharedFlow<MuestraAcelerometro>(extraBufferCapacity = 64)
         val fuente = object : FuenteAcelerometro {
-            // Reenviar las muestras de la prueba y fallar cuando llega una con x negativa
             override fun observarMuestras(): Flow<MuestraAcelerometro> = flow {
                 origen.collect { muestra ->
                     check(muestra.x >= 0f) { "Sensor caído" }
@@ -238,11 +226,9 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.estado.value?.ritmoPasosPorMinuto)
     }
 
-    // Verificar que el recorrido guardado tras un fallo del acelerómetro no tiene pasos
     @Test
     fun `tras un fallo del acelerometro el recorrido guardado no tiene pasos`() = runTest {
         val fuente = object : FuenteAcelerometro {
-            // Fallar apenas se observa
             override fun observarMuestras(): Flow<MuestraAcelerometro> = flow { throw IllegalStateException("Sensor caído") }
         }
         val control = crearControl(fuenteAcelerometro = fuente)
@@ -255,7 +241,7 @@ class ControlSeguimientoSensoresTest {
         assertNull(repositorioRecorridos.guardados.single().ritmoPasosPorMinuto)
     }
 
-    // Verificar que un recorrido simulado guarda los pasos pero no el ritmo, que estaría multiplicado
+    // Los pasos se guardan pero no el ritmo, que estaría multiplicado
     @Test
     fun `un recorrido simulado guarda ritmo null`() = runTest {
         val control = crearControl()
@@ -269,7 +255,6 @@ class ControlSeguimientoSensoresTest {
         assertTrue((guardado.pasos ?: 0) > 0)
     }
 
-    // Verificar que cancelar deja el motivo CANCELADO_POR_EL_USUARIO y que iniciar de nuevo lo limpia
     @Test
     fun `cancelar fija el motivo cancelado por el usuario`() = runTest {
         val control = crearControl()
@@ -282,7 +267,6 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.motivoFin.value)
     }
 
-    // Verificar que detener no deja motivo de fin
     @Test
     fun `detener no deja motivo de fin`() = runTest {
         val control = crearControl()
@@ -293,7 +277,6 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.motivoFin.value)
     }
 
-    // Verificar que detenido y con brújula el rumbo efectivo sale de la brújula
     @Test
     fun `detenido el rumbo efectivo sale de la brujula`() = runTest {
         val control = crearControl()
@@ -305,7 +288,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(200f, control.estado.value?.rumboEfectivoGrados)
     }
 
-    // Verificar que sin brújula en el equipo no se suscribe a la fuente
     @Test
     fun `sin brujula no se suscribe a la fuente`() = runTest {
         val control = crearControl(capacidades = todasLasCapacidades.copy(tieneBrujula = false))
@@ -316,11 +298,9 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.estado.value?.rumboBrujulaGrados)
     }
 
-    // Verificar que un fallo de la fuente de pasos no termina el seguimiento
     @Test
     fun `un fallo de la fuente de pasos no termina el seguimiento`() = runTest {
         val fuenteQueFalla = object : FuenteAcelerometro {
-            // Fallar al observar para simular un sensor roto
             override fun observarMuestras(): Flow<MuestraAcelerometro> = flow { throw IllegalStateException("Sensor roto") }
         }
         val control = crearControl(fuenteAcelerometro = fuenteQueFalla)
@@ -332,7 +312,6 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.estado.value?.pasos)
     }
 
-    // Verificar que un recorrido simulado genera pasos coherentes con la distancia, sin brújula ni sensores reales
     @Test
     fun `la simulacion genera un paso cada 75 centimetros`() = runTest {
         val control = crearControl()
@@ -350,7 +329,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(0, brujula.rumbos.subscriptionCount.value)
     }
 
-    // Verificar que detener guarda el recorrido con los pasos y el ritmo medios reales
     @Test
     fun `detener guarda pasos y ritmo reales`() = runTest {
         val control = crearControl()
@@ -367,7 +345,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(pasos / (60_000L / 60_000.0), guardado.ritmoPasosPorMinuto ?: -1.0, 0.0001)
     }
 
-    // Verificar que sin acelerómetro el recorrido guardado no tiene pasos ni ritmo
     @Test
     fun `detener sin acelerometro guarda pasos y ritmo null`() = runTest {
         val control = crearControl(capacidades = todasLasCapacidades.copy(tieneAcelerometro = false))
@@ -381,7 +358,6 @@ class ControlSeguimientoSensoresTest {
         assertNull(guardado.ritmoPasosPorMinuto)
     }
 
-    // Verificar que cancelar no guarda nada, deja el estado en null y libera los sensores
     @Test
     fun `cancelar no guarda y libera los sensores`() = runTest {
         val control = crearControl()
@@ -399,7 +375,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(0, brujula.rumbos.subscriptionCount.value)
     }
 
-    // Verificar que detener con las mismas posiciones sí guarda
     @Test
     fun `detener con posiciones guarda un recorrido`() = runTest {
         val control = crearControl()
@@ -413,7 +388,6 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que cancelar y luego detener no guarda el recorrido descartado
     @Test
     fun `cancelar y luego detener no guarda`() = runTest {
         val control = crearControl()
@@ -426,7 +400,6 @@ class ControlSeguimientoSensoresTest {
         assertTrue(repositorioRecorridos.guardados.isEmpty())
     }
 
-    // Verificar que cancelar sin recorrido activo no falla
     @Test
     fun `cancelar sin recorrido activo no falla`() = runTest {
         val control = crearControl()
@@ -437,7 +410,6 @@ class ControlSeguimientoSensoresTest {
         assertTrue(repositorioRecorridos.guardados.isEmpty())
     }
 
-    // Verificar que cancelar un recorrido simulado tampoco guarda
     @Test
     fun `cancelar un recorrido simulado no guarda`() = runTest {
         val control = crearControl()
@@ -450,7 +422,6 @@ class ControlSeguimientoSensoresTest {
         assertNull(control.estado.value)
     }
 
-    // Verificar que el temporizador degrada la señal a débil sin que lleguen lecturas
     @Test
     fun `el temporizador pasa la senal de buena a debil sin lecturas`() = runTest {
         val control = crearControl()
@@ -464,7 +435,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
     }
 
-    // Verificar que sin ninguna lectura válida el estado busca y luego pasa a débil por el temporizador
     @Test
     fun `sin lecturas validas busca y luego es debil por el temporizador`() = runTest {
         val control = crearControl()
@@ -477,7 +447,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
     }
 
-    // Verificar que una lectura válida devuelve la señal a buena tras haber estado débil
     @Test
     fun `una lectura valida devuelve la senal a buena`() = runTest {
         val control = crearControl()
@@ -492,7 +461,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(CalidadSenal.BUENA, control.estado.value?.calidadSenal)
     }
 
-    // Verificar que las lecturas imprecisas no mueven la posición y dejan la señal débil pasados 15 s
     @Test
     fun `las lecturas imprecisas dejan la senal debil sin mover la posicion`() = runTest {
         val control = crearControl()
@@ -507,7 +475,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(CalidadSenal.DEBIL, control.estado.value?.calidadSenal)
     }
 
-    // Verificar que el recorrido simulado tiene buena señal desde el inicio y sigue así
     @Test
     fun `la simulacion siempre tiene buena senal`() = runTest {
         val control = crearControl()
@@ -520,7 +487,6 @@ class ControlSeguimientoSensoresTest {
         assertEquals(CalidadSenal.BUENA, control.estado.value?.calidadSenal)
     }
 
-    // Verificar que cancelar detiene el temporizador de calidad
     @Test
     fun `cancelar detiene el temporizador de calidad`() = runTest {
         val control = crearControl()

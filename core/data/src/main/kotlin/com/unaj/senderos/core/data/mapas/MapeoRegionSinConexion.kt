@@ -11,7 +11,6 @@ const val MAXIMO_ERRORES_SEGUIDOS = 5
 
 private val formatoJson = Json { ignoreUnknownKeys = true }
 
-// Metadatos guardados en cada región sin conexión para asociarla al usuario, al sendero y al trazado
 @Serializable
 data class MetadatosRegion(
     val idUsuario: String,
@@ -19,7 +18,6 @@ data class MetadatosRegion(
     val firma: String
 )
 
-// Avance de una región sin conexión, independiente de las clases de MapLibre
 data class ProgresoRegion(
     val recursosCompletados: Long,
     val recursosRequeridos: Long,
@@ -28,7 +26,6 @@ data class ProgresoRegion(
     val estaDescargando: Boolean
 )
 
-// Serializar los metadatos a los bytes JSON que guarda la región
 fun MetadatosRegion.aBytes(): ByteArray {
     return formatoJson.encodeToString(MetadatosRegion.serializer(), this).toByteArray(Charsets.UTF_8)
 }
@@ -45,17 +42,14 @@ fun leerMetadatosRegion(bytes: ByteArray?): MetadatosRegion? {
     }
 }
 
-// Calcular el porcentaje de recursos completados acotado entre 0 y 100
 fun calcularPorcentaje(recursosCompletados: Long, recursosRequeridos: Long): Int {
     if (recursosRequeridos <= 0L) return 0
     val porcentaje = recursosCompletados * 100L / recursosRequeridos
     return porcentaje.coerceIn(0L, 100L).toInt()
 }
 
-// Crear la clave que identifica la región de un sendero de un usuario
 fun crearClaveRegion(idUsuario: String, idSendero: String): String = "$idUsuario/$idSendero"
 
-// Determinar el estado visible del mapa a partir del avance, la firma guardada y la firma vigente
 fun determinarEstado(
     progreso: ProgresoRegion?,
     firmaRegion: String?,
@@ -79,13 +73,10 @@ fun determinarEstado(
     return EstadoMapaSinConexion.ConError(MENSAJE_DESCARGA_INCOMPLETA)
 }
 
-// Categoría de un error reportado por MapLibre durante la descarga
 enum class CategoriaErrorRegion { CONEXION, SERVIDOR, NO_ENCONTRADO, OTRO }
 
-// Qué hacer con la descarga ante un error
 enum class DecisionError { ESPERAR_CONEXION, DETENER }
 
-// Decidir si esperar a que MapLibre reintente o detener la descarga, según la categoría y los errores seguidos
 fun decidirAnteError(categoria: CategoriaErrorRegion, erroresSeguidos: Int): DecisionError {
     val esRecuperable = categoria == CategoriaErrorRegion.CONEXION || categoria == CategoriaErrorRegion.SERVIDOR
     return if (esRecuperable && erroresSeguidos < MAXIMO_ERRORES_SEGUIDOS) {
@@ -95,7 +86,6 @@ fun decidirAnteError(categoria: CategoriaErrorRegion, erroresSeguidos: Int): Dec
     }
 }
 
-// Obtener el mensaje en español para el usuario según la categoría del error, sin detalles técnicos
 fun mensajeErrorParaUsuario(categoria: CategoriaErrorRegion): String {
     return when (categoria) {
         CategoriaErrorRegion.CONEXION -> "Se perdió la conexión varias veces. Revisá tu señal y volvé a intentarlo."
@@ -105,10 +95,8 @@ fun mensajeErrorParaUsuario(categoria: CategoriaErrorRegion): String {
     }
 }
 
-// Acción a tomar cuando el usuario pide descargar el mapa de un sendero
 enum class AccionDescarga { CREAR, YA_DISPONIBLE, REACTIVAR, CREAR_CONSERVANDO_ANTERIOR, CREAR_REEMPLAZANDO }
 
-// Decidir cómo atender un pedido de descarga según la región existente y la firma del trazado vigente
 fun decidirAccionDescarga(firmaRegion: String?, progreso: ProgresoRegion?, firmaNueva: String): AccionDescarga {
     if (firmaRegion == null) return AccionDescarga.CREAR
     val estaCompleta = progreso?.estaCompleta == true
@@ -120,10 +108,8 @@ fun decidirAccionDescarga(firmaRegion: String?, progreso: ProgresoRegion?, firma
     }
 }
 
-// Región guardada en el dispositivo candidata a ser la de un sendero
 data class CandidataRegion(val id: Long, val estaCompleta: Boolean)
 
-// Reparto de las regiones de un sendero: la vigente, la anterior completa que se conserva y las que sobran
 data class PlanRegiones(val principal: Long, val anterior: Long?, val sobrantes: List<Long>)
 
 // Planificar qué regiones de un mismo sendero conservar: la de mayor id es la vigente y, si está incompleta, la completa más reciente queda como anterior

@@ -5,7 +5,6 @@ object ConfiguracionEstiloMapa {
     // Estilo vectorial gratuito de OpenFreeMap (sin clave); MapLibre agrega la atribución automáticamente
     const val URL_ESTILO = "https://tiles.openfreemap.org/styles/liberty"
 
-    // Rango de zoom que se descarga para el uso sin señal
     const val ZOOM_MINIMO_DESCARGA = 10.0
     const val ZOOM_MAXIMO_DESCARGA = 16.0
 }

@@ -9,7 +9,6 @@ class FalsoLanzadorSeguimiento(private val registro: MutableList<String> = mutab
     var cantidadDetenciones: Int = 0
         private set
 
-    // Registrar el sendero cuyo seguimiento se pidió iniciar
     override fun iniciar(idSendero: String, esSimulado: Boolean) {
         idsIniciados.add(idSendero)
         iniciosSimulados.add(esSimulado)
@@ -18,13 +17,11 @@ class FalsoLanzadorSeguimiento(private val registro: MutableList<String> = mutab
     var cantidadCancelaciones: Int = 0
         private set
 
-    // Contar cada pedido de detener el seguimiento
     override fun detener() {
         cantidadDetenciones++
         registro.add("lanzador.detener")
     }
 
-    // Contar cada pedido de cancelar el seguimiento
     override fun cancelar() {
         cantidadCancelaciones++
         registro.add("lanzador.cancelar")

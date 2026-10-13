@@ -12,7 +12,6 @@ private const val INTERVALO_MILISEGUNDOS = 20L
 
 class DetectorPasosTest {
 
-    // Generar una señal sinusoidal vertical sobre la gravedad y contar los pasos detectados
     private fun contarPasos(frecuenciaHercios: Double, amplitud: Double, duracionMilisegundos: Long): Int {
         val detector = DetectorPasos()
         var pasos = 0
@@ -25,7 +24,6 @@ class DetectorPasosTest {
         return pasos
     }
 
-    // Contar los pasos de una señal plana con un pico de 4 m/s2 en los índices indicados
     private fun contarPasosConPicosEn(vararg indicesDePico: Int): Int {
         val detector = DetectorPasos()
         var pasos = 0
@@ -36,7 +34,6 @@ class DetectorPasosTest {
         return pasos
     }
 
-    // Verificar que una caminata de 2 pasos por segundo durante 10 s cuenta cerca de 20 pasos
     @Test
     fun `una caminata de dos pasos por segundo cuenta los pasos`() {
         val pasos = contarPasos(frecuenciaHercios = 2.0, amplitud = 3.0, duracionMilisegundos = 10_000L)
@@ -44,7 +41,6 @@ class DetectorPasosTest {
         assertTrue("Pasos: $pasos", pasos in 18..21)
     }
 
-    // Verificar que el teléfono quieto con ruido pequeño no cuenta pasos
     @Test
     fun `el ruido pequeno no cuenta pasos`() {
         val detector = DetectorPasos()
@@ -60,7 +56,6 @@ class DetectorPasosTest {
         assertEquals(0, pasos)
     }
 
-    // Verificar que picos demasiado juntos no se duplican por encima de uno cada 250 ms
     @Test
     fun `los picos demasiado juntos no duplican pasos`() {
         val pasos = contarPasos(frecuenciaHercios = 8.0, amplitud = 6.0, duracionMilisegundos = 2_000L)
@@ -68,7 +63,6 @@ class DetectorPasosTest {
         assertTrue("Pasos: $pasos", pasos in 1..8)
     }
 
-    // Verificar que la gravedad constante en cualquier orientación no cuenta pasos
     @Test
     fun `la gravedad constante en cualquier eje no cuenta pasos`() {
         val detector = DetectorPasos()
@@ -80,19 +74,17 @@ class DetectorPasosTest {
         assertEquals(0, pasos)
     }
 
-    // Verificar que dos picos separados más de 250 ms se cuentan ambos
     @Test
     fun `dos pasos separados por mas de 250 ms se cuentan`() {
         assertEquals(2, contarPasosConPicosEn(30, 50))
     }
 
-    // Verificar que dos picos a 100 ms cuentan como un solo paso
     @Test
     fun `dos picos a 100 ms cuentan como uno`() {
         assertEquals(1, contarPasosConPicosEn(30, 35))
     }
 
-    // Verificar que dos picos a 300 ms sin que la señal baje de la mitad del umbral cuentan como un solo paso (histéresis)
+    // Histéresis: la señal no baja de la mitad del umbral entre los dos picos
     @Test
     fun `dos picos a 300 ms sin bajar de la mitad del umbral cuentan como uno`() {
         val detector = DetectorPasos()

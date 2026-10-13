@@ -25,19 +25,16 @@ class FormularioSenderoViewModelTest {
     private val despachadorPrueba = StandardTestDispatcher()
     private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel del formulario con repositorios falsos
     private fun crearViewModel(idSendero: String?, repositorio: FalsoSenderoRepositorio): FormularioSenderoViewModel {
         return FormularioSenderoViewModel(
             idSendero,
@@ -47,7 +44,6 @@ class FormularioSenderoViewModelTest {
         )
     }
 
-    // Verificar que la distancia copiada del mapa se escribe con coma decimal
     @Test
     fun `la distancia copiada del mapa se escribe con coma`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
@@ -60,7 +56,6 @@ class FormularioSenderoViewModelTest {
         assertEquals("11,1", viewModel.estadoVisual.value.distancia)
     }
 
-    // Verificar que la distancia de un sendero en edición se muestra con coma decimal
     @Test
     fun `la distancia de un sendero en edicion se muestra con coma`() = runTest(despachadorPrueba) {
         val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(distanciaKilometros = 12.5)))

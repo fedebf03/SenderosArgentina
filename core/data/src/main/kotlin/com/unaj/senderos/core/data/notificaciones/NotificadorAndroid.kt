@@ -25,10 +25,8 @@ private const val ID_NOTIFICACION_SUBIDOS = 1001
 private const val ID_NOTIFICACION_ERROR = 1002
 private const val CODIGO_PEDIDO_REINTENTAR = 1
 
-// Mostrar notificaciones del sistema Android sobre el resultado de la sincronización
 class NotificadorAndroid(private val contexto: Context) : Notificador {
 
-    // Mostrar la notificación del mensaje si hay permiso, registrando cualquier rechazo del sistema
     override fun notificar(mensaje: MensajeNotificacion) {
         if (!tienePermisoDeNotificaciones()) {
             Log.d(TAG, "Notificación omitida: falta el permiso POST_NOTIFICATIONS")
@@ -59,12 +57,11 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
         }
     }
 
-    // Cancelar la notificación de error de sincronización mostrada antes
     override fun cancelarAvisoDeError() {
         NotificationManagerCompat.from(contexto).cancel(ID_NOTIFICACION_ERROR)
     }
 
-    // Verificar si la aplicación puede publicar notificaciones (requiere permiso en API 33 o superior)
+    // Requiere permiso en API 33 o superior
     private fun tienePermisoDeNotificaciones(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(
@@ -73,7 +70,7 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Crear el canal de sincronización; repetirlo es inofensivo: Android actualiza el nombre y la descripción de un canal existente e ignora el cambio de importancia
+    // Repetirlo es inofensivo: Android actualiza el nombre y la descripción de un canal existente e ignora el cambio de importancia
     private fun crearCanalSiHaceFalta() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val canal = NotificationChannel(
@@ -84,13 +81,11 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
         NotificationManagerCompat.from(contexto).createNotificationChannel(canal)
     }
 
-    // Crear la intención pendiente, inmutable y explícito, que dirige "Reintentar" al receptor interno de la aplicación
     private fun crearAccionReintentar(): PendingIntent {
         val intencion = Intent(contexto, ReintentoSincronizacionReceptor::class.java)
         return PendingIntent.getBroadcast(contexto, CODIGO_PEDIDO_REINTENTAR, intencion, PendingIntent.FLAG_IMMUTABLE)
     }
 
-    // Crear la intención pendiente que abre la pantalla principal al tocar la notificación
     private fun crearAccionAbrirAplicacion(): PendingIntent {
         val intencion = Intent(contexto, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)

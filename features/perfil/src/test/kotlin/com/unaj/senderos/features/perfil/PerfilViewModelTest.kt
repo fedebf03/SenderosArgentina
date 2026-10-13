@@ -43,19 +43,16 @@ class PerfilViewModelTest {
     private val controlSeguimiento = FalsoControlSeguimiento()
     private val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel del perfil con un usuario activo y las preferencias falsas
     private fun crearViewModel(
         capacidades: CapacidadesDispositivo = CapacidadesDispositivo(
             tieneGps = true,
@@ -74,7 +71,6 @@ class PerfilViewModelTest {
         )
     }
 
-    // Verificar que el modo demostración arranca desactivado
     @Test
     fun `el modo demostracion arranca desactivado`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -83,7 +79,6 @@ class PerfilViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esModoDemostracion)
     }
 
-    // Verificar que el interruptor guarda la preferencia y la refleja en el estado visual
     @Test
     fun `activar el modo demostracion lo guarda y lo refleja`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -96,7 +91,6 @@ class PerfilViewModelTest {
         assertTrue(viewModel.estadoVisual.value.esModoDemostracion)
     }
 
-    // Verificar que desactivar el modo lo vuelve a apagar
     @Test
     fun `desactivar el modo demostracion lo apaga`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -109,7 +103,6 @@ class PerfilViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esModoDemostracion)
     }
 
-    // Verificar que el historial llega del más reciente al más viejo
     @Test
     fun `el historial refleja los recorridos del mas reciente al mas viejo`() = runTest(despachadorPrueba) {
         repositorioRecorridos.recorridos.value = listOf(
@@ -122,7 +115,6 @@ class PerfilViewModelTest {
         assertEquals(listOf("nuevo", "viejo"), viewModel.estadoVisual.value.recorridos.map { recorrido -> recorrido.id })
     }
 
-    // Verificar que sin recorridos la lista queda vacía
     @Test
     fun `sin recorridos el historial es vacio`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -131,7 +123,6 @@ class PerfilViewModelTest {
         assertTrue(viewModel.estadoVisual.value.recorridos.isEmpty())
     }
 
-    // Verificar que las cuatro funciones del equipo se listan con su disponibilidad
     @Test
     fun `las funciones del dispositivo reflejan las capacidades detectadas`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(
@@ -150,7 +141,6 @@ class PerfilViewModelTest {
         )
     }
 
-    // Verificar que cada función explica qué se pierde si falta
     @Test
     fun `cada funcion explica que se pierde si falta`() {
         assertEquals(
@@ -166,7 +156,6 @@ class PerfilViewModelTest {
         }
     }
 
-    // Verificar que tocar un recorrido emite el efecto de navegación a su detalle
     @Test
     fun `seleccionar un recorrido navega a su detalle`() = runTest(despachadorPrueba) {
         val efectos = mutableListOf<PerfilEfecto>()
@@ -180,7 +169,6 @@ class PerfilViewModelTest {
         assertEquals(listOf<PerfilEfecto>(PerfilEfecto.NavegarAHistorialDetalle("r1")), efectos)
     }
 
-    // Verificar que tocar cerrar sesión pide confirmación y todavía no cierra la sesión
     @Test
     fun `tocar cerrar sesion muestra la confirmacion sin cerrar`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -193,7 +181,6 @@ class PerfilViewModelTest {
         assertEquals(0, autenticacion.cantidadCierresSesion)
     }
 
-    // Verificar que confirmar cierra la sesión, oculta el diálogo y navega al inicio de sesión
     @Test
     fun `confirmar cerrar sesion cierra la sesion y navega al login`() = runTest(despachadorPrueba) {
         val efectos = mutableListOf<PerfilEfecto>()
@@ -209,7 +196,6 @@ class PerfilViewModelTest {
         assertEquals(listOf<PerfilEfecto>(PerfilEfecto.NavegarALogin), efectos)
     }
 
-    // Verificar que cancelar la confirmación conserva la sesión
     @Test
     fun `cancelar cerrar sesion conserva la sesion`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -222,7 +208,6 @@ class PerfilViewModelTest {
         assertEquals(0, autenticacion.cantidadCierresSesion)
     }
 
-    // Verificar que el estado avisa cuando hay un recorrido en curso y deja de avisar al terminar
     @Test
     fun `el estado indica si hay un recorrido en curso`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
@@ -238,7 +223,6 @@ class PerfilViewModelTest {
         assertFalse(viewModel.estadoVisual.value.hayRecorridoEnCurso)
     }
 
-    // Verificar que un fallo al leer el historial queda como mensaje y no como lista vacía
     @Test
     fun `un fallo al leer el historial muestra un mensaje de error`() = runTest(despachadorPrueba) {
         autenticacion.usuarioActual = null
@@ -248,7 +232,6 @@ class PerfilViewModelTest {
         assertNotNull(viewModel.estadoVisual.value.mensajeError)
     }
 
-    // Verificar que con el historial disponible no hay mensaje de error
     @Test
     fun `con el historial disponible no hay mensaje de error`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()

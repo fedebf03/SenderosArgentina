@@ -14,28 +14,23 @@ import com.unaj.senderos.domain.model.Sendero
 import com.unaj.senderos.domain.model.TipoPunto
 import com.unaj.senderos.domain.model.TipoRecorrido
 
-// Resolver la dificultad a partir de su nombre guardado
 private fun resolverDificultad(nombre: String): Dificultad {
     return Dificultad.entries.firstOrNull { valor -> valor.name == nombre } ?: Dificultad.MEDIA
 }
 
-// Resolver el tipo de recorrido a partir de su nombre guardado
 private fun resolverTipoRecorrido(nombre: String): TipoRecorrido {
     return TipoRecorrido.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoRecorrido.LINEAL
 }
 
-// Resolver el tipo de punto a partir de su nombre guardado
 private fun resolverTipoPunto(nombre: String): TipoPunto {
     return TipoPunto.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoPunto.PASO
 }
 
-// Resolver el estado de sincronización a partir de su nombre guardado
 private fun resolverEstadoSincronizacion(nombre: String): EstadoSincronizacion {
     return EstadoSincronizacion.entries.firstOrNull { valor -> valor.name == nombre }
         ?: EstadoSincronizacion.SINCRONIZADO
 }
 
-// Convertir la entidad local en el modelo de dominio
 fun SenderoEntidad.aDominio(): Sendero {
     return Sendero(
         id = id,
@@ -64,7 +59,6 @@ fun SenderoEntidad.aDominio(): Sendero {
     )
 }
 
-// Convertir el modelo en la entidad local
 fun Sendero.aEntidad(
     fechaModificacion: Long,
     estadoSincronizacion: EstadoSincronizacion,
@@ -99,7 +93,6 @@ fun Sendero.aEntidad(
     )
 }
 
-// Convertir la entidad local en el documento remoto
 fun SenderoEntidad.aRed(): SenderoRed {
     return SenderoRed(
         id = id,
@@ -126,7 +119,6 @@ fun SenderoEntidad.aRed(): SenderoRed {
     )
 }
 
-// Convertir el modelo en la entidad local
 fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
     return SenderoEntidad(
         id = id,

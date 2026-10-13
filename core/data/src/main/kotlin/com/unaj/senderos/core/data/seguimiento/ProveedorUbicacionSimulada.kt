@@ -20,7 +20,7 @@ private const val METROS_POR_GRADO = 111_195.0
 private const val METROS_POR_KILOMETRO = 1000.0
 private val MULTIPLICADORES_VALIDOS = setOf(1, 5, 20)
 
-// Simular un caminante que recorre el trazado; es Kotlin puro para probarse en JVM con tiempo virtual
+// Es Kotlin puro para probarse en JVM con tiempo virtual
 class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : ProveedorUbicacion {
 
     @Volatile
@@ -29,7 +29,6 @@ class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : Pr
     @Volatile
     private var lecturasDeDesvioPendientes = 0
 
-    // Cambiar la velocidad de avance; solo se admiten los multiplicadores 1, 5 y 20
     fun cambiarMultiplicador(valor: Int) {
         require(valor in MULTIPLICADORES_VALIDOS) { "Multiplicador de simulación no válido: $valor" }
         multiplicador = valor
@@ -40,12 +39,10 @@ class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : Pr
         lecturasDeDesvioPendientes = LECTURAS_DE_DESVIO
     }
 
-    // Obtener el punto de partida del trazado como ubicación actual
     override suspend fun obtenerUbicacionActual(): Result<Coordenada?> {
         return Result.success(trazado.firstOrNull()?.let { punto -> Coordenada(punto.latitud, punto.longitud) })
     }
 
-    // Emitir una lectura por segundo avanzando por el trazado hasta llegar a su final
     override fun observarUbicaciones(): Flow<LecturaUbicacion> = flow {
         val largosMetros = (0 until (trazado.size - 1).coerceAtLeast(0)).map { indice -> largoDelTramoEnMetros(indice) }
         val totalMetros = largosMetros.sum()
@@ -64,7 +61,7 @@ class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : Pr
         }
     }
 
-    // Construir la lectura de la distancia recorrida; el desvío pendiente no se aplica en la última lectura
+    // El desvío pendiente no se aplica en la última lectura
     private fun construirLectura(recorridoMetros: Double, largosMetros: List<Double>, esFinal: Boolean): LecturaUbicacion {
         var inicioTramo = 0.0
         var indiceTramo = largosMetros.indexOfLast { largo -> largo > 0.0 }.coerceAtLeast(0)
@@ -99,7 +96,6 @@ class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : Pr
         )
     }
 
-    // Calcular el largo en metros de un tramo del trazado
     private fun largoDelTramoEnMetros(indiceTramo: Int): Double {
         val origen = trazado[indiceTramo]
         val destino = trazado[indiceTramo + 1]

@@ -92,7 +92,6 @@ class DetalleSenderoViewModel(
         observarRevisionDePuntos()
     }
 
-    // Procesar cada evento de la pantalla de detalle
     fun procesarEvento(evento: DetalleSenderoEvento) {
         when (evento) {
             is DetalleSenderoEvento.AlVolver -> emitirEfecto(DetalleSenderoEfecto.VolverAlListado)
@@ -170,7 +169,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Reflejar en el estado visual los puntos capturados pendientes y su revisión
     private fun observarRevisionDePuntos() {
         viewModelScope.launch {
             controladorRevision.estado.collect { revision ->
@@ -179,7 +177,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Observar el sendero del usuario y reflejar sus cambios en el estado visual
     private fun observarSendero() {
         observarDetalleSenderoUseCase(idSendero).fold(
             onSuccess = { flujoSendero ->
@@ -193,7 +190,7 @@ class DetalleSenderoViewModel(
         )
     }
 
-    // Guardar el sendero emitido, o informar que no existe si no se está eliminando
+    // Si el sendero no existe se informa, salvo que se esté eliminando
     private fun reflejarSendero(senderoEmitido: Sendero?) {
         if (senderoEmitido != null) {
             _estadoVisual.update { estadoActual ->
@@ -210,7 +207,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Registrar el error y mostrarlo en el estado visual
     private fun mostrarError(mensajeOriginal: String?) {
         val mensaje = mensajeOriginal?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_POR_DEFECTO
         Log.e(TAG, "Error en el detalle del sendero: $mensaje")
@@ -219,7 +215,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Alternar el favorito ignorando toques mientras hay una operación en curso
     private fun alternarFavorito() {
         if (trabajoAlternarFavorito?.isActive == true) return
         trabajoAlternarFavorito = viewModelScope.launch {
@@ -232,7 +227,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Eliminar el sendero ignorando llamadas repetidas y volver al listado si sale bien
     private fun eliminar() {
         if (estaEliminando) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = false) }
@@ -251,7 +245,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Armar el texto del sendero cargado y pedir a la pantalla que lo comparta
     private fun compartir() {
         val sendero = _estadoVisual.value.sendero ?: return
         val texto = "${sendero.nombre} (${sendero.region})\n" +
@@ -261,7 +254,6 @@ class DetalleSenderoViewModel(
         emitirEfecto(DetalleSenderoEfecto.CompartirSendero(texto))
     }
 
-    // Expandir o contraer una sección desplegable del detalle
     private fun alternarSeccion(seccion: SeccionDetalle) {
         _estadoVisual.update { estadoActual ->
             val seccionesNuevas = if (seccion in estadoActual.seccionesExpandidas) {
@@ -273,7 +265,7 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Enfocar el mapa en el punto elegido, incrementando el contador para repetir el enfoque sobre el mismo punto
+    // El contador se incrementa para poder repetir el enfoque sobre el mismo punto
     private fun enfocarPuntoDeInteres(indice: Int) {
         val coordenada = _estadoVisual.value.coordenadaDelPunto(indice) ?: return
         Log.d(TAG, "Enfocando el punto de interés $indice del sendero $idSendero")
@@ -282,7 +274,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Reflejar el modo demostración para que el botón diga "Simular recorrido"
     private fun observarModoDemostracion() {
         viewModelScope.launch {
             preferenciasAplicacion.esModoDemostracion.collect { activo ->
@@ -291,7 +282,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Observar si hay un recorrido activo en este sendero para mostrar "Ver recorrido en curso"
     private fun observarRecorridoEnCurso() {
         viewModelScope.launch {
             controlSeguimiento.estado.collect { estadoSeguimiento ->
@@ -307,7 +297,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Resolver el toque en iniciar: ver el recorrido activo, confirmar el reemplazo de otro o pedir el permiso
     private fun pedirPermisoParaIniciarRecorrido() {
         if (!tieneRecorridoSeguible()) {
             emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_SIN_RECORRIDO))
@@ -321,7 +310,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Mostrar la confirmación para finalizar el recorrido de otro sendero antes de iniciar este
     private fun pedirConfirmarReemplazo(idSenderoEnCurso: String) {
         viewModelScope.launch {
             val nombre = try {
@@ -336,7 +324,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Lanzar el seguimiento en segundo plano y navegar a la pantalla del recorrido en curso
     private fun iniciarRecorrido() {
         if (!tieneRecorridoSeguible()) {
             emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_SIN_RECORRIDO))
@@ -347,13 +334,11 @@ class DetalleSenderoViewModel(
         emitirEfecto(DetalleSenderoEfecto.NavegarARecorrido(idSendero))
     }
 
-    // Verificar si el sendero cargado tiene al menos dos puntos para poder seguirlo
     private fun tieneRecorridoSeguible(): Boolean {
         val cantidadPuntos = _estadoVisual.value.sendero?.recorrido?.size ?: 0
         return cantidadPuntos >= CANTIDAD_MINIMA_PUNTOS_RECORRIDO
     }
 
-    // Observar el estado del mapa sin conexión, volviendo a observar solo si cambió el recorrido del sendero
     private fun observarMapaSinConexion(sendero: Sendero) {
         if (sendero.recorrido == recorridoObservadoDelMapa) return
         recorridoObservadoDelMapa = sendero.recorrido
@@ -378,7 +363,7 @@ class DetalleSenderoViewModel(
         )
     }
 
-    // Pedir la descarga del mapa del sendero cargado; el avance llega por el flujo de estado
+    // El avance llega por el flujo de estado
     private fun descargarMapa() {
         val sendero = _estadoVisual.value.sendero ?: return
         val estadoMapa = _estadoVisual.value.estadoMapaSinConexion
@@ -396,7 +381,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Eliminar el mapa descargado del sendero tras la confirmación
     private fun eliminarMapa() {
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarMapaVisible = false) }
         Log.d(TAG, "Eliminando el mapa sin conexión del sendero $idSendero")
@@ -410,7 +394,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Avisar que el equipo no tiene GPS antes del flujo de permisos (salvo en simulación); si no, seguir con la sugerencia de descarga
     private fun avisarSinGpsOSugerirDescarga() {
         val esSimulado = preferenciasAplicacion.esModoDemostracion.value
         if (!capacidadesDispositivo.tieneGps && !esSimulado) {
@@ -420,7 +403,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Sugerir descargar el mapa si falta o está desactualizado; si no, seguir con el pedido de permiso
     private fun sugerirDescargaOSolicitarPermiso() {
         val estadoMapa = _estadoVisual.value.estadoMapaSinConexion
         val conviene = estadoMapa is EstadoMapaSinConexion.NoDescargado || estadoMapa is EstadoMapaSinConexion.Desactualizado
@@ -431,7 +413,6 @@ class DetalleSenderoViewModel(
         }
     }
 
-    // Enviar un efecto único a la pantalla
     private fun emitirEfecto(efecto: DetalleSenderoEfecto) {
         viewModelScope.launch {
             canalEfectos.send(efecto)

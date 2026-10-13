@@ -27,7 +27,6 @@ class AlmacenFotosLocal(contexto: Context) : AlmacenFotos {
     private val contexto = contexto.applicationContext
     private val carpetaFotos = File(this.contexto.filesDir, "fotos_senderos")
 
-    // Guardar una copia achicada de la imagen elegida en la carpeta privada y devolver su ruta
     override suspend fun guardarCopia(uriOrigen: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             val imagen = decodificarAchicada(Uri.parse(uriOrigen))
@@ -56,7 +55,7 @@ class AlmacenFotosLocal(contexto: Context) : AlmacenFotos {
         Unit
     }
 
-    // Decodificar la imagen limitando su lado mayor para no guardar ni subir archivos de varios megas
+    // Se limita el lado mayor para no guardar ni subir archivos de varios megas
     private fun decodificarAchicada(uri: Uri): Bitmap {
         // ImageDecoder respeta la orientación EXIF de las fotos de cámara; BitmapFactory no
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -85,7 +84,6 @@ class AlmacenFotosLocal(contexto: Context) : AlmacenFotos {
         return rotarSegunExif(imagen, uri)
     }
 
-    // Rotar o espejar el mapa de bits según la orientación EXIF, que BitmapFactory ignora
     private fun rotarSegunExif(imagen: Bitmap, uri: Uri): Bitmap {
         val orientacion = contexto.contentResolver.openInputStream(uri).use { entrada ->
             if (entrada == null) ExifInterface.ORIENTATION_NORMAL else ExifInterface(entrada).getAttributeInt(

@@ -12,7 +12,6 @@ import org.junit.Test
  */
 class DecisorNotificacionSincronizacionTest {
 
-    // Construir un resumen con los contadores indicados
     private fun crearResumen(guardadosSinConexion: Int = 0, conError: Int = 0, subidos: Int = 0): ResumenSincronizacion {
         return ResumenSincronizacion(
             senderosSubidos = subidos,
@@ -22,7 +21,6 @@ class DecisorNotificacionSincronizacionTest {
         )
     }
 
-    // Verificar que se notifica lo subido cuando hubo senderos guardados sin conexión
     @Test
     fun `con senderos guardados sin conexion notifica los senderos subidos`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(
@@ -33,7 +31,6 @@ class DecisorNotificacionSincronizacionTest {
         assertEquals(MensajeNotificacion.SenderosSubidos(3), mensaje)
     }
 
-    // Verificar que se notifica lo subido también en el último intento si no hubo errores
     @Test
     fun `con senderos guardados sin conexion y ultimo intento sin errores notifica los senderos subidos`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(
@@ -44,7 +41,6 @@ class DecisorNotificacionSincronizacionTest {
         assertEquals(MensajeNotificacion.SenderosSubidos(2), mensaje)
     }
 
-    // Verificar que un error se notifica solo en el último intento
     @Test
     fun `con errores en el ultimo intento notifica los senderos con error`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(crearResumen(conError = 2), esUltimoIntento = true)
@@ -52,7 +48,6 @@ class DecisorNotificacionSincronizacionTest {
         assertEquals(MensajeNotificacion.SenderosConError(2), mensaje)
     }
 
-    // Verificar que un error no se notifica mientras queden reintentos
     @Test
     fun `con errores y reintentos pendientes no notifica`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(crearResumen(conError = 2), esUltimoIntento = false)
@@ -60,7 +55,6 @@ class DecisorNotificacionSincronizacionTest {
         assertNull(mensaje)
     }
 
-    // Verificar que subir senderos recientes sin errores no genera notificación
     @Test
     fun `con senderos subidos recientemente y sin errores no notifica`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(crearResumen(subidos = 4), esUltimoIntento = true)
@@ -68,7 +62,6 @@ class DecisorNotificacionSincronizacionTest {
         assertNull(mensaje)
     }
 
-    // Verificar que un resumen vacío no genera notificación
     @Test
     fun `con resumen vacio no notifica`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(crearResumen(), esUltimoIntento = false)
@@ -76,7 +69,6 @@ class DecisorNotificacionSincronizacionTest {
         assertNull(mensaje)
     }
 
-    // Verificar que con ambos casos y un intento intermedio se informa lo subido
     @Test
     fun `con guardados y errores en un intento intermedio notifica los senderos subidos`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(
@@ -87,7 +79,6 @@ class DecisorNotificacionSincronizacionTest {
         assertEquals(MensajeNotificacion.SenderosSubidos(1), mensaje)
     }
 
-    // Verificar que con ambos casos y el último intento se prioriza el error
     @Test
     fun `con guardados y errores en el ultimo intento prioriza los senderos con error`() {
         val mensaje = DecisorNotificacionSincronizacion.decidir(

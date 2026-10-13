@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Renderizar un diálogo de confirmación con título nominal, cuerpo con la pregunta y dos acciones.
 // Si confirmar interrumpe o destruye algo, el descarte debe ser un verbo de continuidad ("Seguir…");
 // "Cancelar" queda para cuando confirmar es una acción neutra
 @Composable
@@ -41,7 +40,6 @@ fun DialogoConfirmacion(
     )
 }
 
-// Previsualizar un diálogo de confirmación destructivo
 @Preview(showBackground = true)
 @Composable
 private fun DialogoConfirmacionPreview() {

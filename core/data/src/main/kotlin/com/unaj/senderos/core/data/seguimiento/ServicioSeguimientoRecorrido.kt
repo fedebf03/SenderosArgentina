@@ -41,7 +41,6 @@ private data class DatosNotificacion(
     val contenido: ContenidoNotificacionRecorrido
 )
 
-// Mantener el seguimiento del recorrido en primer plano con notificación persistente y avisos
 class ServicioSeguimientoRecorrido : Service() {
 
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -56,7 +55,6 @@ class ServicioSeguimientoRecorrido : Service() {
 
     companion object {
 
-        // Crear la intención que inicia el seguimiento del sendero indicado
         fun crearIntencionIniciar(contexto: Context, idSendero: String, esSimulado: Boolean): Intent {
             return Intent(contexto, ServicioSeguimientoRecorrido::class.java)
                 .setAction(ACCION_INICIAR)
@@ -64,18 +62,15 @@ class ServicioSeguimientoRecorrido : Service() {
                 .putExtra(EXTRA_ES_SIMULADO, esSimulado)
         }
 
-        // Crear la intención que detiene el seguimiento guardando el recorrido
         fun crearIntencionDetener(contexto: Context): Intent {
             return Intent(contexto, ServicioSeguimientoRecorrido::class.java).setAction(ACCION_DETENER)
         }
 
-        // Crear la intención que cancela el seguimiento sin guardar el recorrido
         fun crearIntencionCancelar(contexto: Context): Intent {
             return Intent(contexto, ServicioSeguimientoRecorrido::class.java).setAction(ACCION_CANCELAR)
         }
     }
 
-    // Obtener las dependencias de proceso y observar el estado y los avisos del control
     override fun onCreate() {
         super.onCreate()
         val contenedor = (applicationContext as SenderosAplicacion).contenedorDependencias
@@ -93,7 +88,6 @@ class ServicioSeguimientoRecorrido : Service() {
             }
         }
         alcance.launch {
-            // Republicar la notificación a lo sumo una vez por segundo y solo si cambió algo de lo que muestra
             control.estado
                 .map { estado ->
                     estado?.let { estadoActual ->
@@ -118,7 +112,6 @@ class ServicioSeguimientoRecorrido : Service() {
         Log.d(TAG, "Servicio creado")
     }
 
-    // Atender las acciones de iniciar, detener y cancelar recibidas por intención
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACCION_CANCELAR) {
             Log.d(TAG, "Cancelación pedida: se descarta el recorrido sin guardarlo")
@@ -157,7 +150,6 @@ class ServicioSeguimientoRecorrido : Service() {
         return START_NOT_STICKY
     }
 
-    // Detener el control y liberar el alcance al destruirse el servicio
     override fun onDestroy() {
         control.detener()
         liberarBloqueoParcial()
@@ -167,10 +159,9 @@ class ServicioSeguimientoRecorrido : Service() {
         super.onDestroy()
     }
 
-    // Rechazar el enlace: este servicio solo se usa mediante inicio y detención
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // Pasar a primer plano con el tipo de ubicación; devolver falso si el sistema lo rechaza
+    // Devuelve falso si el sistema rechaza pasar a primer plano
     private fun pasarAPrimerPlano(idSendero: String): Boolean {
         val tipo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
         return try {
@@ -192,7 +183,6 @@ class ServicioSeguimientoRecorrido : Service() {
         }
     }
 
-    // Quitar la notificación persistente y detener el servicio
     private fun detenerServicio() {
         liberarBloqueoParcial()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -211,7 +201,6 @@ class ServicioSeguimientoRecorrido : Service() {
         Log.d(TAG, "WakeLock parcial adquirido")
     }
 
-    // Liberar el WakeLock parcial si está tomado
     private fun liberarBloqueoParcial() {
         val bloqueo = bloqueoParcial ?: return
         if (bloqueo.isHeld) {

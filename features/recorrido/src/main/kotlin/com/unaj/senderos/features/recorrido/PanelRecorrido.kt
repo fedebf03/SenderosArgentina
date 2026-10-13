@@ -55,12 +55,10 @@ import com.unaj.senderos.presentation.comun.formatearVelocidad
 import com.unaj.senderos.presentation.comun.formatearVelocidadDesdeMetrosPorSegundo
 import com.unaj.senderos.presentation.revisionpuntos.describirCantidadPuntosCapturados
 
-// Ancho disponible mínimo para mostrar "Agregar punto" y "Finalizar" lado a lado, y escala de fuente máxima para ello
 private val ANCHO_MINIMO_BOTONES_LADO_A_LADO = 340.dp
 private const val ESCALA_FUENTE_MAXIMA_LADO_A_LADO = 1.3f
 
-// Mostrar el panel del recorrido: todo el bloque de datos y avisos se desplaza, y las acciones quedan fijas abajo;
-// el panel tiene una altura máxima y, si los datos no entran, se resuelve con el desplazamiento
+// Los datos y avisos se desplazan y las acciones quedan fijas abajo; el panel tiene altura máxima y, si los datos no entran, se resuelve con el desplazamiento
 @Composable
 internal fun PanelRecorrido(
     estadoVisual: RecorridoEstadoVisual,
@@ -101,8 +99,6 @@ internal fun PanelRecorrido(
     }
 }
 
-// Mostrar las acciones fijas del panel: "Agregar punto" y "Finalizar" lado a lado si entran con su ícono, apiladas
-// si el ancho es escaso o la fuente es grande, y "Cancelar recorrido" debajo
 @Composable
 private fun AccionesDelPanel(estadoVisual: RecorridoEstadoVisual, alProcesarEvento: (RecorridoEvento) -> Unit) {
     val escalaFuente = LocalDensity.current.fontScale
@@ -155,7 +151,6 @@ private fun AccionesDelPanel(estadoVisual: RecorridoEstadoVisual, alProcesarEven
     }
 }
 
-// Mostrar el aviso de que el usuario se alejó del trazado del sendero
 @Composable
 private fun AvisoDeDesvio() {
     Surface(
@@ -172,7 +167,6 @@ private fun AvisoDeDesvio() {
     }
 }
 
-// Mostrar los cuatro datos principales, siempre visibles: distancia recorrida y restante, tiempo y velocidad
 @Composable
 private fun GrillaCompacta(estadoVisual: RecorridoEstadoVisual, leerAhoraMilisegundos: () -> Long) {
     val confiable = estadoVisual.sonConfiablesLosDatosDeDistancia
@@ -200,7 +194,7 @@ private fun GrillaCompacta(estadoVisual: RecorridoEstadoVisual, leerAhoraMiliseg
     }
 }
 
-// Mostrar la celda del tiempo transcurrido; es la única que lee el reloj, así que solo ella se recompone cada segundo
+// Es la única celda que lee el reloj, así que solo ella se recompone cada segundo
 @Composable
 private fun CeldaTiempo(instanteInicioMilisegundos: Long, leerAhoraMilisegundos: () -> Long, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
@@ -217,7 +211,6 @@ private fun CeldaTiempo(instanteInicioMilisegundos: Long, leerAhoraMilisegundos:
     }
 }
 
-// Mostrar la sección expandible "Más datos" con la velocidad promedio y los datos de los sensores
 @Composable
 private fun SeccionMasDatos(estadoVisual: RecorridoEstadoVisual) {
     var estaExpandida by rememberSaveable { mutableStateOf(false) }
@@ -273,10 +266,8 @@ private fun SeccionMasDatos(estadoVisual: RecorridoEstadoVisual) {
     }
 }
 
-// Datos de una celda de la grilla: título, valor y si el dispositivo no puede medirlo
 private class DatoDeGrilla(val titulo: String, val valor: String, val esNoDisponible: Boolean = false, val rumboGrados: Float? = null)
 
-// Armar el dato del rumbo: sin rumbo conocido y sin brújula se indica que no está disponible en el dispositivo
 private fun armarDatoRumbo(estadoVisual: RecorridoEstadoVisual): DatoDeGrilla {
     val rumbo = estadoVisual.rumboGrados
     val sinBrujulaNiRumbo = rumbo == null && !estadoVisual.tieneBrujula
@@ -288,7 +279,6 @@ private fun armarDatoRumbo(estadoVisual: RecorridoEstadoVisual): DatoDeGrilla {
     )
 }
 
-// Mostrar dos datos lado a lado con el mismo ancho
 @Composable
 private fun FilaDeDatos(izquierdo: DatoDeGrilla, derecho: DatoDeGrilla) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -297,7 +287,6 @@ private fun FilaDeDatos(izquierdo: DatoDeGrilla, derecho: DatoDeGrilla) {
     }
 }
 
-// Mostrar un cartel mientras se busca la señal GPS o cuando se perdió; con buena señal se oculta con una animación
 @Composable
 private fun CartelDeSenal(calidadSenal: CalidadSenal) {
     AnimatedVisibility(visible = calidadSenal != CalidadSenal.BUENA) {
@@ -331,7 +320,6 @@ private fun CartelDeSenal(calidadSenal: CalidadSenal) {
     }
 }
 
-// Mostrar el aviso de que el usuario está quieto
 @Composable
 private fun IndicadorDetenido() {
     Surface(
@@ -347,7 +335,6 @@ private fun IndicadorDetenido() {
     }
 }
 
-// Mostrar una celda de la grilla; el rumbo suma una flecha girada hacia donde se mira
 @Composable
 private fun CeldaDelPanel(dato: DatoDeGrilla, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
@@ -384,7 +371,6 @@ private fun CeldaDelPanel(dato: DatoDeGrilla, modifier: Modifier = Modifier) {
     }
 }
 
-// Mostrar el cartel de simulación con el selector de velocidad y el botón para simular un desvío
 @Composable
 private fun ControlesSimulacion(multiplicador: Int, alProcesarEvento: (RecorridoEvento) -> Unit) {
     Surface(
@@ -414,7 +400,6 @@ private fun ControlesSimulacion(multiplicador: Int, alProcesarEvento: (Recorrido
     }
 }
 
-// Mostrar un dato del panel con su título y su valor destacado
 @Composable
 internal fun DatoDelPanel(titulo: String, valor: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {

@@ -33,7 +33,6 @@ class PuntosCapturadosUseCasesTest {
         listOf(crearSenderoDePrueba(id = "sendero-1", recorrido = recorrido).copy(tipoRecorrido = TipoRecorrido.LINEAL))
     )
 
-    // Verificar que incorporar delega en el repositorio con el usuario de la sesión y devuelve su resultado
     @Test
     fun `incorporar delega en el repositorio con el usuario de la sesion`() = runTest {
         val puntos = FalsoPuntosCapturadosRepositorio()
@@ -46,7 +45,6 @@ class PuntosCapturadosUseCasesTest {
         assertEquals(Triple("usuario-1", "sendero-1", setOf("p1")), puntos.llamadasIncorporar.single())
     }
 
-    // Verificar que incorporar sin sesión activa falla sin llamar al repositorio
     @Test
     fun `incorporar sin sesion activa falla`() = runTest {
         autenticacion.usuarioActual = null
@@ -58,7 +56,6 @@ class PuntosCapturadosUseCasesTest {
         assertTrue(puntos.llamadasIncorporar.isEmpty())
     }
 
-    // Verificar que descartar borra los puntos indicados del usuario con sesión
     @Test
     fun `descartar borra los puntos indicados`() = runTest {
         val puntos = FalsoPuntosCapturadosRepositorio(
@@ -72,7 +69,6 @@ class PuntosCapturadosUseCasesTest {
         assertEquals("usuario-1", puntos.llamadasDescartar.single().first)
     }
 
-    // Verificar que descartar sin sesión activa falla
     @Test
     fun `descartar sin sesion activa falla`() = runTest {
         autenticacion.usuarioActual = null
@@ -82,7 +78,6 @@ class PuntosCapturadosUseCasesTest {
         assertTrue(resultado.isFailure)
     }
 
-    // Verificar que observar devuelve los pendientes del sendero del usuario con sesión
     @Test
     fun `observar devuelve los pendientes del sendero`() = runTest {
         val puntos = FalsoPuntosCapturadosRepositorio(
@@ -94,7 +89,6 @@ class PuntosCapturadosUseCasesTest {
         assertEquals(listOf("p1"), flujo.first().map { punto -> punto.id })
     }
 
-    // Verificar que observar sin sesión activa falla
     @Test
     fun `observar sin sesion activa falla`() {
         autenticacion.usuarioActual = null
@@ -104,7 +98,6 @@ class PuntosCapturadosUseCasesTest {
         assertTrue(resultado.isFailure)
     }
 
-    // Verificar que observar con distancia calcula la distancia al trazado y marca los que superan los 100 m
     @Test
     fun `observar con distancia marca los puntos lejanos`() = runTest {
         val puntos = FalsoPuntosCapturadosRepositorio(
@@ -122,7 +115,6 @@ class PuntosCapturadosUseCasesTest {
         assertTrue((lista[1].distanciaAlTrazadoMetros ?: 0.0) > DISTANCIA_MAXIMA_RECOMENDADA_METROS)
     }
 
-    // Verificar que si el sendero no tiene recorrido la distancia es desconocida y no se advierte
     @Test
     fun `observar con distancia sin recorrido deja la distancia desconocida`() = runTest {
         senderos.senderos.value = listOf(crearSenderoDePrueba(id = "sendero-1"))
@@ -134,7 +126,6 @@ class PuntosCapturadosUseCasesTest {
         assertFalse(lista.single().superaDistanciaRecomendada)
     }
 
-    // Verificar que observar con distancia sin sesión activa falla
     @Test
     fun `observar con distancia sin sesion activa falla`() {
         autenticacion.usuarioActual = null

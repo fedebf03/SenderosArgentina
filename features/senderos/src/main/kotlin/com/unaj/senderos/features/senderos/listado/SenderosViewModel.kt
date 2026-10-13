@@ -49,7 +49,7 @@ class SenderosViewModel(
         )
     }
 
-    // Reflejar en el estado si el dispositivo tiene o no conexión, para avisarlo sin bloquear la lista
+    // Se avisa sin bloquear la lista
     private fun observarConexion(monitorConectividad: MonitorConectividad) {
         viewModelScope.launch {
             monitorConectividad.observarConexion()
@@ -60,7 +60,6 @@ class SenderosViewModel(
         }
     }
 
-    // Procesar un evento de la pantalla y actualizar el estado o emitir el efecto correspondiente
     fun procesarEvento(evento: SenderosEvento) {
         when (evento) {
             is SenderosEvento.AlCambiarBusqueda -> {
@@ -79,7 +78,7 @@ class SenderosViewModel(
         }
     }
 
-    // Consultar la ubicación actual ignorando el pedido si hay otro en curso, sin pisar una ubicación válida con null
+    // Ignora el pedido si hay otro en curso y no pisa una ubicación válida con null
     private fun obtenerUbicacion() {
         if (trabajoUbicacion?.isActive == true) return
         trabajoUbicacion = viewModelScope.launch {
@@ -100,7 +99,6 @@ class SenderosViewModel(
         }
     }
 
-    // Emitir un efecto único hacia la pantalla
     private fun emitir(efecto: SenderosEfecto) {
         viewModelScope.launch { canalEfectos.send(efecto) }
     }

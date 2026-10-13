@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-// Renderizar el diálogo que ofrece sacar una foto con la cámara o elegirla de la galería
 @Composable
 internal fun DialogoOrigenFoto(
     alSacarFoto: () -> Unit,
@@ -42,7 +41,6 @@ internal fun DialogoOrigenFoto(
     )
 }
 
-// Renderizar una fila tocable con ícono y texto para una opción de origen de la foto
 @Composable
 private fun OpcionOrigenFoto(icono: ImageVector, texto: String, alTocar: () -> Unit) {
     Row(

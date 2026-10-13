@@ -8,7 +8,6 @@ class TextosHistorialTest {
 
     private val zonaArgentina = ZoneId.of("America/Argentina/Buenos_Aires")
 
-    // Verificar el formato de fecha y hora en es-AR según la zona indicada
     @Test
     fun `la fecha y hora se formatean como dia mes anio y hora`() {
         // 2026-10-12T04:33:00Z equivale a 01:33 en Buenos Aires

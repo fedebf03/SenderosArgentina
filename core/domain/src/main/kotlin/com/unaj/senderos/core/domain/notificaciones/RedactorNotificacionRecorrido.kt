@@ -15,7 +15,6 @@ private const val METROS_DE_REDONDEO = 10.0
 private const val KILOMETROS_POR_HORA_POR_METRO_POR_SEGUNDO = 3.6
 private val LOCALIZACION_ARGENTINA: Locale = Locale.forLanguageTag("es-AR")
 
-// Redactor puro (sin Android) del contenido de las notificaciones del recorrido: textos, progreso y tipo visual de los avisos
 object RedactorNotificacionRecorrido {
 
     // Calcular el porcentaje avanzado como 1 menos lo que resta sobre el largo del trazado, acotado a [0, 100];
@@ -27,7 +26,6 @@ object RedactorNotificacionRecorrido {
         return ((1 - estado.distanciaRestanteKilometros / largoTrazado) * 100).roundToInt().coerceIn(0, 100)
     }
 
-    // Redactar el título, el texto corto, el texto expandido y el progreso de la notificación persistente
     fun redactarPersistente(estado: EstadoSeguimiento?, esSimulado: Boolean): ContenidoNotificacionRecorrido {
         val nombre = estado?.nombreSendero.orEmpty().ifBlank { "el sendero" }
         val prefijo = if (esSimulado) "Simulación · " else ""
@@ -41,7 +39,6 @@ object RedactorNotificacionRecorrido {
         )
     }
 
-    // Redactar el texto corto: la señal débil tiene prioridad sobre las distancias
     private fun redactarTextoCorto(estado: EstadoSeguimiento?): String {
         return when {
             estado == null -> "Preparando el recorrido"
@@ -51,13 +48,11 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Redactar las distancias restante y recorrida en kilómetros
     private fun redactarDistancias(estado: EstadoSeguimiento): String {
         return "${formatearDecimal(estado.distanciaRestanteKilometros)} km restantes · " +
             "${formatearDecimal(estado.distanciaRecorridaKilometros)} km recorridos"
     }
 
-    // Redactar el texto expandido con el texto corto, el tiempo, la velocidad, los pasos y el próximo punto
     private fun redactarTextoExpandido(estado: EstadoSeguimiento?, textoCorto: String): String {
         if (estado == null || estado.calidadSenal == CalidadSenal.BUSCANDO) return textoCorto
         val lineas = mutableListOf(textoCorto)
@@ -70,7 +65,6 @@ object RedactorNotificacionRecorrido {
         return lineas.joinToString("\n")
     }
 
-    // Redactar la línea del próximo punto con su nombre (o tipo) y la distancia si se conoce la posición
     private fun redactarProximoPunto(estado: EstadoSeguimiento): String? {
         val punto = estado.trazado.getOrNull(estado.indiceProximoPunto) ?: return null
         val nombre = punto.nombre.ifBlank { describirTipoCorto(punto.tipo) }
@@ -80,7 +74,6 @@ object RedactorNotificacionRecorrido {
         return "Próximo punto: $nombre$distancia"
     }
 
-    // Elegir la apariencia (ícono y color) del aviso según su tipo
     fun elegirTipoVisual(aviso: AvisoRecorrido): TipoAvisoVisual {
         return when (aviso) {
             is AvisoRecorrido.CercaDePunto -> when (aviso.punto.tipo) {
@@ -96,7 +89,6 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Redactar el título y el texto de un aviso del recorrido; el estado aporta la distancia y el nombre del sendero
     fun redactarAviso(aviso: AvisoRecorrido, estado: EstadoSeguimiento?): ContenidoAvisoRecorrido {
         val tipoVisual = elegirTipoVisual(aviso)
         return when (aviso) {
@@ -131,7 +123,7 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Redactar el texto de cercanía con el nombre del punto y la distancia (o el umbral del aviso si no hay posición)
+    // Sin posición se usa el umbral del aviso en lugar de la distancia
     private fun redactarCercania(nombre: String, punto: PuntoRecorrido, estado: EstadoSeguimiento?): String {
         val distancia = estado?.posicionActual?.let { posicion ->
             formatearDistanciaMetros(CalculadoraRecorrido.distanciaEntre(posicion, punto) * METROS_POR_KILOMETRO)
@@ -152,7 +144,6 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Formatear una distancia en metros: metros enteros bajo 1 km y kilómetros con un decimal desde allí
     fun formatearDistanciaMetros(metros: Double): String {
         return if (metros < METROS_POR_KILOMETRO) {
             "${metros.roundToInt()} m"
@@ -161,10 +152,8 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Dar formato de un decimal con coma a un número
     private fun formatearDecimal(valor: Double): String = String.format(LOCALIZACION_ARGENTINA, "%.1f", valor)
 
-    // Describir en español el tipo de un punto sin nombre, con artículo
     private fun describirTipo(tipo: TipoPunto): String {
         return when (tipo) {
             TipoPunto.PASO -> "un punto de paso"
@@ -176,7 +165,6 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Describir en español el tipo de un punto sin nombre, sin artículo
     private fun describirTipoCorto(tipo: TipoPunto): String {
         return when (tipo) {
             TipoPunto.PASO -> "punto de paso"

@@ -14,10 +14,9 @@ object ConfiguracionMapa {
 
     const val ZOOM_UN_PUNTO = 14.0
 
-    // Zoom al enfocar un punto de interés desde el detalle del sendero
     const val ZOOM_PUNTO_DE_INTERES = 16.0
 
-    // Vista de navegación: zoom de caminata, inclinación y fracción superior libre para ver más camino adelante
+    // Fracción superior libre para ver más camino adelante
     const val ZOOM_NAVEGACION = 17.5
     const val INCLINACION_NAVEGACION_GRADOS = 45.0
     const val FRACCION_MARGEN_SUPERIOR_NAVEGACION = 0.4

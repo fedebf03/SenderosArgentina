@@ -8,7 +8,6 @@ class RegistrarUsuarioUseCase(
 ) {
     private val formatoEmail = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 
-    // Ejecutar el caso de uso
     suspend operator fun invoke(email: String, clave: String, confirmacion: String): Result<Usuario> {
         if (email.isBlank()) return Result.failure(IllegalArgumentException("El correo es requerido"))
         if (!formatoEmail.matches(email.trim())) {

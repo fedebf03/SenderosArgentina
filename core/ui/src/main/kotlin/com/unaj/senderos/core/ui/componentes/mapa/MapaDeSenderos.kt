@@ -76,7 +76,6 @@ private const val MARGEN_CONTROLES_DP = 40
 private const val ALTO_TARJETA_DP = 120
 private const val ZOOM_MI_UBICACION = 12.0
 
-// Renderizar el mapa con los senderos, su selección y la ubicación del usuario
 @Composable
 fun MapaDeSenderos(
     senderos: List<Sendero>,
@@ -149,7 +148,6 @@ fun MapaDeSenderos(
     }
 }
 
-// Renderizar los botones para acercar, alejar e ir a la ubicación del usuario
 @Composable
 private fun ControlesDeMapa(
     alAcercar: () -> Unit,
@@ -164,7 +162,6 @@ private fun ControlesDeMapa(
     }
 }
 
-// Renderizar un botón flotante de los controles del mapa
 @Composable
 private fun BotonDeMapa(icono: ImageVector, descripcion: String, alTocar: () -> Unit) {
     SmallFloatingActionButton(
@@ -205,7 +202,6 @@ private class ControladorMapaDeSenderos(
         true
     }
 
-    // Iniciar el controlador: cargar el estilo del mapa y registrar sus escuchas
     fun iniciar() {
         vistaMapa.addOnDidFailLoadingMapListener(escuchaFalloDeCarga)
         vistaMapa.getMapAsync { mapaListo ->
@@ -231,7 +227,6 @@ private class ControladorMapaDeSenderos(
         estilo = null
     }
 
-    // Actualizar los senderos, la selección y la acción de selección, y redibujar el mapa
     fun actualizar(nuevosSenderos: List<Sendero>, nuevoIdSeleccionado: String?, alSeleccionar: (String?) -> Unit) {
         val hayCambios = nuevosSenderos != senderos || nuevoIdSeleccionado != idSeleccionado
         val cambioLaSeleccion = nuevoIdSeleccionado != idSeleccionado
@@ -242,7 +237,6 @@ private class ControladorMapaDeSenderos(
         if (cambioLaSeleccion && nuevoIdSeleccionado != null) centrarEnSeleccionado(animar = true)
     }
 
-    // Agregar al estilo las fuentes y capas que dibujan los senderos
     private fun agregarFuentesYCapas(estiloBase: Style) {
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_LINEAS))
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_INICIOS))
@@ -281,7 +275,6 @@ private class ControladorMapaDeSenderos(
         )
     }
 
-    // Refrescar los datos de las fuentes y reencuadrar la cámara cuando cambia el conjunto de senderos
     private fun refrescar() {
         val estiloActual = estilo ?: return
         // El seleccionado va último para que su línea se dibuje por encima de las demás
@@ -297,7 +290,6 @@ private class ControladorMapaDeSenderos(
         }
     }
 
-    // Crear la colección de líneas que dibuja el recorrido de cada sendero
     private fun crearLineas(senderosOrdenados: List<Sendero>): FeatureCollection {
         val lineas = senderosOrdenados.mapNotNull { sendero ->
             val coordenadas = sendero.recorrido
@@ -317,7 +309,6 @@ private class ControladorMapaDeSenderos(
         return FeatureCollection.fromFeatures(lineas)
     }
 
-    // Crear la colección de puntos que marca el inicio de cada sendero
     private fun crearInicios(senderosOrdenados: List<Sendero>): FeatureCollection {
         val inicios = senderosOrdenados.mapNotNull { sendero ->
             val inicio = sendero.recorrido.firstOrNull { punto -> punto.tieneCoordenadasValidas() } ?: return@mapNotNull null
@@ -330,14 +321,12 @@ private class ControladorMapaDeSenderos(
         return FeatureCollection.fromFeatures(inicios)
     }
 
-    // Mostrar u ocultar la ubicación del usuario en el mapa
     fun mostrarUbicacion(mostrar: Boolean) {
         debeMostrarUbicacion = mostrar
         activarUbicacionSiCorresponde()
     }
 
     // Solo se llama con el permiso ya otorgado: la pantalla decide cuándo pedirlo
-    // Activar la ubicación del usuario en el mapa; solo se llama con el permiso ya otorgado: la pantalla decide cuándo pedirlo
     private fun activarUbicacionSiCorresponde() {
         val componente = mapa?.locationComponent ?: return
         val estiloActual = estilo ?: return
@@ -349,7 +338,6 @@ private class ControladorMapaDeSenderos(
         componente.renderMode = RenderMode.COMPASS
     }
 
-    // Centrar el mapa en la ubicación del usuario y devolver si se pudo hacer
     fun centrarEnUbicacion(): Boolean {
         val mapaActual = mapa ?: return false
         if (!mapaActual.locationComponent.isLocationComponentActivated) return false
@@ -361,23 +349,19 @@ private class ControladorMapaDeSenderos(
         return true
     }
 
-    // Acercar el mapa un nivel de zoom
     fun acercar() {
         mapa?.animateCamera(CameraUpdateFactory.zoomIn())
     }
 
-    // Alejar el mapa un nivel de zoom
     fun alejar() {
         mapa?.animateCamera(CameraUpdateFactory.zoomOut())
     }
 
-    // Encuadrar todos los senderos una vez que la vista tiene su tamaño final
     private fun encuadrar() {
         // Encuadrar antes de que la vista tenga su tamaño final calcula la cámara para un lienzo vacío
         vistaMapa.doOnLayout { moverCamaraParaVerTodos() }
     }
 
-    // Mover la cámara para que entren todos los senderos del mapa
     private fun moverCamaraParaVerTodos() {
         val mapaActual = mapa ?: return
         val coordenadas = senderos.flatMap { sendero -> sendero.recorrido }
@@ -405,12 +389,10 @@ private class ControladorMapaDeSenderos(
         }
     }
 
-    // Centrar la cámara en el sendero seleccionado, con o sin animación
     private fun centrarEnSeleccionado(animar: Boolean) {
         vistaMapa.doOnLayout { moverCamaraAlSeleccionado(animar) }
     }
 
-    // Mover la cámara para que entre el recorrido del sendero seleccionado
     private fun moverCamaraAlSeleccionado(animar: Boolean) {
         val mapaActual = mapa ?: return
         val coordenadas = senderos.firstOrNull { sendero -> sendero.id == idSeleccionado }
@@ -431,7 +413,6 @@ private class ControladorMapaDeSenderos(
         if (animar) mapaActual.animateCamera(actualizacion, 600) else mapaActual.moveCamera(actualizacion)
     }
 
-    // Buscar el sendero tocado en una posición del mapa, o nulo si no hay ninguno
     private fun buscarSenderoTocado(posicion: LatLng): String? {
         val mapaActual = mapa ?: return null
         val pantalla = mapaActual.projection.toScreenLocation(posicion)

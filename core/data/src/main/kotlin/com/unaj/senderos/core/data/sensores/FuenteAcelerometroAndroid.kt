@@ -32,7 +32,6 @@ private const val SIN_LOTE_MICROSEGUNDOS = 0
 // El instante se expresa en reloj de pared: instante del evento del sensor (monotónico) más el desfase actual entre ambos relojes
 class FuenteAcelerometroAndroid(private val contexto: Context) : FuenteAcelerometro {
 
-    // Observar las muestras registrando el escucha al recolectar y quitándolo (junto con su hilo) al cancelar
     override fun observarMuestras(): Flow<MuestraAcelerometro> = callbackFlow {
         val gestor = contexto.getSystemService(SensorManager::class.java)
         val sensor = gestor?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -45,7 +44,6 @@ class FuenteAcelerometroAndroid(private val contexto: Context) : FuenteAcelerome
         val descartadas = AtomicInteger(0)
         val escucha = object : SensorEventListener {
 
-            // Convertir cada evento en una muestra con el instante en milisegundos de reloj de pared, contando las que no caben en el búfer
             override fun onSensorChanged(evento: SensorEvent) {
                 val desfaseMilisegundos = System.currentTimeMillis() - SystemClock.elapsedRealtime()
                 val instante = evento.timestamp / NANOSEGUNDOS_POR_MILISEGUNDO + desfaseMilisegundos
@@ -56,7 +54,6 @@ class FuenteAcelerometroAndroid(private val contexto: Context) : FuenteAcelerome
                 }
             }
 
-            // Ignorar los cambios de precisión: el detector solo usa la magnitud relativa
             override fun onAccuracyChanged(sensor: Sensor?, precision: Int) = Unit
         }
         val latencia = if (sensor.fifoMaxEventCount > 0) LATENCIA_LOTE_MICROSEGUNDOS else SIN_LOTE_MICROSEGUNDOS

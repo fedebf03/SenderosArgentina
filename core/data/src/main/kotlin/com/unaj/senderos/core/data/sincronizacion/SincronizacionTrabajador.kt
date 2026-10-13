@@ -20,7 +20,7 @@ private val CODIGOS_REINTENTABLES = setOf(
     FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED
 )
 
-// Determinar si un error merece reintento: los códigos permanentes de Firestore no lo merecen
+// Los códigos permanentes de Firestore no merecen reintento
 fun esErrorReintentable(error: Throwable?): Boolean {
     return if (error is FirebaseFirestoreException) error.code in CODIGOS_REINTENTABLES else true
 }
@@ -30,7 +30,6 @@ class SincronizacionTrabajador(
     parametros: WorkerParameters
 ) : CoroutineWorker(contexto, parametros) {
 
-    // Sincronizar los senderos y luego los recorridos del usuario, notificar el resultado y decidir si WorkManager reintenta
     override suspend fun doWork(): Result {
         val idUsuario = inputData.getString(CLAVE_ID_USUARIO).orEmpty()
         if (idUsuario.isBlank()) {
@@ -71,7 +70,6 @@ class SincronizacionTrabajador(
         }
     }
 
-    // Notificar al usuario el resultado de la sincronización cuando el decisor lo indique
     private fun notificarResultado(
         aplicacion: SenderosAplicacion,
         resumen: ResumenSincronizacion,
@@ -81,7 +79,7 @@ class SincronizacionTrabajador(
         aplicacion.contenedorDependencias.notificador.notificar(mensaje)
     }
 
-    // Notificar el error con la cantidad de senderos y recorridos pendientes cuando la sincronización falló por completo y no se reintentará
+    // Solo cuando la sincronización falló por completo y no se reintentará
     private suspend fun notificarPendientesSinSincronizar(aplicacion: SenderosAplicacion, idUsuario: String) {
         val cantidadPendientes = aplicacion.contenedorDependencias.senderoDao.obtenerPendientes(idUsuario).size +
             aplicacion.contenedorDependencias.recorridoDao.obtenerPendientes(idUsuario).size

@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Renderizar un aviso no bloqueante en una franja, con una acción opcional; el lector de pantalla lo anuncia al aparecer
+// El lector de pantalla lo anuncia al aparecer
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BannerAviso(
@@ -44,7 +44,6 @@ fun BannerAviso(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(imageVector = Icons.Outlined.CloudOff, contentDescription = null)
-            // El texto y la acción comparten renglón si entran; si no, la acción pasa debajo del texto
             FlowRow(modifier = Modifier.weight(1f)) {
                 Box(modifier = Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.CenterStart) {
                     Text(
@@ -61,7 +60,6 @@ fun BannerAviso(
     }
 }
 
-// Previsualizar el aviso de falta de conexión con y sin acción
 @Preview(showBackground = true)
 @Composable
 private fun BannerAvisoPreview() {

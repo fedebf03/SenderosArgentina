@@ -36,7 +36,6 @@ class MonitorConectividadAndroid(
         initialValue = hayConexion()
     )
 
-    // Indicar si la red activa tiene salida a Internet validada por el sistema
     override fun hayConexion(): Boolean {
         return try {
             val red = administradorConectividad?.activeNetwork ?: return false
@@ -48,24 +47,19 @@ class MonitorConectividadAndroid(
         }
     }
 
-    // Observar la conexión compartida entre todos los suscriptores (tipo más específico que el contrato)
     override fun observarConexion(): StateFlow<Boolean> = conexionCompartida
 
-    // Indicar si las capacidades declaran Internet y el sistema lo validó
     private fun tieneInternetValidado(capacidades: NetworkCapabilities): Boolean {
         return capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
             capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
-    // Crear el flujo que registra una escucha de la red predeterminada y la libera al cancelarse
     private fun crearFlujoDeConexion(): Flow<Boolean> = callbackFlow {
         val escucha = object : ConnectivityManager.NetworkCallback() {
-            // Emitir la conexión a partir de las capacidades recibidas de la red predeterminada
             override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
                 trySend(tieneInternetValidado(networkCapabilities))
             }
 
-            // Emitir falso cuando se pierde la red predeterminada
             override fun onLost(network: Network) {
                 trySend(false)
             }

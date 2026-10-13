@@ -49,7 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.senderosargentina.R
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Renderizar el registro conectando el ViewModel y la navegación
 @Composable
 fun RegistroPantalla(
     viewModel: RegistroViewModel,
@@ -78,7 +77,6 @@ fun RegistroPantalla(
     }
 }
 
-// Renderizar el contenido del registro a partir del estado visual
 @Composable
 fun RegistroContenido(
     estadoVisual: RegistroEstadoVisual,
@@ -215,7 +213,6 @@ fun RegistroContenido(
     }
 }
 
-// Previsualizar el registro con un correo de ejemplo
 @Preview(showBackground = true)
 @Composable
 fun PrevisualizacionRegistro() {

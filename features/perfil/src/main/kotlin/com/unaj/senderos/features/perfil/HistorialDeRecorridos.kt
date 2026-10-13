@@ -24,7 +24,6 @@ import com.unaj.senderos.presentation.componentes.IconoSincronizacion
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
 
-// Mostrar la sección "Historial de recorridos" con la lista del más reciente al más viejo, o un aviso si está vacía
 @Composable
 fun HistorialDeRecorridos(
     recorridos: List<RecorridoRealizado>,
@@ -60,7 +59,6 @@ fun HistorialDeRecorridos(
     }
 }
 
-// Mostrar un recorrido con su fecha, sendero, distancia, duración, etiqueta de simulación y estado de sincronización
 @Composable
 private fun FilaDeRecorrido(recorrido: RecorridoRealizado, alTocar: () -> Unit) {
     Row(

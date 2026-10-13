@@ -59,13 +59,11 @@ class DetalleSenderoViewModelTest {
         PuntoRecorrido(latitud = -41.11, longitud = -71.31)
     )
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
@@ -78,7 +76,6 @@ class DetalleSenderoViewModelTest {
         tieneCamara = true
     )
 
-    // Verificar que en un equipo sin GPS iniciar un recorrido real pide confirmar antes del permiso
     @Test
     fun `sin gps iniciar un recorrido real muestra el aviso antes del permiso`() = runTest(despachadorPrueba) {
         capacidades = capacidades.copy(tieneGps = false)
@@ -92,7 +89,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(efectosRecibidos.isEmpty())
     }
 
-    // Verificar que "Iniciar igual" cierra el aviso y sigue con el pedido de permiso
     @Test
     fun `iniciar igual sin gps continua con el permiso`() = runTest(despachadorPrueba) {
         capacidades = capacidades.copy(tieneGps = false)
@@ -107,7 +103,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Verificar que cancelar el aviso no inicia nada
     @Test
     fun `cancelar el aviso sin gps no inicia el recorrido`() = runTest(despachadorPrueba) {
         capacidades = capacidades.copy(tieneGps = false)
@@ -122,7 +117,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(efectosRecibidos.isEmpty())
     }
 
-    // Verificar que en simulación no se muestra el aviso aunque el equipo no tenga GPS
     @Test
     fun `en simulacion no se avisa la falta de gps`() = runTest(despachadorPrueba) {
         capacidades = capacidades.copy(tieneGps = false)
@@ -137,7 +131,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Crear el ViewModel con un sendero de prueba y recolectar sus efectos en una lista
     private fun crearViewModel(recorrido: List<PuntoRecorrido>): DetalleSenderoViewModel {
         val repositorio = FalsoSenderoRepositorio(
             listOf(
@@ -169,7 +162,6 @@ class DetalleSenderoViewModelTest {
         return viewModel
     }
 
-    // Verificar que un sendero con menos de dos puntos avisa y no pide permiso
     @Test
     fun `iniciar recorrido sin recorrido muestra un aviso`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorrido = listOf(recorridoValido.first()))
@@ -185,7 +177,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(lanzador.idsIniciados.isEmpty())
     }
 
-    // Verificar que con recorrido se emite el pedido de permiso de ubicación
     @Test
     fun `iniciar recorrido con recorrido pide el permiso de ubicacion`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -198,7 +189,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(lanzador.idsIniciados.isEmpty())
     }
 
-    // Verificar que con el permiso concedido se lanza el seguimiento y se navega al recorrido
     @Test
     fun `con el permiso concedido lanza el seguimiento y navega al recorrido`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -211,7 +201,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.NavegarARecorrido("sendero-1")), efectosRecibidos)
     }
 
-    // Verificar que con el permiso negado se explica el motivo y no se lanza nada
     @Test
     fun `con el permiso negado avisa y no lanza el seguimiento`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -225,7 +214,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(aviso.mensaje.contains("ubicación"))
     }
 
-    // Verificar que conceder el permiso sin recorrido válido no lanza el seguimiento
     @Test
     fun `conceder el permiso sin recorrido no lanza el seguimiento`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorrido = emptyList())
@@ -241,7 +229,6 @@ class DetalleSenderoViewModelTest {
         )
     }
 
-    // Verificar que conceder solo la ubicación aproximada avisa que hace falta la precisa y no lanza nada
     @Test
     fun `con solo la ubicacion aproximada avisa y no lanza el seguimiento`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -259,7 +246,6 @@ class DetalleSenderoViewModelTest {
         )
     }
 
-    // Verificar que con un recorrido activo del mismo sendero se navega sin volver a lanzarlo
     @Test
     fun `con el recorrido ya activo en este sendero navega sin lanzar`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -274,7 +260,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.NavegarARecorrido("sendero-1")), efectosRecibidos)
     }
 
-    // Verificar que con un recorrido activo de otro sendero se pide confirmar el reemplazo con su nombre
     @Test
     fun `con el recorrido activo de otro sendero pide confirmar el reemplazo`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -289,7 +274,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(efectosRecibidos.isEmpty())
     }
 
-    // Verificar que confirmar el reemplazo continúa con el pedido de permiso
     @Test
     fun `confirmar el reemplazo pide el permiso de ubicacion`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -305,7 +289,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Verificar que cancelar el reemplazo cierra la confirmación sin otros efectos
     @Test
     fun `cancelar el reemplazo no hace nada`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -322,7 +305,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(lanzador.idsIniciados.isEmpty())
     }
 
-    // Verificar que con el modo demostración apagado el recorrido se lanza real
     @Test
     fun `sin modo demostracion el recorrido se lanza real`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -335,7 +317,6 @@ class DetalleSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.esModoDemostracion)
     }
 
-    // Verificar que con el modo demostración activo el recorrido se lanza simulado
     @Test
     fun `con modo demostracion el recorrido se lanza simulado`() = runTest(despachadorPrueba) {
         preferencias.cambiarModoDemostracion(true)
@@ -349,7 +330,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.esModoDemostracion)
     }
 
-    // Verificar que un error al buscar el nombre del otro sendero usa el texto de respaldo
     @Test
     fun `si falla la busqueda del otro sendero usa el nombre de respaldo`() = runTest(despachadorPrueba) {
         val repositorio = FalsoSenderoRepositorio(
@@ -384,7 +364,6 @@ class DetalleSenderoViewModelTest {
         assertEquals("otro sendero", viewModel.estadoVisual.value.nombreSenderoEnCursoAReemplazar)
     }
 
-    // Verificar que un recorrido simulado en curso de este sendero se distingue del real
     @Test
     fun `un recorrido simulado en este sendero se marca como simulado`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -399,7 +378,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.esRecorridoEnCursoSimulado)
     }
 
-    // Verificar que elegir un punto de interés guarda su coordenada y repite el enfoque sobre el mismo punto
     @Test
     fun `seleccionar un punto de interes enfoca su coordenada y repite el enfoque`() = runTest(despachadorPrueba) {
         val recorridoConInteres = listOf(
@@ -423,7 +401,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(2, segundo.contadorEnfoque)
     }
 
-    // Verificar que un índice inexistente no cambia el enfoque
     @Test
     fun `seleccionar un indice inexistente no cambia el enfoque`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -436,7 +413,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(0, viewModel.estadoVisual.value.contadorEnfoque)
     }
 
-    // Verificar que el estado del mapa sin conexión se refleja y cambia con el flujo
     @Test
     fun `refleja los estados del mapa sin conexion`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -452,7 +428,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(EstadoMapaSinConexion.ConError("Sin conexión"), viewModel.estadoVisual.value.estadoMapaSinConexion)
     }
 
-    // Verificar que tocar descargar llama al caso de uso con el sendero
     @Test
     fun `tocar descargar el mapa llama al caso de uso`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -464,7 +439,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf("usuario-1/sendero-1"), gestorMapas.descargas)
     }
 
-    // Verificar que eliminar pide confirmación y solo al confirmar llama al caso de uso
     @Test
     fun `eliminar el mapa pide confirmacion y luego elimina`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -481,7 +455,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf("usuario-1/sendero-1"), gestorMapas.eliminaciones)
     }
 
-    // Verificar que cancelar la eliminación del mapa no elimina nada
     @Test
     fun `cancelar la eliminacion del mapa no elimina`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -495,7 +468,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(gestorMapas.eliminaciones.isEmpty())
     }
 
-    // Verificar que con el mapa disponible iniciar no sugiere descargar
     @Test
     fun `con el mapa disponible no se sugiere descargar`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -508,7 +480,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Verificar que sin el mapa descargado se sugiere antes de pedir el permiso
     @Test
     fun `sin el mapa descargado se sugiere antes de pedir el permiso`() = runTest(despachadorPrueba) {
         gestorMapas.estado.value = EstadoMapaSinConexion.NoDescargado
@@ -522,7 +493,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(efectosRecibidos.isEmpty())
     }
 
-    // Verificar que un mapa desactualizado también dispara la sugerencia
     @Test
     fun `con el mapa desactualizado tambien se sugiere`() = runTest(despachadorPrueba) {
         gestorMapas.estado.value = EstadoMapaSinConexion.Desactualizado(500L)
@@ -535,7 +505,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(viewModel.estadoVisual.value.esSugerenciaDescargaVisible)
     }
 
-    // Verificar que "Descargar e iniciar" lanza la descarga y continúa con el permiso
     @Test
     fun `descargar e iniciar descarga y continua con el inicio`() = runTest(despachadorPrueba) {
         gestorMapas.estado.value = EstadoMapaSinConexion.NoDescargado
@@ -552,7 +521,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Verificar que "Iniciar sin descargar" continúa con el permiso sin descargar
     @Test
     fun `iniciar sin descargar continua con el inicio sin descargar`() = runTest(despachadorPrueba) {
         gestorMapas.estado.value = EstadoMapaSinConexion.NoDescargado
@@ -569,7 +537,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Verificar que se puede cancelar o eliminar el mapa en cada estado que lo permite
     @Test
     fun `cancelar o eliminar el mapa funciona en cada estado`() = runTest(despachadorPrueba) {
         val estados = listOf(
@@ -593,7 +560,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(estados.size, gestorMapas.eliminaciones.size)
     }
 
-    // Verificar que sin conexión no se sugiere descargar y se sigue directo con el inicio
     @Test
     fun `sin conexion no se sugiere descargar`() = runTest(despachadorPrueba) {
         gestorMapas.estado.value = EstadoMapaSinConexion.NoDescargado
@@ -608,7 +574,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    // Verificar que un doble toque en descargar pide una sola descarga
     @Test
     fun `el doble toque en descargar se ignora`() = runTest(despachadorPrueba) {
         gestorMapas.estado.value = EstadoMapaSinConexion.NoDescargado
@@ -622,7 +587,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(1, gestorMapas.descargas.size)
     }
 
-    // Verificar que descargar se ignora mientras el estado indica una descarga activa
     @Test
     fun `descargar se ignora si ya hay una descarga activa`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -638,7 +602,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(gestorMapas.descargas.isEmpty())
     }
 
-    // Verificar que sin puntos capturados no hay tarjeta de revisión
     @Test
     fun `sin puntos capturados no hay puntos por revisar`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)
@@ -648,7 +611,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(0, viewModel.estadoVisual.value.revision.puntosPendientes.size)
     }
 
-    // Verificar que los puntos capturados del sendero activan la tarjeta y los de otro sendero no cuentan
     @Test
     fun `los puntos capturados del sendero activan la tarjeta de revision`() = runTest(despachadorPrueba) {
         repositorioPuntos.puntos.value = listOf(
@@ -663,7 +625,6 @@ class DetalleSenderoViewModelTest {
         assertEquals(2, viewModel.estadoVisual.value.revision.puntosPendientes.size)
     }
 
-    // Verificar que con un recorrido en curso en este sendero la tarjeta se oculta
     @Test
     fun `con un recorrido en curso la tarjeta de revision se oculta`() = runTest(despachadorPrueba) {
         repositorioPuntos.puntos.value = listOf(crearPuntoCapturadoDePrueba(id = "a"))
@@ -674,7 +635,6 @@ class DetalleSenderoViewModelTest {
         assertFalse(viewModel.estadoVisual.value.hayPuntosPorRevisar)
     }
 
-    // Verificar que revisar abre el diálogo y que agregar los puntos los incorpora y lo cierra
     @Test
     fun `revisar abre el dialogo y agregar incorpora los puntos`() = runTest(despachadorPrueba) {
         repositorioPuntos.puntos.value = listOf(
@@ -698,7 +658,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(efectosRecibidos.contains(DetalleSenderoEfecto.MostrarAviso("Puntos agregados al sendero")))
     }
 
-    // Verificar que descartar todos desde el detalle exige confirmación y vacía los pendientes
     @Test
     fun `descartar todos desde el detalle pide confirmacion y descarta`() = runTest(despachadorPrueba) {
         repositorioPuntos.puntos.value = listOf(crearPuntoCapturadoDePrueba(id = "a"))
@@ -716,7 +675,6 @@ class DetalleSenderoViewModelTest {
         assertTrue(repositorioPuntos.puntos.value.isEmpty())
     }
 
-    // Verificar que tocar la miniatura amplía la foto y cerrarla la oculta
     @Test
     fun `ampliar una foto la muestra y cerrarla la oculta`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(recorridoValido)

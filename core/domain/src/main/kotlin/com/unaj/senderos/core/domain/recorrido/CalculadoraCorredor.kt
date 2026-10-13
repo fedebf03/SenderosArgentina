@@ -21,7 +21,6 @@ private const val METROS_POR_KILOMETRO = 1000.0
 object CalculadoraCorredor {
     const val ANCHO_PREDETERMINADO_METROS = 1000.0
 
-    // Calcular un rectángulo por tramo del recorrido, ampliado el ancho indicado en metros hacia cada lado
     fun rectangulos(puntos: List<PuntoRecorrido>, anchoMetros: Double = ANCHO_PREDETERMINADO_METROS): List<Rectangulo> {
         val puntosValidos = puntos.filter { punto -> Coordenada(punto.latitud, punto.longitud).tieneCoordenadasValidas() }
         if (puntosValidos.isEmpty()) return emptyList()
@@ -59,12 +58,10 @@ object CalculadoraCorredor {
         return java.lang.Long.toHexString(hash)
     }
 
-    // Redondear una coordenada a seis decimales expresada como entero para evitar diferencias de formato
     private fun redondearSeisDecimales(valor: Double): Long {
         return (valor * FACTOR_REDONDEO_FIRMA).roundToLong()
     }
 
-    // Ampliar el rectángulo que contiene dos puntos con el ancho en metros convertido a grados
     private fun ampliar(origen: PuntoRecorrido, destino: PuntoRecorrido, anchoMetros: Double): Rectangulo {
         val ampliacionLatitud = anchoMetros / METROS_POR_GRADO_LATITUD
         val latitudMasAlejada = max(abs(origen.latitud), abs(destino.latitud))

@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.presentation.componentes.TituloDeSeccion
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Obtener el ícono que representa una función del equipo
 private fun obtenerIconoFuncion(funcion: FuncionDispositivo): ImageVector {
     return when (funcion) {
         FuncionDispositivo.GPS -> Icons.Filled.GpsFixed
@@ -36,7 +35,6 @@ private fun obtenerIconoFuncion(funcion: FuncionDispositivo): ImageVector {
     }
 }
 
-// Mostrar las funciones del equipo con su disponibilidad y lo que se pierde si faltan
 @Composable
 fun SeccionFuncionesDispositivo(
     funciones: List<EstadoFuncion>,
@@ -51,7 +49,6 @@ fun SeccionFuncionesDispositivo(
     }
 }
 
-// Mostrar una función con su ícono, su estado y, si falta, la explicación
 @Composable
 private fun FilaFuncionDispositivo(estadoFuncion: EstadoFuncion) {
     val nombre = obtenerNombreFuncion(estadoFuncion.funcion)
@@ -91,7 +88,6 @@ private fun FilaFuncionDispositivo(estadoFuncion: EstadoFuncion) {
     }
 }
 
-// Previsualizar las funciones de un equipo sin brújula ni acelerómetro
 @Preview(showBackground = true)
 @Composable
 private fun SeccionFuncionesDispositivoPreview() {

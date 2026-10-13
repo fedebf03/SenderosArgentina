@@ -34,7 +34,6 @@ private const val TAMANO_ORIENTACION = 3
 // la rotación de la pantalla y, si el equipo está de pie (inclinado más de 45 grados), para que el azimut sea el de la cámara trasera
 class FuenteBrujulaAndroid(private val contexto: Context) : FuenteBrujula {
 
-    // Observar el rumbo registrando el escucha al recolectar y quitándolo (junto con su hilo) al cancelar
     override fun observarRumbo(): Flow<Float> = callbackFlow {
         val gestor = contexto.getSystemService(SensorManager::class.java)
         val sensor = gestor?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
@@ -53,7 +52,6 @@ class FuenteBrujulaAndroid(private val contexto: Context) : FuenteBrujula {
         var ultimoRumbo: Float? = null
         val escucha = object : SensorEventListener {
 
-            // Calcular el azimut del evento y emitirlo si cambió lo suficiente respecto del último
             override fun onSensorChanged(evento: SensorEvent) {
                 SensorManager.getRotationMatrixFromVector(matrizRotacion, evento.values)
                 val rotacionPantalla = gestorPantallas?.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
@@ -65,7 +63,6 @@ class FuenteBrujulaAndroid(private val contexto: Context) : FuenteBrujula {
                 }
             }
 
-            // Ignorar los cambios de precisión: la app no distingue calibraciones
             override fun onAccuracyChanged(sensor: Sensor?, precision: Int) = Unit
         }
         val estaRegistrado = gestor.registerListener(escucha, sensor, SensorManager.SENSOR_DELAY_UI, Handler(hilo.looper))
@@ -78,7 +75,6 @@ class FuenteBrujulaAndroid(private val contexto: Context) : FuenteBrujula {
         }
     }
 
-    // Calcular el azimut normalizado a [0, 360) remapeando los ejes por la rotación de la pantalla y, si está de pie, por la inclinación
     private fun calcularAzimutGrados(
         matrizRotacion: FloatArray,
         rotacionPantalla: Int,

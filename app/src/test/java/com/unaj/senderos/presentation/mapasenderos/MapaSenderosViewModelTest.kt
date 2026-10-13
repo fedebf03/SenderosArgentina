@@ -24,26 +24,22 @@ class MapaSenderosViewModelTest {
     private val despachadorPrueba = StandardTestDispatcher()
     private val monitorConectividad = FalsoMonitorConectividad()
 
-    // Configurar el despachador principal de las corrutinas de prueba
     @Before
     fun configurar() {
         Dispatchers.setMain(despachadorPrueba)
     }
 
-    // Restaurar el despachador principal original
     @After
     fun limpiar() {
         Dispatchers.resetMain()
     }
 
-    // Crear el ViewModel del mapa con un usuario activo y el monitor de conectividad falso
     private fun crearViewModel(): MapaSenderosViewModel {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val casoDeUso = ObservarSenderosDelUsuarioUseCase(FalsoSenderoRepositorio(), autenticacion)
         return MapaSenderosViewModel(casoDeUso, monitorConectividad)
     }
 
-    // Verificar que el estado refleja la pérdida y la vuelta de la conexión
     @Test
     fun `el estado sigue la conexion`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()

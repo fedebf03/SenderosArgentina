@@ -9,7 +9,6 @@ class ObservarRecorridosUseCase(
     private val recorridoRepositorio: RecorridoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Observar los recorridos del usuario con sesión activa, del más reciente al más viejo
     operator fun invoke(): Result<Flow<List<RecorridoRealizado>>> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))

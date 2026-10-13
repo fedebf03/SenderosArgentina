@@ -10,7 +10,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.maplibre.android.maps.MapView
 
-// Reenviar el ciclo de vida al MapView y liberarlo sin fugas al salir de la composición
 @Composable
 internal fun VincularCicloDeVidaMapa(vistaMapa: MapView, alIniciar: () -> Unit, alLiberar: () -> Unit) {
     val contexto = LocalContext.current
@@ -57,7 +56,6 @@ internal fun VincularCicloDeVidaMapa(vistaMapa: MapView, alIniciar: () -> Unit, 
             // Ignorar los cambios de configuración, que el MapView resuelve solo
             override fun onConfigurationChanged(configuracion: Configuration) = Unit
 
-            // Avisar al mapa que el sistema tiene poca memoria
             override fun onLowMemory() {
                 vistaMapa.onLowMemory()
             }

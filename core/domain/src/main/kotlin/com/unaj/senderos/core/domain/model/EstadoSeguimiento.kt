@@ -1,6 +1,6 @@
 package com.unaj.senderos.domain.model
 
-// Situación de un recorrido en curso; el trazado incluye el tramo de cierre (circular) o la vuelta (ida y vuelta)
+// El trazado incluye el tramo de cierre (circular) o la vuelta (ida y vuelta)
 data class EstadoSeguimiento(
     val idSendero: String,
     val trazado: List<PuntoRecorrido>,
@@ -54,7 +54,6 @@ data class EstadoSeguimiento(
     val rumboEfectivoGrados: Float?
         get() = if (estaDetenido && rumboBrujulaGrados != null) rumboBrujulaGrados else rumboGrados
 
-    // Velocidad promedio en km/h: distancia recorrida sobre el tiempo transcurrido; 0 si todavía no pasó tiempo
     val velocidadPromedioKilometrosPorHora: Double
         get() = if (tiempoTranscurridoMilisegundos <= 0L) {
             0.0

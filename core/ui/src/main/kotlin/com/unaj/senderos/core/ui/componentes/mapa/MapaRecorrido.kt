@@ -54,7 +54,6 @@ import org.maplibre.android.style.sources.GeoJsonSource
 
 private const val TAG = "MAPA"
 
-// Configuración de la vista de navegación: rumbo del usuario, seguimiento de cámara y aviso del gesto del usuario
 data class ModoNavegacion(
     val rumboGrados: Float?,
     val estaSiguiendo: Boolean,
@@ -76,7 +75,6 @@ private const val ID_CAPA_NUMEROS = "capa-numeros-recorrido"
 private const val ID_CAPA_TIPOS = "capa-tipos-recorrido"
 private const val ID_CAPA_ROLES = "capa-roles-recorrido"
 
-// Dibujar el recorrido sobre el mapa, con edición, posición del usuario y vista de navegación opcionales
 @Composable
 fun MapaRecorrido(
     puntos: List<PuntoRecorrido>,
@@ -218,7 +216,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Conectar los detectores de toque y de carga e iniciar la obtención del mapa
     @SuppressLint("ClickableViewAccessibility")
     fun iniciar() {
         vistaMapa.setOnTouchListener { _, evento -> manejarToque(evento) }
@@ -236,7 +233,6 @@ private class ControladorMapaRecorrido(
         estilo = null
     }
 
-    // Aplicar los datos nuevos y refrescar el mapa solo si algo relevante cambió
     fun actualizar(nuevosDatos: DatosMapa) {
         val hayCambios = nuevosDatos.puntos != datos.puntos ||
             nuevosDatos.trazadoCaminado != datos.trazadoCaminado ||
@@ -256,7 +252,7 @@ private class ControladorMapaRecorrido(
         aplicarEnfoque()
     }
 
-    // Centrar la cámara con animación en el punto enfocado, una sola vez por cada clave nueva
+    // Una sola vez por cada clave nueva
     private fun aplicarEnfoque() {
         val coordenada = datos.puntoEnfocado ?: return
         val mapaActual = mapa ?: return
@@ -271,7 +267,6 @@ private class ControladorMapaRecorrido(
         )
     }
 
-    // Configurar gestos, detectores y estilo cuando el mapa está listo
     private fun alEstarListoElMapa(mapaListo: MapLibreMap) {
         mapa = mapaListo
         aplicarGestos()
@@ -285,7 +280,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Agregar al estilo las imágenes, las fuentes de datos y las capas del recorrido y de la posición
     private fun agregarImagenesFuentesYCapas(estiloBase: Style) {
         IconosMapa.crearTodos(paleta, densidad).forEach { (nombre, imagen) -> estiloBase.addImage(nombre, imagen) }
 
@@ -416,7 +410,6 @@ private class ControladorMapaRecorrido(
         )
     }
 
-    // Volcar los datos actuales en las fuentes del mapa y mover la cámara según corresponda
     private fun refrescar() {
         val estiloActual = estilo ?: return
         val puntosVisibles = puntosEnArrastre ?: datos.puntos
@@ -444,7 +437,6 @@ private class ControladorMapaRecorrido(
         aplicarEnfoque()
     }
 
-    // Centrar la cámara en el usuario con el rumbo, la inclinación y el zoom de caminata; devolver si lo hizo
     private fun seguirAlUsuario(): Boolean {
         val modo = datos.modoNavegacion ?: return false
         val posicion = datos.posicionUsuario ?: return false
@@ -466,7 +458,6 @@ private class ControladorMapaRecorrido(
         return true
     }
 
-    // Habilitar o deshabilitar los gestos del mapa según los datos actuales
     private fun aplicarGestos() {
         val ajustes = mapa?.uiSettings ?: return
         ajustes.setAllGesturesEnabled(datos.sonGestosHabilitados)
@@ -474,7 +465,6 @@ private class ControladorMapaRecorrido(
         ajustes.setTiltGesturesEnabled(false)
     }
 
-    // Encuadrar la cámara para que se vean todos los puntos válidos del recorrido
     private fun encuadrar(todosLosPuntos: List<PuntoRecorrido>) {
         val mapaActual = mapa ?: return
         val puntos = todosLosPuntos.filter { punto -> punto.tieneCoordenadasValidas() }
@@ -504,7 +494,6 @@ private class ControladorMapaRecorrido(
         mapaActual.moveCamera(CameraUpdateFactory.newLatLngBounds(limites, margen))
     }
 
-    // Atender los toques sobre el mapa para seleccionar y arrastrar puntos en modo edición
     private fun manejarToque(evento: MotionEvent): Boolean {
         if (evento.actionMasked == MotionEvent.ACTION_DOWN && datos.sonGestosHabilitados) {
             // Evitar que un contenedor con desplazamiento vertical robe los gestos del mapa
@@ -534,7 +523,6 @@ private class ControladorMapaRecorrido(
         }
     }
 
-    // Mover el punto arrastrado una vez superado el umbral de desplazamiento
     private fun arrastrar(indice: Int, evento: MotionEvent) {
         val proyeccion = mapa?.projection ?: return
         if (!haySuperadoUmbral) {
@@ -551,7 +539,6 @@ private class ControladorMapaRecorrido(
         refrescar()
     }
 
-    // Cerrar el toque en curso notificando el movimiento o la selección del punto
     private fun terminarToque(fueCancelado: Boolean): Boolean {
         val indice = indiceArrastrado ?: return false
         if (!fueCancelado) {
@@ -571,7 +558,6 @@ private class ControladorMapaRecorrido(
         return true
     }
 
-    // Buscar el punto cuyo marcador esté más cerca del toque dentro del radio de captura
     private fun buscarMarcadorCercano(x: Float, y: Float): Int? {
         val proyeccion = mapa?.projection ?: return null
         val radioMaximo = ConfiguracionMapa.RADIO_CAPTURA_MARCADOR_DP * densidad

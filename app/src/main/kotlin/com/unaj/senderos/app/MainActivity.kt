@@ -93,10 +93,8 @@ class MainActivity : ComponentActivity() {
     // Sendero cuyo recorrido en curso pidió abrir la notificación; la composición lo consume y lo limpia
     private var idSenderoRecorridoPendiente by mutableStateOf<String?>(null)
 
-    // Verdadero si la notificación pidió abrir el recorrido con la confirmación de cancelación; la pantalla lo consume
     private var solicitudCancelacionPendiente by mutableStateOf(false)
 
-    // Tomar el pedido de abrir el recorrido desde la intención recibida y quitarlo para no repetirlo
     private fun leerPedidoDeRecorrido(intencionRecibida: Intent?) {
         val idSendero = intencionRecibida?.getStringExtra(EXTRA_ID_SENDERO_RECORRIDO)
         if (idSendero.isNullOrBlank()) return
@@ -111,14 +109,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Atender la notificación del recorrido cuando la Activity ya estaba abierta (launchMode singleTop)
+    // launchMode singleTop: con la Activity ya abierta la notificación llega por aquí
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         leerPedidoDeRecorrido(intent)
     }
 
-    // Crear la Activity, aplicar el modo de borde a borde y componer la navegación por estado
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Tras recrear la Activity (giro o muerte del proceso) el destino se restaura solo
@@ -134,7 +131,6 @@ class MainActivity : ComponentActivity() {
                 val hayUsuario = dependencias.obtenerUsuarioActualUseCase() != null
                 mutableStateOf(if (hayUsuario) DestinoPantalla.Inicio else DestinoPantalla.Login)
             }
-            // Para volver del detalle (o de crear un sendero) al mismo listado desde el que se entró
             var listadoDeOrigen by rememberSaveable(stateSaver = guardadorDeDestino) {
                 mutableStateOf<DestinoPantalla>(DestinoPantalla.Inicio)
             }
@@ -153,7 +149,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
             val idUsuario = dependencias.obtenerUsuarioActualUseCase()?.id.orEmpty()
-            // Aviso global para lo que ocurre fuera de una pantalla concreta, como un pedido desde la notificación
             val estadoAvisosGlobal = remember { SnackbarHostState() }
             val alcance = rememberCoroutineScope()
 
@@ -168,7 +163,6 @@ class MainActivity : ComponentActivity() {
                         alAvisar = { mensaje -> alcance.launch { estadoAvisosGlobal.showSnackbar(mensaje) } },
                         irARecorrido = { pantallaActual = DestinoPantalla.Recorrido(idRecorridoPedido) }
                     )
-                    // Si el pedido no llevó a la pantalla del recorrido, la solicitud de cancelación se descarta
                     if (pantallaActual !is DestinoPantalla.Recorrido) solicitudCancelacionPendiente = false
                     idSenderoRecorridoPendiente = null
                 }
@@ -314,7 +308,6 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.Formulario -> {
                             val idEditado = destino.idSendero
                             val clave = "formulario-$idUsuario-${idEditado ?: "nuevo"}"
-                            // Al editar se vuelve al detalle del sendero; al crear, al listado de origen
                             val salir = { idSendero: String? ->
                                 pantallaActual = if (idEditado != null && idSendero != null) {
                                     DestinoPantalla.Detalle(idSendero)
@@ -348,8 +341,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Navegar al recorrido pedido liberando el ViewModel del destino que se deja; con un formulario abierto
-    // se conserva y se avisa, porque podría tener cambios sin guardar y descartarlos en silencio perdería datos
+    // Con un formulario abierto se conserva y se avisa, porque podría tener cambios sin guardar y descartarlos en silencio perdería datos
     private fun abrirRecorridoPedido(
         idSendero: String,
         idUsuario: String,
@@ -370,7 +362,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Componer el ViewModel de un destino guardado en su propio almacén para poder descartarlo al salir
     @Composable
     private inline fun <reified VM : ViewModel> viewModelDeDestino(clave: String, crossinline crear: () -> VM): VM {
         return viewModel(
@@ -380,7 +371,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Obtener la clave del almacén de ViewModels de un destino; Login y Registro no usan almacén por destino
 private fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String? {
     return when (destino) {
         is DestinoPantalla.Login, is DestinoPantalla.Registro -> null

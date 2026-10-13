@@ -1,6 +1,5 @@
 package com.unaj.senderos.domain.model
 
-// Filtrar los senderos cuyo nombre o región contienen el texto buscado
 fun filtrarSenderosPorTexto(senderos: List<Sendero>, texto: String): List<Sendero> {
     val textoNormalizado = texto.trim()
     if (textoNormalizado.isEmpty()) return senderos

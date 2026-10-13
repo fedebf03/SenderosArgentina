@@ -6,10 +6,9 @@ import com.unaj.senderos.domain.model.TipoRecorrido
 
 private const val METROS_POR_KILOMETRO = 1000.0
 
-// Ubicación de un punto nuevo respecto de su tramo; el orden de la declaración es el orden dentro del mismo hueco
+// El orden de la declaración es el orden dentro del mismo hueco
 private enum class Zona { ANTES_DEL_INICIO, DENTRO_DEL_TRAMO, DESPUES_DEL_FINAL }
 
-// Hueco de inserción (después del punto indicado), zona, valor de orden dentro de la zona y orden de captura de un punto nuevo
 private data class Asignacion(val hueco: Int, val zona: Zona, val valorOrden: Double, val orden: Int, val punto: PuntoRecorrido)
 
 object CalculadoraInsercionPuntos {
@@ -59,7 +58,6 @@ object CalculadoraInsercionPuntos {
         }
     }
 
-    // Asignar un punto nuevo al tramo más cercano; el más temprano gana los empates
     private fun asignar(
         puntos: List<PuntoRecorrido>,
         cantidadTramos: Int,
@@ -89,26 +87,22 @@ object CalculadoraInsercionPuntos {
         }
     }
 
-    // Verificar si un tramo es degenerado: sus dos vértices coinciden y por eso no tiene dirección
     private fun esDegenerado(puntos: List<PuntoRecorrido>, tramo: Int): Boolean {
         val origen = puntos[tramo]
         val destino = puntos[(tramo + 1) % puntos.size]
         return origen.latitud == destino.latitud && origen.longitud == destino.longitud
     }
 
-    // Calcular la distancia en metros entre una posición y un vértice del recorrido
     private fun distanciaAlVertice(posicion: Coordenada, vertice: PuntoRecorrido): Double {
         return CalculadoraRecorrido.distanciaEntre(posicion, vertice) * METROS_POR_KILOMETRO
     }
 
-    // Proyectar la posición sobre el tramo indicado reutilizando la geometría del seguimiento
     private fun proyectar(puntos: List<PuntoRecorrido>, tramo: Int, posicion: Coordenada): Proyeccion {
         val origen = puntos[tramo]
         val destino = puntos[(tramo + 1) % puntos.size]
         return CalculadoraSeguimiento.proyectarSobreTramo(posicion, origen, destino)
     }
 
-    // Ordenar las asignaciones de un hueco por zona, valor de orden y, si empatan, por orden de captura
     private fun ordenar(asignaciones: List<Asignacion>?): List<PuntoRecorrido> {
         return asignaciones.orEmpty()
             .sortedWith(

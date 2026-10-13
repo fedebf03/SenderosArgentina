@@ -57,7 +57,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.senderosargentina.R
 import com.unaj.senderos.presentation.tema.TemaSenderos
 
-// Renderizar el inicio de sesión conectando el ViewModel, los avisos y Google
 @Composable
 fun LoginPantalla(
     viewModel: LoginViewModel,
@@ -96,7 +95,6 @@ fun LoginPantalla(
     }
 }
 
-// Renderizar el contenido del inicio de sesión a partir del estado visual
 @Composable
 fun LoginContenido(
     estadoVisual: LoginEstadoVisual,
@@ -251,7 +249,6 @@ fun LoginContenido(
     }
 }
 
-// Pedir el correo para enviar el enlace de recuperación de la contraseña, mostrando el motivo si falla
 @Composable
 private fun DialogoRecuperarClave(
     estadoVisual: LoginEstadoVisual,
@@ -294,7 +291,6 @@ private fun DialogoRecuperarClave(
     )
 }
 
-// Previsualizar el inicio de sesión con un correo de ejemplo
 @Preview(showBackground = true)
 @Composable
 fun PrevisualizacionLogin() {

@@ -10,11 +10,9 @@ import com.unaj.senderos.domain.port.DetectorCapacidades
 
 private const val TAG = "CAPACIDADES"
 
-// Detectar las funciones del equipo con PackageManager y SensorManager.
 // La brújula se considera disponible si existe TYPE_ROTATION_VECTOR o, como respaldo, TYPE_GEOMAGNETIC_ROTATION_VECTOR (los sensores que realmente usa la app), no solo el magnetómetro
 class DetectorCapacidadesAndroid(private val contexto: Context) : DetectorCapacidades {
 
-    // Consultar GPS, acelerómetro, brújula y cámara del equipo
     override fun detectar(): CapacidadesDispositivo {
         val paquetes = contexto.packageManager
         val gestor = contexto.getSystemService(SensorManager::class.java)

@@ -49,7 +49,6 @@ import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
 import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
 
-// Renderizar la sección de la foto del sendero con sus acciones
 @Composable
 internal fun SeccionFoto(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -127,7 +126,6 @@ internal fun SeccionFoto(
     }
 }
 
-// Renderizar la sección con el nombre, la región y la descripción
 @Composable
 internal fun SeccionDatosGenerales(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -158,7 +156,6 @@ internal fun SeccionDatosGenerales(
     )
 }
 
-// Renderizar la sección con la distancia, los desniveles, la dificultad y el tipo de recorrido
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SeccionDatosTecnicos(
@@ -240,7 +237,6 @@ internal fun SeccionDatosTecnicos(
     }
 }
 
-// Renderizar la sección del recorrido con su vista previa y el acceso al editor
 @Composable
 internal fun SeccionRecorrido(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -293,7 +289,6 @@ internal fun SeccionRecorrido(
     )
 }
 
-// Renderizar la sección con la duración, el punto de inicio y la mejor época
 @Composable
 internal fun SeccionPlanificacion(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -322,7 +317,6 @@ internal fun SeccionPlanificacion(
     )
 }
 
-// Renderizar la sección de recomendaciones con su lista editable
 @Composable
 internal fun SeccionRecomendaciones(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -347,7 +341,6 @@ internal fun SeccionRecomendaciones(
     )
 }
 
-// Renderizar la sección de servicios con su lista editable
 @Composable
 internal fun SeccionServicios(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -372,7 +365,6 @@ internal fun SeccionServicios(
     )
 }
 
-// Renderizar la sección de etapas con su lista editable
 @Composable
 internal fun SeccionEtapas(
     estadoVisual: FormularioSenderoEstadoVisual,

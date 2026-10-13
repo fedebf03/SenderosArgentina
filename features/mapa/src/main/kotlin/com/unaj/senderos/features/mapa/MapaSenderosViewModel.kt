@@ -43,7 +43,6 @@ class MapaSenderosViewModel(
         )
     }
 
-    // Reflejar en el estado si el dispositivo tiene o no conexión, para avisarlo sin bloquear el mapa
     private fun observarConexion(monitorConectividad: MonitorConectividad) {
         viewModelScope.launch {
             monitorConectividad.observarConexion()
@@ -54,7 +53,6 @@ class MapaSenderosViewModel(
         }
     }
 
-    // Procesar cada evento de la pantalla del mapa de senderos
     fun procesarEvento(evento: MapaSenderosEvento) {
         when (evento) {
             is MapaSenderosEvento.AlSeleccionarSendero -> {

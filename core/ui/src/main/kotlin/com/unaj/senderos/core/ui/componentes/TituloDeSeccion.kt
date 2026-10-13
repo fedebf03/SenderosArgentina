@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 
-// Renderizar el título de una sección de pantalla
 @Composable
 fun TituloDeSeccion(texto: String) {
     Text(

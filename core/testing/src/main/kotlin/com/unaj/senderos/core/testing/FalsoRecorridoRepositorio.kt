@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.map
 
 class FalsoRecorridoRepositorio : RecorridoRepositorio {
 
-    // Fuente local falsa: cualquier cambio se emite a los observadores
     val recorridos: MutableStateFlow<List<RecorridoRealizado>> = MutableStateFlow(emptyList())
 
     var resultadoGuardar: Result<Unit> = Result.success(Unit)
@@ -17,7 +16,6 @@ class FalsoRecorridoRepositorio : RecorridoRepositorio {
     val guardados: MutableList<RecorridoRealizado> = mutableListOf()
     val idsUsuarioConsultados: MutableList<String> = mutableListOf()
 
-    // Observar los recorridos del usuario del más reciente al más viejo
     override fun observarRecorridos(idUsuario: String): Flow<List<RecorridoRealizado>> {
         idsUsuarioConsultados.add(idUsuario)
         return recorridos.map { lista ->
@@ -26,7 +24,6 @@ class FalsoRecorridoRepositorio : RecorridoRepositorio {
         }
     }
 
-    // Observar un recorrido del usuario o null si no existe
     override fun observarRecorrido(idUsuario: String, idRecorrido: String): Flow<RecorridoRealizado?> {
         idsUsuarioConsultados.add(idUsuario)
         return recorridos.map { lista ->
@@ -34,7 +31,6 @@ class FalsoRecorridoRepositorio : RecorridoRepositorio {
         }
     }
 
-    // Registrar el recorrido recibido y devolver el resultado configurado o lanzar el error configurado
     override suspend fun guardar(recorrido: RecorridoRealizado): Result<Unit> {
         guardados.add(recorrido)
         errorAlGuardar?.let { error -> throw error }

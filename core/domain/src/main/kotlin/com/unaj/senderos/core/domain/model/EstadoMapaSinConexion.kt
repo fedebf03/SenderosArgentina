@@ -1,6 +1,5 @@
 package com.unaj.senderos.domain.model
 
-// Situación del mapa descargado de un sendero para usarlo sin señal
 sealed interface EstadoMapaSinConexion {
     data object NoDescargado : EstadoMapaSinConexion
 

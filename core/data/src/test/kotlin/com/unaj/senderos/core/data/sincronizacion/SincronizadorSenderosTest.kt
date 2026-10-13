@@ -18,12 +18,10 @@ class SincronizadorSenderosTest {
     private val ahora = 1_000_000L
     private val fuenteRemota = FalsoSenderoFuenteRemota()
 
-    // Crear el sincronizador con un reloj fijo sobre el DAO falso indicado
     private fun crearSincronizador(dao: FalsoSenderoDao): SincronizadorSenderos {
         return SincronizadorSenderos(dao, fuenteRemota, FalsoEjecutorTransacciones(), FalsoSubidorFotos()) { ahora }
     }
 
-    // Verificar que un sendero modificado hace poco se cuenta como subido pero no como guardado sin conexión
     @Test
     fun `un sendero subido poco despues de modificarse no cuenta como guardado sin conexion`() = runTest {
         val dao = FalsoSenderoDao(listOf(crearEntidadDePrueba(fechaModificacion = ahora - 10_000L)))
@@ -36,7 +34,6 @@ class SincronizadorSenderosTest {
         assertNull(resumen.primerError)
     }
 
-    // Verificar que un sendero modificado hace mucho se cuenta como guardado sin conexión
     @Test
     fun `un sendero subido mucho despues de modificarse cuenta como guardado sin conexion`() = runTest {
         val dao = FalsoSenderoDao(listOf(crearEntidadDePrueba(fechaModificacion = ahora - 5 * 60_000L)))
@@ -47,7 +44,6 @@ class SincronizadorSenderosTest {
         assertEquals(1, resumen.senderosGuardadosSinConexion)
     }
 
-    // Verificar que la demora exactamente igual al umbral cuenta como guardado sin conexión
     @Test
     fun `una demora igual al umbral cuenta como guardado sin conexion`() = runTest {
         val dao = FalsoSenderoDao(listOf(crearEntidadDePrueba(fechaModificacion = ahora - 60_000L)))
@@ -57,7 +53,6 @@ class SincronizadorSenderosTest {
         assertEquals(1, resumen.senderosGuardadosSinConexion)
     }
 
-    // Verificar que una demora un milisegundo menor al umbral no cuenta como guardado sin conexión
     @Test
     fun `una demora menor al umbral por un milisegundo no cuenta como guardado sin conexion`() = runTest {
         val dao = FalsoSenderoDao(listOf(crearEntidadDePrueba(fechaModificacion = ahora - 59_999L)))
@@ -68,7 +63,6 @@ class SincronizadorSenderosTest {
         assertEquals(0, resumen.senderosGuardadosSinConexion)
     }
 
-    // Verificar que un error de subida se cuenta, se guarda el primer error y la sincronización no falla
     @Test
     fun `un error de subida queda en el resumen sin hacer fallar la sincronizacion`() = runTest {
         val dao = FalsoSenderoDao(listOf(crearEntidadDePrueba(id = "falla"), crearEntidadDePrueba(id = "bien")))
@@ -83,7 +77,6 @@ class SincronizadorSenderosTest {
         assertNotNull(resumen.primerError)
     }
 
-    // Verificar que un sendero eliminado con demora no cuenta como guardado sin conexión
     @Test
     fun `un sendero eliminado no cuenta como guardado sin conexion`() = runTest {
         val dao = FalsoSenderoDao(
@@ -96,7 +89,6 @@ class SincronizadorSenderosTest {
         assertEquals(0, resumen.senderosConError)
     }
 
-    // Verificar que los contadores se acumulan con varios senderos de distinta antigüedad
     @Test
     fun `los contadores acumulan senderos recientes antiguos y con error`() = runTest {
         val dao = FalsoSenderoDao(
@@ -116,7 +108,6 @@ class SincronizadorSenderosTest {
         assertEquals(1, resumen.senderosConError)
     }
 
-    // Verificar que un fallo en la lectura remota hace fallar la sincronización completa
     @Test
     fun `un fallo en la lectura remota devuelve failure`() = runTest {
         fuenteRemota.errorAlObtener = IllegalStateException("sin red")
@@ -127,7 +118,6 @@ class SincronizadorSenderosTest {
         assertTrue(resultado.isFailure)
     }
 
-    // Verificar que una subida lenta no convierte un sendero reciente en guardado sin conexión
     @Test
     fun `el umbral se mide contra el instante de inicio de la subida y no contra el final`() = runTest {
         var instanteActual = ahora

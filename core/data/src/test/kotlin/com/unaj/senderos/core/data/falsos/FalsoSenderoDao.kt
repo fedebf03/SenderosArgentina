@@ -12,12 +12,10 @@ class FalsoSenderoDao(
     entidadesIniciales: List<SenderoEntidad> = emptyList()
 ) : SenderoDao {
 
-    // Tabla local falsa: cualquier cambio se emite a los observadores
     val entidades: MutableStateFlow<List<SenderoEntidad>> = MutableStateFlow(entidadesIniciales)
 
     var errorAlGuardar: Throwable? = null
 
-    // Observar los senderos no eliminados del usuario ordenados por nombre
     override fun observarPorUsuario(idUsuario: String): Flow<List<SenderoEntidad>> {
         return entidades.map { listaActual ->
             listaActual
@@ -26,7 +24,6 @@ class FalsoSenderoDao(
         }
     }
 
-    // Observar un sendero no eliminado del usuario o null si no existe
     override fun observarPorId(idUsuario: String, idSendero: String): Flow<SenderoEntidad?> {
         return entidades.map { listaActual ->
             listaActual.firstOrNull { entidad ->
@@ -40,14 +37,12 @@ class FalsoSenderoDao(
         return entidades.value.firstOrNull { entidad -> entidad.idUsuario == idUsuario && entidad.id == idSendero }
     }
 
-    // Obtener los senderos del usuario cuyo estado de sincronización no es SINCRONIZADO
     override suspend fun obtenerPendientes(idUsuario: String): List<SenderoEntidad> {
         return entidades.value.filter { entidad ->
             entidad.idUsuario == idUsuario && entidad.estadoSincronizacion != "SINCRONIZADO"
         }
     }
 
-    // Actualizar el estado solo si la fecha de modificación coincide con la leída; devolver filas afectadas
     override suspend fun actualizarEstadoSiNoCambio(
         idUsuario: String,
         idSendero: String,
@@ -71,7 +66,6 @@ class FalsoSenderoDao(
         return filasAfectadas
     }
 
-    // Actualizar la foto solo si la fecha de modificación coincide con la leída; devolver filas afectadas
     override suspend fun actualizarFotoSiNoCambio(
         idUsuario: String,
         idSendero: String,
@@ -95,7 +89,6 @@ class FalsoSenderoDao(
         return filasAfectadas
     }
 
-    // Actualizar el recorrido solo si la fecha de modificación coincide con la leída; devolver filas afectadas
     override suspend fun actualizarRecorridoSiNoCambio(
         idUsuario: String,
         idSendero: String,
@@ -119,7 +112,6 @@ class FalsoSenderoDao(
         return filasAfectadas
     }
 
-    // Borrar el eliminado lógico solo si la fecha de modificación coincide con la leída; devolver filas afectadas
     override suspend fun borrarEliminadoSiNoCambio(idUsuario: String, idSendero: String, fechaLeida: Long): Int {
         var filasAfectadas = 0
         entidades.update { listaActual ->
@@ -133,7 +125,6 @@ class FalsoSenderoDao(
         return filasAfectadas
     }
 
-    // Insertar o reemplazar la entidad con la misma clave compuesta
     override suspend fun guardar(entidad: SenderoEntidad) {
         errorAlGuardar?.let { error -> throw error }
         entidades.update { listaActual ->
@@ -143,7 +134,6 @@ class FalsoSenderoDao(
         }
     }
 
-    // Borrar definitivamente la fila del usuario con el identificador indicado
     override suspend fun borrarDefinitivamente(idUsuario: String, idSendero: String) {
         entidades.update { listaActual ->
             listaActual.filterNot { existente -> existente.idUsuario == idUsuario && existente.id == idSendero }

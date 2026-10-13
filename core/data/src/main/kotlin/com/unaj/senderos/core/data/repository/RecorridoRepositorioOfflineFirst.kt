@@ -16,7 +16,6 @@ import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "REPOSITORIO_RECORRIDOS"
 
-// Repositorio offline-first de recorridos: lee solo de Room y delega la red en la sincronización diferida
 class RecorridoRepositorioOfflineFirst(
     private val recorridoDao: RecorridoDao,
     private val planificadorSincronizacion: PlanificadorSincronizacion,
@@ -24,14 +23,13 @@ class RecorridoRepositorioOfflineFirst(
     private val reloj: () -> Long = System::currentTimeMillis
 ) : RecorridoRepositorio {
 
-    // Observar los recorridos locales del usuario y pedir la sincronización al empezar a recolectar
+    // Pide la sincronización al empezar a recolectar
     override fun observarRecorridos(idUsuario: String): Flow<List<RecorridoRealizado>> {
         return recorridoDao.observarPorUsuario(idUsuario)
             .map { entidades -> entidades.map { entidad -> entidad.aDominio() } }
             .onStart { planificadorSincronizacion.solicitarSincronizacion(idUsuario) }
     }
 
-    // Observar un recorrido local del usuario; emite null si no existe
     override fun observarRecorrido(idUsuario: String, idRecorrido: String): Flow<RecorridoRealizado?> {
         return recorridoDao.observarPorId(idUsuario, idRecorrido)
             .map { entidad -> entidad?.aDominio() }

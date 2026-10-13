@@ -51,7 +51,6 @@ import com.unaj.senderos.presentation.tema.TemaSenderos
 
 private const val TAG = "HISTORIAL"
 
-// Mostrar el detalle de un recorrido conectado a su ViewModel y atender el regreso al perfil
 @Composable
 fun HistorialDetallePantalla(
     viewModel: HistorialDetalleViewModel,
@@ -72,7 +71,6 @@ fun HistorialDetallePantalla(
     HistorialDetalleContenido(estadoVisual = estadoVisual, alProcesarEvento = viewModel::procesarEvento)
 }
 
-// Renderizar el detalle del recorrido a partir del estado visual
 @Composable
 fun HistorialDetalleContenido(
     estadoVisual: HistorialDetalleEstadoVisual,
@@ -120,7 +118,6 @@ fun HistorialDetalleContenido(
     }
 }
 
-// Mostrar la cabecera, el mapa con ambos trazados y los datos del recorrido
 @Composable
 private fun CuerpoHistorial(
     estadoVisual: HistorialDetalleEstadoVisual,
@@ -190,7 +187,6 @@ private fun CuerpoHistorial(
     }
 }
 
-// Mostrar la etiqueta que marca un recorrido realizado en modo simulación
 @Composable
 fun EtiquetaSimulado(modifier: Modifier = Modifier) {
     Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small, modifier = modifier) {
@@ -203,7 +199,6 @@ fun EtiquetaSimulado(modifier: Modifier = Modifier) {
     }
 }
 
-// Previsualizar el mensaje de recorrido inexistente
 @Preview(showBackground = true)
 @Composable
 private fun HistorialDetalleInexistentePreview() {

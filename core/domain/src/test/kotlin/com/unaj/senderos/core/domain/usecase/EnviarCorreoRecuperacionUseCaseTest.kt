@@ -11,7 +11,6 @@ class EnviarCorreoRecuperacionUseCaseTest {
     private val autenticacion = FalsoAutenticacionRepositorio()
     private val casoDeUso = EnviarCorreoRecuperacionUseCase(autenticacion)
 
-    // Verificar que un correo vacío se rechaza sin llamar al repositorio
     @Test
     fun `correo vacio falla con mensaje de requerido`() = runTest {
         val resultado = casoDeUso("   ")
@@ -20,7 +19,6 @@ class EnviarCorreoRecuperacionUseCaseTest {
         assertTrue(autenticacion.correosDeRecuperacion.isEmpty())
     }
 
-    // Verificar que un correo con formato inválido se rechaza sin llamar al repositorio
     @Test
     fun `correo con formato invalido falla`() = runTest {
         val resultado = casoDeUso("ana@correo")
@@ -29,7 +27,6 @@ class EnviarCorreoRecuperacionUseCaseTest {
         assertTrue(autenticacion.correosDeRecuperacion.isEmpty())
     }
 
-    // Verificar que un correo válido se envía recortado al repositorio
     @Test
     fun `correo valido se envia recortado al repositorio`() = runTest {
         val resultado = casoDeUso("  ana@correo.com ")
@@ -38,7 +35,6 @@ class EnviarCorreoRecuperacionUseCaseTest {
         assertEquals(listOf("ana@correo.com"), autenticacion.correosDeRecuperacion)
     }
 
-    // Verificar que el fallo del repositorio se propaga tal cual
     @Test
     fun `fallo del repositorio se propaga`() = runTest {
         autenticacion.resultadoRecuperacion = Result.failure(Exception("Sin conexión a internet"))

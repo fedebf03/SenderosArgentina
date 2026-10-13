@@ -44,7 +44,6 @@ import com.unaj.senderos.domain.model.Sendero
 // Ancho mínimo de una tarjeta: en pantallas angostas hay una columna y en tablets se reparten en varias
 private val ANCHO_MINIMO_TARJETA = 360.dp
 
-// Renderizar la lista de senderos con su título y la distancia al usuario cuando se conoce
 @Composable
 fun ListaSenderos(
     titulo: String,
@@ -85,7 +84,6 @@ fun ListaSenderos(
     }
 }
 
-// Renderizar un indicador de carga centrado
 @Composable
 fun CargandoCentrado(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -93,7 +91,6 @@ fun CargandoCentrado(modifier: Modifier = Modifier) {
     }
 }
 
-// Renderizar un mensaje de texto centrado, en color de error si corresponde
 @Composable
 fun MensajeCentrado(texto: String, modifier: Modifier = Modifier, esError: Boolean = false) {
     Box(modifier.fillMaxSize().padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
@@ -106,7 +103,6 @@ fun MensajeCentrado(texto: String, modifier: Modifier = Modifier, esError: Boole
     }
 }
 
-// Renderizar el aviso de lista vacía con ícono, título y detalle
 @Composable
 fun MensajeVacio(icono: ImageVector, titulo: String, detalle: String, modifier: Modifier = Modifier) {
     Column(
@@ -139,7 +135,6 @@ fun MensajeVacio(icono: ImageVector, titulo: String, detalle: String, modifier: 
     }
 }
 
-// Renderizar la tarjeta de un sendero con foto, datos, estado de sincronización y distancia opcional
 @Composable
 fun TarjetaSendero(
     sendero: Sendero,
@@ -211,7 +206,6 @@ fun TarjetaSendero(
     }
 }
 
-// Renderizar un dato breve de la tarjeta con ícono y texto
 @Composable
 private fun DatoTarjeta(icono: ImageVector, texto: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -229,7 +223,6 @@ private fun DatoTarjeta(icono: ImageVector, texto: String) {
     }
 }
 
-// Renderizar el ícono del estado de sincronización cuando el sendero no está sincronizado
 @Composable
 fun IconoSincronizacion(estado: EstadoSincronizacion) {
     when (estado) {

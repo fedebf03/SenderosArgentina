@@ -47,7 +47,6 @@ class ControlSeguimientoCapturaTest {
     private var instante = 5_000L
     private var contador = 0
 
-    // Construir el control con alcance inmediato, reloj de la prueba e identificadores determinísticos
     private fun TestScope.crearControl(): ControlSeguimientoEnMemoria {
         return ControlSeguimientoEnMemoria(
             proveedor,
@@ -60,12 +59,10 @@ class ControlSeguimientoCapturaTest {
         ) { instante }
     }
 
-    // Construir una lectura de GPS al sur del origen
     private fun lectura(gradosAlSur: Double, precision: Float? = null): LecturaUbicacion {
         return LecturaUbicacion(Coordenada(LATITUD_BASE - gradosAlSur, LONGITUD_BASE), null, null, precisionMetros = precision)
     }
 
-    // Verificar que capturar sin recorrido activo falla con un mensaje claro
     @Test
     fun `capturar sin recorrido activo falla`() = runTest {
         val control = crearControl()
@@ -77,7 +74,6 @@ class ControlSeguimientoCapturaTest {
         assertTrue(puntosCapturados.llamadasGuardar.isEmpty())
     }
 
-    // Verificar que capturar antes de la primera posición falla con un mensaje claro
     @Test
     fun `capturar sin posicion valida falla`() = runTest {
         val control = crearControl()
@@ -90,7 +86,6 @@ class ControlSeguimientoCapturaTest {
         assertTrue(puntosCapturados.llamadasGuardar.isEmpty())
     }
 
-    // Verificar que captura guarda de inmediato el punto con la última posición, el tipo, la nota y el instante
     @Test
     fun `capturar guarda el punto con la ultima posicion`() = runTest {
         val control = crearControl()
@@ -114,7 +109,6 @@ class ControlSeguimientoCapturaTest {
         assertEquals(9_000L, guardado.instanteMilisegundos)
     }
 
-    // Verificar que una lectura imprecisa no mueve la posición usada para capturar
     @Test
     fun `capturar usa la ultima posicion valida y no la imprecisa`() = runTest {
         val control = crearControl()
@@ -127,7 +121,6 @@ class ControlSeguimientoCapturaTest {
         assertEquals(LATITUD_BASE - 0.001, puntosCapturados.llamadasGuardar.single().latitud, 0.0)
     }
 
-    // Verificar que la foto se copia con el almacén y se guarda la ruta local
     @Test
     fun `capturar con foto la copia y guarda la ruta local`() = runTest {
         val control = crearControl()
@@ -141,7 +134,6 @@ class ControlSeguimientoCapturaTest {
         assertEquals("/fotos/copia-1.jpg", puntosCapturados.llamadasGuardar.single().foto)
     }
 
-    // Verificar que si la copia de la foto falla no se guarda ningún punto
     @Test
     fun `capturar con foto que no se puede copiar falla sin guardar`() = runTest {
         almacenFotos.error = IllegalStateException("sin espacio")
@@ -155,7 +147,6 @@ class ControlSeguimientoCapturaTest {
         assertTrue(puntosCapturados.llamadasGuardar.isEmpty())
     }
 
-    // Verificar que si el repositorio falla el resultado es failure
     @Test
     fun `capturar devuelve failure si el repositorio no guarda`() = runTest {
         puntosCapturados.resultadoGuardar = Result.failure(IllegalStateException("disco lleno"))
@@ -168,7 +159,7 @@ class ControlSeguimientoCapturaTest {
         assertTrue(resultado.isFailure)
     }
 
-    // Verificar que también funciona en simulación una vez que el avance simulado produjo una posición
+    // Requiere que el avance simulado ya haya producido una posición
     @Test
     fun `capturar funciona en simulacion`() = runTest {
         val control = crearControl()
@@ -181,7 +172,7 @@ class ControlSeguimientoCapturaTest {
         assertEquals("s1", puntosCapturados.llamadasGuardar.single().idSendero)
     }
 
-    // Verificar que el punto capturado sobrevive a finalizar el recorrido porque ya está en el repositorio
+    // Persiste porque el punto ya está en el repositorio
     @Test
     fun `el punto capturado persiste aunque se detenga el recorrido`() = runTest {
         val control = crearControl()
@@ -194,7 +185,6 @@ class ControlSeguimientoCapturaTest {
         assertEquals(1, puntosCapturados.puntos.value.size)
     }
 
-    // Verificar que si el repositorio no guarda se borra la copia de la foto recién hecha
     @Test
     fun `capturar borra la copia de la foto si no se pudo guardar el punto`() = runTest {
         puntosCapturados.resultadoGuardar = Result.failure(IllegalStateException("disco lleno"))
@@ -207,7 +197,6 @@ class ControlSeguimientoCapturaTest {
         assertEquals(listOf("/fotos/copia-1.jpg"), almacenFotos.rutasBorradas)
     }
 
-    // Verificar que si no hay foto no se borra nada al fallar
     @Test
     fun `capturar sin foto no borra archivos al fallar`() = runTest {
         puntosCapturados.resultadoGuardar = Result.failure(IllegalStateException("disco lleno"))
@@ -220,7 +209,6 @@ class ControlSeguimientoCapturaTest {
         assertTrue(almacenFotos.rutasBorradas.isEmpty())
     }
 
-    // Verificar que con señal débil el resultado informa la antigüedad de la posición usada
     @Test
     fun `capturar con senal debil informa la antiguedad de la posicion`() = runTest {
         val control = crearControl()
@@ -235,7 +223,6 @@ class ControlSeguimientoCapturaTest {
         assertEquals(1, puntosCapturados.llamadasGuardar.size)
     }
 
-    // Verificar que los mensajes de fallo para la UI están en español y sin detalle técnico
     @Test
     fun `los fallos llevan mensajes propios en español`() = runTest {
         almacenFotos.error = IllegalStateException("java.io.IOException: ENOSPC")

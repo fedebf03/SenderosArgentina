@@ -8,7 +8,6 @@ class FalsoDetectorCapacidades(var capacidades: CapacidadesDispositivo) : Detect
     var cantidadDeteccion: Int = 0
         private set
 
-    // Contar la consulta y devolver las capacidades configuradas
     override fun detectar(): CapacidadesDispositivo {
         cantidadDeteccion++
         return capacidades

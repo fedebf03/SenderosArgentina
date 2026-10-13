@@ -39,7 +39,6 @@ import coil.compose.AsyncImage
 import com.example.senderosargentina.R
 import com.unaj.senderos.domain.model.Usuario
 
-// Renderizar la cabecera de las secciones con el logo, el avatar y un contenido inferior opcional
 @Composable
 fun CabeceraPrincipal(
     usuario: Usuario?,
@@ -82,7 +81,6 @@ fun CabeceraPrincipal(
     }
 }
 
-// Renderizar el campo de búsqueda de senderos con botón para borrar el texto
 @Composable
 fun BuscadorSenderos(texto: String, alCambiarTexto: (String) -> Unit) {
     TextField(
@@ -110,7 +108,6 @@ fun BuscadorSenderos(texto: String, alCambiarTexto: (String) -> Unit) {
     )
 }
 
-// Renderizar el avatar circular del usuario con su foto o con su inicial
 @Composable
 fun AvatarUsuario(usuario: Usuario?, tamano: Dp, modifier: Modifier = Modifier) {
     Box(
@@ -142,7 +139,6 @@ fun AvatarUsuario(usuario: Usuario?, tamano: Dp, modifier: Modifier = Modifier) 
     }
 }
 
-// Obtener la inicial en mayúscula del nombre del usuario o, si falta, de su correo
 private fun obtenerInicial(usuario: Usuario?): String {
     val texto = usuario?.nombre?.ifBlank { usuario.email } ?: ""
     return texto.trim().take(1).uppercase()

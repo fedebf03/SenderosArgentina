@@ -19,24 +19,20 @@ private const val LONGITUD_BASE = -71.07
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProveedorUbicacionSimuladaTest {
 
-    // Construir un trazado recto hacia el sur con la longitud en grados indicada
     private fun trazadoAlSur(grados: Double): List<PuntoRecorrido> {
         return listOf(PuntoRecorrido(LATITUD_BASE, LONGITUD_BASE), PuntoRecorrido(LATITUD_BASE - grados, LONGITUD_BASE))
     }
 
-    // Medir en metros la distancia entre dos lecturas
     private fun metrosEntre(primera: LecturaUbicacion, segunda: LecturaUbicacion): Double {
         val destino = PuntoRecorrido(segunda.coordenada.latitud, segunda.coordenada.longitud)
         return CalculadoraRecorrido.distanciaEntre(primera.coordenada, destino) * 1000.0
     }
 
-    // Medir en metros la distancia de una lectura a la recta del trazado (misma longitud)
     private fun metrosAlTrazado(lectura: LecturaUbicacion): Double {
         val proyectado = PuntoRecorrido(lectura.coordenada.latitud, LONGITUD_BASE)
         return CalculadoraRecorrido.distanciaEntre(lectura.coordenada, proyectado) * 1000.0
     }
 
-    // Verificar que avanza 1,4 metros por segundo y emite una lectura por segundo de tiempo virtual
     @Test
     fun `avanza 1,4 metros por segundo con una lectura por segundo`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.01))
@@ -48,7 +44,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(3_000L, currentTime)
     }
 
-    // Verificar que el multiplicador acelera el avance
     @Test
     fun `el multiplicador acelera el avance`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.01))
@@ -60,7 +55,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(7.0, lecturas[1].velocidadMetrosPorSegundo?.toDouble() ?: -1.0, 0.01)
     }
 
-    // Verificar que un cambio de multiplicador durante la emisión se aplica a las lecturas siguientes
     @Test
     fun `cambiar el multiplicador durante la emision afecta a las lecturas siguientes`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.01))
@@ -75,7 +69,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(28.0, metrosEntre(lecturas[2], lecturas[3]), 0.2)
     }
 
-    // Verificar que cada lectura trae el rumbo del tramo, la velocidad y 5 metros de precisión
     @Test
     fun `las lecturas traen el rumbo del tramo la velocidad y la precision`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.01))
@@ -87,7 +80,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(5.0, lectura.precisionMetros?.toDouble() ?: -1.0, 0.01)
     }
 
-    // Verificar que el rumbo sigue el tramo en un trazado que gira
     @Test
     fun `el rumbo cambia al entrar en el siguiente tramo`() = runTest {
         val trazado = listOf(
@@ -102,7 +94,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(90.0, lecturas[39].rumboGrados?.toDouble() ?: -1.0, 0.5)
     }
 
-    // Verificar que el flujo termina al llegar al final del trazado con la última lectura en el último punto
     @Test
     fun `termina al llegar al final del trazado`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.0001))
@@ -113,7 +104,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(LATITUD_BASE - 0.0001, lecturas.last().coordenada.latitud, 0.000001)
     }
 
-    // Verificar que simular el desvío aleja más de 100 metros durante 10 lecturas y luego vuelve al trazado
     @Test
     fun `el desvio supera cien metros durante diez lecturas y luego vuelve`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.02))
@@ -129,7 +119,6 @@ class ProveedorUbicacionSimuladaTest {
         (12..15).forEach { indice -> assertTrue("lectura $indice", metrosAlTrazado(lecturas[indice]) < 1.0) }
     }
 
-    // Verificar que la ubicación actual es el primer punto del trazado
     @Test
     fun `la ubicacion actual es el primer punto del trazado`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.01))
@@ -137,7 +126,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(Result.success<Coordenada?>(Coordenada(LATITUD_BASE, LONGITUD_BASE)), proveedor.obtenerUbicacionActual())
     }
 
-    // Verificar que un desvío pendiente al llegar al final no deja la última lectura desplazada
     @Test
     fun `un desvio pendiente al llegar al final termina sobre el trazado`() = runTest {
         val proveedor = ProveedorUbicacionSimulada(trazadoAlSur(0.0003))
@@ -152,7 +140,6 @@ class ProveedorUbicacionSimuladaTest {
         assertEquals(LATITUD_BASE - 0.0003, lecturas.last().coordenada.latitud, 0.000001)
     }
 
-    // Verificar que un trazado de largo cero emite el primer punto y termina sin valores inválidos
     @Test
     fun `un trazado de largo cero emite el primer punto y termina`() = runTest {
         val punto = PuntoRecorrido(LATITUD_BASE, LONGITUD_BASE)

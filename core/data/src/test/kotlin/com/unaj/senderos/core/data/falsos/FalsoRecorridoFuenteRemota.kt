@@ -16,18 +16,15 @@ class FalsoRecorridoFuenteRemota : RecorridoFuenteRemota {
 
     val recorridosGuardados: MutableList<Pair<String, RecorridoRed>> = mutableListOf()
 
-    // Agregar un documento remoto precargado para el usuario indicado
     fun precargar(idUsuario: String, recorrido: RecorridoRed) {
         documentosPorUsuario.getOrPut(idUsuario) { mutableMapOf() }[recorrido.id] = recorrido
     }
 
-    // Obtener los documentos remotos del usuario o lanzar el error configurado
     override suspend fun obtenerRecorridos(idUsuario: String): List<RecorridoRed> {
         errorAlObtener?.let { error -> throw error }
         return documentosPorUsuario[idUsuario]?.values?.toList() ?: emptyList()
     }
 
-    // Guardar el documento en memoria o lanzar el error si el id está configurado para fallar
     override suspend fun guardarRecorrido(idUsuario: String, recorrido: RecorridoRed) {
         recorridosGuardados.add(idUsuario to recorrido)
         alGuardarRecorrido?.invoke(recorrido)
