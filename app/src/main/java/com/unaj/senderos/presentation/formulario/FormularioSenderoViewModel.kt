@@ -97,6 +97,7 @@ class FormularioSenderoViewModel(
                 _estadoVisual.update { estadoActual ->
                     estadoActual.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null)
                 }
+                completarDistanciaConLaDelMapa()
             }
             is FormularioSenderoEvento.AlAgregarPunto -> editarRecorrido { it.agregar(evento.latitud, evento.longitud) }
             is FormularioSenderoEvento.AlMoverPunto -> {
@@ -104,7 +105,6 @@ class FormularioSenderoViewModel(
             }
             is FormularioSenderoEvento.AlSeleccionarPunto -> seleccionarPunto(evento.indice)
             is FormularioSenderoEvento.AlEliminarPunto -> editarRecorrido { it.eliminar(evento.indice) }
-            is FormularioSenderoEvento.AlInsertarPuntoAntes -> editarRecorrido { it.insertarAntes(evento.indice) }
             is FormularioSenderoEvento.AlCambiarTipoPunto -> {
                 editarRecorrido { it.reemplazar(evento.indice) { punto -> punto.copy(tipo = evento.tipo) } }
             }
@@ -112,7 +112,6 @@ class FormularioSenderoViewModel(
                 editarRecorrido { it.reemplazar(evento.indice) { punto -> punto.copy(nombre = evento.nombre) } }
             }
             is FormularioSenderoEvento.AlInvertirSentido -> editarRecorrido { it.invertir() }
-            is FormularioSenderoEvento.AlUsarDistanciaDelMapa -> usarDistanciaDelMapa()
             is FormularioSenderoEvento.AlSeleccionarFoto -> seleccionarFoto(evento.uri)
             is FormularioSenderoEvento.AlQuitarFoto -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(foto = "", hayCambiosSinGuardar = true) }
@@ -197,9 +196,11 @@ class FormularioSenderoViewModel(
         _estadoVisual.update { estado -> estado.copy(indicePuntoSeleccionado = indice) }
     }
 
-    private fun usarDistanciaDelMapa() {
-        val distanciaRedondeada = Math.round(_estadoVisual.value.distanciaCalculadaKilometros * 10) / 10.0
+    // Solo con el campo vacío: una distancia ya cargada puede ser la del sendero completo y el trazado, apenas un tramo
+    private fun completarDistanciaConLaDelMapa() {
         _estadoVisual.update { estadoActual ->
+            if (estadoActual.distancia.isNotBlank() || estadoActual.recorrido.size < 2) return@update estadoActual
+            val distanciaRedondeada = Math.round(estadoActual.distanciaCalculadaKilometros * 10) / 10.0
             estadoActual.copy(
                 distancia = formatearDecimalEditable(distanciaRedondeada),
                 camposConError = estadoActual.camposConError - CampoSendero.DISTANCIA,

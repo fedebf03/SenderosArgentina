@@ -7,7 +7,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.BoxWithConstraints
+import com.unaj.senderos.presentation.componentes.BotonPrincipal
 import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.presentation.componentes.IconoDeBoton
 import com.unaj.senderos.presentation.comun.formatearKilometros
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +28,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,8 +44,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +90,7 @@ fun EditorRecorridoMapa(
                     tipoRecorrido = estadoVisual.tipoRecorrido,
                     modifier = Modifier.fillMaxSize(),
                     esEditable = true,
+                    mostrarControlesDeZoom = true,
                     indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
                     alAgregarPunto = { latitud, longitud ->
                         alProcesarEvento(FormularioSenderoEvento.AlAgregarPunto(latitud, longitud))
@@ -152,20 +157,12 @@ private fun BarraInferiorEditor(
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            BotonSecundario(
-                texto = "Invertir sentido",
-                alTocar = { alProcesarEvento(FormularioSenderoEvento.AlInvertirSentido) },
-                estaHabilitado = estadoVisual.recorrido.size >= 2,
-                modifier = Modifier.weight(1f)
-            )
-            BotonSecundario(
-                texto = "Usar distancia del mapa",
-                alTocar = { alProcesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa) },
-                estaHabilitado = estadoVisual.recorrido.size >= 2,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        BotonSecundario(
+            texto = "Invertir sentido",
+            alTocar = { alProcesarEvento(FormularioSenderoEvento.AlInvertirSentido) },
+            estaHabilitado = estadoVisual.recorrido.size >= 2,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -177,6 +174,8 @@ private fun PanelPuntoSeleccionado(
     alProcesarEvento: (FormularioSenderoEvento) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var nombre by remember(indice, punto.nombre) { mutableStateOf(punto.nombre) }
+    var tipo by remember(indice, punto.tipo) { mutableStateOf(punto.tipo) }
     Card(
         modifier = modifier.fillMaxWidth().heightIn(max = 320.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -198,18 +197,18 @@ private fun PanelPuntoSeleccionado(
                 }
             }
             OutlinedTextField(
-                value = punto.nombre,
-                onValueChange = { texto -> alProcesarEvento(FormularioSenderoEvento.AlCambiarNombrePunto(indice, texto)) },
+                value = nombre,
+                onValueChange = { texto -> nombre = texto },
                 label = { Text("Nombre (opcional)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TipoPunto.entries.forEach { tipo ->
+                TipoPunto.entries.forEach { tipoDisponible ->
                     FilterChip(
-                        selected = punto.tipo == tipo,
-                        onClick = { alProcesarEvento(FormularioSenderoEvento.AlCambiarTipoPunto(indice, tipo)) },
-                        label = { Text(obtenerTextoTipoPunto(tipo)) },
+                        selected = tipo == tipoDisponible,
+                        onClick = { tipo = tipoDisponible },
+                        label = { Text(obtenerTextoTipoPunto(tipoDisponible)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -217,15 +216,28 @@ private fun PanelPuntoSeleccionado(
                     )
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (indice >= 1) {
-                    TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlInsertarPuntoAntes(indice)) }) {
-                        Text("Insertar punto antes")
-                    }
-                }
-                TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlEliminarPunto(indice)) }) {
-                    Text("Eliminar punto", color = MaterialTheme.colorScheme.error)
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                BotonSecundario(
+                    texto = "Eliminar",
+                    alTocar = { alProcesarEvento(FormularioSenderoEvento.AlEliminarPunto(indice)) },
+                    icono = { IconoDeBoton(Icons.Outlined.Delete) },
+                    esDestructivo = true,
+                    modifier = Modifier.weight(1f)
+                )
+                BotonPrincipal(
+                    texto = "Guardar",
+                    alTocar = {
+                        if (nombre != punto.nombre) {
+                            alProcesarEvento(FormularioSenderoEvento.AlCambiarNombrePunto(indice, nombre))
+                        }
+                        if (tipo != punto.tipo) {
+                            alProcesarEvento(FormularioSenderoEvento.AlCambiarTipoPunto(indice, tipo))
+                        }
+                        alProcesarEvento(FormularioSenderoEvento.AlSeleccionarPunto(null))
+                    },
+                    icono = { IconoDeBoton(Icons.Filled.Check) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

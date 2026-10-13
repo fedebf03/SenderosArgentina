@@ -84,6 +84,7 @@ fun MapaRecorrido(
     indiceSeleccionado: Int? = null,
     sonGestosHabilitados: Boolean = true,
     usarModoTextura: Boolean = false,
+    mostrarControlesDeZoom: Boolean = false,
     posicionUsuario: Coordenada? = null,
     modoNavegacion: ModoNavegacion? = null,
     puntoEnfocado: Coordenada? = null,
@@ -142,6 +143,13 @@ fun MapaRecorrido(
 
     Box(modifier = modifier) {
         AndroidView(factory = { vistaMapa }, modifier = Modifier.fillMaxSize())
+        if (mostrarControlesDeZoom) {
+            ControlesDeZoom(
+                alAcercar = controlador::acercar,
+                alAlejar = controlador::alejar,
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
+            )
+        }
         AnimatedVisibility(
             visible = controlador.haFalladoLaCarga,
             modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)
@@ -265,6 +273,14 @@ private class ControladorMapaRecorrido(
                 ConfiguracionMapa.ZOOM_PUNTO_DE_INTERES
             )
         )
+    }
+
+    fun acercar() {
+        mapa?.animateCamera(CameraUpdateFactory.zoomIn())
+    }
+
+    fun alejar() {
+        mapa?.animateCamera(CameraUpdateFactory.zoomOut())
     }
 
     private fun alEstarListoElMapa(mapaListo: MapLibreMap) {

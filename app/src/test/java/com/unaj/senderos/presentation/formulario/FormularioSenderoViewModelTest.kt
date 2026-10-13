@@ -45,15 +45,39 @@ class FormularioSenderoViewModelTest {
     }
 
     @Test
-    fun `la distancia copiada del mapa se escribe con coma`() = runTest(despachadorPrueba) {
+    fun `al cerrar el editor con la distancia vacia se completa con la del mapa y con coma`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
         viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
         viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.1))
 
-        viewModel.procesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
         advanceUntilIdle()
 
         assertEquals("11,1", viewModel.estadoVisual.value.distancia)
+    }
+
+    @Test
+    fun `al cerrar el editor no pisa una distancia ya cargada`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "570"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.1))
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
+        advanceUntilIdle()
+
+        assertEquals("570", viewModel.estadoVisual.value.distancia)
+    }
+
+    @Test
+    fun `al cerrar el editor con menos de dos puntos no completa la distancia`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
+        advanceUntilIdle()
+
+        assertEquals("", viewModel.estadoVisual.value.distancia)
     }
 
     @Test

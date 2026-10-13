@@ -12,12 +12,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -28,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -156,20 +151,8 @@ private fun ControlesDeMapa(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        BotonDeMapa(Icons.Filled.Add, "Acercar", alAcercar)
-        BotonDeMapa(Icons.Filled.Remove, "Alejar", alAlejar)
+        ControlesDeZoom(alAcercar, alAlejar)
         BotonDeMapa(Icons.Filled.MyLocation, "Ir a mi ubicación", alIrAMiUbicacion)
-    }
-}
-
-@Composable
-private fun BotonDeMapa(icono: ImageVector, descripcion: String, alTocar: () -> Unit) {
-    SmallFloatingActionButton(
-        onClick = alTocar,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.primary
-    ) {
-        Icon(imageVector = icono, contentDescription = descripcion)
     }
 }
 
