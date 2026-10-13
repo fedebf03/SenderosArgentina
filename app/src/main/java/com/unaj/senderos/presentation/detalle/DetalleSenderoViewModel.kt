@@ -16,6 +16,9 @@ import com.unaj.senderos.domain.port.PreferenciasAplicacion
 import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
 import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.domain.usecase.DespublicarSenderoUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderoPublicadoUseCase
+import com.unaj.senderos.domain.usecase.PublicarSenderoUseCase
 import com.unaj.senderos.domain.usecase.EliminarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
 import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
@@ -23,6 +26,7 @@ import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
 import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
+import com.unaj.senderos.presentation.comun.describirErrorParaElUsuario
 import com.unaj.senderos.presentation.revisionpuntos.ControladorRevisionPuntos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -43,6 +47,8 @@ private const val MENSAJE_PERMISO_DENEGADO =
     "Necesitamos el permiso de ubicación para seguir tu recorrido. Podés concederlo desde los ajustes del teléfono."
 private const val MENSAJE_UBICACION_PRECISA = "Para seguir el recorrido hace falta la ubicación precisa"
 private const val CANTIDAD_MINIMA_PUNTOS_RECORRIDO = 2
+private const val MENSAJE_SIN_CONEXION_PARA_PUBLICAR = "Necesitás conexión"
+private const val MENSAJE_SIN_CONEXION_PARA_ELIMINAR_PUBLICADO = "Necesitás conexión para eliminar un sendero publicado"
 
 class DetalleSenderoViewModel(
     private val idSendero: String,
@@ -59,7 +65,10 @@ class DetalleSenderoViewModel(
     private val capacidadesDispositivo: CapacidadesDispositivo,
     observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
     incorporarPuntosCapturadosUseCase: IncorporarPuntosCapturadosUseCase,
-    descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase
+    descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase,
+    observarSenderoPublicadoUseCase: ObservarSenderoPublicadoUseCase,
+    private val publicarSenderoUseCase: PublicarSenderoUseCase,
+    private val despublicarSenderoUseCase: DespublicarSenderoUseCase
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(DetalleSenderoEstadoVisual())
@@ -90,6 +99,7 @@ class DetalleSenderoViewModel(
         observarRecorridoEnCurso()
         observarModoDemostracion()
         observarRevisionDePuntos()
+        observarPublicacion(observarSenderoPublicadoUseCase)
     }
 
     fun procesarEvento(evento: DetalleSenderoEvento) {
@@ -159,6 +169,16 @@ class DetalleSenderoViewModel(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = false) }
             }
             is DetalleSenderoEvento.AlConfirmarEliminar -> eliminar()
+            is DetalleSenderoEvento.AlTocarPublicar -> pedirConfirmacionDePublicacion(esPublicar = true)
+            is DetalleSenderoEvento.AlTocarHacerPrivado -> pedirConfirmacionDePublicacion(esPublicar = false)
+            is DetalleSenderoEvento.AlCancelarPublicar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoPublicarVisible = false) }
+            }
+            is DetalleSenderoEvento.AlCancelarHacerPrivado -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoHacerPrivadoVisible = false) }
+            }
+            is DetalleSenderoEvento.AlConfirmarPublicar -> publicar()
+            is DetalleSenderoEvento.AlConfirmarHacerPrivado -> hacerPrivado()
             is DetalleSenderoEvento.AlRevisionPuntos -> controladorRevision.procesarEvento(evento.evento)
             is DetalleSenderoEvento.AlAmpliarFoto -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(fotoAmpliada = evento.foto) }
@@ -167,6 +187,67 @@ class DetalleSenderoViewModel(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(fotoAmpliada = null) }
             }
         }
+    }
+
+    private fun observarPublicacion(casoDeUso: ObservarSenderoPublicadoUseCase) {
+        casoDeUso(idSendero).onSuccess { flujo ->
+            viewModelScope.launch {
+                flujo
+                    .catch { error -> Log.e(TAG, "No se pudo observar si el sendero está publicado", error) }
+                    .collect { estaPublicado ->
+                        _estadoVisual.update { estadoActual -> estadoActual.copy(estaPublicado = estaPublicado) }
+                    }
+            }
+        }
+    }
+
+    private fun pedirConfirmacionDePublicacion(esPublicar: Boolean) {
+        _estadoVisual.update { estadoActual -> estadoActual.copy(esMenuOpcionesVisible = false) }
+        if (!monitorConectividad.hayConexion()) {
+            emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_SIN_CONEXION_PARA_PUBLICAR))
+            return
+        }
+        _estadoVisual.update { estadoActual ->
+            if (esPublicar) {
+                estadoActual.copy(esDialogoPublicarVisible = true)
+            } else {
+                estadoActual.copy(esDialogoHacerPrivadoVisible = true)
+            }
+        }
+    }
+
+    private fun publicar() {
+        val sendero = _estadoVisual.value.sendero ?: return
+        if (_estadoVisual.value.estaPublicando) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoPublicarVisible = false, estaPublicando = true) }
+        viewModelScope.launch {
+            publicarSenderoUseCase(sendero).fold(
+                onSuccess = { emitirResultadoDePublicacion("Sendero publicado") },
+                onFailure = { error -> emitirErrorDePublicacion("publicar", error) }
+            )
+        }
+    }
+
+    private fun hacerPrivado() {
+        if (_estadoVisual.value.estaPublicando) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoHacerPrivadoVisible = false, estaPublicando = true) }
+        viewModelScope.launch {
+            despublicarSenderoUseCase(idSendero).fold(
+                onSuccess = { emitirResultadoDePublicacion("El sendero volvió a ser privado") },
+                onFailure = { error -> emitirErrorDePublicacion("dejar de publicar", error) }
+            )
+        }
+    }
+
+    private suspend fun emitirResultadoDePublicacion(mensaje: String) {
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaPublicando = false) }
+        canalEfectos.send(DetalleSenderoEfecto.MostrarAviso(mensaje))
+    }
+
+    private suspend fun emitirErrorDePublicacion(accion: String, error: Throwable) {
+        Log.e(TAG, "Error al $accion el sendero", error)
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaPublicando = false) }
+        canalEfectos.send(DetalleSenderoEfecto.MostrarAviso(describirErrorParaElUsuario(error, MENSAJE_ERROR_POR_DEFECTO)))
     }
 
     private fun observarRevisionDePuntos() {
@@ -230,8 +311,21 @@ class DetalleSenderoViewModel(
     private fun eliminar() {
         if (estaEliminando) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = false) }
+        val estaPublicado = _estadoVisual.value.estaPublicado
+        if (estaPublicado && !monitorConectividad.hayConexion()) {
+            emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_SIN_CONEXION_PARA_ELIMINAR_PUBLICADO))
+            return
+        }
         estaEliminando = true
         viewModelScope.launch {
+            if (estaPublicado) {
+                val resultadoDespublicar = despublicarSenderoUseCase(idSendero)
+                if (resultadoDespublicar.isFailure) {
+                    estaEliminando = false
+                    emitirErrorDePublicacion("dejar de publicar", resultadoDespublicar.exceptionOrNull() ?: IllegalStateException())
+                    return@launch
+                }
+            }
             eliminarSenderoUseCase(idSendero).fold(
                 onSuccess = { canalEfectos.send(DetalleSenderoEfecto.VolverAlListado) },
                 onFailure = { error ->

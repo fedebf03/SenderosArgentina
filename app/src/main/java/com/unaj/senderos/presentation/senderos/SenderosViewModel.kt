@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.domain.port.MonitorConectividad
 import com.unaj.senderos.domain.port.ProveedorUbicacion
 import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
+import com.unaj.senderos.domain.usecase.ObservarSenderosPublicosUseCase
 import com.unaj.senderos.presentation.comun.observarSenderos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -21,12 +22,14 @@ import kotlinx.coroutines.launch
 private const val TAG = "SENDEROS"
 
 class SenderosViewModel(
+    modo: ModoListado,
     observarSenderosDelUsuarioUseCase: ObservarSenderosDelUsuarioUseCase,
+    observarSenderosPublicosUseCase: ObservarSenderosPublicosUseCase,
     private val proveedorUbicacion: ProveedorUbicacion,
     monitorConectividad: MonitorConectividad
 ) : ViewModel() {
 
-    private val _estadoVisual = MutableStateFlow(SenderosEstadoVisual())
+    private val _estadoVisual = MutableStateFlow(SenderosEstadoVisual(modo = modo))
     val estadoVisual: StateFlow<SenderosEstadoVisual> = _estadoVisual.asStateFlow()
 
     private val canalEfectos = Channel<SenderosEfecto>(Channel.BUFFERED)
@@ -36,11 +39,16 @@ class SenderosViewModel(
 
     init {
         observarConexion(monitorConectividad)
+        if (modo == ModoListado.EXPLORAR) observarPublicos(observarSenderosPublicosUseCase)
         observarSenderos(
             observarSenderosDelUsuarioUseCase,
             alRecibir = { datos ->
                 _estadoVisual.update { estado ->
-                    estado.copy(usuario = datos.usuario, senderos = datos.senderos, estaCargando = false)
+                    estado.copy(
+                        usuario = datos.usuario,
+                        senderos = datos.senderos,
+                        estaCargando = estado.estaCargando && modo == ModoListado.EXPLORAR
+                    )
                 }
             },
             alFallar = { mensaje ->
@@ -81,13 +89,50 @@ class SenderosViewModel(
                     )
                 }
             }
+            is SenderosEvento.AlAlternarFavoritos -> {
+                _estadoVisual.update { estado -> estado.copy(soloFavoritos = !estado.soloFavoritos) }
+            }
+            is SenderosEvento.AlAlternarGuardados -> {
+                _estadoVisual.update { estado -> estado.copy(soloGuardados = !estado.soloGuardados) }
+            }
             is SenderosEvento.AlObtenerUbicacion -> obtenerUbicacion()
             is SenderosEvento.AlSolicitarPermisoNotificaciones -> {
                 _estadoVisual.update { estado -> estado.copy(seSolicitoPermisoNotificaciones = true) }
             }
             is SenderosEvento.AlTocarCrearSendero -> emitir(SenderosEfecto.NavegarACreacion)
-            is SenderosEvento.AlSeleccionarSendero -> emitir(SenderosEfecto.NavegarADetalle(evento.idSendero))
+            is SenderosEvento.AlSeleccionarSendero -> {
+                val esPublicoDeOtro = _estadoVisual.value.esPublicoDeOtro(evento.idSendero)
+                emitir(
+                    if (esPublicoDeOtro) {
+                        SenderosEfecto.NavegarADetallePublico(evento.idSendero)
+                    } else {
+                        SenderosEfecto.NavegarADetalle(evento.idSendero)
+                    }
+                )
+            }
         }
+    }
+
+    private fun observarPublicos(casoDeUso: ObservarSenderosPublicosUseCase) {
+        casoDeUso().fold(
+            onSuccess = { flujo ->
+                viewModelScope.launch {
+                    flujo
+                        .catch { error -> marcarErrorEnPublicos(error) }
+                        .collect { publicos ->
+                            _estadoVisual.update { estado ->
+                                estado.copy(senderosPublicos = publicos, hayErrorEnPublicos = false, estaCargando = false)
+                            }
+                        }
+                }
+            },
+            onFailure = { error -> marcarErrorEnPublicos(error) }
+        )
+    }
+
+    private fun marcarErrorEnPublicos(error: Throwable) {
+        Log.e(TAG, "No se pudieron cargar los senderos públicos", error)
+        _estadoVisual.update { estado -> estado.copy(hayErrorEnPublicos = true, estaCargando = false) }
     }
 
     // Ignora el pedido si hay otro en curso y no pisa una ubicación válida con null

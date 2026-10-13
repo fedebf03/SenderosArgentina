@@ -70,7 +70,7 @@ fun PerfilPantalla(
         }
     }
 
-    BackHandler { alNavegarASeccion(SeccionPrincipal.INICIO) }
+    BackHandler { alNavegarASeccion(SeccionPrincipal.EXPLORAR) }
 
     PerfilContenido(
         estadoVisual = estadoVisual,

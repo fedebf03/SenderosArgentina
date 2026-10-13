@@ -42,10 +42,12 @@ import com.unaj.senderos.presentation.componentes.mapa.MapaDeSenderos
 fun MapaSenderosPantalla(
     viewModel: MapaSenderosViewModel,
     alNavegarADetalle: (String) -> Unit = {},
+    alNavegarADetallePublico: (String) -> Unit = {},
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
+    val navegarADetallePublicoActual by rememberUpdatedState(alNavegarADetallePublico)
     val contexto = LocalContext.current
     val estadoAvisos = remember { SnackbarHostState() }
     val alcance = rememberCoroutineScope()
@@ -70,6 +72,7 @@ fun MapaSenderosPantalla(
         viewModel.efectoVisual.collect { efecto ->
             when (efecto) {
                 is MapaSenderosEfecto.NavegarADetalle -> navegarADetalleActual(efecto.idSendero)
+                is MapaSenderosEfecto.NavegarADetallePublico -> navegarADetallePublicoActual(efecto.idSendero)
             }
         }
     }
@@ -78,7 +81,7 @@ fun MapaSenderosPantalla(
         if (estadoVisual.senderoSeleccionado != null) {
             viewModel.procesarEvento(MapaSenderosEvento.AlSeleccionarSendero(null))
         } else {
-            alNavegarASeccion(SeccionPrincipal.INICIO)
+            alNavegarASeccion(SeccionPrincipal.EXPLORAR)
         }
     }
 
@@ -147,7 +150,8 @@ fun MapaSenderosContenido(
                             sendero = senderoSeleccionado,
                             alSeleccionar = {
                                 alProcesarEvento(MapaSenderosEvento.AlAbrirDetalle(senderoSeleccionado.id))
-                            }
+                            },
+                            autor = estadoVisual.nombreAutorDe(senderoSeleccionado)
                         )
                     }
                 }

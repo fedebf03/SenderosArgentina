@@ -27,7 +27,11 @@ data class DetalleSenderoEstadoVisual(
     val esSugerenciaDescargaVisible: Boolean = false,
     val esDialogoSinGpsVisible: Boolean = false,
     val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual(),
-    val fotoAmpliada: String? = null
+    val fotoAmpliada: String? = null,
+    val estaPublicado: Boolean = false,
+    val estaPublicando: Boolean = false,
+    val esDialogoPublicarVisible: Boolean = false,
+    val esDialogoHacerPrivadoVisible: Boolean = false
 ) {
     // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
     val hayPuntosPorRevisar: Boolean
@@ -60,6 +64,12 @@ sealed interface DetalleSenderoEvento {
     data object AlTocarEliminar : DetalleSenderoEvento
     data object AlCancelarEliminar : DetalleSenderoEvento
     data object AlConfirmarEliminar : DetalleSenderoEvento
+    data object AlTocarPublicar : DetalleSenderoEvento
+    data object AlConfirmarPublicar : DetalleSenderoEvento
+    data object AlCancelarPublicar : DetalleSenderoEvento
+    data object AlTocarHacerPrivado : DetalleSenderoEvento
+    data object AlConfirmarHacerPrivado : DetalleSenderoEvento
+    data object AlCancelarHacerPrivado : DetalleSenderoEvento
     data class AlRevisionPuntos(val evento: RevisionPuntosEvento) : DetalleSenderoEvento
     data class AlAmpliarFoto(val foto: String) : DetalleSenderoEvento
     data object AlCerrarFotoAmpliada : DetalleSenderoEvento

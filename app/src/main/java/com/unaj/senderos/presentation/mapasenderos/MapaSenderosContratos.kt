@@ -1,22 +1,38 @@
 package com.unaj.senderos.presentation.mapasenderos
 
 import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.domain.model.SenderoPublico
 import com.unaj.senderos.domain.model.Usuario
 
 data class MapaSenderosEstadoVisual(
     val usuario: Usuario? = null,
     val senderos: List<Sendero> = emptyList(),
+    val senderosPublicos: List<SenderoPublico> = emptyList(),
     val estaCargando: Boolean = true,
     val mensajeError: String? = null,
     val idSeleccionado: String? = null,
     val seSolicitoUbicacion: Boolean = false,
     val estaSinConexion: Boolean = false
 ) {
+    private val publicosDeOtros: List<SenderoPublico>
+        get() = senderosPublicos.filter { publico ->
+            senderos.none { propio -> propio.id == publico.id || propio.idOrigen == publico.id }
+        }
+
     val senderosEnMapa: List<Sendero>
-        get() = senderos.filter { sendero -> sendero.recorrido.isNotEmpty() }
+        get() = (senderos + publicosDeOtros.map { publico -> publico.sendero })
+            .filter { sendero -> sendero.recorrido.isNotEmpty() }
 
     val senderoSeleccionado: Sendero?
         get() = senderosEnMapa.firstOrNull { sendero -> sendero.id == idSeleccionado }
+
+    fun esPublicoDeOtro(idSendero: String): Boolean {
+        return publicosDeOtros.any { publico -> publico.id == idSendero }
+    }
+
+    fun nombreAutorDe(sendero: Sendero): String? {
+        return publicosDeOtros.firstOrNull { publico -> publico.id == sendero.id }?.nombreAutor
+    }
 }
 
 sealed interface MapaSenderosEvento {
@@ -27,4 +43,5 @@ sealed interface MapaSenderosEvento {
 
 sealed interface MapaSenderosEfecto {
     data class NavegarADetalle(val idSendero: String) : MapaSenderosEfecto
+    data class NavegarADetallePublico(val idSendero: String) : MapaSenderosEfecto
 }

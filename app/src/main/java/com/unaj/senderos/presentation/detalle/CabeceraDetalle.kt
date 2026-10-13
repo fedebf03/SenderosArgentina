@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Share
@@ -100,7 +102,7 @@ internal fun CabeceraDetalle(
                         descripcion = "Más opciones",
                         alTocar = { alProcesarEvento(DetalleSenderoEvento.AlAbrirMenuOpciones) }
                     )
-                    MenuOpciones(estadoVisual.esMenuOpcionesVisible, alProcesarEvento)
+                    MenuOpciones(estadoVisual.esMenuOpcionesVisible, estadoVisual.estaPublicado, alProcesarEvento)
                 }
             }
         }
@@ -147,6 +149,7 @@ internal fun CabeceraDetalle(
 @Composable
 internal fun MenuOpciones(
     esVisible: Boolean,
+    estaPublicado: Boolean,
     alProcesarEvento: (DetalleSenderoEvento) -> Unit
 ) {
     DropdownMenu(
@@ -158,6 +161,20 @@ internal fun MenuOpciones(
             text = { Text("Editar") },
             leadingIcon = { Icon(imageVector = Icons.Outlined.Edit, contentDescription = null) },
             onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarEditar) }
+        )
+        DropdownMenuItem(
+            text = { Text(if (estaPublicado) "Hacer privado" else "Publicar") },
+            leadingIcon = {
+                Icon(
+                    imageVector = if (estaPublicado) Icons.Outlined.Lock else Icons.Outlined.Public,
+                    contentDescription = null
+                )
+            },
+            onClick = {
+                alProcesarEvento(
+                    if (estaPublicado) DetalleSenderoEvento.AlTocarHacerPrivado else DetalleSenderoEvento.AlTocarPublicar
+                )
+            }
         )
         DropdownMenuItem(
             text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },

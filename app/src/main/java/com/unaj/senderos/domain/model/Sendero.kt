@@ -47,5 +47,6 @@ data class Sendero(
     val estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
     val recorrido: List<PuntoRecorrido> = emptyList(),
     val foto: String = "",
-    val bioma: Bioma = Bioma.SIN_DEFINIR
+    val bioma: Bioma = Bioma.SIN_DEFINIR,
+    val idOrigen: String = ""
 )
