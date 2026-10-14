@@ -37,6 +37,10 @@ class FalsoSenderoDao(
         return entidades.value.firstOrNull { entidad -> entidad.idUsuario == idUsuario && entidad.id == idSendero }
     }
 
+    override suspend fun obtenerActivos(idUsuario: String): List<SenderoEntidad> {
+        return entidades.value.filter { entidad -> entidad.idUsuario == idUsuario && !entidad.estaEliminado }
+    }
+
     override suspend fun obtenerPendientes(idUsuario: String): List<SenderoEntidad> {
         return entidades.value.filter { entidad ->
             entidad.idUsuario == idUsuario && entidad.estadoSincronizacion != "SINCRONIZADO"

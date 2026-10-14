@@ -31,7 +31,9 @@ data class SenderoRed(
     val recorrido: List<PuntoRecorridoRed> = emptyList(),
     val foto: String = "",
     val bioma: String = "SIN_DEFINIR",
-    val idOrigen: String = ""
+    val idOrigen: String = "",
+    // Un documento anterior al perfil no trae el campo y se lee como null (sin calcular)
+    val perfilElevacion: PerfilElevacionRed? = null
 )
 
 // Punto del recorrido como se guarda en Firestore (valores por defecto requeridos por el deserializador)

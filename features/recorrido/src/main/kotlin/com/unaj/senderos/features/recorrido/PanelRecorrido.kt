@@ -54,6 +54,10 @@ import com.unaj.senderos.core.ui.comun.formatearRitmo
 import com.unaj.senderos.core.ui.comun.formatearVelocidad
 import com.unaj.senderos.core.ui.comun.formatearVelocidadDesdeMetrosPorSegundo
 import com.unaj.senderos.core.ui.revisionpuntos.describirCantidadPuntosCapturados
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
+import com.unaj.senderos.core.ui.componentes.TEXTO_SUBIDA_RESTANTE
+import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 
 private val ANCHO_MINIMO_BOTONES_LADO_A_LADO = 340.dp
 private const val ESCALA_FUENTE_MAXIMA_LADO_A_LADO = 1.3f
@@ -261,6 +265,22 @@ private fun SeccionMasDatos(estadoVisual: RecorridoEstadoVisual) {
                     ),
                     armarDatoRumbo(estadoVisual)
                 )
+                val perfil = estadoVisual.sendero?.perfilElevacion
+                if (perfil != null && !estadoVisual.perfilEstaDesactualizado) {
+                    estadoVisual.subidaRestanteMetros?.let { subida ->
+                        DatoDelPanel(
+                            titulo = TEXTO_SUBIDA_RESTANTE,
+                            valor = formatearAlturaMetros(subida),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    GraficoPerfilElevacion(
+                        perfil = perfil,
+                        bioma = estadoVisual.sendero?.bioma ?: Bioma.SIN_DEFINIR,
+                        esCompacto = true,
+                        kilometroActual = estadoVisual.kilometroEnTrazado
+                    )
+                }
             }
         }
     }

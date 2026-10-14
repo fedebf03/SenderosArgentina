@@ -18,6 +18,8 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import com.unaj.senderos.core.network.FirebaseFuenteAutenticacion
 import com.unaj.senderos.core.network.FuenteAutenticacion
+import com.unaj.senderos.core.network.ApiElevacionOpenMeteo
+import com.unaj.senderos.core.network.crearApiElevacionOpenMeteo
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -43,6 +45,10 @@ abstract class NetworkModule {
         @Provides
         @Singleton
         fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+
+        @Provides
+        @Singleton
+        fun provideApiElevacion(): ApiElevacionOpenMeteo = crearApiElevacionOpenMeteo()
 
         @Provides
         @Singleton

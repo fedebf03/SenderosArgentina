@@ -18,6 +18,10 @@ interface SenderoDao {
     @Query("SELECT * FROM senderos WHERE idUsuario = :idUsuario AND id = :idSendero")
     suspend fun obtenerPorId(idUsuario: String, idSendero: String): SenderoEntidad?
 
+    // Obtener una vez los senderos del usuario que no están marcados como eliminados
+    @Query("SELECT * FROM senderos WHERE idUsuario = :idUsuario AND estaEliminado = 0")
+    suspend fun obtenerActivos(idUsuario: String): List<SenderoEntidad>
+
     @Query("SELECT * FROM senderos WHERE idUsuario = :idUsuario AND estadoSincronizacion != 'SINCRONIZADO'")
     suspend fun obtenerPendientes(idUsuario: String): List<SenderoEntidad>
 

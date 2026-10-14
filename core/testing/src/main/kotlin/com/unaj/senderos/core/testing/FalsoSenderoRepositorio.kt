@@ -2,6 +2,8 @@ package com.unaj.senderos.core.testing
 
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.repository.SenderoRepositorio
+import com.unaj.senderos.core.domain.model.PerfilElevacion
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
@@ -18,12 +20,14 @@ class FalsoSenderoRepositorio(
     var resultadoAlternarFavorito: Result<Unit> = Result.success(Unit)
     var resultadoEliminarSendero: Result<Unit> = Result.success(Unit)
     var resultadoGuardarSendero: Result<Unit> = Result.success(Unit)
+    var resultadoGuardarPerfil: Result<Unit> = Result.success(Unit)
 
     val idsUsuarioConsultados: MutableList<String> = mutableListOf()
     val consultasSendero: MutableList<Pair<String, String>> = mutableListOf()
     val llamadasAlternarFavorito: MutableList<Pair<String, String>> = mutableListOf()
     val llamadasEliminarSendero: MutableList<Pair<String, String>> = mutableListOf()
     val llamadasGuardarSendero: MutableList<Pair<String, Sendero>> = mutableListOf()
+    val llamadasGuardarPerfil: MutableList<Triple<String, String, PerfilElevacion>> = mutableListOf()
 
     val idsUsuarioDetenidos: MutableList<String> = mutableListOf()
     var alDetenerSincronizacion: ((String) -> Unit)? = null
@@ -83,5 +87,17 @@ class FalsoSenderoRepositorio(
             }
         }
         return resultadoGuardarSendero
+    }
+
+    override suspend fun guardarPerfilElevacion(idUsuario: String, idSendero: String, perfil: PerfilElevacion): Result<Unit> {
+        llamadasGuardarPerfil.add(Triple(idUsuario, idSendero, perfil))
+        if (resultadoGuardarPerfil.isSuccess) {
+            senderos.update { listaActual ->
+                listaActual.map { sendero ->
+                    if (sendero.id == idSendero) CalculadoraPerfil.aplicarAlSendero(sendero, perfil) else sendero
+                }
+            }
+        }
+        return resultadoGuardarPerfil
     }
 }

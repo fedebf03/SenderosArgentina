@@ -33,7 +33,10 @@ data class DetalleSenderoEstadoVisual(
     val estaPublicado: Boolean = false,
     val estaPublicando: Boolean = false,
     val esDialogoPublicarVisible: Boolean = false,
-    val esDialogoHacerPrivadoVisible: Boolean = false
+    val esDialogoHacerPrivadoVisible: Boolean = false,
+    val estaCalculandoPerfil: Boolean = false,
+    val perfilEstaDesactualizado: Boolean = false,
+    val debeDesplazarAlMapa: Boolean = true
 ) {
     // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
     val hayPuntosPorRevisar: Boolean
@@ -47,6 +50,8 @@ sealed interface DetalleSenderoEvento {
     data class AlAlternarSeccion(val seccion: SeccionDetalle) : DetalleSenderoEvento
     data class AlSeleccionarPuntoDeInteres(val indice: Int) : DetalleSenderoEvento
     data class AlSeleccionarPuntoEnMapa(val indice: Int?) : DetalleSenderoEvento
+    data class AlSeleccionarKilometroDelPerfil(val kilometros: Double) : DetalleSenderoEvento
+    data object AlCalcularPerfil : DetalleSenderoEvento
     data object AlTocarIniciarRecorrido : DetalleSenderoEvento
     data object AlTocarDescargarMapa : DetalleSenderoEvento
     data object AlTocarEliminarMapa : DetalleSenderoEvento

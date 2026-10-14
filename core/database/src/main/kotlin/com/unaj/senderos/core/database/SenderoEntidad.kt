@@ -33,5 +33,7 @@ data class SenderoEntidad(
     @ColumnInfo(defaultValue = "SIN_DEFINIR")
     val bioma: String = "SIN_DEFINIR",
     @ColumnInfo(defaultValue = "")
-    val idOrigen: String = ""
+    val idOrigen: String = "",
+    // JSON del perfil de elevación; null si todavía no se calculó
+    val perfilElevacion: PerfilElevacionEntidad? = null
 )

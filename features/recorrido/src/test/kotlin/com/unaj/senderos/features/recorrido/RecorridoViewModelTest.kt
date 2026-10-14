@@ -20,6 +20,12 @@ import com.unaj.senderos.core.testing.FalsoControlSeguimiento
 import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
 import com.unaj.senderos.core.testing.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.PerfilElevacion
+import com.unaj.senderos.core.domain.model.PuntoPerfil
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -73,9 +79,10 @@ class RecorridoViewModelTest {
     }
 
     private fun crearViewModel(
-        capacidades: CapacidadesDispositivo = capacidadesCompletas
+        capacidades: CapacidadesDispositivo = capacidadesCompletas,
+        sendero: Sendero = crearSenderoDePrueba(id = "sendero-1", recorrido = trazado)
     ): RecorridoViewModel {
-        val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(id = "sendero-1", recorrido = trazado)))
+        val repositorio = FalsoSenderoRepositorio(listOf(sendero))
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val viewModel = RecorridoViewModel(
             idSendero = "sendero-1",
@@ -700,5 +707,92 @@ class RecorridoViewModelTest {
         advanceUntilIdle()
 
         assertTrue(viewModel.estadoVisual.value.esDialogoLlegadaVisible)
+    }
+
+    private val firmaVigente = CalculadoraPerfil.firmaTrazado(trazado, TipoRecorrido.LINEAL)
+    private val largoDelTrazado = CalculadoraRecorrido.distanciaKilometros(trazado, TipoRecorrido.LINEAL)
+
+    private fun crearSenderoConPerfil(conPerfil: Boolean, firmaDelTrazado: String = firmaVigente): Sendero {
+        val perfil = PerfilElevacion(
+            puntos = (0..10).map { indice ->
+                PuntoPerfil(largoDelTrazado * indice / 10, 1000.0 + indice * (if (indice % 2 == 0) 30.0 else 10.0))
+            },
+            desnivelPositivoMetros = 100,
+            desnivelNegativoMetros = 0,
+            alturaMaximaMetros = 1300,
+            alturaMinimaMetros = 1000,
+            pendienteMaximaPorcentaje = 12.0,
+            firmaTrazado = firmaDelTrazado
+        )
+        return crearSenderoDePrueba(
+            id = "sendero-1",
+            recorrido = trazado,
+            tipoRecorrido = TipoRecorrido.LINEAL,
+            perfilElevacion = if (conPerfil) perfil else null
+        )
+    }
+
+    private fun crearEstadoConAvance(kilometrosRecorridos: Double) =
+        crearEstado().copy(distanciaRestanteKilometros = largoDelTrazado - kilometrosRecorridos)
+
+    @Test
+    fun `con perfil el kilometro en el trazado es el largo menos lo que falta`() = runTest(despachadorPrueba) {
+        val sendero = crearSenderoConPerfil(conPerfil = true)
+        val viewModel = crearViewModel(sendero = sendero)
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = 0.5)
+        advanceUntilIdle()
+
+        val estadoVisual = viewModel.estadoVisual.value
+        assertEquals(0.5, estadoVisual.kilometroEnTrazado ?: Double.NaN, 0.0001)
+        assertEquals(CalculadoraPerfil.calcularSubidaRestanteMetros(requireNotNull(sendero.perfilElevacion), 0.5), estadoVisual.subidaRestanteMetros)
+        assertTrue((estadoVisual.subidaRestanteMetros ?: 0) > 0)
+    }
+
+    @Test
+    fun `sin perfil no hay kilometro en el trazado ni subida restante`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(sendero = crearSenderoConPerfil(conPerfil = false))
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = 0.5)
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.kilometroEnTrazado)
+        assertNull(viewModel.estadoVisual.value.subidaRestanteMetros)
+    }
+
+    @Test
+    fun `antes de que el recorrido esté en curso no se muestra la posición en el perfil`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(sendero = crearSenderoConPerfil(conPerfil = true))
+        runCurrent()
+
+        assertNull(viewModel.estadoVisual.value.kilometroEnTrazado)
+        assertNull(viewModel.estadoVisual.value.subidaRestanteMetros)
+    }
+
+    @Test
+    fun `al llegar al final la subida restante es cero`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(sendero = crearSenderoConPerfil(conPerfil = true))
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = largoDelTrazado)
+        advanceUntilIdle()
+
+        assertEquals(0, viewModel.estadoVisual.value.subidaRestanteMetros)
+    }
+
+    @Test
+    fun `con el perfil desactualizado no se muestra la posicion ni la subida restante`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(sendero = crearSenderoConPerfil(conPerfil = true, firmaDelTrazado = "otro-trazado"))
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = 0.5)
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.kilometroEnTrazado)
+        assertNull(viewModel.estadoVisual.value.subidaRestanteMetros)
+    }
+
+    @Test
+    fun `con la senal no buena no se muestra la posicion ni la subida restante`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(sendero = crearSenderoConPerfil(conPerfil = true))
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = 0.5).copy(calidadSenal = CalidadSenal.DEBIL)
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.kilometroEnTrazado)
+        assertNull(viewModel.estadoVisual.value.subidaRestanteMetros)
     }
 }

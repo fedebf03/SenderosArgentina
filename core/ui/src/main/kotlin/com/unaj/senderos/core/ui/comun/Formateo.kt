@@ -77,3 +77,13 @@ fun formatearTamanoMapa(bytes: Long): String {
         "${formatearUnDecimal(bytes / BYTES_POR_KILOBYTE)} KB"
     }
 }
+
+// Formatear una altura en metros con separador de miles argentino
+fun formatearAlturaMetros(metros: Int): String {
+    return "${String.format(LOCALIDAD_ARGENTINA, "%,d", metros)} m"
+}
+
+// Formatear un porcentaje con un decimal y coma argentina
+fun formatearPorcentaje(porcentaje: Double): String {
+    return "${formatearUnDecimal(porcentaje)} %"
+}

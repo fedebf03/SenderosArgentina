@@ -30,6 +30,14 @@ import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
 import com.unaj.senderos.core.testing.FalsoPreferenciasAplicacion
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
 import com.unaj.senderos.core.testing.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.PerfilElevacion
+import com.unaj.senderos.core.domain.model.PuntoPerfil
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.domain.port.SinConexionElevacionException
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.usecase.CalcularPerfilElevacionUseCase
+import com.unaj.senderos.core.testing.FalsoFuenteElevacion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,6 +67,7 @@ class DetalleSenderoViewModelTest {
     private val efectosRecibidos = mutableListOf<DetalleSenderoEfecto>()
     private val repositorioPuntos = FalsoPuntosCapturadosRepositorio()
     private val repositorioPublicos = FalsoSenderoPublicoRepositorio()
+    private val fuenteElevacion = FalsoFuenteElevacion()
 
     private val recorridoValido = listOf(
         PuntoRecorrido(latitud = -41.10, longitud = -71.30),
@@ -136,10 +145,19 @@ class DetalleSenderoViewModelTest {
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.SolicitarPermisoUbicacion), efectosRecibidos)
     }
 
-    private fun crearViewModel(recorrido: List<PuntoRecorrido>): DetalleSenderoViewModel {
+    private fun crearViewModel(
+        recorrido: List<PuntoRecorrido>,
+        perfilElevacion: PerfilElevacion? = null,
+        tipoRecorrido: TipoRecorrido = TipoRecorrido.CIRCULAR
+    ): DetalleSenderoViewModel {
         val repositorio = FalsoSenderoRepositorio(
             listOf(
-                crearSenderoDePrueba(id = "sendero-1", recorrido = recorrido),
+                crearSenderoDePrueba(
+                    id = "sendero-1",
+                    recorrido = recorrido,
+                    tipoRecorrido = tipoRecorrido,
+                    perfilElevacion = perfilElevacion
+                ),
                 crearSenderoDePrueba(id = "sendero-2", nombre = "Laguna Azul", recorrido = recorridoValido)
             )
         )
@@ -162,7 +180,8 @@ class DetalleSenderoViewModelTest {
             descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),
             observarSenderoPublicadoUseCase = ObservarSenderoPublicadoUseCase(repositorioPublicos, autenticacion),
             publicarSenderoUseCase = PublicarSenderoUseCase(repositorioPublicos, autenticacion),
-            despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion)
+            despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion),
+            calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion)
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }
@@ -362,7 +381,8 @@ class DetalleSenderoViewModelTest {
             descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),
             observarSenderoPublicadoUseCase = ObservarSenderoPublicadoUseCase(repositorioPublicos, autenticacion),
             publicarSenderoUseCase = PublicarSenderoUseCase(repositorioPublicos, autenticacion),
-            despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion)
+            despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion),
+            calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion)
         )
         advanceUntilIdle()
         control.estadoEmitido.value = EstadoSeguimiento(idSendero = "sendero-2", trazado = recorridoValido)
@@ -870,5 +890,127 @@ class DetalleSenderoViewModelTest {
 
         assertTrue(repositorioPublicos.llamadasDespublicar.isEmpty())
         assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.VolverAlListado), efectosRecibidos)
+    }
+
+    private fun crearPerfilDePrueba(firmaTrazado: String) = PerfilElevacion(
+        puntos = listOf(PuntoPerfil(0.0, 1000.0), PuntoPerfil(1.0, 1100.0)),
+        desnivelPositivoMetros = 100,
+        desnivelNegativoMetros = 0,
+        alturaMaximaMetros = 1100,
+        alturaMinimaMetros = 1000,
+        pendienteMaximaPorcentaje = 10.0,
+        firmaTrazado = firmaTrazado
+    )
+
+    @Test
+    fun `calcular el perfil guarda el resultado y el sendero lo recibe por el flujo`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+        assertNull(viewModel.estadoVisual.value.sendero?.perfilElevacion)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlCalcularPerfil)
+        assertTrue(viewModel.estadoVisual.value.estaCalculandoPerfil)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.estaCalculandoPerfil)
+        assertEquals(1, fuenteElevacion.llamadas.size)
+        assertTrue(viewModel.estadoVisual.value.sendero?.perfilElevacion != null)
+        assertTrue(efectosRecibidos.isEmpty())
+    }
+
+    @Test
+    fun `si falla el cálculo se avisa con el mensaje del dominio y se libera el botón`() = runTest(despachadorPrueba) {
+        fuenteElevacion.falloDevuelto = SinConexionElevacionException(null)
+        val viewModel = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlCalcularPerfil)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.estaCalculandoPerfil)
+        assertEquals(
+            listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.MostrarAviso("Sin conexión para calcular el perfil")),
+            efectosRecibidos
+        )
+        assertNull(viewModel.estadoVisual.value.sendero?.perfilElevacion)
+    }
+
+    @Test
+    fun `un segundo toque mientras se calcula el perfil se ignora`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlCalcularPerfil)
+        viewModel.procesarEvento(DetalleSenderoEvento.AlCalcularPerfil)
+        advanceUntilIdle()
+
+        assertEquals(1, fuenteElevacion.llamadas.size)
+    }
+
+    @Test
+    fun `el perfil calculado con otro trazado se marca como desactualizado`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(
+            recorridoValido,
+            perfilElevacion = crearPerfilDePrueba(firmaTrazado = "otro-trazado"),
+            tipoRecorrido = TipoRecorrido.LINEAL
+        )
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.perfilEstaDesactualizado)
+    }
+
+    @Test
+    fun `el perfil del trazado vigente o la falta de perfil no se marcan como desactualizados`() = runTest(despachadorPrueba) {
+        val firmaVigente = CalculadoraPerfil.firmaTrazado(recorridoValido, TipoRecorrido.LINEAL)
+        val conPerfilVigente = crearViewModel(
+            recorridoValido,
+            perfilElevacion = crearPerfilDePrueba(firmaTrazado = firmaVigente),
+            tipoRecorrido = TipoRecorrido.LINEAL
+        )
+        advanceUntilIdle()
+        assertFalse(conPerfilVigente.estadoVisual.value.perfilEstaDesactualizado)
+
+        val sinPerfil = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+        assertFalse(sinPerfil.estadoVisual.value.perfilEstaDesactualizado)
+    }
+
+    @Test
+    fun `tocar el perfil en el inicio enfoca el primer punto sin desplazar la lista`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil(0.0))
+
+        val estado = viewModel.estadoVisual.value
+        assertEquals(-41.10, estado.puntoEnfocado?.latitud ?: Double.NaN, 0.00001)
+        assertEquals(-71.30, estado.puntoEnfocado?.longitud ?: Double.NaN, 0.00001)
+        assertEquals(1, estado.contadorEnfoque)
+        assertFalse(estado.debeDesplazarAlMapa)
+    }
+
+    @Test
+    fun `tocar el perfil más allá del final enfoca el último punto y a mitad queda en el tramo`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil(1_000.0))
+        assertEquals(-41.11, viewModel.estadoVisual.value.puntoEnfocado?.latitud ?: Double.NaN, 0.00001)
+
+        val largo = CalculadoraRecorrido.distanciaKilometros(recorridoValido, TipoRecorrido.LINEAL)
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil(largo / 2))
+        assertEquals(-41.105, viewModel.estadoVisual.value.puntoEnfocado?.latitud ?: Double.NaN, 0.0005)
+        assertEquals(2, viewModel.estadoVisual.value.contadorEnfoque)
+    }
+
+    @Test
+    fun `seleccionar un punto de interés sí desplaza la lista hasta el mapa`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, tipoRecorrido = TipoRecorrido.LINEAL)
+        advanceUntilIdle()
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil(0.0))
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(1))
+
+        assertTrue(viewModel.estadoVisual.value.debeDesplazarAlMapa)
     }
 }

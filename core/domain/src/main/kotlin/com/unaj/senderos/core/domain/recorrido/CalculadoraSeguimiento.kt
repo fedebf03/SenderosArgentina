@@ -271,7 +271,7 @@ object CalculadoraSeguimiento {
         }
     }
 
-    private fun construirTrazado(puntos: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): List<PuntoRecorrido> {
+    internal fun construirTrazado(puntos: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): List<PuntoRecorrido> {
         if (puntos.size < 2) return puntos
         return when (tipoRecorrido) {
             TipoRecorrido.LINEAL -> puntos
