@@ -1,6 +1,7 @@
 package com.unaj.senderos.core.domain.repository
 
 import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.PerfilElevacion
 import kotlinx.coroutines.flow.Flow
 
 interface SenderoRepositorio {
@@ -14,6 +15,10 @@ interface SenderoRepositorio {
     suspend fun eliminarSendero(idUsuario: String, idSendero: String): Result<Unit>
 
     suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit>
+
+    // Guardar el perfil calculado (dato derivado: no renueva la fecha de modificación) y completar desnivel y alturas vacías;
+    // falla si el trazado cambió desde el cálculo
+    suspend fun guardarPerfilElevacion(idUsuario: String, idSendero: String, perfil: PerfilElevacion): Result<Unit>
 
     fun detenerSincronizacion(idUsuario: String)
 }

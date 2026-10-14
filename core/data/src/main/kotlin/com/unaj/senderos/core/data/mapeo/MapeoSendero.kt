@@ -63,7 +63,8 @@ fun SenderoEntidad.aDominio(): Sendero {
         },
         foto = foto,
         bioma = resolverBioma(bioma),
-        idOrigen = idOrigen
+        idOrigen = idOrigen,
+        perfilElevacion = perfilElevacion?.aDominio()
     )
 }
 
@@ -99,7 +100,8 @@ fun Sendero.aEntidad(
         },
         foto = foto,
         bioma = bioma.name,
-        idOrigen = idOrigen
+        idOrigen = idOrigen,
+        perfilElevacion = perfilElevacion?.aEntidad()
     )
 }
 
@@ -127,7 +129,8 @@ fun SenderoEntidad.aRed(): SenderoRed {
         recorrido = recorrido.map { punto -> PuntoRecorridoRed(punto.latitud, punto.longitud, punto.tipo, punto.nombre, punto.foto) },
         foto = foto,
         bioma = bioma,
-        idOrigen = idOrigen
+        idOrigen = idOrigen,
+        perfilElevacion = perfilElevacion?.aRed()
     )
 }
 
@@ -159,6 +162,7 @@ fun SenderoRed.aEntidad(idUsuario: String): SenderoEntidad {
         },
         foto = foto,
         bioma = resolverBioma(bioma).name,
-        idOrigen = idOrigen
+        idOrigen = idOrigen,
+        perfilElevacion = perfilElevacion?.aEntidad()
     )
 }

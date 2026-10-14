@@ -1,6 +1,7 @@
 package com.unaj.senderos.core.database
 
 import androidx.room.TypeConverter
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -37,6 +38,23 @@ class ConvertidoresSendero {
     @TypeConverter
     fun textoAListaPuntos(texto: String): List<PuntoRecorridoEntidad> {
         return json.decodeFromString(ListSerializer(PuntoRecorridoEntidad.serializer()), texto)
+    }
+
+    // Convertir el perfil de elevación a JSON, o a null si no se calculó
+    @TypeConverter
+    fun perfilATexto(perfil: PerfilElevacionEntidad?): String? {
+        return perfil?.let { valor -> json.encodeToString(PerfilElevacionEntidad.serializer(), valor) }
+    }
+
+    // Convertir el JSON guardado al perfil de elevación; un texto ilegible se trata como perfil sin calcular
+    @TypeConverter
+    fun textoAPerfil(texto: String?): PerfilElevacionEntidad? {
+        if (texto == null) return null
+        return try {
+            json.decodeFromString(PerfilElevacionEntidad.serializer(), texto)
+        } catch (error: SerializationException) {
+            null
+        }
     }
 
     @TypeConverter

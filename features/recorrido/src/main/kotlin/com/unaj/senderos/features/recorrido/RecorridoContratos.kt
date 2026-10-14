@@ -7,6 +7,8 @@ import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEstadoVisual
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.ui.componentes.calcularKilometroEnTrazado
 
 val TIPO_PUNTO_INICIAL: TipoPunto = TipoPunto.MIRADOR
 
@@ -54,7 +56,9 @@ data class RecorridoEstadoVisual(
     val fotoPunto: String? = null,
     val estaGuardandoPunto: Boolean = false,
     val mensajeErrorPunto: String? = null,
-    val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual()
+    val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual(),
+    val largoTrazadoKilometros: Double = 0.0,
+    val perfilEstaDesactualizado: Boolean = false
 ) {
     val puedeAgregarPunto: Boolean
         get() = fase == FaseRecorrido.EN_CURSO && (estaDetenido || esSimulado)
@@ -64,6 +68,25 @@ data class RecorridoEstadoVisual(
 
     val sonConfiablesLosDatosDeDistancia: Boolean
         get() = calidadSenal == CalidadSenal.BUENA
+
+    // Indicar el kilómetro recorrido a lo largo del trazado planificado; nulo sin perfil vigente, sin señal confiable o antes de que el recorrido esté en curso
+    val kilometroEnTrazado: Double?
+        get() = if (
+            fase == FaseRecorrido.EN_CURSO && sendero?.perfilElevacion != null &&
+            !perfilEstaDesactualizado && sonConfiablesLosDatosDeDistancia
+        ) {
+            calcularKilometroEnTrazado(largoTrazadoKilometros, distanciaRestanteKilometros)
+        } else {
+            null
+        }
+
+    // Sumar las subidas que faltan desde la posición actual hasta el final; nulo cuando no se conoce la posición en el perfil
+    val subidaRestanteMetros: Int?
+        get() {
+            val perfil = sendero?.perfilElevacion ?: return null
+            val kilometro = kilometroEnTrazado ?: return null
+            return CalculadoraPerfil.calcularSubidaRestanteMetros(perfil, kilometro)
+        }
 
     // En simulación los pasos los estima el control
     val faltaAcelerometro: Boolean

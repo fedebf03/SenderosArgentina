@@ -79,6 +79,9 @@ private const val TAG = "DETALLE_SENDERO"
 // Posición del recuadro del mapa dentro de la lista del detalle
 private const val INDICE_ELEMENTO_MAPA = 2
 
+// Cantidad mínima de puntos del recorrido para poder calcular y mostrar el perfil de elevación
+private const val CANTIDAD_MINIMA_PUNTOS_PERFIL = 2
+
 @Composable
 fun DetalleSenderoPantalla(
     viewModel: DetalleSenderoViewModel,
@@ -357,7 +360,7 @@ private fun CuerpoDetalle(
     LaunchedEffect(estadoVisual.contadorEnfoque) {
         if (estadoVisual.contadorEnfoque > ultimaClaveDesplazada) {
             ultimaClaveDesplazada = estadoVisual.contadorEnfoque
-            estadoLista.animateScrollToItem(INDICE_ELEMENTO_MAPA)
+            if (estadoVisual.debeDesplazarAlMapa) estadoLista.animateScrollToItem(INDICE_ELEMENTO_MAPA)
         }
     }
     LazyColumn(
@@ -396,6 +399,16 @@ private fun CuerpoDetalle(
                 if (sendero.recorrido.isNotEmpty()) {
                     TarjetaMapaSinConexion(estadoVisual.estadoMapaSinConexion, alProcesarEvento)
                 }
+            }
+        }
+        if (sendero.recorrido.size >= CANTIDAD_MINIMA_PUNTOS_PERFIL) {
+            item {
+                SeccionPerfilElevacion(
+                    estadoVisual = estadoVisual,
+                    sendero = sendero,
+                    alProcesarEvento = alProcesarEvento,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
             }
         }
         if (estadoVisual.hayPuntosPorRevisar) {

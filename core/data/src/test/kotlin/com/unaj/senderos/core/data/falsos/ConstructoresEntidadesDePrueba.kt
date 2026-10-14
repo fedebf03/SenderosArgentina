@@ -6,6 +6,8 @@ import com.unaj.senderos.core.database.RecorridoEntidad
 import com.unaj.senderos.core.database.SenderoEntidad
 import com.unaj.senderos.core.network.CoordenadaRed
 import com.unaj.senderos.core.network.RecorridoRed
+import com.unaj.senderos.core.database.PerfilElevacionEntidad
+import com.unaj.senderos.core.database.PuntoRecorridoEntidad
 
 fun crearEntidadDePrueba(
     id: String = "sendero-1",
@@ -14,7 +16,13 @@ fun crearEntidadDePrueba(
     fechaModificacion: Long = 1_000L,
     estadoSincronizacion: String = "PENDIENTE",
     estaEliminado: Boolean = false,
-    bioma: String = "SIN_DEFINIR"
+    bioma: String = "SIN_DEFINIR",
+    recorrido: List<PuntoRecorridoEntidad> = emptyList(),
+    tipoRecorrido: String = "CIRCULAR",
+    desnivelMetros: Int = 600,
+    alturaMaximaMetros: Int = 2000,
+    alturaMinimaMetros: Int = 1400,
+    perfilElevacion: PerfilElevacionEntidad? = null
 ): SenderoEntidad {
     return SenderoEntidad(
         id = id,
@@ -24,11 +32,11 @@ fun crearEntidadDePrueba(
         distanciaKilometros = 12.0,
         dificultad = "MEDIA",
         descripcion = "Ascenso con vistas al lago",
-        desnivelMetros = 600,
+        desnivelMetros = desnivelMetros,
         duracionEstimada = "5 horas",
-        alturaMaximaMetros = 2000,
-        alturaMinimaMetros = 1400,
-        tipoRecorrido = "CIRCULAR",
+        alturaMaximaMetros = alturaMaximaMetros,
+        alturaMinimaMetros = alturaMinimaMetros,
+        tipoRecorrido = tipoRecorrido,
         puntoInicio = "Base del cerro",
         mejorEpoca = "Verano",
         recomendaciones = listOf("Llevar agua"),
@@ -38,7 +46,9 @@ fun crearEntidadDePrueba(
         fechaModificacion = fechaModificacion,
         estadoSincronizacion = estadoSincronizacion,
         estaEliminado = estaEliminado,
-        bioma = bioma
+        recorrido = recorrido,
+        bioma = bioma,
+        perfilElevacion = perfilElevacion
     )
 }
 

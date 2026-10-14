@@ -7,6 +7,7 @@ import com.unaj.senderos.core.domain.model.Etapa
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.PerfilElevacion
 
 fun crearSenderoDePrueba(
     id: String = "sendero-1",
@@ -22,7 +23,9 @@ fun crearSenderoDePrueba(
     esFavorito: Boolean = false,
     estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.SINCRONIZADO,
     recorrido: List<PuntoRecorrido> = emptyList(),
-    bioma: Bioma = Bioma.SIN_DEFINIR
+    bioma: Bioma = Bioma.SIN_DEFINIR,
+    tipoRecorrido: TipoRecorrido = TipoRecorrido.CIRCULAR,
+    perfilElevacion: PerfilElevacion? = null
 ): Sendero {
     return Sendero(
         id = id,
@@ -36,7 +39,7 @@ fun crearSenderoDePrueba(
         duracionEstimada = "5 horas",
         alturaMaximaMetros = alturaMaximaMetros,
         alturaMinimaMetros = alturaMinimaMetros,
-        tipoRecorrido = TipoRecorrido.CIRCULAR,
+        tipoRecorrido = tipoRecorrido,
         puntoInicio = "Base del cerro",
         mejorEpoca = "Verano",
         recomendaciones = listOf("Llevar agua"),
@@ -45,6 +48,7 @@ fun crearSenderoDePrueba(
         esFavorito = esFavorito,
         estadoSincronizacion = estadoSincronizacion,
         recorrido = recorrido,
-        bioma = bioma
+        bioma = bioma,
+        perfilElevacion = perfilElevacion
     )
 }

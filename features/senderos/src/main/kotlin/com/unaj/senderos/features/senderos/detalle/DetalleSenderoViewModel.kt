@@ -29,6 +29,9 @@ import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.core.ui.componentes.obtenerTextoDificultad
 import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
 import com.unaj.senderos.core.ui.revisionpuntos.ControladorRevisionPuntos
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.domain.port.ErrorElevacionException
+import com.unaj.senderos.core.domain.usecase.CalcularPerfilElevacionUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -44,9 +47,11 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlin.math.abs
 
 private const val TAG = "DETALLE_SENDERO"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
+private const val MENSAJE_ERROR_PERFIL = "No se pudo calcular el perfil de elevación"
 private const val MENSAJE_SIN_RECORRIDO = "Este sendero no tiene recorrido"
 private const val MENSAJE_PERMISO_DENEGADO =
     "Necesitamos el permiso de ubicación para seguir tu recorrido. Podés concederlo desde los ajustes del teléfono."
@@ -74,7 +79,8 @@ class DetalleSenderoViewModel @AssistedInject constructor(
     descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase,
     observarSenderoPublicadoUseCase: ObservarSenderoPublicadoUseCase,
     private val publicarSenderoUseCase: PublicarSenderoUseCase,
-    private val despublicarSenderoUseCase: DespublicarSenderoUseCase
+    private val despublicarSenderoUseCase: DespublicarSenderoUseCase,
+    private val calcularPerfilElevacionUseCase: CalcularPerfilElevacionUseCase
 ) : ViewModel() {
 
     @AssistedFactory
@@ -126,6 +132,8 @@ class DetalleSenderoViewModel @AssistedInject constructor(
                     estadoActual.copy(indicePuntoSeleccionado = evento.indice.takeIf { esDeInteres })
                 }
             }
+            is DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil -> enfocarKilometroDelPerfil(evento.kilometros)
+            is DetalleSenderoEvento.AlCalcularPerfil -> calcularPerfil()
             is DetalleSenderoEvento.AlTocarIniciarRecorrido -> pedirPermisoParaIniciarRecorrido()
             is DetalleSenderoEvento.AlConcederPermisoUbicacion -> iniciarRecorrido()
             is DetalleSenderoEvento.AlDenegarPermisoUbicacion -> {
@@ -295,6 +303,8 @@ class DetalleSenderoViewModel @AssistedInject constructor(
                 estadoActual.copy(
                     sendero = senderoEmitido,
                     puntosDeInteres = obtenerPuntosDeInteres(senderoEmitido),
+                    perfilEstaDesactualizado = senderoEmitido.perfilElevacion != null &&
+                        CalculadoraPerfil.necesitaPerfil(senderoEmitido),
                     estaCargando = false,
                     mensajeError = null
                 )
@@ -384,8 +394,43 @@ class DetalleSenderoViewModel @AssistedInject constructor(
             estadoActual.copy(
                 puntoEnfocado = coordenada,
                 contadorEnfoque = estadoActual.contadorEnfoque + 1,
-                indicePuntoSeleccionado = indice
+                indicePuntoSeleccionado = indice,
+                debeDesplazarAlMapa = true
             )
+        }
+    }
+
+    // Enfocar en el mapa la muestra del trazado más cercana al kilómetro tocado en el perfil, sin mover la lista para no perder el gráfico
+    private fun enfocarKilometroDelPerfil(kilometros: Double) {
+        val sendero = _estadoVisual.value.sendero ?: return
+        val muestra = CalculadoraPerfil.muestrearTrazado(sendero.recorrido, sendero.tipoRecorrido)
+            .minByOrNull { candidata -> abs(candidata.distanciaKilometros - kilometros) } ?: return
+        Log.d(TAG, "Enfocando el kilómetro $kilometros del perfil del sendero $idSendero")
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(
+                puntoEnfocado = muestra.coordenada,
+                contadorEnfoque = estadoActual.contadorEnfoque + 1,
+                debeDesplazarAlMapa = false
+            )
+        }
+    }
+
+    // Calcular el perfil con el caso de uso; el resultado llega por el flujo del sendero y el fallo se avisa con el mensaje del dominio
+    private fun calcularPerfil() {
+        if (_estadoVisual.value.estaCalculandoPerfil) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaCalculandoPerfil = true) }
+        viewModelScope.launch {
+            val resultado = calcularPerfilElevacionUseCase(idSendero)
+            _estadoVisual.update { estadoActual -> estadoActual.copy(estaCalculandoPerfil = false) }
+            resultado.onFailure { error ->
+                Log.e(TAG, "Error al calcular el perfil de elevación", error)
+                val mensaje = if (error is ErrorElevacionException) {
+                    error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_PERFIL
+                } else {
+                    describirErrorParaElUsuario(error, MENSAJE_ERROR_PERFIL)
+                }
+                canalEfectos.send(DetalleSenderoEfecto.MostrarAviso(mensaje))
+            }
         }
     }
 

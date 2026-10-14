@@ -13,11 +13,19 @@ import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.ResumenSincronizacion
 import com.unaj.senderos.core.domain.model.UMBRAL_DEMORA_MILISEGUNDOS
 import com.unaj.senderos.core.domain.model.esFotoLocal
+import com.unaj.senderos.core.data.mapeo.aDominio
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.domain.port.ErrorElevacionException
+import com.unaj.senderos.core.domain.port.SinConexionElevacionException
+import com.unaj.senderos.core.domain.usecase.CalcularPerfilElevacionUseCase
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "SINCRONIZACION"
 private const val MAXIMO_PASADAS_SUBIDA = 3
+private const val MAXIMO_PERFILES_POR_PASADA = 5
 
 // La base local es la fuente de verdad frente a Firestore
 class SincronizadorSenderos(
@@ -26,8 +34,12 @@ class SincronizadorSenderos(
     private val ejecutorTransacciones: EjecutorTransacciones,
     private val subidorFotos: SubidorFotos,
     private val existeArchivo: (String) -> Boolean = { ruta -> File(ruta).exists() },
+    private val calculadorPerfiles: CalcularPerfilElevacionUseCase? = null,
     private val reloj: () -> Long = System::currentTimeMillis
 ) {
+    // Pedidos de perfil que el servicio rechazó para un trazado concreto; se recuerdan mientras viva el proceso
+    private val perfilesRechazados: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
     // Sincronizar al usuario con Firestore y devolver el resumen de lo subido, o failure si falla la lectura remota
     suspend fun sincronizar(idUsuario: String): Result<ResumenSincronizacion> {
         Log.d(TAG, "Comienza la sincronización del usuario $idUsuario")
@@ -50,7 +62,9 @@ class SincronizadorSenderos(
     // Ejecutar la fusión y la subida sin capturar excepciones, que captura el llamador
     private suspend fun sincronizarSinCapturar(idUsuario: String): Result<ResumenSincronizacion> {
         fusionarRemotos(idUsuario, fuenteRemota.obtenerSenderos(idUsuario))
-        return Result.success(subirPendientes(idUsuario))
+        val idsSubidos = mutableSetOf<String>()
+        val resumen = subirPendientes(idUsuario, idsSubidos)
+        return Result.success(completarPerfiles(idUsuario, resumen, idsSubidos))
     }
 
     private suspend fun fusionarRemotos(idUsuario: String, remotos: List<SenderoRed>) {
@@ -68,7 +82,67 @@ class SincronizadorSenderos(
         }
     }
 
-    private suspend fun subirPendientes(idUsuario: String): ResumenSincronizacion {
+    // Completar los perfiles de elevación después de subir los cambios del usuario y volver a subir solo los senderos con
+    // perfil nuevo. Esa segunda subida suma a los senderos subidos que no se contaron antes, pero no toca el conteo de
+    // guardados sin conexión; un fallo de este paso nunca invalida lo ya subido
+    private suspend fun completarPerfiles(
+        idUsuario: String,
+        resumen: ResumenSincronizacion,
+        idsSubidos: Set<String>
+    ): ResumenSincronizacion {
+        val calculador = calculadorPerfiles ?: return resumen
+        val idsConPerfilNuevo = calcularPerfilesFaltantes(idUsuario, calculador)
+        var senderosSubidos = resumen.senderosSubidos
+        var senderosConError = resumen.senderosConError
+        var primerError = resumen.primerError
+        for (idSendero in idsConPerfilNuevo) {
+            val entidad = senderoDao.obtenerPorId(idUsuario, idSendero) ?: continue
+            if (entidad.estaEliminado || entidad.estadoSincronizacion != EstadoSincronizacion.PENDIENTE.name) continue
+            val error = subirEntidad(idUsuario, entidad)
+            if (error != null) {
+                senderosConError++
+                if (primerError == null) primerError = error
+            } else if (idSendero !in idsSubidos) {
+                senderosSubidos++
+            }
+        }
+        return resumen.copy(senderosSubidos = senderosSubidos, senderosConError = senderosConError, primerError = primerError)
+    }
+
+    // Calcular el perfil de hasta cinco senderos que lo necesitan y devolver los ids de los que lo obtuvieron. Se corta
+    // ante falta de conexión o límite del servicio; un rechazo definitivo se recuerda para no repetirlo mientras viva el proceso
+    private suspend fun calcularPerfilesFaltantes(idUsuario: String, calculador: CalcularPerfilElevacionUseCase): List<String> {
+        val idsConPerfilNuevo = mutableListOf<String>()
+        try {
+            val candidatos = senderoDao.obtenerActivos(idUsuario)
+                .map { entidad -> entidad.aDominio() }
+                .filter { sendero -> CalculadoraPerfil.necesitaPerfil(sendero) && claveDePerfil(idUsuario, sendero) !in perfilesRechazados }
+                .take(MAXIMO_PERFILES_POR_PASADA)
+            for (sendero in candidatos) {
+                val error = calculador.calcularPara(idUsuario, sendero).exceptionOrNull()
+                if (error == null) {
+                    idsConPerfilNuevo.add(sendero.id)
+                    continue
+                }
+                Log.e(TAG, "No se pudo calcular el perfil del sendero ${sendero.id}: ${error.message}", error)
+                if (error is SinConexionElevacionException) break
+                if (error is ErrorElevacionException && error.esLimitacionDelServicio) break
+                if (error is ErrorElevacionException && error.esRechazoDefinitivo) perfilesRechazados.add(claveDePerfil(idUsuario, sendero))
+            }
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "Fallo el cálculo de perfiles del usuario $idUsuario", error)
+        }
+        return idsConPerfilNuevo
+    }
+
+    // Identificar un sendero con su trazado actual, para recordar los pedidos de perfil que el servicio rechazó
+    private fun claveDePerfil(idUsuario: String, sendero: Sendero): String {
+        return "$idUsuario/${sendero.id}/${CalculadoraPerfil.firmaTrazado(sendero.recorrido, sendero.tipoRecorrido)}"
+    }
+
+    private suspend fun subirPendientes(idUsuario: String, idsSubidos: MutableSet<String>): ResumenSincronizacion {
         val instanteInicio = reloj()
         val idsFallidos = mutableSetOf<String>()
         var primerError: Throwable? = null
@@ -88,6 +162,7 @@ class SincronizadorSenderos(
                     if (primerError == null) primerError = error
                 } else if (!entidad.estaEliminado) {
                     senderosSubidos++
+                    idsSubidos.add(entidad.id)
                     if (instanteInicio - entidad.fechaModificacion >= UMBRAL_DEMORA_MILISEGUNDOS) {
                         senderosGuardadosSinConexion++
                     }

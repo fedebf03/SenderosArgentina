@@ -18,6 +18,8 @@ import com.unaj.senderos.core.domain.usecase.ObservarPuntosCapturadosConDistanci
 import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
 import com.unaj.senderos.core.ui.revisionpuntos.ControladorRevisionPuntos
 import com.unaj.senderos.core.ui.revisionpuntos.describirPuntoGuardadoConPosicionAntigua
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -232,7 +234,18 @@ class RecorridoViewModel @AssistedInject constructor(
     }
 
     private fun reflejarSendero(senderoEmitido: Sendero?) {
-        _estadoVisual.update { estadoActual -> estadoActual.copy(sendero = senderoEmitido) }
+        val largoTrazado = senderoEmitido
+            ?.let { sendero -> CalculadoraRecorrido.distanciaKilometros(sendero.recorrido, sendero.tipoRecorrido) }
+            ?: 0.0
+        _estadoVisual.update { estadoActual ->
+            estadoActual.copy(
+                sendero = senderoEmitido,
+                largoTrazadoKilometros = largoTrazado,
+                perfilEstaDesactualizado = senderoEmitido?.let { sendero ->
+                    sendero.perfilElevacion != null && CalculadoraPerfil.necesitaPerfil(sendero)
+                } ?: false
+            )
+        }
     }
 
     private fun observarSeguimiento() {

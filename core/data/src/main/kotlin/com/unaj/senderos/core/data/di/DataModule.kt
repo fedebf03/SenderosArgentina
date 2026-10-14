@@ -34,6 +34,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
+import com.unaj.senderos.core.data.elevacion.FuenteElevacionOpenMeteo
+import com.unaj.senderos.core.domain.port.FuenteElevacion
+import com.unaj.senderos.core.domain.usecase.CalcularPerfilElevacionUseCase
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -46,6 +49,9 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindAlmacenFotos(impl: AlmacenFotosLocal): AlmacenFotos
+
+    @Binds
+    abstract fun bindFuenteElevacion(impl: FuenteElevacionOpenMeteo): FuenteElevacion
 
     @Binds
     @Singleton
@@ -106,7 +112,14 @@ abstract class DataModule {
             senderoDao: SenderoDao,
             fuenteRemota: SenderoFuenteRemota,
             ejecutorTransacciones: EjecutorTransacciones,
-            subidorFotos: SubidorFotos
-        ): SincronizadorSenderos = SincronizadorSenderos(senderoDao, fuenteRemota, ejecutorTransacciones, subidorFotos)
+            subidorFotos: SubidorFotos,
+            calcularPerfilElevacion: CalcularPerfilElevacionUseCase
+        ): SincronizadorSenderos = SincronizadorSenderos(
+            senderoDao,
+            fuenteRemota,
+            ejecutorTransacciones,
+            subidorFotos,
+            calculadorPerfiles = calcularPerfilElevacion
+        )
     }
 }
