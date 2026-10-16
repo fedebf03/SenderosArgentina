@@ -1,0 +1,91 @@
+package com.unaj.senderos.core.data.falsos
+
+import com.unaj.senderos.core.database.CoordenadaEntidad
+import com.unaj.senderos.core.database.EtapaEntidad
+import com.unaj.senderos.core.database.RecorridoEntidad
+import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.network.CoordenadaRed
+import com.unaj.senderos.core.network.RecorridoRed
+
+fun crearEntidadDePrueba(
+    id: String = "sendero-1",
+    idUsuario: String = "usuario-1",
+    nombre: String = "Cerro Catedral",
+    fechaModificacion: Long = 1_000L,
+    estadoSincronizacion: String = "PENDIENTE",
+    estaEliminado: Boolean = false,
+    bioma: String = "SIN_DEFINIR"
+): SenderoEntidad {
+    return SenderoEntidad(
+        id = id,
+        idUsuario = idUsuario,
+        nombre = nombre,
+        region = "Bariloche",
+        distanciaKilometros = 12.0,
+        dificultad = "MEDIA",
+        descripcion = "Ascenso con vistas al lago",
+        desnivelMetros = 600,
+        duracionEstimada = "5 horas",
+        alturaMaximaMetros = 2000,
+        alturaMinimaMetros = 1400,
+        tipoRecorrido = "CIRCULAR",
+        puntoInicio = "Base del cerro",
+        mejorEpoca = "Verano",
+        recomendaciones = listOf("Llevar agua"),
+        servicios = listOf("Refugio"),
+        etapas = listOf(EtapaEntidad(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
+        esFavorito = false,
+        fechaModificacion = fechaModificacion,
+        estadoSincronizacion = estadoSincronizacion,
+        estaEliminado = estaEliminado,
+        bioma = bioma
+    )
+}
+
+fun crearEntidadRecorridoDePrueba(
+    id: String = "recorrido-1",
+    idUsuario: String = "usuario-1",
+    fechaModificacion: Long = 1_000L,
+    estadoSincronizacion: String = "PENDIENTE"
+): RecorridoEntidad {
+    return RecorridoEntidad(
+        id = id,
+        idUsuario = idUsuario,
+        idSendero = "sendero-1",
+        nombreSendero = "Cerro Catedral",
+        inicioMilisegundos = 1_000L,
+        finMilisegundos = 3_601_000L,
+        duracionMilisegundos = 3_600_000L,
+        distanciaKilometros = 5.0,
+        velocidadPromedioKilometrosPorHora = 5.0,
+        velocidadMaximaKilometrosPorHora = 7.2,
+        pasos = null,
+        ritmoPasosPorMinuto = null,
+        trazadoCaminado = listOf(CoordenadaEntidad(-39.95, -71.07), CoordenadaEntidad(-39.96, -71.07)),
+        esSimulado = false,
+        estadoSincronizacion = estadoSincronizacion,
+        fechaModificacion = fechaModificacion
+    )
+}
+
+fun crearRecorridoRedDePrueba(
+    id: String = "recorrido-1",
+    fechaModificacion: Long = 1_000L
+): RecorridoRed {
+    return RecorridoRed(
+        id = id,
+        idSendero = "sendero-1",
+        nombreSendero = "Cerro Catedral",
+        inicioMilisegundos = 1_000L,
+        finMilisegundos = 3_601_000L,
+        duracionMilisegundos = 3_600_000L,
+        distanciaKilometros = 5.0,
+        velocidadPromedioKilometrosPorHora = 5.0,
+        velocidadMaximaKilometrosPorHora = 7.2,
+        pasos = null,
+        ritmoPasosPorMinuto = null,
+        trazadoCaminado = listOf(CoordenadaRed(-39.95, -71.07), CoordenadaRed(-39.96, -71.07)),
+        esSimulado = false,
+        fechaModificacion = fechaModificacion
+    )
+}

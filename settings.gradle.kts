@@ -24,3 +24,18 @@ dependencyResolutionManagement {
 
 rootProject.name = "SenderosArgentina"
 include(":app")
+
+include(":features:auth")
+include(":features:senderos")
+include(":features:explorar")
+include(":features:mapa")
+include(":features:recorrido")
+include(":features:historial")
+include(":features:perfil")
+
+include(":core:domain")
+include(":core:data")
+include(":core:network")
+include(":core:database")
+include(":core:ui")
+include(":core:testing")
