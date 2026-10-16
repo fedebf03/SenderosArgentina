@@ -1,17 +1,19 @@
-package com.unaj.senderos.data.sensores
+package com.unaj.senderos.core.data.sensores
 
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.util.Log
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.domain.port.DetectorCapacidades
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.port.DetectorCapacidades
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "CAPACIDADES"
 
 // La brújula se considera disponible si existe TYPE_ROTATION_VECTOR o, como respaldo, TYPE_GEOMAGNETIC_ROTATION_VECTOR (los sensores que realmente usa la app), no solo el magnetómetro
-class DetectorCapacidadesAndroid(private val contexto: Context) : DetectorCapacidades {
+class DetectorCapacidadesAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : DetectorCapacidades {
 
     override fun detectar(): CapacidadesDispositivo {
         val paquetes = contexto.packageManager

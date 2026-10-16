@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.recorrido
+package com.unaj.senderos.core.domain.recorrido
 
-import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
 
 // Los puntos van junto con la selección porque eliminar o invertir corre la posición del punto elegido
 data class EdicionRecorrido(val puntos: List<PuntoRecorrido>, val seleccion: Int?) {

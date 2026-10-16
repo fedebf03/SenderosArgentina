@@ -1,8 +1,9 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import javax.inject.Inject
 
-class EnviarCorreoRecuperacionUseCase(
+class EnviarCorreoRecuperacionUseCase @Inject constructor(
     private val repositorio: AutenticacionRepositorio
 ) {
     private val formatoEmail = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")

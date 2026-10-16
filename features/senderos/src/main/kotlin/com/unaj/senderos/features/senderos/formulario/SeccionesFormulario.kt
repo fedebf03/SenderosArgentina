@@ -1,11 +1,11 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
-import com.unaj.senderos.presentation.componentes.BotonSecundario
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
-import com.unaj.senderos.presentation.comun.formatearKilometros
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.comun.formatearKilometros
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import com.unaj.senderos.presentation.componentes.accionable
+import com.unaj.senderos.core.ui.componentes.accionable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,20 +39,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.CampoSendero
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.presentation.componentes.FotoSendero
-import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
-import com.unaj.senderos.presentation.componentes.IndicadorDificultad
-import com.unaj.senderos.presentation.componentes.PuntoBioma
-import com.unaj.senderos.presentation.componentes.obtenerTextoBioma
-import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
-import com.unaj.senderos.presentation.componentes.obtenerTextoTipoRecorrido
-import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
+import com.unaj.senderos.core.domain.model.CampoSendero
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.ui.componentes.FotoSendero
+import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
+import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
+import com.unaj.senderos.core.ui.componentes.IndicadorDificultad
+import com.unaj.senderos.core.ui.componentes.PuntoBioma
+import com.unaj.senderos.core.ui.componentes.obtenerTextoBioma
+import com.unaj.senderos.core.ui.componentes.obtenerTextoDificultad
+import com.unaj.senderos.core.ui.componentes.obtenerTextoTipoRecorrido
+import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
 
 @Composable
 internal fun SeccionFoto(

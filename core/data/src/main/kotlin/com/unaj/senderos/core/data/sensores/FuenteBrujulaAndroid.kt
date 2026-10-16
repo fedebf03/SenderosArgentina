@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.sensores
+package com.unaj.senderos.core.data.sensores
 
 import android.content.Context
 import android.hardware.Sensor
@@ -11,13 +11,15 @@ import android.os.HandlerThread
 import android.util.Log
 import android.view.Display
 import android.view.Surface
-import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
-import com.unaj.senderos.domain.recorrido.CalculadoraRumbo
-import com.unaj.senderos.domain.port.FuenteBrujula
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRumbo
+import com.unaj.senderos.core.domain.port.FuenteBrujula
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlin.math.abs
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "SENSOR_BRUJULA"
 private const val CAMBIO_MINIMO_GRADOS = 2f
@@ -32,7 +34,7 @@ private const val TAMANO_ORIENTACION = 3
 // Los eventos llegan en un hilo propio (HandlerThread) liberado al cancelar. El azimut es respecto del norte magnético
 // (la corrección a norte verdadero la hace el control con la declinación de la última posición). Se remapean los ejes según
 // la rotación de la pantalla y, si el equipo está de pie (inclinado más de 45 grados), para que el azimut sea el de la cámara trasera
-class FuenteBrujulaAndroid(private val contexto: Context) : FuenteBrujula {
+class FuenteBrujulaAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : FuenteBrujula {
 
     override fun observarRumbo(): Flow<Float> = callbackFlow {
         val gestor = contexto.getSystemService(SensorManager::class.java)

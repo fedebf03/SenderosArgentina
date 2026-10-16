@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.senderos
+package com.unaj.senderos.features.senderos.listado
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

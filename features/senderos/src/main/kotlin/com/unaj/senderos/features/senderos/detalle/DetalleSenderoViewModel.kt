@@ -1,33 +1,34 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.features.senderos.detalle
 
-import com.unaj.senderos.presentation.comun.formatearDistanciaSendero
+import com.unaj.senderos.core.ui.sendero.obtenerPuntosDeInteres
+import com.unaj.senderos.core.ui.comun.formatearDistanciaSendero
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.port.ControlSeguimiento
-import com.unaj.senderos.domain.port.LanzadorSeguimiento
-import com.unaj.senderos.domain.port.MonitorConectividad
-import com.unaj.senderos.domain.port.PreferenciasAplicacion
-import com.unaj.senderos.domain.usecase.AlternarFavoritoUseCase
-import com.unaj.senderos.domain.usecase.DescargarMapaSinConexionUseCase
-import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
-import com.unaj.senderos.domain.usecase.DespublicarSenderoUseCase
-import com.unaj.senderos.domain.usecase.ObservarSenderoPublicadoUseCase
-import com.unaj.senderos.domain.usecase.PublicarSenderoUseCase
-import com.unaj.senderos.domain.usecase.EliminarMapaSinConexionUseCase
-import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
-import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
-import com.unaj.senderos.domain.usecase.EliminarSenderoUseCase
-import com.unaj.senderos.domain.usecase.ObservarMapaSinConexionUseCase
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.presentation.componentes.obtenerTextoDificultad
-import com.unaj.senderos.presentation.comun.describirErrorParaElUsuario
-import com.unaj.senderos.presentation.revisionpuntos.ControladorRevisionPuntos
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
+import com.unaj.senderos.core.domain.port.MonitorConectividad
+import com.unaj.senderos.core.domain.port.PreferenciasAplicacion
+import com.unaj.senderos.core.domain.usecase.AlternarFavoritoUseCase
+import com.unaj.senderos.core.domain.usecase.DescargarMapaSinConexionUseCase
+import com.unaj.senderos.core.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.core.domain.usecase.DespublicarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarSenderoPublicadoUseCase
+import com.unaj.senderos.core.domain.usecase.PublicarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.EliminarMapaSinConexionUseCase
+import com.unaj.senderos.core.domain.usecase.IncorporarPuntosCapturadosUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.core.domain.usecase.EliminarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarMapaSinConexionUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.ui.componentes.obtenerTextoDificultad
+import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
+import com.unaj.senderos.core.ui.revisionpuntos.ControladorRevisionPuntos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -39,6 +40,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 private const val TAG = "DETALLE_SENDERO"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
@@ -50,8 +55,9 @@ private const val CANTIDAD_MINIMA_PUNTOS_RECORRIDO = 2
 private const val MENSAJE_SIN_CONEXION_PARA_PUBLICAR = "Necesitás conexión"
 private const val MENSAJE_SIN_CONEXION_PARA_ELIMINAR_PUBLICADO = "Necesitás conexión para eliminar un sendero publicado"
 
-class DetalleSenderoViewModel(
-    private val idSendero: String,
+@HiltViewModel(assistedFactory = DetalleSenderoViewModel.Fabrica::class)
+class DetalleSenderoViewModel @AssistedInject constructor(
+    @Assisted private val idSendero: String,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val alternarFavoritoUseCase: AlternarFavoritoUseCase,
     private val eliminarSenderoUseCase: EliminarSenderoUseCase,
@@ -70,6 +76,11 @@ class DetalleSenderoViewModel(
     private val publicarSenderoUseCase: PublicarSenderoUseCase,
     private val despublicarSenderoUseCase: DespublicarSenderoUseCase
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Fabrica {
+        fun crear(idSendero: String): DetalleSenderoViewModel
+    }
 
     private val _estadoVisual = MutableStateFlow(DetalleSenderoEstadoVisual())
     val estadoVisual: StateFlow<DetalleSenderoEstadoVisual> = _estadoVisual.asStateFlow()

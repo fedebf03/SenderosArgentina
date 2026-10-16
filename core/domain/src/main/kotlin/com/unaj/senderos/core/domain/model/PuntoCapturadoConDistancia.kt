@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 // Distancia al trazado a partir de la cual la UI debería advertir al usuario y dejar el punto desmarcado
 const val DISTANCIA_MAXIMA_RECOMENDADA_METROS = 100.0

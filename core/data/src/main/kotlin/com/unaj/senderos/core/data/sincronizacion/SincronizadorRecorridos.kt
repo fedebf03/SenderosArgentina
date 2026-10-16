@@ -1,20 +1,21 @@
-package com.unaj.senderos.data.sincronizacion
+package com.unaj.senderos.core.data.sincronizacion
 
 import android.util.Log
-import com.unaj.senderos.data.local.EjecutorTransacciones
-import com.unaj.senderos.data.local.RecorridoDao
-import com.unaj.senderos.data.local.RecorridoEntidad
-import com.unaj.senderos.data.mapeo.aEntidad
-import com.unaj.senderos.data.mapeo.aRed
-import com.unaj.senderos.data.remote.RecorridoFuenteRemota
-import com.unaj.senderos.data.remote.RecorridoRed
-import com.unaj.senderos.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.database.EjecutorTransacciones
+import com.unaj.senderos.core.database.RecorridoDao
+import com.unaj.senderos.core.database.RecorridoEntidad
+import com.unaj.senderos.core.data.mapeo.aEntidad
+import com.unaj.senderos.core.data.mapeo.aRed
+import com.unaj.senderos.core.network.RecorridoFuenteRemota
+import com.unaj.senderos.core.network.RecorridoRed
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import kotlin.coroutines.cancellation.CancellationException
+import javax.inject.Inject
 
 private const val TAG = "SINCRONIZACION_RECORRIDOS"
 
 // La base local es la fuente de verdad frente a Firestore
-class SincronizadorRecorridos(
+class SincronizadorRecorridos @Inject constructor(
     private val recorridoDao: RecorridoDao,
     private val fuenteRemota: RecorridoFuenteRemota,
     private val ejecutorTransacciones: EjecutorTransacciones

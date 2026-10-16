@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 // Punto de interés marcado durante un recorrido; es local hasta que el usuario lo incorpora al sendero
 data class PuntoCapturado(

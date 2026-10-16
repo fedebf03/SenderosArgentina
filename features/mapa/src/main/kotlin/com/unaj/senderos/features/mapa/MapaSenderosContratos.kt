@@ -1,8 +1,8 @@
-package com.unaj.senderos.presentation.mapasenderos
+package com.unaj.senderos.features.mapa
 
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoPublico
-import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.model.Usuario
 
 data class MapaSenderosEstadoVisual(
     val usuario: Usuario? = null,

@@ -1,8 +1,8 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.LecturaUbicacion
-import com.unaj.senderos.domain.port.ProveedorUbicacion
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.LecturaUbicacion
+import com.unaj.senderos.core.domain.port.ProveedorUbicacion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 

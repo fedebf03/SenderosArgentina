@@ -1,13 +1,13 @@
-package com.unaj.senderos.data.mapas
+package com.unaj.senderos.core.data.mapas
 
 import android.content.Context
 import android.util.Log
-import com.unaj.senderos.domain.recorrido.CalculadoraCorredor
-import com.unaj.senderos.domain.configuracion.ConfiguracionEstiloMapa
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.Rectangulo
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.port.GestorMapasSinConexion
+import com.unaj.senderos.core.domain.recorrido.CalculadoraCorredor
+import com.unaj.senderos.core.domain.configuracion.ConfiguracionEstiloMapa
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.Rectangulo
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.port.GestorMapasSinConexion
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +37,8 @@ import org.maplibre.geojson.Polygon
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "MAPAS_SIN_CONEXION"
 
@@ -69,7 +71,7 @@ private class RegionCargada(
  * Las operaciones de descarga y borrado se serializan con un Mutex general y corren sin cancelación (NonCancellable)
  * para que cancelar el ámbito de quien las pide no deje regiones huérfanas ni registros obsoletos.
  */
-class GestorMapasSinConexionMapLibre(contexto: Context) : GestorMapasSinConexion {
+class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext contexto: Context) : GestorMapasSinConexion {
     private val contextoAplicacion = contexto.applicationContext
     private val densidadPantalla = contextoAplicacion.resources.displayMetrics.density
     private val alcanceProceso = CoroutineScope(SupervisorJob() + Dispatchers.Main)

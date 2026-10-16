@@ -1,8 +1,8 @@
-package com.unaj.senderos.domain.recorrido
+package com.unaj.senderos.core.domain.recorrido
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoRecorrido
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos

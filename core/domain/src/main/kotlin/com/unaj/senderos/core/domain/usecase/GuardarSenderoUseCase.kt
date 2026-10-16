@@ -1,18 +1,20 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.tieneCoordenadasValidas
-import com.unaj.senderos.domain.model.CampoSendero
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoInvalidoException
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
-import com.unaj.senderos.domain.repository.SenderoRepositorio
+import com.unaj.senderos.core.domain.model.CampoSendero
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoInvalidoException
+import com.unaj.senderos.core.domain.model.tieneCoordenadasValidas
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.repository.SenderoRepositorio
 import java.util.UUID
+import javax.inject.Inject
+import com.unaj.senderos.core.domain.port.GeneradorIdentificador
 
-class GuardarSenderoUseCase(
+class GuardarSenderoUseCase @Inject constructor(
     private val senderoRepositorio: SenderoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio,
-    private val generarIdentificador: () -> String = { UUID.randomUUID().toString() }
+    private val generarIdentificador: GeneradorIdentificador = GeneradorIdentificador { UUID.randomUUID().toString() }
 ) {
     suspend operator fun invoke(sendero: Sendero): Result<Sendero> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()

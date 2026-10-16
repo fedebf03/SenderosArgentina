@@ -1,16 +1,17 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
-import com.unaj.senderos.presentation.componentes.BarraSuperior
+import com.unaj.senderos.core.ui.sendero.obtenerTextoTipoPunto
+import com.unaj.senderos.core.ui.componentes.BarraSuperior
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.BoxWithConstraints
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.BotonSecundario
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
-import com.unaj.senderos.presentation.comun.formatearKilometros
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.comun.formatearKilometros
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +37,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
-import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
+import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,10 +53,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private val ANCHO_PANEL_PUNTO_HORIZONTAL = 340.dp
 
@@ -242,18 +243,6 @@ private fun PanelPuntoSeleccionado(
                 )
             }
         }
-    }
-}
-
-internal fun obtenerTextoTipoPunto(tipo: TipoPunto): String {
-    return when (tipo) {
-        TipoPunto.PASO -> "Paso"
-        TipoPunto.MIRADOR -> "Mirador"
-        TipoPunto.AGUA -> "Agua"
-        TipoPunto.REFUGIO -> "Refugio"
-        TipoPunto.CAMPING -> "Camping"
-        TipoPunto.PELIGRO -> "Peligro"
-        TipoPunto.OTRO -> "Otro"
     }
 }
 

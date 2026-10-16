@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.repository
+package com.unaj.senderos.core.domain.repository
 
-import com.unaj.senderos.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.model.SenderoPublico
 import kotlinx.coroutines.flow.Flow
 
 interface SenderoPublicoRepositorio {

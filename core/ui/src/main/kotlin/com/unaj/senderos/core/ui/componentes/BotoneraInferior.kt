@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope

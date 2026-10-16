@@ -1,10 +1,10 @@
-package com.unaj.senderos.data.mapeo
+package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.data.remote.SenderoRed
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.falsos.crearEntidadDePrueba
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.data.falsos.crearEntidadDePrueba
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

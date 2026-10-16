@@ -1,13 +1,13 @@
-package com.unaj.senderos.presentation.historial
+package com.unaj.senderos.features.historial
 
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.domain.usecase.ObservarRecorridoUseCase
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoRecorridoRepositorio
-import com.unaj.senderos.falsos.FalsoSenderoRepositorio
-import com.unaj.senderos.falsos.crearRecorridoDePrueba
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarRecorridoUseCase
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
+import com.unaj.senderos.core.testing.crearRecorridoDePrueba
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

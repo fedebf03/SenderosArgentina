@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.revisionpuntos
+package com.unaj.senderos.core.ui.revisionpuntos
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

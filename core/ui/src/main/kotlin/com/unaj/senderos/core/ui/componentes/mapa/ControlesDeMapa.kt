@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -1,21 +1,21 @@
-package com.unaj.senderos.data.seguimiento
+package com.unaj.senderos.core.data.seguimiento
 
-import com.unaj.senderos.domain.model.AvisoRecorrido
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.LecturaUbicacion
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.MotivoFinSeguimiento
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoProveedorUbicacion
-import com.unaj.senderos.falsos.FalsoRecorridoRepositorio
-import com.unaj.senderos.falsos.FalsoSenderoRepositorio
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.AvisoRecorrido
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.LecturaUbicacion
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoProveedorUbicacion
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
@@ -66,8 +66,8 @@ class ControlSeguimientoEnMemoriaTest {
             proveedor,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             repositorioRecorridos,
-            com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio(),
-            com.unaj.senderos.falsos.FalsoAlmacenFotos(),
+            com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio(),
+            com.unaj.senderos.core.testing.FalsoAlmacenFotos(),
             backgroundScope + UnconfinedTestDispatcher(testScheduler)
         ) { instante }
     }

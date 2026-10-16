@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.repository
+package com.unaj.senderos.core.network
 
 import android.util.Log
 import com.google.android.gms.tasks.Task
@@ -11,34 +11,35 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
+import javax.inject.Inject
 
 private const val TAG = "AUTH"
 
-class AutenticacionRepositorioImpl : AutenticacionRepositorio {
+class FirebaseFuenteAutenticacion @Inject constructor(
+    private val firebaseAuth: FirebaseAuth
+) : FuenteAutenticacion {
 
-    override suspend fun iniciarSesion(email: String, clave: String): Result<Usuario> {
-        return esperarResultado { FirebaseAuth.getInstance().signInWithEmailAndPassword(email, clave) }
+    override suspend fun iniciarSesion(email: String, clave: String): Result<UsuarioRed> {
+        return esperarResultado { firebaseAuth.signInWithEmailAndPassword(email, clave) }
     }
 
-    override suspend fun registrar(email: String, clave: String): Result<Usuario> {
-        return esperarResultado { FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, clave) }
+    override suspend fun registrar(email: String, clave: String): Result<UsuarioRed> {
+        return esperarResultado { firebaseAuth.createUserWithEmailAndPassword(email, clave) }
     }
 
-    override suspend fun iniciarSesionConGoogle(idToken: String): Result<Usuario> {
+    override suspend fun iniciarSesionConGoogle(idToken: String): Result<UsuarioRed> {
         val credencialGoogle = GoogleAuthProvider.getCredential(idToken, null)
-        return esperarResultado { FirebaseAuth.getInstance().signInWithCredential(credencialGoogle) }
+        return esperarResultado { firebaseAuth.signInWithCredential(credencialGoogle) }
     }
 
     // Enviar el correo de recuperación sin revelar si el correo pertenece a una cuenta existente
     override suspend fun enviarCorreoRecuperacion(email: String): Result<Unit> {
         return try {
-            FirebaseAuth.getInstance().sendPasswordResetEmail(email).await()
+            firebaseAuth.sendPasswordResetEmail(email).await()
             Result.success(Unit)
         } catch (excepcion: CancellationException) {
             throw excepcion
@@ -56,19 +57,19 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         }
     }
 
-    override fun obtenerUsuarioActual(): Usuario? {
-        return FirebaseAuth.getInstance().currentUser?.aUsuario()
+    override fun obtenerUsuarioActual(): UsuarioRed? {
+        return firebaseAuth.currentUser?.aUsuarioRed()
     }
 
     override fun cerrarSesion() {
-        FirebaseAuth.getInstance().signOut()
+        firebaseAuth.signOut()
     }
 
-    private suspend fun esperarResultado(operacion: () -> Task<AuthResult>): Result<Usuario> {
+    private suspend fun esperarResultado(operacion: () -> Task<AuthResult>): Result<UsuarioRed> {
         return suspendCancellableCoroutine { continuacion ->
             operacion()
                 .addOnSuccessListener { resultado ->
-                    val usuario = resultado.user?.aUsuario()
+                    val usuario = resultado.user?.aUsuarioRed()
                     continuacion.resume(
                         if (usuario != null) {
                             Result.success(usuario)
@@ -83,7 +84,7 @@ class AutenticacionRepositorioImpl : AutenticacionRepositorio {
         }
     }
 
-    private fun FirebaseUser.aUsuario() = Usuario(
+    private fun FirebaseUser.aUsuarioRed() = UsuarioRed(
         id = uid,
         email = email ?: "",
         nombre = displayName ?: "",

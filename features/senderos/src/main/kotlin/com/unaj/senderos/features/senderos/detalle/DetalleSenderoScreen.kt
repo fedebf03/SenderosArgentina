@@ -1,10 +1,15 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.features.senderos.detalle
 
+import com.unaj.senderos.core.ui.sendero.ListaDeEtapas
+import com.unaj.senderos.core.ui.sendero.ListaConVinietas
+import com.unaj.senderos.core.ui.sendero.TarjetaPuntoSeleccionado
+import com.unaj.senderos.core.ui.sendero.RecuadroMapa
+import com.unaj.senderos.core.ui.sendero.DatosDelRecorrido
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -56,18 +61,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.revisionpuntos.DialogoFotoAmpliada
-import com.unaj.senderos.presentation.revisionpuntos.DialogoRevisionPuntos
-import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
-import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
-import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacionPrecisa
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
+import com.unaj.senderos.core.ui.revisionpuntos.DialogoFotoAmpliada
+import com.unaj.senderos.core.ui.revisionpuntos.DialogoRevisionPuntos
+import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
+import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacionPrecisa
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "DETALLE_SENDERO"
 

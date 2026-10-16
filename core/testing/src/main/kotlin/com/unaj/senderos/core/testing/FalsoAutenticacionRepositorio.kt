@@ -1,7 +1,7 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
 
 class FalsoAutenticacionRepositorio(
     var usuarioActual: Usuario? = null

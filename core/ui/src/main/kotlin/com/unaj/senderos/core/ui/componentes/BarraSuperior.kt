@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
@@ -17,7 +17,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

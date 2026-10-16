@@ -1,19 +1,19 @@
-package com.unaj.senderos.data.mapeo
+package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.data.local.EtapaEntidad
-import com.unaj.senderos.data.local.PuntoRecorridoEntidad
-import com.unaj.senderos.data.local.SenderoEntidad
-import com.unaj.senderos.data.remote.EtapaRed
-import com.unaj.senderos.data.remote.PuntoRecorridoRed
-import com.unaj.senderos.data.remote.SenderoRed
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.core.database.EtapaEntidad
+import com.unaj.senderos.core.database.PuntoRecorridoEntidad
+import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.network.EtapaRed
+import com.unaj.senderos.core.network.PuntoRecorridoRed
+import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.model.TipoRecorrido
 
 private fun resolverDificultad(nombre: String): Dificultad {
     return Dificultad.entries.firstOrNull { valor -> valor.name == nombre } ?: Dificultad.MEDIA

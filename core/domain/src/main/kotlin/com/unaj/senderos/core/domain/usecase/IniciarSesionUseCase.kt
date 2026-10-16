@@ -1,9 +1,10 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import javax.inject.Inject
 
-class IniciarSesionUseCase(
+class IniciarSesionUseCase @Inject constructor(
     private val repositorio: AutenticacionRepositorio
 ) {
     suspend operator fun invoke(email: String, clave: String): Result<Usuario> {

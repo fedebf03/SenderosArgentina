@@ -1,10 +1,10 @@
-package com.unaj.senderos.data.sincronizacion
+package com.unaj.senderos.core.data.sincronizacion
 
-import com.unaj.senderos.falsos.FalsoEjecutorTransacciones
-import com.unaj.senderos.falsos.FalsoSenderoDao
-import com.unaj.senderos.falsos.FalsoSenderoFuenteRemota
-import com.unaj.senderos.falsos.FalsoSubidorFotos
-import com.unaj.senderos.falsos.crearEntidadDePrueba
+import com.unaj.senderos.core.data.falsos.FalsoEjecutorTransacciones
+import com.unaj.senderos.core.data.falsos.FalsoSenderoDao
+import com.unaj.senderos.core.data.falsos.FalsoSenderoFuenteRemota
+import com.unaj.senderos.core.data.falsos.FalsoSubidorFotos
+import com.unaj.senderos.core.data.falsos.crearEntidadDePrueba
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

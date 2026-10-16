@@ -1,6 +1,5 @@
-package com.unaj.senderos.presentation.historial
+package com.unaj.senderos.core.ui.comun
 
-import com.unaj.senderos.presentation.comun.LOCALIDAD_ARGENTINA
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

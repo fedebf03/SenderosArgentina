@@ -1,11 +1,11 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import com.unaj.senderos.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.model.TipoPunto
 
 data class PaletaMapa(
     val primario: Int,

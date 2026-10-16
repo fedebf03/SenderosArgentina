@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 // El trazado incluye el tramo de cierre (circular) o la vuelta (ida y vuelta)
 data class EstadoSeguimiento(

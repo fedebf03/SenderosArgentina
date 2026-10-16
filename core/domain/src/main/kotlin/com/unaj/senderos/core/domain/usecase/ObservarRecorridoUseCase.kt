@@ -1,11 +1,12 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.RecorridoRealizado
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
-import com.unaj.senderos.domain.repository.RecorridoRepositorio
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.repository.RecorridoRepositorio
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
-class ObservarRecorridoUseCase(
+class ObservarRecorridoUseCase @Inject constructor(
     private val recorridoRepositorio: RecorridoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {

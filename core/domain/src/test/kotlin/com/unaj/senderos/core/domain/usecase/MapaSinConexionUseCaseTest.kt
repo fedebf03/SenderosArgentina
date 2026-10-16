@@ -1,12 +1,12 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.recorrido.CalculadoraCorredor
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoGestorMapasSinConexion
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.recorrido.CalculadoraCorredor
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoGestorMapasSinConexion
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

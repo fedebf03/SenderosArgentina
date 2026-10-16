@@ -1,8 +1,8 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.features.senderos.detalle
 
-import com.unaj.senderos.presentation.comun.formatearTamanoMapa
+import com.unaj.senderos.core.ui.comun.formatearTamanoMapa
 import org.junit.Assert.assertEquals
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
 import org.junit.Test
 
 class TextosMapaSinConexionTest {

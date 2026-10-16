@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
-import com.unaj.senderos.presentation.comun.formatearDistanciaAlUsuario
+import com.unaj.senderos.core.ui.comun.formatearDistanciaAlUsuario
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

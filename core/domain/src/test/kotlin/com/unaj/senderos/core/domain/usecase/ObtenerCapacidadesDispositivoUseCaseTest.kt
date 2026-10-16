@@ -1,7 +1,7 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.falsos.FalsoDetectorCapacidades
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.testing.FalsoDetectorCapacidades
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

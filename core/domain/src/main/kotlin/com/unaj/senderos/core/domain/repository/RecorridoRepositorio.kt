@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.repository
+package com.unaj.senderos.core.domain.repository
 
-import com.unaj.senderos.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
 import kotlinx.coroutines.flow.Flow
 
 interface RecorridoRepositorio {

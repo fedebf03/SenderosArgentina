@@ -1,7 +1,7 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.MuestraAcelerometro
-import com.unaj.senderos.domain.port.FuenteAcelerometro
+import com.unaj.senderos.core.domain.model.MuestraAcelerometro
+import com.unaj.senderos.core.domain.port.FuenteAcelerometro
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 

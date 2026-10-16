@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.login
+package com.unaj.senderos.features.auth.login
 
 data class LoginEstadoVisual(
     val email: String = "",

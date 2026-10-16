@@ -1,24 +1,24 @@
-package com.unaj.senderos.data.seguimiento
+package com.unaj.senderos.core.data.seguimiento
 
-import com.unaj.senderos.domain.model.CalidadSenal
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.LecturaUbicacion
-import com.unaj.senderos.domain.model.MuestraAcelerometro
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.domain.model.MotivoFinSeguimiento
-import com.unaj.senderos.domain.port.FuenteAcelerometro
-import com.unaj.senderos.domain.port.ProveedorDeclinacion
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoFuenteAcelerometro
-import com.unaj.senderos.falsos.FalsoFuenteBrujula
-import com.unaj.senderos.falsos.FalsoProveedorUbicacion
-import com.unaj.senderos.falsos.FalsoRecorridoRepositorio
-import com.unaj.senderos.falsos.FalsoSenderoRepositorio
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.CalidadSenal
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.LecturaUbicacion
+import com.unaj.senderos.core.domain.model.MuestraAcelerometro
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.core.domain.port.FuenteAcelerometro
+import com.unaj.senderos.core.domain.port.ProveedorDeclinacion
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoFuenteAcelerometro
+import com.unaj.senderos.core.testing.FalsoFuenteBrujula
+import com.unaj.senderos.core.testing.FalsoProveedorUbicacion
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -69,8 +69,8 @@ class ControlSeguimientoSensoresTest {
             proveedor,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             repositorioRecorridos,
-            com.unaj.senderos.falsos.FalsoPuntosCapturadosRepositorio(),
-            com.unaj.senderos.falsos.FalsoAlmacenFotos(),
+            com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio(),
+            com.unaj.senderos.core.testing.FalsoAlmacenFotos(),
             backgroundScope + UnconfinedTestDispatcher(testScheduler),
             capacidades = capacidades,
             fuenteAcelerometro = fuenteAcelerometro,

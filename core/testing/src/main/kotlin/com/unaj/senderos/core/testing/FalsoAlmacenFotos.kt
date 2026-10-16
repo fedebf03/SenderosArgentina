@@ -1,6 +1,6 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.port.AlmacenFotos
+import com.unaj.senderos.core.domain.port.AlmacenFotos
 
 class FalsoAlmacenFotos : AlmacenFotos {
 

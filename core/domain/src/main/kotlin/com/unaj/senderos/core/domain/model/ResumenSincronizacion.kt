@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 // Milisegundos de demora desde la modificación a partir de los cuales un sendero se considera guardado sin conexión
 const val UMBRAL_DEMORA_MILISEGUNDOS = 60_000L

@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.seguimiento
+package com.unaj.senderos.core.data.seguimiento
 
 import android.app.Service
 import android.content.Context
@@ -9,10 +9,9 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
-import com.unaj.senderos.app.SenderosAplicacion
-import com.unaj.senderos.domain.notificaciones.RedactorNotificacionRecorrido
-import com.unaj.senderos.domain.notificaciones.ContenidoNotificacionRecorrido
-import com.unaj.senderos.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.notificaciones.RedactorNotificacionRecorrido
+import com.unaj.senderos.core.domain.notificaciones.ContenidoNotificacionRecorrido
+import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,6 +23,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 private const val TAG = "SERVICIO_RECORRIDO"
 private const val ACCION_INICIAR = "com.example.senderosargentina.seguimiento.INICIAR"
@@ -41,10 +43,16 @@ private data class DatosNotificacion(
     val contenido: ContenidoNotificacionRecorrido
 )
 
+@AndroidEntryPoint
 class ServicioSeguimientoRecorrido : Service() {
 
+    @Inject
+    lateinit var control: ControlSeguimiento
+
+    @Inject
+    lateinit var capacidadesDispositivo: CapacidadesDispositivo
+
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private lateinit var control: ControlSeguimiento
     private lateinit var notificador: NotificadorRecorrido
     private var idSenderoActual: String = ""
     private var esSimuladoActual = false
@@ -73,10 +81,8 @@ class ServicioSeguimientoRecorrido : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        val contenedor = (applicationContext as SenderosAplicacion).contenedorDependencias
-        control = contenedor.controlSeguimiento
         notificador = NotificadorRecorrido(applicationContext)
-        tieneAcelerometro = contenedor.capacidadesDispositivo.tieneAcelerometro
+        tieneAcelerometro = capacidadesDispositivo.tieneAcelerometro
         alcance.launch {
             control.estado.map { estado -> estado != null }.distinctUntilChanged().collect { estaActivo ->
                 if (estaActivo) {

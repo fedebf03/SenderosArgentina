@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.port
+package com.unaj.senderos.core.domain.port
 
-import com.unaj.senderos.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.Coordenada
 
 interface ProveedorDeclinacion {
 

@@ -1,20 +1,21 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.PuntoCapturado
-import com.unaj.senderos.domain.model.PuntoCapturadoConDistancia
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.domain.recorrido.CalculadoraInsercionPuntos
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
-import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
-import com.unaj.senderos.domain.repository.SenderoRepositorio
+import com.unaj.senderos.core.domain.model.PuntoCapturado
+import com.unaj.senderos.core.domain.model.PuntoCapturadoConDistancia
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraInsercionPuntos
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.repository.PuntosCapturadosRepositorio
+import com.unaj.senderos.core.domain.repository.SenderoRepositorio
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
 private const val MENSAJE_SIN_SESION = "No hay una sesión activa"
 
-class ObservarPuntosCapturadosUseCase(
+class ObservarPuntosCapturadosUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -25,7 +26,7 @@ class ObservarPuntosCapturadosUseCase(
     }
 }
 
-class ObservarPuntosCapturadosConDistanciaUseCase(
+class ObservarPuntosCapturadosConDistanciaUseCase @Inject constructor(
     private val senderoRepositorio: SenderoRepositorio,
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
@@ -52,7 +53,7 @@ class ObservarPuntosCapturadosConDistanciaUseCase(
     }
 }
 
-class DescartarPuntosCapturadosUseCase(
+class DescartarPuntosCapturadosUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -63,7 +64,7 @@ class DescartarPuntosCapturadosUseCase(
     }
 }
 
-class IncorporarPuntosCapturadosUseCase(
+class IncorporarPuntosCapturadosUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {

@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.configuracion
+package com.unaj.senderos.core.domain.configuracion
 
 // Constantes puras del mapa base; viven en dominio porque tanto presentation como data pueden depender de él
 object ConfiguracionEstiloMapa {

@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.sensores
+package com.unaj.senderos.core.data.sensores
 
 import android.content.Context
 import android.hardware.Sensor
@@ -9,13 +9,15 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Log
-import com.unaj.senderos.domain.model.MuestraAcelerometro
-import com.unaj.senderos.domain.port.FuenteAcelerometro
+import com.unaj.senderos.core.domain.model.MuestraAcelerometro
+import com.unaj.senderos.core.domain.port.FuenteAcelerometro
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import java.util.concurrent.atomic.AtomicInteger
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "SENSOR_PASOS"
 private const val NANOSEGUNDOS_POR_MILISEGUNDO = 1_000_000L
@@ -30,7 +32,7 @@ private const val SIN_LOTE_MICROSEGUNDOS = 0
 // Si el sensor tiene FIFO (fifoMaxEventCount > 0) se piden lotes de hasta 2 s para despertar menos la CPU; las muestras conservan su instante real.
 // Las muestras llegan en un hilo propio (HandlerThread) para no perderlas si el hilo principal está ocupado.
 // El instante se expresa en reloj de pared: instante del evento del sensor (monotónico) más el desfase actual entre ambos relojes
-class FuenteAcelerometroAndroid(private val contexto: Context) : FuenteAcelerometro {
+class FuenteAcelerometroAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : FuenteAcelerometro {
 
     override fun observarMuestras(): Flow<MuestraAcelerometro> = callbackFlow {
         val gestor = contexto.getSystemService(SensorManager::class.java)

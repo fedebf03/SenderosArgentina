@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.Image
@@ -36,8 +36,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.unaj.senderos.R
-import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.core.ui.R
+import com.unaj.senderos.core.domain.model.Usuario
 
 @Composable
 fun CabeceraPrincipal(

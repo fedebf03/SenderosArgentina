@@ -1,13 +1,15 @@
-package com.unaj.senderos.data.seguimiento
+package com.unaj.senderos.core.data.seguimiento
 
 import android.content.Context
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.unaj.senderos.domain.port.LanzadorSeguimiento
+import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "LANZADOR_SEGUIMIENTO"
 
-class LanzadorSeguimientoAndroid(private val contexto: Context) : LanzadorSeguimiento {
+class LanzadorSeguimientoAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : LanzadorSeguimiento {
 
     override fun iniciar(idSendero: String, esSimulado: Boolean) {
         Log.d(TAG, "Solicitud de inicio del recorrido: $idSendero (simulado: $esSimulado)")

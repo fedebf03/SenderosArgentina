@@ -1,6 +1,6 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.port.FuenteBrujula
+import com.unaj.senderos.core.domain.port.FuenteBrujula
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 

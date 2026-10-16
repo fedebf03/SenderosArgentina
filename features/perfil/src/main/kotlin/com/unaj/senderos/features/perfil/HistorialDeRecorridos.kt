@@ -1,8 +1,8 @@
-package com.unaj.senderos.presentation.historial
+package com.unaj.senderos.features.perfil
 
 import androidx.compose.ui.text.style.TextOverflow
-import com.unaj.senderos.presentation.componentes.accionable
-import com.unaj.senderos.presentation.comun.formatearDistanciaCorta
+import com.unaj.senderos.core.ui.componentes.accionable
+import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,10 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.RecorridoRealizado
-import com.unaj.senderos.presentation.componentes.IconoSincronizacion
-import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.ui.componentes.IconoSincronizacion
+import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
+import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
+import com.unaj.senderos.core.ui.componentes.EtiquetaSimulado
+import com.unaj.senderos.core.ui.comun.formatearFechaHora
 
 @Composable
 fun HistorialDeRecorridos(

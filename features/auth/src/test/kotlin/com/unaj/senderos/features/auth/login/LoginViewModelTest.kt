@@ -1,9 +1,9 @@
-package com.unaj.senderos.presentation.login
+package com.unaj.senderos.features.auth.login
 
-import com.unaj.senderos.domain.usecase.EnviarCorreoRecuperacionUseCase
-import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
-import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.domain.usecase.EnviarCorreoRecuperacionUseCase
+import com.unaj.senderos.core.domain.usecase.IniciarSesionConGoogleUseCase
+import com.unaj.senderos.core.domain.usecase.IniciarSesionUseCase
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

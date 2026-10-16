@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.tema
+package com.unaj.senderos.core.ui.tema
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import com.unaj.senderos.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.Dificultad
 
 val CelesteArgentino = Color(0xFF74ACDF)
 

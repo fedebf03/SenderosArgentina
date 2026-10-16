@@ -1,12 +1,12 @@
-package com.unaj.senderos.data.mapeo
+package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.data.local.CoordenadaEntidad
-import com.unaj.senderos.data.local.RecorridoEntidad
-import com.unaj.senderos.data.remote.CoordenadaRed
-import com.unaj.senderos.data.remote.RecorridoRed
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.database.CoordenadaEntidad
+import com.unaj.senderos.core.database.RecorridoEntidad
+import com.unaj.senderos.core.network.CoordenadaRed
+import com.unaj.senderos.core.network.RecorridoRed
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
 
 // Un valor desconocido se toma como sincronizado
 private fun resolverEstadoDelRecorrido(nombre: String): EstadoSincronizacion {

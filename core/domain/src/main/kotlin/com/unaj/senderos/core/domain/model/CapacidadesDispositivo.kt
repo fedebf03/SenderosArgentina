@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 // La brújula equivale al sensor de vector de rotación, que es el que usa la app
 data class CapacidadesDispositivo(

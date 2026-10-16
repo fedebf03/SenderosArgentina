@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading

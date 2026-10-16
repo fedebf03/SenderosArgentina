@@ -1,9 +1,12 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.features.senderos.detalle
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.ui.sendero.formatearKilometrosDesdeInicio
+import com.unaj.senderos.core.ui.sendero.obtenerPuntosDeInteres
+import com.unaj.senderos.core.ui.sendero.PuntoDeInteres
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

@@ -1,13 +1,13 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.falsos.FalsoAlmacenFotos
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoSenderoRepositorio
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.testing.FalsoAlmacenFotos
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

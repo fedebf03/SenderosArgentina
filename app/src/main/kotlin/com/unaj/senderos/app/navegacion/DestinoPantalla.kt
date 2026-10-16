@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.navegacion
+package com.unaj.senderos.navegacion
 
 import androidx.compose.runtime.saveable.Saver
 

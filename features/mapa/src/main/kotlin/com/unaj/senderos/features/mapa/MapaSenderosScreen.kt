@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.mapasenderos
+package com.unaj.senderos.features.mapa
 
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,15 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.presentation.componentes.BotoneraInferior
-import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
-import com.unaj.senderos.presentation.componentes.CargandoCentrado
-import com.unaj.senderos.presentation.componentes.MensajeCentrado
-import com.unaj.senderos.presentation.componentes.SeccionPrincipal
-import com.unaj.senderos.presentation.componentes.TarjetaSendero
-import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
-import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
-import com.unaj.senderos.presentation.componentes.mapa.MapaDeSenderos
+import com.unaj.senderos.core.ui.componentes.BotoneraInferior
+import com.unaj.senderos.core.ui.componentes.CabeceraPrincipal
+import com.unaj.senderos.core.ui.componentes.CargandoCentrado
+import com.unaj.senderos.core.ui.componentes.MensajeCentrado
+import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
+import com.unaj.senderos.core.ui.componentes.TarjetaSendero
+import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacion
+import com.unaj.senderos.core.ui.componentes.mapa.MapaDeSenderos
 
 @Composable
 fun MapaSenderosPantalla(

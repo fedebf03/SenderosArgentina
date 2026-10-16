@@ -1,23 +1,23 @@
-package com.unaj.senderos.presentation.recorrido
+package com.unaj.senderos.features.recorrido
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.model.AvisoRecorrido
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.domain.model.EstadoSeguimiento
-import com.unaj.senderos.domain.model.MotivoFinSeguimiento
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.domain.port.ControlSeguimiento
-import com.unaj.senderos.domain.port.LanzadorSeguimiento
-import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
-import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
-import com.unaj.senderos.presentation.comun.describirErrorParaElUsuario
-import com.unaj.senderos.presentation.revisionpuntos.ControladorRevisionPuntos
-import com.unaj.senderos.presentation.revisionpuntos.describirPuntoGuardadoConPosicionAntigua
+import com.unaj.senderos.core.domain.model.AvisoRecorrido
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
+import com.unaj.senderos.core.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.core.domain.usecase.IncorporarPuntosCapturadosUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
+import com.unaj.senderos.core.ui.revisionpuntos.ControladorRevisionPuntos
+import com.unaj.senderos.core.ui.revisionpuntos.describirPuntoGuardadoConPosicionAntigua
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,14 +27,20 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import com.unaj.senderos.core.domain.port.Reloj
 
 private const val TAG = "RECORRIDO"
 private const val PLAZO_INICIO_MILISEGUNDOS = 5_000L
 private const val MENSAJE_PUNTO_GUARDADO = "Punto guardado"
 private const val MENSAJE_ERROR_PUNTO = "No se pudo guardar el punto"
 
-class RecorridoViewModel(
-    private val idSendero: String,
+@HiltViewModel(assistedFactory = RecorridoViewModel.Fabrica::class)
+class RecorridoViewModel @AssistedInject constructor(
+    @Assisted private val idSendero: String,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val controlSeguimiento: ControlSeguimiento,
     private val lanzadorSeguimiento: LanzadorSeguimiento,
@@ -42,8 +48,13 @@ class RecorridoViewModel(
     observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
     incorporarPuntosCapturadosUseCase: IncorporarPuntosCapturadosUseCase,
     descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase,
-    private val reloj: () -> Long = System::currentTimeMillis
+    private val reloj: Reloj = Reloj(System::currentTimeMillis)
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Fabrica {
+        fun crear(idSendero: String): RecorridoViewModel
+    }
 
     private val _estadoVisual = MutableStateFlow(
         RecorridoEstadoVisual(

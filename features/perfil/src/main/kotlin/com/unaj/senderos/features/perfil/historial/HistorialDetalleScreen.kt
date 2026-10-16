@@ -1,11 +1,13 @@
-package com.unaj.senderos.presentation.historial
+package com.unaj.senderos.features.historial
 
-import com.unaj.senderos.presentation.componentes.BarraSuperior
-import com.unaj.senderos.presentation.comun.formatearDistanciaCorta
-import com.unaj.senderos.presentation.comun.formatearPasos
-import com.unaj.senderos.presentation.comun.formatearRitmo
-import com.unaj.senderos.presentation.comun.formatearVelocidad
-import com.unaj.senderos.presentation.comun.TEXTO_NO_DISPONIBLE
+import com.unaj.senderos.core.ui.componentes.EtiquetaSimulado
+import com.unaj.senderos.core.ui.comun.formatearFechaHora
+import com.unaj.senderos.core.ui.componentes.BarraSuperior
+import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
+import com.unaj.senderos.core.ui.comun.formatearPasos
+import com.unaj.senderos.core.ui.comun.formatearRitmo
+import com.unaj.senderos.core.ui.comun.formatearVelocidad
+import com.unaj.senderos.core.ui.comun.TEXTO_NO_DISPONIBLE
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -26,10 +28,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
+import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,12 +44,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.domain.model.RecorridoRealizado
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
-import com.unaj.senderos.presentation.recorrido.formatearTiempoTranscurrido
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
+import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
+import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "HISTORIAL"
 
@@ -188,18 +189,6 @@ private fun CuerpoHistorial(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun EtiquetaSimulado(modifier: Modifier = Modifier) {
-    Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small, modifier = modifier) {
-        Text(
-            text = "Simulado",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-        )
     }
 }
 

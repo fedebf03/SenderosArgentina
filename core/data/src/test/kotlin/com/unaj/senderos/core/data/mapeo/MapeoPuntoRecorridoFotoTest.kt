@@ -1,13 +1,13 @@
-package com.unaj.senderos.data.mapeo
+package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.data.local.ConvertidoresSendero
-import com.unaj.senderos.data.local.PuntoRecorridoEntidad
-import com.unaj.senderos.data.remote.PuntoRecorridoRed
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.falsos.crearEntidadDePrueba
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.database.ConvertidoresSendero
+import com.unaj.senderos.core.database.PuntoRecorridoEntidad
+import com.unaj.senderos.core.network.PuntoRecorridoRed
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.data.falsos.crearEntidadDePrueba
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

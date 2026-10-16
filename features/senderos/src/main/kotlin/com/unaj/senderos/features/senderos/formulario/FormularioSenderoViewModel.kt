@@ -1,17 +1,17 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.recorrido.EdicionRecorrido
-import com.unaj.senderos.domain.model.CampoSendero
-import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoInvalidoException
-import com.unaj.senderos.domain.port.AlmacenFotos
-import com.unaj.senderos.domain.usecase.GuardarSenderoUseCase
-import com.unaj.senderos.presentation.comun.formatearDecimalEditable
-import com.unaj.senderos.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.domain.recorrido.EdicionRecorrido
+import com.unaj.senderos.core.domain.model.CampoSendero
+import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoInvalidoException
+import com.unaj.senderos.core.domain.port.AlmacenFotos
+import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
+import com.unaj.senderos.core.ui.comun.formatearDecimalEditable
+import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +21,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 private const val TAG = "FORMULARIO_SENDERO"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
@@ -29,12 +33,18 @@ private const val MENSAJE_REVISAR_CAMPOS = "Revisá los campos marcados"
 private const val MENSAJE_ETAPA_INVALIDA = "Completá el nombre y los km de la etapa"
 private const val MENSAJE_FOTO_INVALIDA = "No se pudo usar esa foto"
 
-class FormularioSenderoViewModel(
-    private val idSendero: String?,
+@HiltViewModel(assistedFactory = FormularioSenderoViewModel.Fabrica::class)
+class FormularioSenderoViewModel @AssistedInject constructor(
+    @Assisted private val idSendero: String?,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val guardarSenderoUseCase: GuardarSenderoUseCase,
     private val almacenFotos: AlmacenFotos
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Fabrica {
+        fun crear(idSendero: String?): FormularioSenderoViewModel
+    }
 
     private val _estadoVisual = MutableStateFlow(
         FormularioSenderoEstadoVisual(esEdicion = idSendero != null, estaCargando = idSendero != null)

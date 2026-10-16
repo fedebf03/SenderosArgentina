@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.registro
+package com.unaj.senderos.features.auth.registro
 
 data class RegistroEstadoVisual(
     val email: String = "",

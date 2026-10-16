@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.recorrido
+package com.unaj.senderos.core.domain.recorrido
 
-import com.unaj.senderos.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue

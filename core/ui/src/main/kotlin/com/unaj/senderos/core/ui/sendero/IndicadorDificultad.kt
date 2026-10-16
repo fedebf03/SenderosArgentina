@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +16,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.presentation.tema.obtenerColorDificultad
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.ui.tema.obtenerColorDificultad
 
 private val ANCHO_BARRAS = 16.dp
 private val ALTO_BARRAS = 14.dp

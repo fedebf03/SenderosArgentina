@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.local
+package com.unaj.senderos.core.database
 
 import androidx.room.TypeConverter
 import kotlinx.serialization.builtins.ListSerializer

@@ -1,8 +1,8 @@
-package com.unaj.senderos.domain.recorrido
+package com.unaj.senderos.core.domain.recorrido
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoRecorrido
 
 private const val METROS_POR_KILOMETRO = 1000.0
 

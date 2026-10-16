@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.core.ui.comun
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.model.SenderosDelUsuario
-import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
+import com.unaj.senderos.core.domain.model.SenderosDelUsuario
+import com.unaj.senderos.core.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 

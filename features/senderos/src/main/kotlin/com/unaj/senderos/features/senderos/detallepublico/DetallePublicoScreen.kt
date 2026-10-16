@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.detallepublico
+package com.unaj.senderos.features.explorar
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -44,18 +44,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoPublico
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.FotoSendero
-import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.detalle.BotonCircular
-import com.unaj.senderos.presentation.detalle.DatosDelRecorrido
-import com.unaj.senderos.presentation.detalle.ListaConVinietas
-import com.unaj.senderos.presentation.detalle.ListaDeEtapas
-import com.unaj.senderos.presentation.detalle.RecuadroMapa
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoPublico
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.FotoSendero
+import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
+import com.unaj.senderos.core.ui.componentes.BotonCircular
+import com.unaj.senderos.core.ui.sendero.DatosDelRecorrido
+import com.unaj.senderos.core.ui.sendero.ListaConVinietas
+import com.unaj.senderos.core.ui.sendero.ListaDeEtapas
+import com.unaj.senderos.core.ui.sendero.RecuadroMapa
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 @Composable
 fun DetallePublicoPantalla(

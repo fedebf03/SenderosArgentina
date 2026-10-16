@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
-import com.unaj.senderos.falsos.crearSenderoDePrueba
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

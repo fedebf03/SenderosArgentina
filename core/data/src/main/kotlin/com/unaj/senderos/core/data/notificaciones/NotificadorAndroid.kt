@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.notificaciones
+package com.unaj.senderos.core.data.notificaciones
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -12,11 +12,12 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.unaj.senderos.R
-import com.unaj.senderos.app.MainActivity
-import com.unaj.senderos.domain.notificaciones.MensajeNotificacion
-import com.unaj.senderos.domain.notificaciones.RedactorNotificacionSincronizacion
-import com.unaj.senderos.domain.port.Notificador
+import com.unaj.senderos.core.data.R
+import com.unaj.senderos.core.domain.notificaciones.MensajeNotificacion
+import com.unaj.senderos.core.domain.notificaciones.RedactorNotificacionSincronizacion
+import com.unaj.senderos.core.domain.port.Notificador
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "NOTIFICACIONES"
 private const val ID_CANAL_SINCRONIZACION = "sincronizacion"
@@ -25,7 +26,7 @@ private const val ID_NOTIFICACION_SUBIDOS = 1001
 private const val ID_NOTIFICACION_ERROR = 1002
 private const val CODIGO_PEDIDO_REINTENTAR = 1
 
-class NotificadorAndroid(private val contexto: Context) : Notificador {
+class NotificadorAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : Notificador {
 
     override fun notificar(mensaje: MensajeNotificacion) {
         if (!tienePermisoDeNotificaciones()) {
@@ -87,7 +88,7 @@ class NotificadorAndroid(private val contexto: Context) : Notificador {
     }
 
     private fun crearAccionAbrirAplicacion(): PendingIntent {
-        val intencion = Intent(contexto, MainActivity::class.java)
+        val intencion = contexto.intencionAbrirAplicacion()
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         return PendingIntent.getActivity(contexto, 0, intencion, PendingIntent.FLAG_IMMUTABLE)
     }

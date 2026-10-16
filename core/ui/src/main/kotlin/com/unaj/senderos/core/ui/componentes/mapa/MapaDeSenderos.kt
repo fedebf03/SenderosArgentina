@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
-import com.unaj.senderos.presentation.componentes.BannerAviso
+import com.unaj.senderos.core.ui.componentes.BannerAviso
 import androidx.compose.animation.AnimatedVisibility
 import android.annotation.SuppressLint
 import android.graphics.RectF
@@ -31,10 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.doOnLayout
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng

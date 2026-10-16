@@ -1,10 +1,10 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoLanzadorSeguimiento
-import com.unaj.senderos.falsos.FalsoNotificador
-import com.unaj.senderos.falsos.FalsoSenderoRepositorio
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
+import com.unaj.senderos.core.testing.FalsoNotificador
+import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -20,7 +20,7 @@ class CerrarSesionUseCaseTest {
     fun `cerrar sesion detiene el seguimiento antes de cerrar la sesion`() {
         val eventos = mutableListOf<String>()
         senderos.alDetenerSincronizacion = { eventos.add("sincronizacion") }
-        val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, object : com.unaj.senderos.domain.port.LanzadorSeguimiento {
+        val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, object : com.unaj.senderos.core.domain.port.LanzadorSeguimiento {
             override fun iniciar(idSendero: String, esSimulado: Boolean) = Unit
 
             override fun detener() {

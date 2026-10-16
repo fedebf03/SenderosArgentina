@@ -1,7 +1,7 @@
-package com.unaj.senderos.presentation.historial
+package com.unaj.senderos.features.historial
 
-import com.unaj.senderos.domain.model.RecorridoRealizado
-import com.unaj.senderos.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.domain.model.Sendero
 
 data class HistorialDetalleEstadoVisual(
     val recorrido: RecorridoRealizado? = null,

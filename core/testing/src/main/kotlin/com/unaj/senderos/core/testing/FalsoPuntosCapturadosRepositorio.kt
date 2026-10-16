@@ -1,10 +1,10 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.PuntoCapturado
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.recorrido.CalculadoraInsercionPuntos
-import com.unaj.senderos.domain.repository.PuntosCapturadosRepositorio
+import com.unaj.senderos.core.domain.model.PuntoCapturado
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.recorrido.CalculadoraInsercionPuntos
+import com.unaj.senderos.core.domain.repository.PuntosCapturadosRepositorio
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first

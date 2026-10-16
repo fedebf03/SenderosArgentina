@@ -1,12 +1,12 @@
-package com.unaj.senderos.presentation.recorrido
+package com.unaj.senderos.features.recorrido
 
-import com.unaj.senderos.domain.model.CalidadSenal
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEstadoVisual
-import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
+import com.unaj.senderos.core.domain.model.CalidadSenal
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEstadoVisual
+import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
 
 val TIPO_PUNTO_INICIAL: TipoPunto = TipoPunto.MIRADOR
 

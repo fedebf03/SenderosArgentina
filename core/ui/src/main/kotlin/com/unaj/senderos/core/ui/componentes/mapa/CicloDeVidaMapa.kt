@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
 import android.content.ComponentCallbacks2
 import android.content.res.Configuration

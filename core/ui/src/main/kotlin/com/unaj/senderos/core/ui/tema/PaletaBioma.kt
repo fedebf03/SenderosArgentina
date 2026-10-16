@@ -1,9 +1,9 @@
-package com.unaj.senderos.presentation.tema
+package com.unaj.senderos.core.ui.tema
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import com.unaj.senderos.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Bioma
 
 /**
  * Colores de un bioma: [principal] para líneas, franjas y puntos; [contenedor] para fondos de etiquetas

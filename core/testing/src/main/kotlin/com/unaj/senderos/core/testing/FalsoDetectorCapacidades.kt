@@ -1,7 +1,7 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.CapacidadesDispositivo
-import com.unaj.senderos.domain.port.DetectorCapacidades
+import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.port.DetectorCapacidades
 
 class FalsoDetectorCapacidades(var capacidades: CapacidadesDispositivo) : DetectorCapacidades {
 

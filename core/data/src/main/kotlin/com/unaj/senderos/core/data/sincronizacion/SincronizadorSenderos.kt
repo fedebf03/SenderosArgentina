@@ -1,18 +1,18 @@
-package com.unaj.senderos.data.sincronizacion
+package com.unaj.senderos.core.data.sincronizacion
 
 import android.util.Log
-import com.unaj.senderos.data.local.EjecutorTransacciones
-import com.unaj.senderos.data.local.SenderoDao
-import com.unaj.senderos.data.local.SenderoEntidad
-import com.unaj.senderos.data.mapeo.aEntidad
-import com.unaj.senderos.data.mapeo.aRed
-import com.unaj.senderos.data.remote.SenderoFuenteRemota
-import com.unaj.senderos.data.remote.SenderoRed
-import com.unaj.senderos.data.remote.SubidorFotos
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.ResumenSincronizacion
-import com.unaj.senderos.domain.model.UMBRAL_DEMORA_MILISEGUNDOS
-import com.unaj.senderos.domain.model.esFotoLocal
+import com.unaj.senderos.core.database.EjecutorTransacciones
+import com.unaj.senderos.core.database.SenderoDao
+import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.data.mapeo.aEntidad
+import com.unaj.senderos.core.data.mapeo.aRed
+import com.unaj.senderos.core.network.SenderoFuenteRemota
+import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.network.SubidorFotos
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.ResumenSincronizacion
+import com.unaj.senderos.core.domain.model.UMBRAL_DEMORA_MILISEGUNDOS
+import com.unaj.senderos.core.domain.model.esFotoLocal
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 

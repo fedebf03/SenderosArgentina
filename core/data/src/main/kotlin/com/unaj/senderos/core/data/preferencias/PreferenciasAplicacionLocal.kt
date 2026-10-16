@@ -1,21 +1,23 @@
-package com.unaj.senderos.data.preferencias
+package com.unaj.senderos.core.data.preferencias
 
 import android.content.Context
 import android.util.Log
-import com.unaj.senderos.domain.port.PreferenciasAplicacion
+import com.unaj.senderos.core.domain.port.PreferenciasAplicacion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "PREFERENCIAS"
 private const val NOMBRE_ARCHIVO = "preferencias_aplicacion"
 private const val CLAVE_MODO_DEMOSTRACION = "modo_demostracion"
 
-class PreferenciasAplicacionLocal(contexto: Context) : PreferenciasAplicacion {
+class PreferenciasAplicacionLocal @Inject constructor(@ApplicationContext contexto: Context) : PreferenciasAplicacion {
 
     private val preferencias by lazy { contexto.applicationContext.getSharedPreferences(NOMBRE_ARCHIVO, Context.MODE_PRIVATE) }
     private val modoDemostracion by lazy { MutableStateFlow(preferencias.getBoolean(CLAVE_MODO_DEMOSTRACION, false)) }
 
-    // Leer las preferencias recién al primer acceso, fuera de la construcción del contenedor
+    // Leer las preferencias recién al primer acceso, fuera de la construcción del grafo de dependencias
     override val esModoDemostracion: StateFlow<Boolean> get() = modoDemostracion
 
     override fun cambiarModoDemostracion(activo: Boolean) {

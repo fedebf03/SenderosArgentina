@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.detallepublico
+package com.unaj.senderos.features.explorar
 
-import com.unaj.senderos.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.model.SenderoPublico
 
 data class DetallePublicoEstadoVisual(
     val senderoPublico: SenderoPublico? = null,

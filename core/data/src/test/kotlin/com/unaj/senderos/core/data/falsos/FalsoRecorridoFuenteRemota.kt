@@ -1,7 +1,7 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.data.remote.RecorridoFuenteRemota
-import com.unaj.senderos.data.remote.RecorridoRed
+import com.unaj.senderos.core.network.RecorridoFuenteRemota
+import com.unaj.senderos.core.network.RecorridoRed
 
 class FalsoRecorridoFuenteRemota : RecorridoFuenteRemota {
 

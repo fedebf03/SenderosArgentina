@@ -1,7 +1,7 @@
-package com.unaj.senderos.presentation.tema
+package com.unaj.senderos.core.ui.tema
 
 import androidx.compose.ui.graphics.Color
-import com.unaj.senderos.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Bioma
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

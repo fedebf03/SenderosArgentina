@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.registro
+package com.unaj.senderos.features.auth.registro
 
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -46,8 +46,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.R
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.ui.R
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 @Composable
 fun RegistroPantalla(

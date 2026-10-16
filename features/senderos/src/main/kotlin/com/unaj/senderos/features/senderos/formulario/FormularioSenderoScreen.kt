@@ -1,9 +1,9 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
-import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
-import com.unaj.senderos.presentation.componentes.BarraSuperior
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.BarraSuperior
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -58,11 +58,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.domain.model.CampoSendero
-import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.presentation.comun.limpiarFotosTemporalesViejas
-import com.unaj.senderos.presentation.comun.recordarAccionesDeFoto
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.CampoSendero
+import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.ui.comun.limpiarFotosTemporalesViejas
+import com.unaj.senderos.core.ui.comun.recordarAccionesDeFoto
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "FORMULARIO_SENDERO"
 

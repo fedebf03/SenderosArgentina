@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.login
+package com.unaj.senderos.features.auth.login
 
 import android.content.Context
 import android.util.Log
@@ -10,18 +10,18 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.unaj.senderos.R
 
 private const val TAG = "AUTH"
 
 suspend fun pedirTokenDeGoogle(
     contexto: Context,
+    idClienteWeb: String,
     alObtenerToken: (String) -> Unit,
     alMostrarMensaje: suspend (String) -> Unit
 ) {
     val opcionGoogle = GetGoogleIdOption.Builder()
         .setFilterByAuthorizedAccounts(false)
-        .setServerClientId(contexto.getString(R.string.default_web_client_id))
+        .setServerClientId(idClienteWeb)
         .build()
 
     val peticion = GetCredentialRequest.Builder()

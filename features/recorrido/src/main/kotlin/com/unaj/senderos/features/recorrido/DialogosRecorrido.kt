@@ -1,5 +1,6 @@
-package com.unaj.senderos.presentation.recorrido
+package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -11,12 +12,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
-import com.unaj.senderos.presentation.componentes.TituloDeSeccion
-import com.unaj.senderos.presentation.comun.formatearDistanciaCorta
-import com.unaj.senderos.presentation.revisionpuntos.ContenidoRevisionPuntos
-import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEstadoVisual
-import com.unaj.senderos.presentation.revisionpuntos.describirCantidadPuntosCapturados
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
+import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
+import com.unaj.senderos.core.ui.revisionpuntos.ContenidoRevisionPuntos
+import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEstadoVisual
+import com.unaj.senderos.core.ui.revisionpuntos.describirCantidadPuntosCapturados
 
 @Composable
 internal fun DialogoLlegadaAlFinal(nombreSendero: String, alProcesarEvento: (RecorridoEvento) -> Unit) {

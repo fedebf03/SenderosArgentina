@@ -1,22 +1,25 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
+import com.unaj.senderos.core.network.di.NombreNubeCloudinary
+import com.unaj.senderos.core.network.di.PresetSubidaCloudinary
 import java.io.DataOutputStream
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
+import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 private const val CARPETA_CLOUDINARY = "senderos"
 private const val SALTO = "\r\n"
 
 // Subir fotos a Cloudinary con un upload preset sin firma, así la app no necesita guardar el secreto de la API
-class SubidorFotosCloudinary(
-    private val nombreNube: String,
-    private val presetSubida: String
+class SubidorFotosCloudinary @Inject constructor(
+    @param:NombreNubeCloudinary private val nombreNube: String,
+    @param:PresetSubidaCloudinary private val presetSubida: String
 ) : SubidorFotos {
 
     override suspend fun subir(rutaLocal: String): String = withContext(Dispatchers.IO) {

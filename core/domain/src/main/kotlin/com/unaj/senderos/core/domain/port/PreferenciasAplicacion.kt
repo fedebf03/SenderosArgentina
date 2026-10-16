@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.port
+package com.unaj.senderos.core.domain.port
 
 import kotlinx.coroutines.flow.StateFlow
 

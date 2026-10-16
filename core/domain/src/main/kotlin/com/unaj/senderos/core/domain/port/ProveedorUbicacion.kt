@@ -1,7 +1,7 @@
-package com.unaj.senderos.domain.port
+package com.unaj.senderos.core.domain.port
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.LecturaUbicacion
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.LecturaUbicacion
 import kotlinx.coroutines.flow.Flow
 
 interface ProveedorUbicacion {

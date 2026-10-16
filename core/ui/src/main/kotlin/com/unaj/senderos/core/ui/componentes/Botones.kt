@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
@@ -26,7 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private val ALTURA_MINIMA_BOTON = 50.dp
 private val TAMANO_ICONO_BOTON = 20.dp

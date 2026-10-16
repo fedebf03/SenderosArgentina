@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.recorrido
+package com.unaj.senderos.core.domain.recorrido
 
-import com.unaj.senderos.domain.model.PuntoCardinal
+import com.unaj.senderos.core.domain.model.PuntoCardinal
 import kotlin.math.abs
 
 private const val GRADOS_POR_SECTOR = 45f

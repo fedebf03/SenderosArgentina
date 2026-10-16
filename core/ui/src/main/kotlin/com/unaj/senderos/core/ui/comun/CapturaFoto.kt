@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.core.ui.comun
 
 import android.content.ActivityNotFoundException
 import android.content.Context

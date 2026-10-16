@@ -1,11 +1,11 @@
-package com.unaj.senderos.presentation.revisionpuntos
+package com.unaj.senderos.core.ui.revisionpuntos
 
 import android.util.Log
-import com.unaj.senderos.domain.model.PuntoCapturadoConDistancia
-import com.unaj.senderos.domain.usecase.DescartarPuntosCapturadosUseCase
-import com.unaj.senderos.domain.usecase.IncorporarPuntosCapturadosUseCase
-import com.unaj.senderos.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
-import com.unaj.senderos.presentation.comun.describirErrorParaElUsuario
+import com.unaj.senderos.core.domain.model.PuntoCapturadoConDistancia
+import com.unaj.senderos.core.domain.usecase.DescartarPuntosCapturadosUseCase
+import com.unaj.senderos.core.domain.usecase.IncorporarPuntosCapturadosUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarPuntosCapturadosConDistanciaUseCase
+import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

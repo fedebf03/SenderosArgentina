@@ -1,8 +1,8 @@
-package com.unaj.senderos.presentation.registro
+package com.unaj.senderos.features.auth.registro
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.usecase.RegistrarUsuarioUseCase
+import com.unaj.senderos.core.domain.usecase.RegistrarUsuarioUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,8 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class RegistroViewModel(
+@HiltViewModel
+class RegistroViewModel @Inject constructor(
     private val registrarUsuarioUseCase: RegistrarUsuarioUseCase
 ) : ViewModel() {
 

@@ -1,13 +1,11 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.core.ui.sendero
 
-import com.unaj.senderos.presentation.comun.formatearKilometros
-import com.unaj.senderos.presentation.comun.formatearUnDecimal
-import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
-import com.unaj.senderos.presentation.componentes.mapa.tieneCoordenadasValidas
+import com.unaj.senderos.core.ui.comun.formatearKilometros
+import com.unaj.senderos.core.ui.comun.formatearUnDecimal
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.ui.componentes.mapa.tieneCoordenadasValidas
 
 data class PuntoDeInteres(
     val indice: Int,
@@ -31,7 +29,7 @@ data class PuntoDeInteres(
     }
 }
 
-internal fun obtenerPuntosDeInteres(sendero: Sendero?): List<PuntoDeInteres> {
+fun obtenerPuntosDeInteres(sendero: Sendero?): List<PuntoDeInteres> {
     val puntosValidos = sendero?.recorrido.orEmpty().withIndex().filter { (_, punto) -> punto.tieneCoordenadasValidas() }
     val distancias = CalculadoraRecorrido.distanciasAcumuladasKilometros(puntosValidos.map { punto -> punto.value })
     return puntosValidos.mapIndexedNotNull { posicion, (indice, punto) ->
@@ -43,11 +41,6 @@ internal fun obtenerPuntosDeInteres(sendero: Sendero?): List<PuntoDeInteres> {
     }
 }
 
-internal fun formatearKilometrosDesdeInicio(kilometros: Double): String {
+fun formatearKilometrosDesdeInicio(kilometros: Double): String {
     return "km " + formatearUnDecimal(kilometros)
-}
-
-internal fun DetalleSenderoEstadoVisual.coordenadaDelPunto(indice: Int): Coordenada? {
-    val punto = sendero?.recorrido?.getOrNull(indice) ?: return null
-    return Coordenada(punto.latitud, punto.longitud)
 }

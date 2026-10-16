@@ -1,7 +1,7 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.repository.SenderoRepositorio
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.repository.SenderoRepositorio
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow

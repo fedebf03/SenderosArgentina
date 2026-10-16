@@ -1,8 +1,8 @@
-package com.unaj.senderos.data.mapeo
+package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.data.remote.SenderoPublicoRed
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.SenderoPublico
+import com.unaj.senderos.core.network.SenderoPublicoRed
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.SenderoPublico
 
 fun SenderoPublico.aRed(): SenderoPublicoRed {
     val documento = sendero.copy(esFavorito = false)

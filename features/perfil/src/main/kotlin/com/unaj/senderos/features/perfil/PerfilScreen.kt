@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.perfil
+package com.unaj.senderos.features.perfil
 
-import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
-import com.unaj.senderos.presentation.componentes.BotonSecundario
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -36,13 +36,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.presentation.componentes.AvatarUsuario
-import com.unaj.senderos.presentation.componentes.BotoneraInferior
-import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
-import com.unaj.senderos.presentation.componentes.SeccionPrincipal
-import com.unaj.senderos.presentation.historial.HistorialDeRecorridos
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.ui.componentes.AvatarUsuario
+import com.unaj.senderos.core.ui.componentes.BotoneraInferior
+import com.unaj.senderos.core.ui.componentes.CabeceraPrincipal
+import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
+import com.unaj.senderos.features.perfil.HistorialDeRecorridos
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "PERFIL"
 

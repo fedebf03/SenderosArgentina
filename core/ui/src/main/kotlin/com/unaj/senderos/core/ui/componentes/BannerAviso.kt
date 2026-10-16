@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,7 +22,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 // El lector de pantalla lo anuncia al aparecer
 @OptIn(ExperimentalLayoutApi::class)

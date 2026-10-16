@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.port
+package com.unaj.senderos.core.domain.port
 
-import com.unaj.senderos.domain.model.MuestraAcelerometro
+import com.unaj.senderos.core.domain.model.MuestraAcelerometro
 import kotlinx.coroutines.flow.Flow
 
 interface FuenteAcelerometro {

@@ -1,41 +1,44 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.data.local.CoordenadaEntidad
-import com.unaj.senderos.data.local.RecorridoEntidad
-import com.unaj.senderos.data.remote.CoordenadaRed
-import com.unaj.senderos.data.remote.RecorridoRed
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.database.CoordenadaEntidad
+import com.unaj.senderos.core.database.EtapaEntidad
+import com.unaj.senderos.core.database.RecorridoEntidad
+import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.network.CoordenadaRed
+import com.unaj.senderos.core.network.RecorridoRed
 
-fun crearRecorridoDePrueba(
-    id: String = "recorrido-1",
+fun crearEntidadDePrueba(
+    id: String = "sendero-1",
     idUsuario: String = "usuario-1",
-    idSendero: String = "sendero-1",
-    nombreSendero: String = "Cerro Catedral",
-    inicioMilisegundos: Long = 1_000L,
-    finMilisegundos: Long = 3_601_000L,
-    pasos: Int? = null,
-    ritmoPasosPorMinuto: Double? = null,
-    esSimulado: Boolean = false,
-    estadoSincronizacion: EstadoSincronizacion = EstadoSincronizacion.PENDIENTE
-): RecorridoRealizado {
-    return RecorridoRealizado(
+    nombre: String = "Cerro Catedral",
+    fechaModificacion: Long = 1_000L,
+    estadoSincronizacion: String = "PENDIENTE",
+    estaEliminado: Boolean = false,
+    bioma: String = "SIN_DEFINIR"
+): SenderoEntidad {
+    return SenderoEntidad(
         id = id,
         idUsuario = idUsuario,
-        idSendero = idSendero,
-        nombreSendero = nombreSendero,
-        inicioMilisegundos = inicioMilisegundos,
-        finMilisegundos = finMilisegundos,
-        duracionMilisegundos = finMilisegundos - inicioMilisegundos,
-        distanciaKilometros = 5.0,
-        velocidadPromedioKilometrosPorHora = 5.0,
-        velocidadMaximaKilometrosPorHora = 7.2,
-        pasos = pasos,
-        ritmoPasosPorMinuto = ritmoPasosPorMinuto,
-        trazadoCaminado = listOf(Coordenada(-39.95, -71.07), Coordenada(-39.96, -71.07)),
-        esSimulado = esSimulado,
-        estadoSincronizacion = estadoSincronizacion
+        nombre = nombre,
+        region = "Bariloche",
+        distanciaKilometros = 12.0,
+        dificultad = "MEDIA",
+        descripcion = "Ascenso con vistas al lago",
+        desnivelMetros = 600,
+        duracionEstimada = "5 horas",
+        alturaMaximaMetros = 2000,
+        alturaMinimaMetros = 1400,
+        tipoRecorrido = "CIRCULAR",
+        puntoInicio = "Base del cerro",
+        mejorEpoca = "Verano",
+        recomendaciones = listOf("Llevar agua"),
+        servicios = listOf("Refugio"),
+        etapas = listOf(EtapaEntidad(numero = 1, nombre = "Base a cumbre", distanciaKilometros = 6.0)),
+        esFavorito = false,
+        fechaModificacion = fechaModificacion,
+        estadoSincronizacion = estadoSincronizacion,
+        estaEliminado = estaEliminado,
+        bioma = bioma
     )
 }
 

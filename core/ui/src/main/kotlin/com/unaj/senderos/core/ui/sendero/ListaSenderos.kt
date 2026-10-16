@@ -1,7 +1,7 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
-import com.unaj.senderos.presentation.comun.formatearDistanciaAlUsuario
-import com.unaj.senderos.presentation.comun.formatearDistanciaSendero
+import com.unaj.senderos.core.ui.comun.formatearDistanciaAlUsuario
+import com.unaj.senderos.core.ui.comun.formatearDistanciaSendero
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,10 +48,10 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
 
 // Ancho mínimo de una tarjeta: en pantallas angostas hay una columna y en tablets se reparten en varias
 private val ANCHO_MINIMO_TARJETA = 360.dp

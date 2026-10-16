@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
 import kotlinx.coroutines.flow.Flow
 

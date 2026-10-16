@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.MaterialTheme
@@ -7,9 +7,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.scale
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.presentation.tema.CelesteArgentino
-import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.ui.tema.CelesteArgentino
+import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
 
 @Composable
 fun IlustracionMontanias(

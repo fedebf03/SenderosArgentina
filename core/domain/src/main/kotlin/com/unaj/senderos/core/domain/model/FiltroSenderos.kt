@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 fun filtrarSenderosPorTexto(senderos: List<Sendero>, texto: String): List<Sendero> {
     val textoNormalizado = texto.trim()

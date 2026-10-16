@@ -1,8 +1,8 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.port.GestorMapasSinConexion
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.port.GestorMapasSinConexion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 

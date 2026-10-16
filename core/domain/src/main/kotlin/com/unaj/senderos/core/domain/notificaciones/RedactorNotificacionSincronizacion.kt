@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.notificaciones
+package com.unaj.senderos.core.domain.notificaciones
 
 object RedactorNotificacionSincronizacion {
 

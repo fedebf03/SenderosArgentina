@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.recorrido
+package com.unaj.senderos.features.recorrido
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -21,7 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import com.unaj.senderos.presentation.tema.obtenerColorLineaBioma
+import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,9 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import com.unaj.senderos.presentation.detalle.TarjetaPuntoSeleccionado
-import com.unaj.senderos.presentation.detalle.obtenerPuntosDeInteres
-import com.unaj.senderos.presentation.revisionpuntos.DialogoFotoAmpliada
+import com.unaj.senderos.core.ui.sendero.TarjetaPuntoSeleccionado
+import com.unaj.senderos.core.ui.sendero.obtenerPuntosDeInteres
+import com.unaj.senderos.core.ui.revisionpuntos.DialogoFotoAmpliada
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -45,12 +45,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.presentation.componentes.BarraSuperior
-import com.unaj.senderos.presentation.componentes.mapa.MapaRecorrido
-import com.unaj.senderos.presentation.componentes.mapa.ModoNavegacion
-import com.unaj.senderos.presentation.comun.limpiarFotosTemporalesViejas
-import com.unaj.senderos.presentation.comun.recordarAccionesDeFoto
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.ui.componentes.BarraSuperior
+import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
+import com.unaj.senderos.core.ui.componentes.mapa.ModoNavegacion
+import com.unaj.senderos.core.ui.comun.limpiarFotosTemporalesViejas
+import com.unaj.senderos.core.ui.comun.recordarAccionesDeFoto
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 import kotlinx.coroutines.delay
 
 private const val TAG = "RECORRIDO"

@@ -1,15 +1,16 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.port.GestorMapasSinConexion
-import com.unaj.senderos.domain.recorrido.CalculadoraCorredor
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.port.GestorMapasSinConexion
+import com.unaj.senderos.core.domain.recorrido.CalculadoraCorredor
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
 private const val MENSAJE_SIN_SESION = "No hay una sesión activa"
 
-class ObservarMapaSinConexionUseCase(
+class ObservarMapaSinConexionUseCase @Inject constructor(
     private val gestorMapasSinConexion: GestorMapasSinConexion,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -21,7 +22,7 @@ class ObservarMapaSinConexionUseCase(
     }
 }
 
-class DescargarMapaSinConexionUseCase(
+class DescargarMapaSinConexionUseCase @Inject constructor(
     private val gestorMapasSinConexion: GestorMapasSinConexion,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -32,7 +33,7 @@ class DescargarMapaSinConexionUseCase(
     }
 }
 
-class EliminarMapaSinConexionUseCase(
+class EliminarMapaSinConexionUseCase @Inject constructor(
     private val gestorMapasSinConexion: GestorMapasSinConexion,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {

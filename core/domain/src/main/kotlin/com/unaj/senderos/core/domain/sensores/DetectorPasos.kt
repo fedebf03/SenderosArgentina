@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.sensores
+package com.unaj.senderos.core.domain.sensores
 
-import com.unaj.senderos.domain.model.MuestraAcelerometro
+import com.unaj.senderos.core.domain.model.MuestraAcelerometro
 import kotlin.math.sqrt
 
 private const val FRECUENCIA_CORTE_GRAVEDAD_HERCIOS = 0.3

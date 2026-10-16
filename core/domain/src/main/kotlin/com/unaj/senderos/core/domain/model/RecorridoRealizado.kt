@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 // Recorrido terminado por el usuario sobre un sendero; los pasos y el ritmo son nulos si el equipo no los mide.
 // Limitaciones: el trazado caminado no tiene tope y todo el recorrido se sube como un único documento de Firestore (máximo 1 MiB).

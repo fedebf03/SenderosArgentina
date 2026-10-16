@@ -1,9 +1,9 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.domain.model.tieneCoordenadasValidas
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.tieneCoordenadasValidas
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString

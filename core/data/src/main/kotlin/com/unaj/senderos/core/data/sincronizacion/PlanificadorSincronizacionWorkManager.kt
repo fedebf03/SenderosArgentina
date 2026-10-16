@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.sincronizacion
+package com.unaj.senderos.core.data.sincronizacion
 
 import android.util.Log
 import androidx.work.BackoffPolicy
@@ -9,10 +9,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 private const val TAG = "SINCRONIZACION"
 
-class PlanificadorSincronizacionWorkManager(
+class PlanificadorSincronizacionWorkManager @Inject constructor(
     private val workManager: WorkManager
 ) : PlanificadorSincronizacion {
 

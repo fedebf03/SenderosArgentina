@@ -1,10 +1,11 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.features.senderos.detalle
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEstadoVisual
-import com.unaj.senderos.presentation.revisionpuntos.RevisionPuntosEvento
+import com.unaj.senderos.core.ui.sendero.PuntoDeInteres
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEstadoVisual
+import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
 
 enum class SeccionDetalle { PUNTOS_DE_INTERES, RECOMENDACIONES, SERVICIOS, ETAPAS }
 

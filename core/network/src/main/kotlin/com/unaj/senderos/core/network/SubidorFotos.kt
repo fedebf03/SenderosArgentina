@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
 interface SubidorFotos {
     // Subir la foto y devolver su URL remota

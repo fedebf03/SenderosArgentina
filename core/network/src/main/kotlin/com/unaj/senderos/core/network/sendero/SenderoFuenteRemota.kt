@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
 // Fuente de datos remota de senderos; sus funciones lanzan excepción ante un fallo
 interface SenderoFuenteRemota {

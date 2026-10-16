@@ -1,6 +1,6 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacion
+import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
 
 class FalsoPlanificadorSincronizacion : PlanificadorSincronizacion {
 

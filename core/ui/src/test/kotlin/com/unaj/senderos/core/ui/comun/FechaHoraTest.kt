@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.historial
+package com.unaj.senderos.core.ui.comun
 
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class TextosHistorialTest {
+class FechaHoraTest {
 
     private val zonaArgentina = ZoneId.of("America/Argentina/Buenos_Aires")
 

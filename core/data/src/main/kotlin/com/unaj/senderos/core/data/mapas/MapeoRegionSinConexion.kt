@@ -1,6 +1,6 @@
-package com.unaj.senderos.data.mapas
+package com.unaj.senderos.core.data.mapas
 
-import com.unaj.senderos.domain.model.EstadoMapaSinConexion
+import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json

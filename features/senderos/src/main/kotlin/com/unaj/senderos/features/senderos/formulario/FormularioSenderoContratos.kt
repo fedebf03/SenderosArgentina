@@ -1,13 +1,13 @@
-package com.unaj.senderos.presentation.formulario
+package com.unaj.senderos.features.senderos.formulario
 
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.CampoSendero
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.Etapa
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.CampoSendero
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
 
 enum class CampoFormulario {
     NOMBRE,

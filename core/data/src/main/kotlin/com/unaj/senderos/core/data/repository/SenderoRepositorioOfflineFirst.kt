@@ -1,15 +1,15 @@
-package com.unaj.senderos.data.repository
+package com.unaj.senderos.core.data.repository
 
 import android.util.Log
-import com.unaj.senderos.data.local.EjecutorTransacciones
-import com.unaj.senderos.data.local.SenderoDao
-import com.unaj.senderos.data.local.SenderoEntidad
-import com.unaj.senderos.data.mapeo.aDominio
-import com.unaj.senderos.data.mapeo.aEntidad
-import com.unaj.senderos.data.sincronizacion.PlanificadorSincronizacion
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.repository.SenderoRepositorio
+import com.unaj.senderos.core.database.EjecutorTransacciones
+import com.unaj.senderos.core.database.SenderoDao
+import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.data.mapeo.aDominio
+import com.unaj.senderos.core.data.mapeo.aEntidad
+import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.repository.SenderoRepositorio
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart

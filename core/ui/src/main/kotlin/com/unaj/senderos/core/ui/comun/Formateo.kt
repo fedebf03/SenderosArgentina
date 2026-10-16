@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.core.ui.comun
 
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols

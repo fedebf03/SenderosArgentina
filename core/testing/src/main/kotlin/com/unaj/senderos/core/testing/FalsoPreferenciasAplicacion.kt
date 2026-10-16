@@ -1,6 +1,6 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.port.PreferenciasAplicacion
+import com.unaj.senderos.core.domain.port.PreferenciasAplicacion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

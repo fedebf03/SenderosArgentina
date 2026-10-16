@@ -1,11 +1,11 @@
-package com.unaj.senderos.presentation.login
+package com.unaj.senderos.features.auth.login
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.usecase.EnviarCorreoRecuperacionUseCase
-import com.unaj.senderos.domain.usecase.IniciarSesionConGoogleUseCase
-import com.unaj.senderos.domain.usecase.IniciarSesionUseCase
+import com.unaj.senderos.core.domain.usecase.EnviarCorreoRecuperacionUseCase
+import com.unaj.senderos.core.domain.usecase.IniciarSesionConGoogleUseCase
+import com.unaj.senderos.core.domain.usecase.IniciarSesionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ensureActive
@@ -15,12 +15,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 private const val TAG = "AUTH"
 private const val MENSAJE_ENLACE_ENVIADO = "Si el correo está registrado, te enviamos un enlace para restablecer la contraseña"
 private const val MENSAJE_ERROR_RECUPERACION = "No pudimos enviar el correo. Intentá de nuevo."
 
-class LoginViewModel(
+@HiltViewModel
+class LoginViewModel @Inject constructor(
     private val iniciarSesionUseCase: IniciarSesionUseCase,
     private val iniciarSesionConGoogleUseCase: IniciarSesionConGoogleUseCase,
     private val enviarCorreoRecuperacionUseCase: EnviarCorreoRecuperacionUseCase

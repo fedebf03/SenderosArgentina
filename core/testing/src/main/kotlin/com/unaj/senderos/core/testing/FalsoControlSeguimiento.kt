@@ -1,11 +1,11 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.AvisoRecorrido
-import com.unaj.senderos.domain.model.EstadoSeguimiento
-import com.unaj.senderos.domain.model.MotivoFinSeguimiento
-import com.unaj.senderos.domain.model.ResultadoCaptura
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.model.AvisoRecorrido
+import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.core.domain.model.ResultadoCaptura
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

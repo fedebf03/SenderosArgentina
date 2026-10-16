@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.recorrido
+package com.unaj.senderos.core.domain.recorrido
 
-import com.unaj.senderos.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.EstadoSeguimiento
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

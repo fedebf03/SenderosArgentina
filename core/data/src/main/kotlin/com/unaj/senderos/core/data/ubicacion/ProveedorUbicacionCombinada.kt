@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.ubicacion
+package com.unaj.senderos.core.data.ubicacion
 
 import android.Manifest
 import android.content.Context
@@ -13,21 +13,23 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.LecturaUbicacion
-import com.unaj.senderos.domain.port.ProveedorUbicacion
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.LecturaUbicacion
+import com.unaj.senderos.core.domain.port.ProveedorUbicacion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val TAG = "UBICACION"
 private const val INTERVALO_UBICACION_MILISEGUNDOS = 5_000L
 
-class ProveedorUbicacionCombinada(private val contexto: Context) : ProveedorUbicacion {
+class ProveedorUbicacionCombinada @Inject constructor(@param:ApplicationContext private val contexto: Context) : ProveedorUbicacion {
 
     // Obtener la ubicación actual; éxito con null si falta el permiso o no hay ubicación disponible
     @OptIn(ExperimentalCoroutinesApi::class)

@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
-import com.unaj.senderos.presentation.componentes.BannerAviso
+import com.unaj.senderos.core.ui.componentes.BannerAviso
 import androidx.compose.animation.AnimatedVisibility
 import android.annotation.SuppressLint
 import android.graphics.PointF
@@ -29,11 +29,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.PuntoRecorrido
-import com.unaj.senderos.domain.model.TipoRecorrido
-import com.unaj.senderos.domain.model.tieneCoordenadasValidas
-import com.unaj.senderos.presentation.tema.CelesteArgentino
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.tieneCoordenadasValidas
+import com.unaj.senderos.core.ui.tema.CelesteArgentino
 import kotlin.math.abs
 import kotlin.math.hypot
 import org.maplibre.android.MapLibre

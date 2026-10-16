@@ -1,17 +1,18 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoPublico
-import com.unaj.senderos.domain.model.esFotoLocal
-import com.unaj.senderos.domain.repository.AutenticacionRepositorio
-import com.unaj.senderos.domain.repository.SenderoPublicoRepositorio
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.model.esFotoLocal
+import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
+import com.unaj.senderos.core.domain.repository.SenderoPublicoRepositorio
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 private const val MENSAJE_SIN_SESION = "No hay una sesión activa"
 
-class ObservarSenderosPublicosUseCase(
+class ObservarSenderosPublicosUseCase @Inject constructor(
     private val senderoPublicoRepositorio: SenderoPublicoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -22,7 +23,7 @@ class ObservarSenderosPublicosUseCase(
     }
 }
 
-class ObservarSenderoPublicoUseCase(
+class ObservarSenderoPublicoUseCase @Inject constructor(
     private val senderoPublicoRepositorio: SenderoPublicoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -33,7 +34,7 @@ class ObservarSenderoPublicoUseCase(
     }
 }
 
-class ObservarSenderoPublicadoUseCase(
+class ObservarSenderoPublicadoUseCase @Inject constructor(
     private val senderoPublicoRepositorio: SenderoPublicoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -46,7 +47,7 @@ class ObservarSenderoPublicadoUseCase(
     }
 }
 
-class PublicarSenderoUseCase(
+class PublicarSenderoUseCase @Inject constructor(
     private val senderoPublicoRepositorio: SenderoPublicoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -73,7 +74,7 @@ class PublicarSenderoUseCase(
     }
 }
 
-class DespublicarSenderoUseCase(
+class DespublicarSenderoUseCase @Inject constructor(
     private val senderoPublicoRepositorio: SenderoPublicoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
@@ -84,7 +85,7 @@ class DespublicarSenderoUseCase(
     }
 }
 
-class GuardarCopiaSenderoPublicoUseCase(
+class GuardarCopiaSenderoPublicoUseCase @Inject constructor(
     private val guardarSenderoUseCase: GuardarSenderoUseCase
 ) {
     suspend operator fun invoke(publico: SenderoPublico): Result<Sendero> {

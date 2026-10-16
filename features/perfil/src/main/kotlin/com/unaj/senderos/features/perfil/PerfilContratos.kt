@@ -1,7 +1,7 @@
-package com.unaj.senderos.presentation.perfil
+package com.unaj.senderos.features.perfil
 
-import com.unaj.senderos.domain.model.RecorridoRealizado
-import com.unaj.senderos.domain.model.Usuario
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.domain.model.Usuario
 
 data class PerfilEstadoVisual(
     val usuario: Usuario? = null,

@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
 // Tramo de un sendero como se guarda en Firestore (valores por defecto requeridos por el deserializador)
 data class EtapaRed(

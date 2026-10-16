@@ -1,14 +1,15 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
+import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
 
 private const val COLECCION_USUARIOS = "usuarios"
 private const val COLECCION_SENDEROS = "senderos"
 
-class FirestoreSenderoFuenteRemota(
+class FirestoreSenderoFuenteRemota @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : SenderoFuenteRemota {
 

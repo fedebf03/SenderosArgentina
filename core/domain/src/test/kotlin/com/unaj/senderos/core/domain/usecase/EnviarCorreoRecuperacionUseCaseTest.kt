@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.usecase
+package com.unaj.senderos.core.domain.usecase
 
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.senderos
+package com.unaj.senderos.features.senderos.listado
 
-import com.unaj.senderos.presentation.componentes.BannerAviso
+import com.unaj.senderos.core.ui.componentes.BannerAviso
 import androidx.compose.animation.AnimatedVisibility
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,22 +44,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoPublico
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.presentation.componentes.BotoneraInferior
-import com.unaj.senderos.presentation.componentes.BuscadorSenderos
-import com.unaj.senderos.presentation.componentes.CabeceraPrincipal
-import com.unaj.senderos.presentation.componentes.CargandoCentrado
-import com.unaj.senderos.presentation.componentes.ChipsDificultad
-import com.unaj.senderos.presentation.componentes.ListaSenderos
-import com.unaj.senderos.presentation.componentes.MensajeCentrado
-import com.unaj.senderos.presentation.componentes.MensajeVacio
-import com.unaj.senderos.presentation.componentes.SeccionPrincipal
-import com.unaj.senderos.presentation.comun.PERMISOS_UBICACION
-import com.unaj.senderos.presentation.comun.tienePermisoDeUbicacion
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.ui.componentes.BotoneraInferior
+import com.unaj.senderos.core.ui.componentes.BuscadorSenderos
+import com.unaj.senderos.core.ui.componentes.CabeceraPrincipal
+import com.unaj.senderos.core.ui.componentes.CargandoCentrado
+import com.unaj.senderos.core.ui.componentes.ChipsDificultad
+import com.unaj.senderos.core.ui.componentes.ListaSenderos
+import com.unaj.senderos.core.ui.componentes.MensajeCentrado
+import com.unaj.senderos.core.ui.componentes.MensajeVacio
+import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
+import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacion
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "SENDEROS"
 

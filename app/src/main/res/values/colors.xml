@@ -4,14 +4,4 @@
     <color name="white">#FFFFFFFF</color>
     <!-- Fondo del ícono adaptable del lanzador -->
     <color name="fondo_icono_lanzador">#FFFFFFFF</color>
-    <!-- Color de acento de la marca en las notificaciones (primario del tema) -->
-    <color name="color_notificacion">#FF1F5A8C</color>
-    <!-- Colores de los avisos del recorrido según su tipo -->
-    <color name="aviso_agua">#FF1E88E5</color>
-    <color name="aviso_peligro">#FFD32F2F</color>
-    <color name="aviso_mirador">#FF2E7D32</color>
-    <color name="aviso_refugio">#FF6D4C41</color>
-    <color name="aviso_camping">#FFEF6C00</color>
-    <color name="aviso_desvio">#FFFFA000</color>
-    <color name="aviso_llegada">#FF2E7D32</color>
 </resources>

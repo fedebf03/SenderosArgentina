@@ -1,8 +1,8 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.TipoRecorrido
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.TipoRecorrido
 
 fun obtenerTextoDificultad(dificultad: Dificultad): String {
     return when (dificultad) {

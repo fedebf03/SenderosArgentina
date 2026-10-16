@@ -1,7 +1,7 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.testing
 
-import com.unaj.senderos.domain.model.PuntoCapturado
-import com.unaj.senderos.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.model.PuntoCapturado
+import com.unaj.senderos.core.domain.model.TipoPunto
 
 fun crearPuntoCapturadoDePrueba(
     id: String = "punto-1",

@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.revisionpuntos
+package com.unaj.senderos.core.ui.revisionpuntos
 
-import com.unaj.senderos.presentation.comun.formatearUnDecimal
+import com.unaj.senderos.core.ui.comun.formatearUnDecimal
 import kotlin.math.roundToInt
 
 fun describirCantidadPuntosCapturados(cantidad: Int): String {

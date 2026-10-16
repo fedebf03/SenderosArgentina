@@ -1,8 +1,9 @@
-package com.unaj.senderos.data.remote
+package com.unaj.senderos.core.network
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import javax.inject.Inject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -10,7 +11,7 @@ import kotlinx.coroutines.tasks.await
 
 private const val COLECCION_PUBLICOS = "senderosPublicos"
 
-class FirestoreSenderoPublicoFuenteRemota(
+class FirestoreSenderoPublicoFuenteRemota @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : SenderoPublicoFuenteRemota {
 

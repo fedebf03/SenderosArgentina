@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.sensores
+package com.unaj.senderos.core.domain.sensores
 
 private const val VENTANA_MILISEGUNDOS = 10_000L
 private const val SEPARACION_MAXIMA_MILISEGUNDOS = 2_000L

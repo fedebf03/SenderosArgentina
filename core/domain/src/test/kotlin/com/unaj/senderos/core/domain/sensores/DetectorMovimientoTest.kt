@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.sensores
+package com.unaj.senderos.core.domain.sensores
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,16 +1,17 @@
-package com.unaj.senderos.data.repository
+package com.unaj.senderos.core.data.repository
 
 import android.util.Log
-import com.google.firebase.firestore.FirebaseFirestoreException
-import com.unaj.senderos.data.mapeo.aDominio
-import com.unaj.senderos.data.mapeo.aRed
-import com.unaj.senderos.data.remote.SenderoPublicoFuenteRemota
-import com.unaj.senderos.domain.model.SenderoPublico
-import com.unaj.senderos.domain.repository.SenderoPublicoRepositorio
+import com.unaj.senderos.core.data.mapeo.aDominio
+import com.unaj.senderos.core.data.mapeo.aRed
+import com.unaj.senderos.core.network.SenderoPublicoFuenteRemota
+import com.unaj.senderos.core.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.repository.SenderoPublicoRepositorio
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeoutOrNull
+import com.unaj.senderos.core.network.TipoErrorRemoto
+import com.unaj.senderos.core.network.tipoErrorRemoto
 
 private const val TAG = "SENDEROS_PUBLICOS"
 private const val TIEMPO_MAXIMO_ESCRITURA_MILISEGUNDOS = 20_000L
@@ -54,11 +55,9 @@ class SenderoPublicoRepositorioImpl(
     }
 
     private fun traducir(error: Exception): Exception {
-        if (error !is FirebaseFirestoreException) return error
-        return when (error.code) {
-            FirebaseFirestoreException.Code.PERMISSION_DENIED -> IllegalStateException(MENSAJE_SIN_PERMISO, error)
-            FirebaseFirestoreException.Code.UNAVAILABLE,
-            FirebaseFirestoreException.Code.DEADLINE_EXCEEDED -> IllegalStateException(MENSAJE_SIN_RESPUESTA, error)
+        return when (error.tipoErrorRemoto()) {
+            TipoErrorRemoto.SIN_PERMISO -> IllegalStateException(MENSAJE_SIN_PERMISO, error)
+            TipoErrorRemoto.SIN_RESPUESTA -> IllegalStateException(MENSAJE_SIN_RESPUESTA, error)
             else -> error
         }
     }

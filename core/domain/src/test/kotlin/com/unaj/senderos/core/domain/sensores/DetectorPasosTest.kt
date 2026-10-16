@@ -1,6 +1,6 @@
-package com.unaj.senderos.domain.sensores
+package com.unaj.senderos.core.domain.sensores
 
-import com.unaj.senderos.domain.model.MuestraAcelerometro
+import com.unaj.senderos.core.domain.model.MuestraAcelerometro
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

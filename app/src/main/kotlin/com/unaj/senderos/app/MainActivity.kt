@@ -27,59 +27,53 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.unaj.senderos.data.seguimiento.EXTRA_ID_SENDERO_RECORRIDO
-import com.unaj.senderos.data.seguimiento.EXTRA_SOLICITAR_CANCELACION
-import com.unaj.senderos.presentation.componentes.SeccionPrincipal
-import com.unaj.senderos.presentation.detalle.DetalleSenderoPantalla
-import com.unaj.senderos.presentation.detalle.DetalleSenderoViewModel
-import com.unaj.senderos.presentation.detallepublico.DetallePublicoPantalla
-import com.unaj.senderos.presentation.detallepublico.DetallePublicoViewModel
-import com.unaj.senderos.presentation.formulario.FormularioSenderoPantalla
-import com.unaj.senderos.presentation.formulario.FormularioSenderoViewModel
-import com.unaj.senderos.presentation.historial.HistorialDetallePantalla
-import com.unaj.senderos.presentation.historial.HistorialDetalleViewModel
-import com.unaj.senderos.presentation.login.LoginPantalla
-import com.unaj.senderos.presentation.login.LoginViewModel
-import com.unaj.senderos.presentation.mapasenderos.MapaSenderosPantalla
-import com.unaj.senderos.presentation.mapasenderos.MapaSenderosViewModel
-import com.unaj.senderos.presentation.perfil.PerfilPantalla
-import com.unaj.senderos.presentation.perfil.PerfilViewModel
-import com.unaj.senderos.presentation.recorrido.RecorridoPantalla
-import com.unaj.senderos.presentation.recorrido.RecorridoViewModel
-import com.unaj.senderos.presentation.registro.RegistroPantalla
-import com.unaj.senderos.presentation.registro.RegistroViewModel
-import com.unaj.senderos.presentation.senderos.ModoListado
-import com.unaj.senderos.presentation.senderos.SenderosPantalla
-import com.unaj.senderos.presentation.senderos.SenderosViewModel
-import com.unaj.senderos.presentation.tema.TemaSenderos
-import com.unaj.senderos.presentation.navegacion.AlmacenDestinosViewModel
-import com.unaj.senderos.presentation.navegacion.DestinoPantalla
-import com.unaj.senderos.presentation.navegacion.claveDeAlmacen
-import com.unaj.senderos.presentation.navegacion.guardadorDeDestino
+import com.unaj.senderos.core.data.seguimiento.EXTRA_ID_SENDERO_RECORRIDO
+import com.unaj.senderos.core.data.seguimiento.EXTRA_SOLICITAR_CANCELACION
+import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
+import com.unaj.senderos.features.senderos.detalle.DetalleSenderoPantalla
+import com.unaj.senderos.features.senderos.detalle.DetalleSenderoViewModel
+import com.unaj.senderos.features.explorar.DetallePublicoPantalla
+import com.unaj.senderos.features.explorar.DetallePublicoViewModel
+import com.unaj.senderos.features.senderos.formulario.FormularioSenderoPantalla
+import com.unaj.senderos.features.senderos.formulario.FormularioSenderoViewModel
+import com.unaj.senderos.features.historial.HistorialDetallePantalla
+import com.unaj.senderos.features.historial.HistorialDetalleViewModel
+import com.unaj.senderos.features.auth.login.LoginPantalla
+import com.unaj.senderos.features.auth.login.LoginViewModel
+import com.unaj.senderos.features.mapa.MapaSenderosPantalla
+import com.unaj.senderos.features.mapa.MapaSenderosViewModel
+import com.unaj.senderos.features.perfil.PerfilPantalla
+import com.unaj.senderos.features.perfil.PerfilViewModel
+import com.unaj.senderos.features.recorrido.RecorridoPantalla
+import com.unaj.senderos.features.recorrido.RecorridoViewModel
+import com.unaj.senderos.features.auth.registro.RegistroPantalla
+import com.unaj.senderos.features.auth.registro.RegistroViewModel
+import com.unaj.senderos.features.senderos.listado.ModoListado
+import com.unaj.senderos.features.senderos.listado.SenderosPantalla
+import com.unaj.senderos.features.senderos.listado.SenderosViewModel
+import com.unaj.senderos.core.ui.tema.TemaSenderos
+import com.unaj.senderos.navegacion.AlmacenDestinosViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.unaj.senderos.R
+import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import com.unaj.senderos.navegacion.DestinoPantalla
+import com.unaj.senderos.navegacion.claveDeAlmacen
+import com.unaj.senderos.navegacion.guardadorDeDestino
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val dependencias by lazy { (application as SenderosAplicacion).contenedorDependencias }
+    @Inject
+    lateinit var obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase
 
     // Cada destino guarda sus ViewModels aparte para poder descartarlos al salir de él
     private val almacenDestinos: AlmacenDestinosViewModel by viewModels()
 
     // Login y Registro viven mientras viva la Activity: así se conserva lo escrito al ir y volver entre ambas
-    private val loginViewModel: LoginViewModel by viewModels {
-        viewModelFactory {
-            initializer { LoginViewModel(
-                dependencias.iniciarSesionUseCase,
-                dependencias.iniciarSesionConGoogleUseCase,
-                dependencias.enviarCorreoRecuperacionUseCase
-            ) }
-        }
-    }
-    private val registroViewModel: RegistroViewModel by viewModels {
-        viewModelFactory { initializer { RegistroViewModel(dependencias.registrarUsuarioUseCase) } }
-    }
+    private val loginViewModel: LoginViewModel by viewModels()
+    private val registroViewModel: RegistroViewModel by viewModels()
 
     // Sendero cuyo recorrido en curso pidió abrir la notificación; la composición lo consume y lo limpia
     private var idSenderoRecorridoPendiente by mutableStateOf<String?>(null)
@@ -119,7 +113,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var pantallaActual by rememberSaveable(stateSaver = guardadorDeDestino) {
-                val hayUsuario = dependencias.obtenerUsuarioActualUseCase() != null
+                val hayUsuario = obtenerUsuarioActualUseCase() != null
                 mutableStateOf(if (hayUsuario) DestinoPantalla.Explorar else DestinoPantalla.Login)
             }
             var listadoDeOrigen by rememberSaveable(stateSaver = guardadorDeDestino) {
@@ -139,7 +133,7 @@ class MainActivity : ComponentActivity() {
                     pantallaActual = DestinoPantalla.Detalle(idSendero)
                 }
             }
-            val idUsuario = dependencias.obtenerUsuarioActualUseCase()?.id.orEmpty()
+            val idUsuario = obtenerUsuarioActualUseCase()?.id.orEmpty()
             val estadoAvisosGlobal = remember { SnackbarHostState() }
             val alcance = rememberCoroutineScope()
 
@@ -164,6 +158,7 @@ class MainActivity : ComponentActivity() {
                     when (val destino = pantallaActual) {
                         is DestinoPantalla.Login -> LoginPantalla(
                             viewModel = loginViewModel,
+                            idClienteWebGoogle = getString(R.string.default_web_client_id),
                             alNavegarAInicio = { pantallaActual = DestinoPantalla.Explorar },
                             alNavegarARegistro = { pantallaActual = DestinoPantalla.Registro }
                         )
@@ -173,40 +168,22 @@ class MainActivity : ComponentActivity() {
                             alVolverALogin = { pantallaActual = DestinoPantalla.Login }
                         )
                         is DestinoPantalla.Explorar -> SenderosPantalla(
-                            viewModel = viewModelDeDestino("explorar-$idUsuario") {
-                                SenderosViewModel(
-                                    ModoListado.EXPLORAR,
-                                    dependencias.observarSenderosDelUsuarioUseCase,
-                                    dependencias.observarSenderosPublicosUseCase,
-                                    dependencias.proveedorUbicacion,
-                                    dependencias.monitorConectividad
-                                )
+                            viewModel = viewModelAsistidoDeDestino<SenderosViewModel, SenderosViewModel.Fabrica>("explorar-$idUsuario") { fabrica ->
+                                fabrica.crear(ModoListado.EXPLORAR)
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Explorar),
                             alNavegarADetallePublico = { idSendero -> pantallaActual = DestinoPantalla.DetallePublico(idSendero) },
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.Mapa -> MapaSenderosPantalla(
-                            viewModel = viewModelDeDestino("mapa-$idUsuario") {
-                                MapaSenderosViewModel(
-                                    dependencias.observarSenderosDelUsuarioUseCase,
-                                    dependencias.observarSenderosPublicosUseCase,
-                                    dependencias.monitorConectividad
-                                )
-                            },
+                            viewModel = viewModelDeDestino<MapaSenderosViewModel>("mapa-$idUsuario"),
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Mapa),
                             alNavegarADetallePublico = { idSendero -> pantallaActual = DestinoPantalla.DetallePublico(idSendero) },
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.MisSenderos -> SenderosPantalla(
-                            viewModel = viewModelDeDestino("mis-senderos-$idUsuario") {
-                                SenderosViewModel(
-                                    ModoListado.MIS_SENDEROS,
-                                    dependencias.observarSenderosDelUsuarioUseCase,
-                                    dependencias.observarSenderosPublicosUseCase,
-                                    dependencias.proveedorUbicacion,
-                                    dependencias.monitorConectividad
-                                )
+                            viewModel = viewModelAsistidoDeDestino<SenderosViewModel, SenderosViewModel.Fabrica>("mis-senderos-$idUsuario") { fabrica ->
+                                fabrica.crear(ModoListado.MIS_SENDEROS)
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.MisSenderos),
                             alNavegarACreacion = {
@@ -216,15 +193,7 @@ class MainActivity : ComponentActivity() {
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.Perfil -> PerfilPantalla(
-                            viewModel = viewModelDeDestino("perfil-$idUsuario") {
-                                PerfilViewModel(
-                                    dependencias.obtenerUsuarioActualUseCase,
-                                    dependencias.cerrarSesionUseCase,
-                                    dependencias.preferenciasAplicacion,
-                                    dependencias.observarRecorridosUseCase,
-                                    dependencias.controlSeguimiento
-                                )
-                            },
+                            viewModel = viewModelDeDestino<PerfilViewModel>("perfil-$idUsuario"),
                             alNavegarALogin = {
                                 pantallaActual = DestinoPantalla.Login
                                 listOf("explorar", "mis-senderos", "mapa", "perfil").forEach { seccion ->
@@ -239,12 +208,8 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.HistorialDetalle -> {
                             val clave = "historial-$idUsuario-${destino.idRecorrido}"
                             HistorialDetallePantalla(
-                                viewModel = viewModelDeDestino(clave) {
-                                    HistorialDetalleViewModel(
-                                        idRecorrido = destino.idRecorrido,
-                                        observarRecorridoUseCase = dependencias.observarRecorridoUseCase,
-                                        observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase
-                                    )
+                                viewModel = viewModelAsistidoDeDestino<HistorialDetalleViewModel, HistorialDetalleViewModel.Fabrica>(clave) { fabrica ->
+                                    fabrica.crear(destino.idRecorrido)
                                 },
                                 alVolverAlPerfil = {
                                     pantallaActual = DestinoPantalla.Perfil
@@ -255,27 +220,8 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.Detalle -> {
                             val clave = "detalle-$idUsuario-${destino.idSendero}"
                             DetalleSenderoPantalla(
-                                viewModel = viewModelDeDestino(clave) {
-                                    DetalleSenderoViewModel(
-                                        idSendero = destino.idSendero,
-                                        observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
-                                        alternarFavoritoUseCase = dependencias.alternarFavoritoUseCase,
-                                        eliminarSenderoUseCase = dependencias.eliminarSenderoUseCase,
-                                        lanzadorSeguimiento = dependencias.lanzadorSeguimiento,
-                                        controlSeguimiento = dependencias.controlSeguimiento,
-                                        preferenciasAplicacion = dependencias.preferenciasAplicacion,
-                                        observarMapaSinConexionUseCase = dependencias.observarMapaSinConexionUseCase,
-                                        descargarMapaSinConexionUseCase = dependencias.descargarMapaSinConexionUseCase,
-                                        eliminarMapaSinConexionUseCase = dependencias.eliminarMapaSinConexionUseCase,
-                                        monitorConectividad = dependencias.monitorConectividad,
-                                        capacidadesDispositivo = dependencias.capacidadesDispositivo,
-                                        observarPuntosCapturadosConDistanciaUseCase = dependencias.observarPuntosCapturadosConDistanciaUseCase,
-                                        incorporarPuntosCapturadosUseCase = dependencias.incorporarPuntosCapturadosUseCase,
-                                        descartarPuntosCapturadosUseCase = dependencias.descartarPuntosCapturadosUseCase,
-                                        observarSenderoPublicadoUseCase = dependencias.observarSenderoPublicadoUseCase,
-                                        publicarSenderoUseCase = dependencias.publicarSenderoUseCase,
-                                        despublicarSenderoUseCase = dependencias.despublicarSenderoUseCase
-                                    )
+                                viewModel = viewModelAsistidoDeDestino<DetalleSenderoViewModel, DetalleSenderoViewModel.Fabrica>(clave) { fabrica ->
+                                    fabrica.crear(destino.idSendero)
                                 },
                                 alVolverAlListado = {
                                     pantallaActual = listadoDeOrigen
@@ -288,14 +234,8 @@ class MainActivity : ComponentActivity() {
                         is DestinoPantalla.DetallePublico -> {
                             val clave = "detallepublico-$idUsuario-${destino.idSendero}"
                             DetallePublicoPantalla(
-                                viewModel = viewModelDeDestino(clave) {
-                                    DetallePublicoViewModel(
-                                        idSendero = destino.idSendero,
-                                        observarSenderoPublicoUseCase = dependencias.observarSenderoPublicoUseCase,
-                                        observarSenderosDelUsuarioUseCase = dependencias.observarSenderosDelUsuarioUseCase,
-                                        obtenerUsuarioActualUseCase = dependencias.obtenerUsuarioActualUseCase,
-                                        guardarCopiaSenderoPublicoUseCase = dependencias.guardarCopiaSenderoPublicoUseCase
-                                    )
+                                viewModel = viewModelAsistidoDeDestino<DetallePublicoViewModel, DetallePublicoViewModel.Fabrica>(clave) { fabrica ->
+                                    fabrica.crear(destino.idSendero)
                                 },
                                 alVolverAExplorar = {
                                     pantallaActual = DestinoPantalla.Explorar
@@ -313,17 +253,8 @@ class MainActivity : ComponentActivity() {
                             RecorridoPantalla(
                                 solicitarCancelacion = solicitudCancelacionPendiente,
                                 alAtenderSolicitudCancelacion = { solicitudCancelacionPendiente = false },
-                                viewModel = viewModelDeDestino(clave) {
-                                    RecorridoViewModel(
-                                        idSendero = destino.idSendero,
-                                        observarDetalleSenderoUseCase = dependencias.observarDetalleSenderoUseCase,
-                                        controlSeguimiento = dependencias.controlSeguimiento,
-                                        lanzadorSeguimiento = dependencias.lanzadorSeguimiento,
-                                        capacidadesDispositivo = dependencias.capacidadesDispositivo,
-                                        observarPuntosCapturadosConDistanciaUseCase = dependencias.observarPuntosCapturadosConDistanciaUseCase,
-                                        incorporarPuntosCapturadosUseCase = dependencias.incorporarPuntosCapturadosUseCase,
-                                        descartarPuntosCapturadosUseCase = dependencias.descartarPuntosCapturadosUseCase
-                                    )
+                                viewModel = viewModelAsistidoDeDestino<RecorridoViewModel, RecorridoViewModel.Fabrica>(clave) { fabrica ->
+                                    fabrica.crear(destino.idSendero)
                                 },
                                 // Volver no detiene el seguimiento: sigue en segundo plano con su notificación
                                 alVolverAlDetalle = {
@@ -344,13 +275,8 @@ class MainActivity : ComponentActivity() {
                                 almacenDestinos.liberarDestino(clave)
                             }
                             FormularioSenderoPantalla(
-                                viewModel = viewModelDeDestino(clave) {
-                                    FormularioSenderoViewModel(
-                                        idEditado,
-                                        dependencias.observarDetalleSenderoUseCase,
-                                        dependencias.guardarSenderoUseCase,
-                                        dependencias.almacenFotos
-                                    )
+                                viewModel = viewModelAsistidoDeDestino<FormularioSenderoViewModel, FormularioSenderoViewModel.Fabrica>(clave) { fabrica ->
+                                    fabrica.crear(idEditado)
                                 },
                                 alVolver = { salir(idEditado) },
                                 alGuardar = { idGuardado -> salir(idGuardado) }
@@ -390,10 +316,18 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private inline fun <reified VM : ViewModel> viewModelDeDestino(clave: String, crossinline crear: () -> VM): VM {
-        return viewModel(
-            viewModelStoreOwner = almacenDestinos.obtenerPropietario(clave),
-            factory = viewModelFactory { initializer { crear() } }
+    private inline fun <reified VM : ViewModel> viewModelDeDestino(clave: String): VM {
+        return hiltViewModel(viewModelStoreOwner = almacenDestinos.obtenerPropietario(clave, this))
+    }
+
+    @Composable
+    private inline fun <reified VM : ViewModel, reified F> viewModelAsistidoDeDestino(
+        clave: String,
+        noinline crear: (F) -> VM
+    ): VM {
+        return hiltViewModel<VM, F>(
+            viewModelStoreOwner = almacenDestinos.obtenerPropietario(clave, this),
+            creationCallback = crear
         )
     }
 }

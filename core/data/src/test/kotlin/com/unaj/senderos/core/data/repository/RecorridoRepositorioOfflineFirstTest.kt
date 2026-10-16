@@ -1,12 +1,12 @@
-package com.unaj.senderos.data.repository
+package com.unaj.senderos.core.data.repository
 
-import com.unaj.senderos.domain.model.EstadoSincronizacion
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.falsos.FalsoAutenticacionRepositorio
-import com.unaj.senderos.falsos.FalsoPlanificadorSincronizacion
-import com.unaj.senderos.falsos.FalsoRecorridoDao
-import com.unaj.senderos.falsos.crearEntidadRecorridoDePrueba
-import com.unaj.senderos.falsos.crearRecorridoDePrueba
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.data.falsos.FalsoPlanificadorSincronizacion
+import com.unaj.senderos.core.data.falsos.FalsoRecorridoDao
+import com.unaj.senderos.core.data.falsos.crearEntidadRecorridoDePrueba
+import com.unaj.senderos.core.testing.crearRecorridoDePrueba
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

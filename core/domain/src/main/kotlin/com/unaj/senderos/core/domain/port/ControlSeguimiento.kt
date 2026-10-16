@@ -1,10 +1,10 @@
-package com.unaj.senderos.domain.port
+package com.unaj.senderos.core.domain.port
 
-import com.unaj.senderos.domain.model.AvisoRecorrido
-import com.unaj.senderos.domain.model.EstadoSeguimiento
-import com.unaj.senderos.domain.model.MotivoFinSeguimiento
-import com.unaj.senderos.domain.model.ResultadoCaptura
-import com.unaj.senderos.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.model.AvisoRecorrido
+import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
+import com.unaj.senderos.core.domain.model.ResultadoCaptura
+import com.unaj.senderos.core.domain.model.TipoPunto
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 

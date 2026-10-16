@@ -1,12 +1,12 @@
-package com.unaj.senderos.presentation.login
+package com.unaj.senderos.features.auth.login
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,12 +54,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unaj.senderos.R
-import com.unaj.senderos.presentation.tema.TemaSenderos
+import com.unaj.senderos.core.ui.R
+import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 @Composable
 fun LoginPantalla(
     viewModel: LoginViewModel,
+    idClienteWebGoogle: String,
     alNavegarAInicio: () -> Unit = {},
     alNavegarARegistro: () -> Unit = {}
 ) {
@@ -75,6 +76,7 @@ fun LoginPantalla(
                 is LoginEfecto.MostrarAviso -> snackbarHostState.showSnackbar(efecto.mensaje)
                 is LoginEfecto.SolicitarGoogleSignIn -> pedirTokenDeGoogle(
                     contexto = contexto,
+                    idClienteWeb = idClienteWebGoogle,
                     alObtenerToken = { idToken ->
                         viewModel.procesarEvento(LoginEvento.AlContinuarConGoogle(idToken))
                     },

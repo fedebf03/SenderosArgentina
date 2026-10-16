@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.comun
+package com.unaj.senderos.core.ui.comun
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -1,8 +1,8 @@
-package com.unaj.senderos.data.mapeo
+package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.data.local.PuntoCapturadoEntidad
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.falsos.crearPuntoCapturadoDePrueba
+import com.unaj.senderos.core.database.PuntoCapturadoEntidad
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.testing.crearPuntoCapturadoDePrueba
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

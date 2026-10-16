@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 enum class Dificultad { BAJA, MEDIA, ALTA }
 

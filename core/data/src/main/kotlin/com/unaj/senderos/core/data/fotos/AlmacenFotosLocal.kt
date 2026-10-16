@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.local
+package com.unaj.senderos.core.data.fotos
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -9,7 +9,7 @@ import android.net.Uri
 import android.util.Log
 import android.os.Build
 import androidx.exifinterface.media.ExifInterface
-import com.unaj.senderos.domain.port.AlmacenFotos
+import com.unaj.senderos.core.domain.port.AlmacenFotos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -17,12 +17,14 @@ import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
 import kotlin.math.roundToInt
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 private const val LADO_MAXIMO_PIXELES = 1600
 private const val CALIDAD_JPEG = 85
 private const val TAG = "FOTOS"
 
-class AlmacenFotosLocal(contexto: Context) : AlmacenFotos {
+class AlmacenFotosLocal @Inject constructor(@ApplicationContext contexto: Context) : AlmacenFotos {
 
     private val contexto = contexto.applicationContext
     private val carpetaFotos = File(this.contexto.filesDir, "fotos_senderos")

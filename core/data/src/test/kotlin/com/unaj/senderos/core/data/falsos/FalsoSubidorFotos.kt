@@ -1,6 +1,6 @@
-package com.unaj.senderos.falsos
+package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.data.remote.SubidorFotos
+import com.unaj.senderos.core.network.SubidorFotos
 
 class FalsoSubidorFotos : SubidorFotos {
 

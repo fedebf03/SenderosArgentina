@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.revisionpuntos
+package com.unaj.senderos.core.ui.revisionpuntos
 
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
-import com.unaj.senderos.presentation.componentes.DialogoConfirmacion
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.accionable
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.accionable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,10 +32,10 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.unaj.senderos.domain.model.PuntoCapturadoConDistancia
-import com.unaj.senderos.domain.model.esFotoLocal
-import com.unaj.senderos.presentation.detalle.obtenerIconoTipoPunto
-import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
+import com.unaj.senderos.core.domain.model.PuntoCapturadoConDistancia
+import com.unaj.senderos.core.domain.model.esFotoLocal
+import com.unaj.senderos.core.ui.sendero.obtenerIconoTipoPunto
+import com.unaj.senderos.core.ui.sendero.obtenerTextoTipoPunto
 import java.io.File
 
 private val ALTURA_MAXIMA_LISTA_REVISION = 280.dp

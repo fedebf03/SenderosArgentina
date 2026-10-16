@@ -1,5 +1,6 @@
-package com.unaj.senderos.presentation.detalle
+package com.unaj.senderos.features.senderos.detalle
 
+import com.unaj.senderos.core.ui.componentes.BotonCircular
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.background
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -29,21 +29,19 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.presentation.componentes.EtiquetaBioma
-import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
-import com.unaj.senderos.presentation.componentes.FotoSendero
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.ui.componentes.EtiquetaBioma
+import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
+import com.unaj.senderos.core.ui.componentes.FotoSendero
 
 @Composable
 internal fun CabeceraDetalle(
@@ -187,25 +185,5 @@ internal fun MenuOpciones(
             },
             onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarEliminar) }
         )
-    }
-}
-
-@Composable
-internal fun BotonCircular(
-    icono: ImageVector,
-    descripcion: String,
-    alTocar: () -> Unit
-) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-    ) {
-        IconButton(onClick = alTocar) {
-            Icon(
-                imageVector = icono,
-                contentDescription = descripcion,
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
     }
 }

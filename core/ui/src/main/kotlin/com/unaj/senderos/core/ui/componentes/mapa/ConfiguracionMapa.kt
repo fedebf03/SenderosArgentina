@@ -1,6 +1,6 @@
-package com.unaj.senderos.presentation.componentes.mapa
+package com.unaj.senderos.core.ui.componentes.mapa
 
-import com.unaj.senderos.domain.configuracion.ConfiguracionEstiloMapa
+import com.unaj.senderos.core.domain.configuracion.ConfiguracionEstiloMapa
 
 object ConfiguracionMapa {
     // El estilo vive en dominio para compartirlo con la descarga de mapas sin conexión

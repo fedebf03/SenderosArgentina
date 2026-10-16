@@ -1,13 +1,13 @@
-package com.unaj.senderos.presentation.senderos
+package com.unaj.senderos.features.senderos.listado
 
-import com.unaj.senderos.domain.model.Coordenada
-import com.unaj.senderos.domain.model.Dificultad
-import com.unaj.senderos.domain.model.Sendero
-import com.unaj.senderos.domain.model.SenderoPublico
-import com.unaj.senderos.domain.model.Usuario
-import com.unaj.senderos.domain.model.filtrarSenderosPorDificultad
-import com.unaj.senderos.domain.model.filtrarSenderosPorTexto
-import com.unaj.senderos.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.model.SenderoPublico
+import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.model.filtrarSenderosPorDificultad
+import com.unaj.senderos.core.domain.model.filtrarSenderosPorTexto
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
 
 enum class ModoListado { EXPLORAR, MIS_SENDEROS }
 

@@ -1,11 +1,11 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.unaj.senderos.presentation.comun.TEXTO_SIN_DATO
+import com.unaj.senderos.core.ui.comun.TEXTO_SIN_DATO
 
 // Texto que lee el lector de pantalla en lugar del guion que se muestra cuando falta un dato
 private const val DESCRIPCION_SIN_DATO = "sin dato"

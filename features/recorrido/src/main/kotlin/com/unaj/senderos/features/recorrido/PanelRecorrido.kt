@@ -1,5 +1,6 @@
-package com.unaj.senderos.presentation.recorrido
+package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -39,20 +40,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.CalidadSenal
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.BotonSecundario
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
-import com.unaj.senderos.presentation.componentes.accionable
-import com.unaj.senderos.presentation.componentes.descripcionSiSinDato
-import com.unaj.senderos.presentation.comun.TEXTO_NO_DISPONIBLE
-import com.unaj.senderos.presentation.comun.TEXTO_SIN_DATO
-import com.unaj.senderos.presentation.comun.formatearDistanciaCorta
-import com.unaj.senderos.presentation.comun.formatearPasos
-import com.unaj.senderos.presentation.comun.formatearRitmo
-import com.unaj.senderos.presentation.comun.formatearVelocidad
-import com.unaj.senderos.presentation.comun.formatearVelocidadDesdeMetrosPorSegundo
-import com.unaj.senderos.presentation.revisionpuntos.describirCantidadPuntosCapturados
+import com.unaj.senderos.core.domain.model.CalidadSenal
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.componentes.accionable
+import com.unaj.senderos.core.ui.componentes.descripcionSiSinDato
+import com.unaj.senderos.core.ui.comun.TEXTO_NO_DISPONIBLE
+import com.unaj.senderos.core.ui.comun.TEXTO_SIN_DATO
+import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
+import com.unaj.senderos.core.ui.comun.formatearPasos
+import com.unaj.senderos.core.ui.comun.formatearRitmo
+import com.unaj.senderos.core.ui.comun.formatearVelocidad
+import com.unaj.senderos.core.ui.comun.formatearVelocidadDesdeMetrosPorSegundo
+import com.unaj.senderos.core.ui.revisionpuntos.describirCantidadPuntosCapturados
 
 private val ANCHO_MINIMO_BOTONES_LADO_A_LADO = 340.dp
 private const val ESCALA_FUENTE_MAXIMA_LADO_A_LADO = 1.3f

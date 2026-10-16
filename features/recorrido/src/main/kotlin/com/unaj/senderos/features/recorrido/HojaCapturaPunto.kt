@@ -1,10 +1,10 @@
-package com.unaj.senderos.presentation.recorrido
+package com.unaj.senderos.features.recorrido
 
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import com.unaj.senderos.presentation.componentes.BotonPrincipal
-import com.unaj.senderos.presentation.componentes.BotonSecundario
-import com.unaj.senderos.presentation.componentes.IconoDeBoton
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -45,10 +45,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.TipoPunto
-import com.unaj.senderos.presentation.revisionpuntos.FotoDePunto
-import com.unaj.senderos.presentation.detalle.obtenerIconoTipoPunto
-import com.unaj.senderos.presentation.formulario.obtenerTextoTipoPunto
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
+import com.unaj.senderos.core.ui.sendero.obtenerIconoTipoPunto
+import com.unaj.senderos.core.ui.sendero.obtenerTextoTipoPunto
 
 private const val LONGITUD_MAXIMA_NOTA = 200
 

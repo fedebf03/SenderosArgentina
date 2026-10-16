@@ -1,13 +1,13 @@
-package com.unaj.senderos.presentation.senderos
+package com.unaj.senderos.features.senderos.listado
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.port.MonitorConectividad
-import com.unaj.senderos.domain.port.ProveedorUbicacion
-import com.unaj.senderos.domain.usecase.ObservarSenderosDelUsuarioUseCase
-import com.unaj.senderos.domain.usecase.ObservarSenderosPublicosUseCase
-import com.unaj.senderos.presentation.comun.observarSenderos
+import com.unaj.senderos.core.domain.port.MonitorConectividad
+import com.unaj.senderos.core.domain.port.ProveedorUbicacion
+import com.unaj.senderos.core.domain.usecase.ObservarSenderosDelUsuarioUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarSenderosPublicosUseCase
+import com.unaj.senderos.core.ui.comun.observarSenderos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -18,16 +18,26 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 private const val TAG = "SENDEROS"
 
-class SenderosViewModel(
-    modo: ModoListado,
+@HiltViewModel(assistedFactory = SenderosViewModel.Fabrica::class)
+class SenderosViewModel @AssistedInject constructor(
+    @Assisted modo: ModoListado,
     observarSenderosDelUsuarioUseCase: ObservarSenderosDelUsuarioUseCase,
     observarSenderosPublicosUseCase: ObservarSenderosPublicosUseCase,
     private val proveedorUbicacion: ProveedorUbicacion,
     monitorConectividad: MonitorConectividad
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Fabrica {
+        fun crear(modo: ModoListado): SenderosViewModel
+    }
 
     private val _estadoVisual = MutableStateFlow(SenderosEstadoVisual(modo = modo))
     val estadoVisual: StateFlow<SenderosEstadoVisual> = _estadoVisual.asStateFlow()

@@ -1,13 +1,13 @@
-package com.unaj.senderos.presentation.perfil
+package com.unaj.senderos.features.perfil
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unaj.senderos.domain.port.PreferenciasAplicacion
-import com.unaj.senderos.domain.port.ControlSeguimiento
-import com.unaj.senderos.domain.usecase.CerrarSesionUseCase
-import com.unaj.senderos.domain.usecase.ObservarRecorridosUseCase
-import com.unaj.senderos.domain.usecase.ObtenerUsuarioActualUseCase
+import com.unaj.senderos.core.domain.port.PreferenciasAplicacion
+import com.unaj.senderos.core.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.usecase.CerrarSesionUseCase
+import com.unaj.senderos.core.domain.usecase.ObservarRecorridosUseCase
+import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,11 +16,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 private const val TAG = "PERFIL"
 private const val MENSAJE_ERROR_HISTORIAL = "No pudimos cargar tu historial de recorridos"
 
-class PerfilViewModel(
+@HiltViewModel
+class PerfilViewModel @Inject constructor(
     obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
     private val cerrarSesionUseCase: CerrarSesionUseCase,
     private val preferenciasAplicacion: PreferenciasAplicacion,

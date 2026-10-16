@@ -1,4 +1,4 @@
-package com.unaj.senderos.presentation.componentes
+package com.unaj.senderos.core.ui.componentes
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +18,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.domain.model.Bioma
-import com.unaj.senderos.presentation.tema.obtenerColoresDelBioma
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
 
 /** Dibujar un punto con el color principal del bioma; es decorativo y siempre va junto al nombre. */
 @Composable

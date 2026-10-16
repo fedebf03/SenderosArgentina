@@ -1,4 +1,4 @@
-package com.unaj.senderos.domain.model
+package com.unaj.senderos.core.domain.model
 
 enum class CampoSendero { NOMBRE, REGION, DESCRIPCION, DISTANCIA, DESNIVEL, ALTURA_MAXIMA, ALTURA_MINIMA, RECORRIDO }
 

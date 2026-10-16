@@ -1,4 +1,4 @@
-package com.unaj.senderos.data.seguimiento
+package com.unaj.senderos.core.data.seguimiento
 
 import android.Manifest
 import android.app.Notification
@@ -17,13 +17,13 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.unaj.senderos.R
-import com.unaj.senderos.app.MainActivity
-import com.unaj.senderos.domain.model.AvisoRecorrido
-import com.unaj.senderos.domain.model.EstadoSeguimiento
-import com.unaj.senderos.domain.notificaciones.ContenidoNotificacionRecorrido
-import com.unaj.senderos.domain.notificaciones.RedactorNotificacionRecorrido
-import com.unaj.senderos.domain.notificaciones.TipoAvisoVisual
+import com.unaj.senderos.core.data.R
+import com.unaj.senderos.core.domain.model.AvisoRecorrido
+import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.notificaciones.ContenidoNotificacionRecorrido
+import com.unaj.senderos.core.domain.notificaciones.RedactorNotificacionRecorrido
+import com.unaj.senderos.core.domain.notificaciones.TipoAvisoVisual
+import com.unaj.senderos.core.data.notificaciones.intencionAbrirAplicacion
 
 private const val TAG = "NOTIFICACION_RECORRIDO"
 private const val ID_CANAL_EN_CURSO = "recorrido_en_curso"
@@ -224,7 +224,7 @@ class NotificadorRecorrido(private val contexto: Context) {
         codigoPedido: Int,
         solicitarCancelacion: Boolean
     ): PendingIntent {
-        val intencion = Intent(contexto, MainActivity::class.java)
+        val intencion = contexto.intencionAbrirAplicacion()
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(EXTRA_ID_SENDERO_RECORRIDO, idSendero)
         if (solicitarCancelacion) intencion.putExtra(EXTRA_SOLICITAR_CANCELACION, true)
