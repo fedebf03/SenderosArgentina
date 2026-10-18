@@ -3,7 +3,10 @@ package com.unaj.senderos.features.recorrido
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.core.domain.clima.AlertaClima
 import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
+import kotlinx.coroutines.CancellationException
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
@@ -39,6 +42,7 @@ import com.unaj.senderos.core.domain.port.Reloj
 
 private const val TAG = "RECORRIDO"
 private const val PLAZO_INICIO_MILISEGUNDOS = 5_000L
+private const val INTERVALO_CONSULTA_CLIMA_MILISEGUNDOS = 10 * 60_000L
 private const val MENSAJE_PUNTO_GUARDADO = "Punto guardado"
 private const val MENSAJE_ERROR_PUNTO = "No se pudo guardar el punto"
 private const val MENSAJE_SIN_POSICION_PARA_PUNTO = "Todavía no hay una posición válida del GPS; esperá a tener señal"
@@ -53,6 +57,7 @@ class RecorridoViewModel @AssistedInject constructor(
     observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
     incorporarPuntosCapturadosUseCase: IncorporarPuntosCapturadosUseCase,
     descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase,
+    private val obtenerPronosticoUseCase: ObtenerPronosticoUseCase,
     private val reloj: Reloj = Reloj(System::currentTimeMillis)
 ) : ViewModel() {
 
@@ -88,6 +93,10 @@ class RecorridoViewModel @AssistedInject constructor(
     private var ultimoEstadoSeguimiento: EstadoSeguimiento? = null
     private var haVistoEstadoActivo = false
     private var estaFinalizando = false
+    private var estaConsultandoClima = false
+    // Instante de la última consulta del clima y avisos ya mostrados en pantalla, para no repetir ni gastar datos en cada lectura de ubicación
+    private var ultimaConsultaClimaMilisegundos: Long? = null
+    private val alertasClimaAvisadas = mutableSetOf<AlertaClima>()
 
     init {
         Log.d(TAG, "ViewModel → creado (${hashCode()})")
@@ -307,6 +316,7 @@ class RecorridoViewModel @AssistedInject constructor(
                     esDialogoLlegadaVisible = estadoDelSendero.llegoAlFinal && !estadoActual.seDescartoLlegada
                 )
             }
+            pedirClimaSiHaceFalta(estadoDelSendero.posicionActual)
         } else if (haVistoEstadoActivo && !estaFinalizando) {
             // El seguimiento terminó por fuera de la pantalla (por ejemplo desde la notificación)
             val motivoFin = controlSeguimiento.motivoFin.value
@@ -325,6 +335,41 @@ class RecorridoViewModel @AssistedInject constructor(
             motivoFin?.let { motivo ->
                 emitirEfecto(RecorridoEfecto.MostrarAviso(describirMotivoFin(motivo)))
             }
+        }
+    }
+
+    // Pedir el clima del lugar donde está el usuario la primera vez y después a lo sumo cada 10 minutos; el caso de uso usa la copia guardada si es reciente
+    // y, sin conexión, la última que haya. Un fallo solo se registra: el clima es un extra y no debe molestar mientras se camina
+    private fun pedirClimaSiHaceFalta(posicion: Coordenada?) {
+        if (posicion == null || estaConsultandoClima) return
+        val ahora = reloj()
+        val ultima = ultimaConsultaClimaMilisegundos
+        if (ultima != null && ahora - ultima < INTERVALO_CONSULTA_CLIMA_MILISEGUNDOS) return
+        ultimaConsultaClimaMilisegundos = ahora
+        estaConsultandoClima = true
+        viewModelScope.launch {
+            val resultado = try {
+                obtenerPronosticoUseCase(posicion)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+            estaConsultandoClima = false
+            resultado.fold(
+                onSuccess = { pronostico ->
+                    _estadoVisual.update { estadoActual -> estadoActual.copy(clima = pronostico) }
+                    avisarAlertasNuevas(_estadoVisual.value.alertasClima)
+                },
+                onFailure = { error -> Log.e(TAG, "No se pudo obtener el clima durante el recorrido", error) }
+            )
+        }
+    }
+
+    // Mostrar en pantalla una sola vez cada aviso de clima durante el recorrido
+    private fun avisarAlertasNuevas(alertas: Set<AlertaClima>) {
+        alertas.filter { alerta -> alertasClimaAvisadas.add(alerta) }.forEach { alerta ->
+            emitirEfecto(RecorridoEfecto.MostrarAviso("Aviso de clima: ${alerta.titulo}"))
         }
     }
 

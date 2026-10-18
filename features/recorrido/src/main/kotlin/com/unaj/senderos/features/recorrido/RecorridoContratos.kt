@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.domain.clima.AlertaClima
+import com.unaj.senderos.core.domain.clima.EvaluadorAlertasClima
+import com.unaj.senderos.core.domain.usecase.ResultadoPronostico
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.recorrido.ConversorCaminata
@@ -64,8 +67,16 @@ data class RecorridoEstadoVisual(
     val largoTrazadoKilometros: Double = 0.0,
     val perfilEstaDesactualizado: Boolean = false,
     // Caminata sin sendero previo: no hay trazado planificado, restante ni perfil; al finalizar se ofrece convertirla en un sendero nuevo
-    val esCaminataLibre: Boolean = false
+    val esCaminataLibre: Boolean = false,
+    // Clima del lugar donde está el usuario, con el último pronóstico obtenido o guardado; nulo hasta tenerlo
+    val clima: ResultadoPronostico? = null
 ) {
+    // Avisos del clima de ahora y del día de hoy (el primero del pronóstico), que cambian cómo conviene seguir caminando
+    val alertasClima: Set<AlertaClima>
+        get() = clima?.pronostico?.let { pronostico ->
+            EvaluadorAlertasClima.evaluarActual(pronostico.actual) + pronostico.dias.firstOrNull()?.let { dia -> EvaluadorAlertasClima.evaluarDia(dia) }.orEmpty()
+        }.orEmpty()
+
     val puedeAgregarPunto: Boolean
         get() = fase == FaseRecorrido.EN_CURSO
 
