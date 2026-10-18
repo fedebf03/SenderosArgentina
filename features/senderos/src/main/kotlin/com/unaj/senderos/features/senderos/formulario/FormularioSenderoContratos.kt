@@ -8,6 +8,8 @@ import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.TipoPunto
 import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.domain.model.PerfilElevacion
 
 enum class CampoFormulario {
     NOMBRE,
@@ -79,11 +81,21 @@ data class FormularioSenderoEstadoVisual(
     val puntoDeInteresNuevo: PuntoDeInteresNuevo? = null,
     // Índice del punto ya trazado cuya foto se está copiando; null si no hay ninguna copia en curso
     val indicePuntoCopiandoFoto: Int? = null,
+    // Falso mientras la distancia sigue a la del mapa; verdadero cuando el usuario la escribió a mano
+    val distanciaEsManual: Boolean = false,
+    val perfilElevacion: PerfilElevacion? = null,
+    val estaCalculandoPerfil: Boolean = false,
+    // Motivo por el que no se pudo calcular el perfil, para mostrarlo con la opción de reintentar
+    val avisoPerfil: String? = null,
     val foto: String = "",
     val estaProcesandoFoto: Boolean = false
 ) {
     val distanciaCalculadaKilometros: Double
         get() = CalculadoraRecorrido.distanciaKilometros(recorrido, tipoRecorrido)
+
+    // Indicar si el perfil se calculó con otro trazado (se movió, agregó o borró un punto, o cambió el tipo de recorrido)
+    val perfilEstaDesactualizado: Boolean
+        get() = perfilElevacion != null && perfilElevacion.firmaTrazado != CalculadoraPerfil.firmaTrazado(recorrido, tipoRecorrido)
 }
 
 sealed interface FormularioSenderoEvento {
@@ -92,6 +104,11 @@ sealed interface FormularioSenderoEvento {
     data class AlSeleccionarBioma(val bioma: Bioma) : FormularioSenderoEvento
     data class AlSeleccionarTipoRecorrido(val tipoRecorrido: TipoRecorrido) : FormularioSenderoEvento
     data object AlAgregarRecomendacion : FormularioSenderoEvento
+    data class AlAgregarRecomendacionSugerida(val texto: String) : FormularioSenderoEvento
+    data class AlAgregarServicioSugerido(val texto: String) : FormularioSenderoEvento
+    data object AlCalcularDuracion : FormularioSenderoEvento
+    data object AlUsarDistanciaDelMapa : FormularioSenderoEvento
+    data object AlCalcularPerfil : FormularioSenderoEvento
     data class AlQuitarRecomendacion(val indice: Int) : FormularioSenderoEvento
     data object AlAgregarServicio : FormularioSenderoEvento
     data class AlQuitarServicio(val indice: Int) : FormularioSenderoEvento

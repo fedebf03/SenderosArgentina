@@ -15,6 +15,8 @@ class CalcularPerfilElevacionUseCase @Inject constructor(
     private val fuenteElevacion: FuenteElevacion,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
+    private val calcularPerfilDeTrazado = CalcularPerfilDeTrazadoUseCase(fuenteElevacion)
+
     // Calcular el perfil del sendero indicado del usuario con sesión activa, si falta o quedó desactualizado
     suspend operator fun invoke(idSendero: String): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
@@ -33,19 +35,8 @@ class CalcularPerfilElevacionUseCase @Inject constructor(
     suspend fun calcularPara(idUsuario: String, sendero: Sendero): Result<Unit> {
         val firma = CalculadoraPerfil.firmaTrazado(sendero.recorrido, sendero.tipoRecorrido)
         if (sendero.perfilElevacion?.firmaTrazado == firma) return Result.success(Unit)
-        val muestras = CalculadoraPerfil.muestrearTrazado(sendero.recorrido, sendero.tipoRecorrido)
-        if (muestras.isEmpty()) {
-            return Result.failure(
-                IllegalStateException("El sendero necesita al menos dos puntos de recorrido para calcular el perfil")
-            )
-        }
-        val altitudes = fuenteElevacion.obtenerAltitudes(muestras.map { muestra -> muestra.coordenada })
+        val perfil = calcularPerfilDeTrazado(sendero.recorrido, sendero.tipoRecorrido)
             .getOrElse { fallo -> return Result.failure(fallo) }
-        val perfil = try {
-            CalculadoraPerfil.calcular(muestras, altitudes, firma)
-        } catch (error: IllegalArgumentException) {
-            return Result.failure(error)
-        }
         return senderoRepositorio.guardarPerfilElevacion(idUsuario, sendero.id, perfil)
     }
 }

@@ -7,6 +7,15 @@ import com.unaj.senderos.core.domain.recorrido.EdicionRecorrido
 import com.unaj.senderos.core.domain.model.CampoSendero
 import com.unaj.senderos.core.domain.model.Etapa
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
+import com.unaj.senderos.core.domain.recorrido.CalculadoraDuracion
+import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
+import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
+import com.unaj.senderos.core.domain.model.PerfilElevacion
+import com.unaj.senderos.core.domain.port.ErrorElevacionException
+import com.unaj.senderos.core.domain.port.SinConexionElevacionException
+import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
+import kotlinx.coroutines.Job
+import kotlin.math.roundToInt
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.SenderoInvalidoException
 import com.unaj.senderos.core.domain.port.AlmacenFotos
@@ -34,13 +43,18 @@ private const val MENSAJE_REVISAR_CAMPOS = "Revisá los campos marcados"
 private const val MENSAJE_ETAPA_INVALIDA = "Completá el nombre y los km de la etapa"
 private const val MENSAJE_FOTO_INVALIDA = "No se pudo usar esa foto"
 private const val MENSAJE_FOTO_PUNTO_INVALIDA = "No se pudo guardar la foto del punto"
+private const val MENSAJE_FALTA_DISTANCIA_PARA_DURACION = "Cargá la distancia o marcá el recorrido para calcular la duración"
+private const val MENSAJE_DESNIVEL_INVALIDO_PARA_DURACION = "Revisá el desnivel: tiene que ser un número de metros"
+private const val MENSAJE_PERFIL_SIN_CONEXION = "Sin conexión: el perfil se calculará al sincronizar"
+private const val MENSAJE_PERFIL_ERROR = "No se pudo calcular el perfil de elevación"
 
 @HiltViewModel(assistedFactory = FormularioSenderoViewModel.Fabrica::class)
 class FormularioSenderoViewModel @AssistedInject constructor(
     @Assisted private val idSendero: String?,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val guardarSenderoUseCase: GuardarSenderoUseCase,
-    private val almacenFotos: AlmacenFotos
+    private val almacenFotos: AlmacenFotos,
+    private val calcularPerfilDeTrazadoUseCase: CalcularPerfilDeTrazadoUseCase
 ) : ViewModel() {
 
     @AssistedFactory
@@ -49,7 +63,12 @@ class FormularioSenderoViewModel @AssistedInject constructor(
     }
 
     private val _estadoVisual = MutableStateFlow(
-        FormularioSenderoEstadoVisual(esEdicion = idSendero != null, estaCargando = idSendero != null)
+        FormularioSenderoEstadoVisual(
+            esEdicion = idSendero != null,
+            estaCargando = idSendero != null,
+            // Un sendero nuevo arranca con las recomendaciones básicas; no cuentan como cambio para no pedir confirmación al salir
+            recomendaciones = if (idSendero == null) RECOMENDACIONES_POR_DEFECTO else emptyList()
+        )
     )
     val estadoVisual: StateFlow<FormularioSenderoEstadoVisual> = _estadoVisual.asStateFlow()
 
@@ -60,11 +79,14 @@ class FormularioSenderoViewModel @AssistedInject constructor(
     private var senderoOriginal: Sendero? = null
     // Cambia cada vez que se abre el menú de un punto de interés: una copia de foto que termina tarde no se pega a otro punto
     private var generacionPuntoNuevo = 0
+    // Cálculo del perfil en curso; uno nuevo cancela al anterior
+    private var trabajoPerfil: Job? = null
 
     init {
         if (idSendero != null) cargarSendero(idSendero)
     }
 
+    // Procesar cada evento de la pantalla y traducirlo en cambios del estado del formulario
     fun procesarEvento(evento: FormularioSenderoEvento) {
         when (evento) {
             is FormularioSenderoEvento.AlCambiarTexto -> cambiarTexto(evento.campo, evento.texto)
@@ -80,10 +102,31 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             }
             is FormularioSenderoEvento.AlSeleccionarTipoRecorrido -> {
                 _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true)
+                    seguirDistanciaDelMapa(estadoActual.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true))
                 }
+                // El tipo cambia el trazado del perfil (cierre o vuelta); con el mapa abierto se recalcula al cerrarlo
+                if (!_estadoVisual.value.esEditorMapaVisible) calcularPerfil(forzar = false)
             }
             is FormularioSenderoEvento.AlAgregarRecomendacion -> agregarRecomendacion()
+            is FormularioSenderoEvento.AlAgregarRecomendacionSugerida -> {
+                _estadoVisual.update { estadoActual ->
+                    agregarSiFalta(estadoActual.recomendaciones, evento.texto)
+                        ?.let { lista -> estadoActual.copy(recomendaciones = lista, hayCambiosSinGuardar = true) } ?: estadoActual
+                }
+            }
+            is FormularioSenderoEvento.AlAgregarServicioSugerido -> {
+                _estadoVisual.update { estadoActual ->
+                    agregarSiFalta(estadoActual.servicios, evento.texto)
+                        ?.let { lista -> estadoActual.copy(servicios = lista, hayCambiosSinGuardar = true) } ?: estadoActual
+                }
+            }
+            is FormularioSenderoEvento.AlCalcularDuracion -> calcularDuracion()
+            is FormularioSenderoEvento.AlUsarDistanciaDelMapa -> {
+                _estadoVisual.update { estadoActual ->
+                    seguirDistanciaDelMapa(estadoActual.copy(distanciaEsManual = false, hayCambiosSinGuardar = true))
+                }
+            }
+            is FormularioSenderoEvento.AlCalcularPerfil -> calcularPerfil(forzar = true)
             is FormularioSenderoEvento.AlQuitarRecomendacion -> {
                 _estadoVisual.update { estadoActual ->
                     estadoActual.copy(
@@ -117,7 +160,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 _estadoVisual.update { estadoActual ->
                     estadoActual.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null)
                 }
-                completarDistanciaConLaDelMapa()
+                calcularPerfil(forzar = false)
             }
             is FormularioSenderoEvento.AlAgregarPunto -> tocarMapa(evento.latitud, evento.longitud)
             is FormularioSenderoEvento.AlMoverPunto -> {
@@ -158,6 +201,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
+    // Cargar el sendero a editar en el formulario, con su perfil y si la distancia sigue o no a la del mapa
     private fun cargarSendero(idSenderoEditado: String) {
         viewModelScope.launch {
             val resultado = observarDetalleSenderoUseCase(idSenderoEditado)
@@ -182,6 +226,10 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 return@launch
             }
             senderoOriginal = senderoEncontrado
+            val distanciaDelMapa = CalculadoraRecorrido.distanciaKilometros(senderoEncontrado.recorrido, senderoEncontrado.tipoRecorrido)
+            // La distancia sigue al mapa solo si es la que el mapa daría; otra la escribió el usuario a mano
+            val distanciaEsManual = senderoEncontrado.recorrido.size < 2 ||
+                Math.round(distanciaDelMapa * 10) != Math.round(senderoEncontrado.distanciaKilometros * 10)
             _estadoVisual.update { estadoActual ->
                 estadoActual.copy(
                     estaCargando = false,
@@ -203,7 +251,9 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                     servicios = senderoEncontrado.servicios,
                     etapas = senderoEncontrado.etapas,
                     recorrido = senderoEncontrado.recorrido,
+                    perfilElevacion = senderoEncontrado.perfilElevacion,
                     foto = senderoEncontrado.foto,
+                    distanciaEsManual = distanciaEsManual,
                     hayCambiosSinGuardar = false
                 )
             }
@@ -223,7 +273,9 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             if (editado == actual) {
                 estado
             } else {
-                estado.copy(recorrido = editado.puntos, indicePuntoSeleccionado = editado.seleccion, hayCambiosSinGuardar = true)
+                seguirDistanciaDelMapa(
+                    estado.copy(recorrido = editado.puntos, indicePuntoSeleccionado = editado.seleccion, hayCambiosSinGuardar = true)
+                )
             }
         }
     }
@@ -337,26 +389,87 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         _estadoVisual.update { estado -> estado.copy(indicePuntoSeleccionado = indice) }
     }
 
-    // Solo con el campo vacío: una distancia ya cargada puede ser la del sendero completo y el trazado, apenas un tramo
-    private fun completarDistanciaConLaDelMapa() {
-        _estadoVisual.update { estadoActual ->
-            if (estadoActual.distancia.isNotBlank() || estadoActual.recorrido.size < 2) return@update estadoActual
-            val distanciaRedondeada = Math.round(estadoActual.distanciaCalculadaKilometros * 10) / 10.0
-            estadoActual.copy(
-                distancia = formatearDecimalEditable(distanciaRedondeada),
-                camposConError = estadoActual.camposConError - CampoSendero.DISTANCIA,
-                hayCambiosSinGuardar = true
-            )
+    // Copiar la distancia del mapa, redondeada a un decimal, mientras el usuario no la haya escrito a mano: una distancia escrita
+    // puede ser la del sendero completo cuando el trazado es apenas un tramo. Con menos de dos puntos no hay distancia del mapa
+    private fun seguirDistanciaDelMapa(estado: FormularioSenderoEstadoVisual): FormularioSenderoEstadoVisual {
+        if (estado.distanciaEsManual || estado.recorrido.size < 2) return estado
+        val distanciaDelMapa = formatearDistanciaDelMapa(estado)
+        if (distanciaDelMapa == estado.distancia) return estado
+        return estado.copy(distancia = distanciaDelMapa, camposConError = estado.camposConError - CampoSendero.DISTANCIA)
+    }
+
+    // Escribir la distancia del mapa como en el campo, redondeada a un decimal
+    private fun formatearDistanciaDelMapa(estado: FormularioSenderoEstadoVisual): String {
+        return formatearDecimalEditable(Math.round(estado.distanciaCalculadaKilometros * 10) / 10.0)
+    }
+
+    // Pedir las alturas del trazado y armar el perfil; sin forzar, no hace nada si el perfil ya corresponde al trazado.
+    // Si el trazado cambia mientras se consulta, el resultado se descarta. Completa desnivel y alturas que estén vacíos,
+    // en 0 o con el valor del perfil anterior (los que escribió el usuario no se tocan)
+    private fun calcularPerfil(forzar: Boolean) {
+        val estadoActual = _estadoVisual.value
+        if (estadoActual.recorrido.size < 2) return
+        val firma = CalculadoraPerfil.firmaTrazado(estadoActual.recorrido, estadoActual.tipoRecorrido)
+        if (!forzar && estadoActual.perfilElevacion?.firmaTrazado == firma) return
+        trabajoPerfil?.cancel()
+        _estadoVisual.update { estado -> estado.copy(estaCalculandoPerfil = true, avisoPerfil = null) }
+        val recorrido = estadoActual.recorrido
+        val tipoRecorrido = estadoActual.tipoRecorrido
+        trabajoPerfil = viewModelScope.launch {
+            val resultado = calcularPerfilDeTrazadoUseCase(recorrido, tipoRecorrido)
+            _estadoVisual.update { estado ->
+                val sigueElMismoTrazado = CalculadoraPerfil.firmaTrazado(estado.recorrido, estado.tipoRecorrido) == firma
+                when {
+                    !sigueElMismoTrazado -> estado.copy(estaCalculandoPerfil = false)
+                    resultado.isSuccess -> aplicarPerfil(estado, resultado.getOrThrow())
+                    else -> estado.copy(estaCalculandoPerfil = false, avisoPerfil = describirFalloDelPerfil(resultado.exceptionOrNull()))
+                }
+            }
         }
     }
 
+    // Guardar el perfil en el estado y completar desnivel y alturas con la misma regla que la sincronización
+    private fun aplicarPerfil(estado: FormularioSenderoEstadoVisual, perfil: PerfilElevacion): FormularioSenderoEstadoVisual {
+        val anterior = estado.perfilElevacion
+        Log.d(TAG, "Perfil de elevación calculado: ${perfil.desnivelPositivoMetros} m de subida")
+        return estado.copy(
+            perfilElevacion = perfil,
+            estaCalculandoPerfil = false,
+            avisoPerfil = null,
+            desnivel = autocompletarTexto(estado.desnivel, anterior?.desnivelPositivoMetros, perfil.desnivelPositivoMetros),
+            alturaMaxima = autocompletarTexto(estado.alturaMaxima, anterior?.alturaMaximaMetros, perfil.alturaMaximaMetros),
+            alturaMinima = autocompletarTexto(estado.alturaMinima, anterior?.alturaMinimaMetros, perfil.alturaMinimaMetros),
+            camposConError = estado.camposConError - setOf(CampoSendero.DESNIVEL, CampoSendero.ALTURA_MAXIMA, CampoSendero.ALTURA_MINIMA),
+            hayCambiosSinGuardar = true
+        )
+    }
+
+    // Reemplazar el texto por el valor del perfil si está vacío, en 0 o coincide con el del perfil anterior
+    private fun autocompletarTexto(actual: String, delPerfilAnterior: Int?, delPerfilNuevo: Int): String {
+        val valor = actual.trim().toIntOrNull()
+        val loCompletoLaApp = actual.isBlank() || valor == 0 || (delPerfilAnterior != null && valor == delPerfilAnterior)
+        return if (loCompletoLaApp) delPerfilNuevo.toString() else actual
+    }
+
+    // Traducir el fallo del perfil en un aviso para el usuario
+    private fun describirFalloDelPerfil(error: Throwable?): String {
+        if (error != null) Log.e(TAG, "No se pudo calcular el perfil de elevación", error)
+        return when (error) {
+            is SinConexionElevacionException -> MENSAJE_PERFIL_SIN_CONEXION
+            is ErrorElevacionException -> error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_PERFIL_ERROR
+            else -> MENSAJE_PERFIL_ERROR
+        }
+    }
+
+    // Cambiar el texto de un campo, limpiar su error y marcar el cambio si modifica datos del sendero
     private fun cambiarTexto(campo: CampoFormulario, texto: String) {
         _estadoVisual.update { estadoActual ->
             val estadoConTexto = when (campo) {
                 CampoFormulario.NOMBRE -> estadoActual.copy(nombre = texto)
                 CampoFormulario.REGION -> estadoActual.copy(region = texto)
                 CampoFormulario.DESCRIPCION -> estadoActual.copy(descripcion = texto)
-                CampoFormulario.DISTANCIA -> estadoActual.copy(distancia = texto)
+                // Vaciar el campo vuelve a seguir la distancia del mapa desde el próximo cambio del trazado, sin rellenarlo mientras se escribe
+                CampoFormulario.DISTANCIA -> estadoActual.copy(distancia = texto, distanciaEsManual = texto.isNotBlank())
                 CampoFormulario.DESNIVEL -> estadoActual.copy(desnivel = texto)
                 CampoFormulario.ALTURA_MAXIMA -> estadoActual.copy(alturaMaxima = texto)
                 CampoFormulario.ALTURA_MINIMA -> estadoActual.copy(alturaMinima = texto)
@@ -395,6 +508,35 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             CampoFormulario.ALTURA_MAXIMA -> CampoSendero.ALTURA_MAXIMA
             CampoFormulario.ALTURA_MINIMA -> CampoSendero.ALTURA_MINIMA
             else -> null
+        }
+    }
+
+    // Devolver la lista con el texto agregado al final, o null si ya estaba (sin distinguir mayúsculas)
+    private fun agregarSiFalta(lista: List<String>, texto: String): List<String>? {
+        val limpio = texto.trim()
+        if (limpio.isEmpty() || lista.any { elemento -> elemento.equals(limpio, ignoreCase = true) }) return null
+        return lista + limpio
+    }
+
+    // Estimar la duración con la distancia cargada (o la del recorrido marcado, si está vacía) y el desnivel, y escribirla en el campo
+    private fun calcularDuracion() {
+        val estadoActual = _estadoVisual.value
+        val distancia = interpretarDecimal(estadoActual.distancia)?.takeIf { valor -> valor > 0.0 }
+            ?: estadoActual.distanciaCalculadaKilometros
+        val textoDesnivel = estadoActual.desnivel.trim()
+        val desnivel = if (textoDesnivel.isEmpty()) 0 else interpretarDecimal(textoDesnivel)?.roundToInt()
+        if (desnivel == null) {
+            emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_DESNIVEL_INVALIDO_PARA_DURACION))
+            return
+        }
+        val minutos = CalculadoraDuracion.estimarMinutos(distancia, desnivel)
+        if (minutos == null) {
+            emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_FALTA_DISTANCIA_PARA_DURACION))
+            return
+        }
+        Log.d(TAG, "Duración estimada: $minutos min para $distancia km y $desnivel m de subida")
+        _estadoVisual.update { estado ->
+            estado.copy(duracionEstimada = formatearDuracionEstimada(minutos), hayCambiosSinGuardar = true)
         }
     }
 
@@ -458,6 +600,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         return valor.takeIf { numero -> numero.isFinite() }
     }
 
+    // Validar los números, armar el sendero con el perfil y guardarlo; un perfil que todavía se calcula se abandona
     private fun guardar() {
         val estadoActual = _estadoVisual.value
         if (estadoActual.estaGuardando || estadoActual.estaCargando || estadoActual.mensajeError != null) return
@@ -506,10 +649,16 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             servicios = estadoActual.servicios,
             etapas = estadoActual.etapas,
             recorrido = estadoActual.recorrido,
-            foto = estadoActual.foto
+            foto = estadoActual.foto,
+            // Viaja aunque sea de otro trazado: su firma distinta hace que la sincronización lo recalcule, y al ser el perfil que
+            // completó el desnivel y las alturas, la sincronización sabe que esos valores los puso la app y puede actualizarlos
+            perfilElevacion = estadoActual.perfilElevacion ?: senderoBase.perfilElevacion
         )
 
-        _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(estaGuardando = true, camposConError = emptySet()) }
+        trabajoPerfil?.cancel()
+        _estadoVisual.update { estadoPrevio ->
+            estadoPrevio.copy(estaGuardando = true, camposConError = emptySet(), estaCalculandoPerfil = false)
+        }
         viewModelScope.launch {
             guardarSenderoUseCase(senderoArmado).fold(
                 onSuccess = { senderoGuardado ->

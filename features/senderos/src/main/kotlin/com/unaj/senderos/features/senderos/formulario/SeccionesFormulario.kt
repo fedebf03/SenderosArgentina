@@ -31,6 +31,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.unaj.senderos.core.domain.configuracion.ProvinciasArgentinas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -144,9 +148,10 @@ internal fun SeccionDatosGenerales(
         tieneError = CampoSendero.NOMBRE in estadoVisual.camposConError,
         mensajeError = "Ingresá un nombre"
     )
-    CampoTexto(
+    CampoConSugerencias(
         valor = estadoVisual.region,
         etiqueta = "Región *",
+        opciones = ProvinciasArgentinas.NOMBRES,
         alCambiar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, texto)) },
         tieneError = CampoSendero.REGION in estadoVisual.camposConError,
         mensajeError = "Ingresá una región"
@@ -192,6 +197,7 @@ internal fun SeccionDatosTecnicos(
             tipoTeclado = KeyboardType.Number
         )
     }
+    AyudaDistanciaDelMapa(estadoVisual, alProcesarEvento)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
         CampoTexto(
             valor = estadoVisual.alturaMaxima,
@@ -291,6 +297,7 @@ internal fun SeccionRecorrido(
                 "según el mapa",
             style = MaterialTheme.typography.bodyMedium
         )
+        PerfilEnFormulario(estadoVisual, alProcesarEvento)
     }
     if (CampoSendero.RECORRIDO in estadoVisual.camposConError) {
         Text(
@@ -314,11 +321,21 @@ internal fun SeccionPlanificacion(
     alProcesarEvento: (FormularioSenderoEvento) -> Unit
 ) {
     TituloDeSeccion("Planificación")
-    CampoTexto(
-        valor = estadoVisual.duracionEstimada,
-        etiqueta = "Duración estimada",
-        alCambiar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DURACION, texto)) }
-    )
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        CampoTexto(
+            valor = estadoVisual.duracionEstimada,
+            etiqueta = "Duración estimada",
+            alCambiar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DURACION, texto)) },
+            modifier = Modifier.weight(1f)
+        )
+        // Estimar con la distancia y el desnivel (regla de Naismith); el resultado se puede corregir a mano
+        TextButton(
+            onClick = { alProcesarEvento(FormularioSenderoEvento.AlCalcularDuracion) },
+            modifier = Modifier.semantics { contentDescription = "Calcular la duración estimada" }
+        ) {
+            Text("Calcular")
+        }
+    }
     CampoTexto(
         valor = estadoVisual.puntoInicio,
         etiqueta = "Punto de inicio",
@@ -326,9 +343,10 @@ internal fun SeccionPlanificacion(
             alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.PUNTO_INICIO, texto))
         }
     )
-    CampoTexto(
+    CampoConSugerencias(
         valor = estadoVisual.mejorEpoca,
         etiqueta = "Mejor época",
+        opciones = EPOCAS_SUGERIDAS,
         alCambiar = { texto ->
             alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.MEJOR_EPOCA, texto))
         },
@@ -358,6 +376,11 @@ internal fun SeccionRecomendaciones(
         },
         alAgregar = { alProcesarEvento(FormularioSenderoEvento.AlAgregarRecomendacion) }
     )
+    ChipsDeSugerencias(
+        sugerencias = RECOMENDACIONES_SUGERIDAS,
+        yaAgregadas = estadoVisual.recomendaciones,
+        alAgregar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlAgregarRecomendacionSugerida(texto)) }
+    )
 }
 
 @Composable
@@ -381,6 +404,11 @@ internal fun SeccionServicios(
             alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NUEVO_SERVICIO, texto))
         },
         alAgregar = { alProcesarEvento(FormularioSenderoEvento.AlAgregarServicio) }
+    )
+    ChipsDeSugerencias(
+        sugerencias = SERVICIOS_SUGERIDOS,
+        yaAgregadas = estadoVisual.servicios,
+        alAgregar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlAgregarServicioSugerido(texto)) }
     )
 }
 
