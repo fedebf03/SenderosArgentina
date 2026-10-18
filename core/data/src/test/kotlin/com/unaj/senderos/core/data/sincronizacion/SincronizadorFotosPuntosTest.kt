@@ -75,7 +75,7 @@ class SincronizadorFotosPuntosTest {
     }
 
     @Test
-    fun `si falla la foto de un punto el sendero queda con error`() = runTest {
+    fun `si falla la foto de un punto el sendero se sube igual sin esa foto y queda pendiente`() = runTest {
         val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L)
             .copy(recorrido = listOf(punto("uno", "/fotos/a.jpg")))
         val dao = FalsoSenderoDao(listOf(entidad))
@@ -85,9 +85,28 @@ class SincronizadorFotosPuntosTest {
 
         val resumen = crearSincronizador(dao, subidorQueFalla).sincronizar(idUsuario).getOrThrow()
 
-        assertEquals(1, resumen.senderosConError)
-        assertEquals("CON_ERROR", dao.entidades.value.single().estadoSincronizacion)
-        assertTrue(fuenteRemota.senderosGuardados.isEmpty())
+        assertEquals(0, resumen.senderosConError)
+        assertEquals("", fuenteRemota.senderosGuardados.single().second.recorrido.single().foto)
+        val local = dao.entidades.value.single()
+        assertEquals("PENDIENTE", local.estadoSincronizacion)
+        assertEquals("/fotos/a.jpg", local.recorrido.single().foto)
+    }
+
+    @Test
+    fun `si falla la foto principal el sendero se sube igual sin foto y la conserva local`() = runTest {
+        val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L).copy(foto = "/fotos/portada.jpg")
+        val dao = FalsoSenderoDao(listOf(entidad))
+        val subidorQueFalla = object : SubidorFotos {
+            override suspend fun subir(rutaLocal: String): String = throw IllegalStateException("Cloudinary no está configurado")
+        }
+
+        val resumen = crearSincronizador(dao, subidorQueFalla).sincronizar(idUsuario).getOrThrow()
+
+        assertEquals(0, resumen.senderosConError)
+        assertEquals("", fuenteRemota.senderosGuardados.single().second.foto)
+        val local = dao.entidades.value.single()
+        assertEquals("PENDIENTE", local.estadoSincronizacion)
+        assertEquals("/fotos/portada.jpg", local.foto)
     }
 
     @Test
@@ -168,5 +187,18 @@ class SincronizadorFotosPuntosTest {
         assertEquals(listOf("editado"), guardada.recorrido.map { puntoGuardado -> puntoGuardado.nombre })
         assertEquals(listOf(""), guardada.recorrido.map { puntoGuardado -> puntoGuardado.foto })
         assertEquals(ahora - 999L, guardada.fechaModificacion)
+    }
+
+    @Test
+    fun `un sendero con error previo por la foto pasa a pendiente cuando sube sin ella`() = runTest {
+        val entidad = crearEntidadDePrueba(fechaModificacion = ahora - 1_000L).copy(foto = "/fotos/portada.jpg", estadoSincronizacion = "CON_ERROR")
+        val dao = FalsoSenderoDao(listOf(entidad))
+        val subidorQueFalla = object : SubidorFotos {
+            override suspend fun subir(rutaLocal: String): String = throw IllegalStateException("Cloudinary no está configurado")
+        }
+
+        crearSincronizador(dao, subidorQueFalla).sincronizar(idUsuario).getOrThrow()
+
+        assertEquals("PENDIENTE", dao.entidades.value.single().estadoSincronizacion)
     }
 }
