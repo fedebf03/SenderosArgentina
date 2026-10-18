@@ -38,6 +38,7 @@ class SolicitudSincronizacionWorkManager @Inject constructor(
         workManager.getWorkInfosForUniqueWorkFlow(nombreDelTrabajo(idUsuario)).map { trabajos ->
             when {
                 trabajos.any { trabajo -> trabajo.state == WorkInfo.State.RUNNING } -> EstadoTrabajoSincronizacion.EN_CURSO
+                trabajos.any { trabajo -> trabajo.state == WorkInfo.State.ENQUEUED && trabajo.runAttemptCount > 0 } -> EstadoTrabajoSincronizacion.EN_REINTENTO
                 trabajos.any { trabajo -> trabajo.state == WorkInfo.State.ENQUEUED || trabajo.state == WorkInfo.State.BLOCKED } -> EstadoTrabajoSincronizacion.EN_COLA
                 else -> EstadoTrabajoSincronizacion.INACTIVO
             }

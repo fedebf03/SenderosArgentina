@@ -3,7 +3,8 @@ package com.unaj.senderos.core.domain.port
 import kotlinx.coroutines.flow.Flow
 
 // Situación del trabajo que sube y baja los datos del usuario
-enum class EstadoTrabajoSincronizacion { INACTIVO, EN_COLA, EN_CURSO }
+// EN_COLA: pedida y por arrancar (o sin red); EN_REINTENTO: ya falló un intento y espera para volver a probar
+enum class EstadoTrabajoSincronizacion { INACTIVO, EN_COLA, EN_REINTENTO, EN_CURSO }
 
 interface SolicitudSincronizacion {
 
