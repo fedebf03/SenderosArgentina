@@ -144,6 +144,7 @@ fun RecorridoContenido(
     BackHandler { alProcesarEvento(RecorridoEvento.AlVolver) }
 
     var fotoAmpliada by remember { mutableStateOf<String?>(null) }
+    var esClimaVisible by remember { mutableStateOf(false) }
     val sigueActivo = estadoVisual.fase == FaseRecorrido.EN_CURSO
     Scaffold(
         modifier = modifier,
@@ -197,7 +198,7 @@ fun RecorridoContenido(
                             modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            DatosFlotantesRecorrido(estadoVisual, leerAhoraMilisegundos)
+                            DatosFlotantesRecorrido(estadoVisual, leerAhoraMilisegundos, alTocarClima = { esClimaVisible = true })
                             sendero?.let { obtenerPuntosDeInteres(it) }.orEmpty()
                                 .firstOrNull { punto -> punto.indice == estadoVisual.indicePuntoSeleccionado }
                                 ?.let { punto ->
@@ -287,6 +288,9 @@ fun RecorridoContenido(
         DialogoResumen(resumen, estadoVisual.revision, estadoVisual.esCaminataLibre, estadoVisual.sePuedeConvertirEnSendero, alProcesarEvento)
     }
     fotoAmpliada?.let { foto -> DialogoFotoAmpliada(foto = foto, alCerrar = { fotoAmpliada = null }) }
+    if (esClimaVisible && estadoVisual.clima != null) {
+        DialogoClimaRecorrido(estadoVisual = estadoVisual, alCerrar = { esClimaVisible = false })
+    }
 }
 
 @Composable
