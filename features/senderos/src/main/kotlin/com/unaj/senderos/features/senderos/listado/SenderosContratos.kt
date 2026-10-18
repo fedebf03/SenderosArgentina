@@ -2,6 +2,7 @@ package com.unaj.senderos.features.senderos.listado
 
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.Dificultad
+import com.unaj.senderos.core.domain.model.RecorridoRealizado
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.SenderoPublico
 import com.unaj.senderos.core.domain.model.Usuario
@@ -26,7 +27,9 @@ data class SenderosEstadoVisual(
     val soloGuardados: Boolean = false,
     val hayErrorEnPublicos: Boolean = false,
     val seSolicitoPermisoNotificaciones: Boolean = false,
-    val estaSinConexion: Boolean = false
+    val estaSinConexion: Boolean = false,
+    // Recorrido que quedó a medias porque Android cerró la app; se ofrece recuperarlo al volver a abrir Explorar
+    val recorridoInterrumpido: RecorridoRealizado? = null
 ) {
     // Devuelve null sin recorrido o sin ubicación
     fun distanciaKilometrosA(sendero: Sendero): Double? {
@@ -90,6 +93,8 @@ sealed interface SenderosEvento {
     data object AlTocarCaminarAhora : SenderosEvento
     data object AlCaminarAhora : SenderosEvento
     data object AlDenegarPermisoParaCaminar : SenderosEvento
+    data object AlRecuperarRecorrido : SenderosEvento
+    data object AlDescartarRecorridoInterrumpido : SenderosEvento
     data class AlSeleccionarSendero(val idSendero: String) : SenderosEvento
 }
 
@@ -99,5 +104,6 @@ sealed interface SenderosEfecto {
     data object NavegarACreacion : SenderosEfecto
     data object SolicitarPermisoUbicacionParaCaminar : SenderosEfecto
     data class NavegarACaminata(val idCaminata: String) : SenderosEfecto
+    data class NavegarAHistorialDetalle(val idRecorrido: String) : SenderosEfecto
     data class MostrarAviso(val mensaje: String) : SenderosEfecto
 }

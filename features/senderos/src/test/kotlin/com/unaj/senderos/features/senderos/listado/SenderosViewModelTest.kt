@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.senderos.listado
 
+import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.testing.FalsoAlmacenBorradorRecorrido
+import com.unaj.senderos.core.domain.usecase.RecuperarRecorridoInterrumpidoUseCase
 import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
 import com.unaj.senderos.core.testing.FalsoControlSeguimiento
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
@@ -70,7 +74,8 @@ class SenderosViewModelTest {
             monitorConectividad,
             FalsoControlSeguimiento(),
             FalsoLanzadorSeguimiento(),
-            ObtenerUsuarioActualUseCase(autenticacion)
+            ObtenerUsuarioActualUseCase(autenticacion),
+            RecuperarRecorridoInterrumpidoUseCase(FalsoAlmacenBorradorRecorrido(), FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion)
         ) { 0L }
         if (recolectarEfectos) {
             CoroutineScope(despachadorPrueba).launch {

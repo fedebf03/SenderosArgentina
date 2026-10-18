@@ -59,6 +59,9 @@ import com.unaj.senderos.core.ui.componentes.MensajeCentrado
 import com.unaj.senderos.core.ui.componentes.MensajeVacio
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
+import com.unaj.senderos.core.ui.comun.formatearFechaHora
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
 import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.core.ui.tema.TemaSenderos
@@ -72,6 +75,7 @@ fun SenderosPantalla(
     alNavegarADetallePublico: (String) -> Unit = {},
     alNavegarACreacion: () -> Unit = {},
     alNavegarACaminata: (String) -> Unit = {},
+    alNavegarAHistorialDetalle: (String) -> Unit = {},
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
@@ -79,6 +83,7 @@ fun SenderosPantalla(
     val navegarADetallePublicoActual by rememberUpdatedState(alNavegarADetallePublico)
     val navegarACreacionActual by rememberUpdatedState(alNavegarACreacion)
     val navegarACaminataActual by rememberUpdatedState(alNavegarACaminata)
+    val navegarAHistorialActual by rememberUpdatedState(alNavegarAHistorialDetalle)
     val contexto = LocalContext.current
     var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
     val estadoAvisos = remember { SnackbarHostState() }
@@ -129,6 +134,7 @@ fun SenderosPantalla(
                 is SenderosEfecto.NavegarADetallePublico -> navegarADetallePublicoActual(efecto.idSendero)
                 is SenderosEfecto.NavegarACreacion -> navegarACreacionActual()
                 is SenderosEfecto.NavegarACaminata -> navegarACaminataActual(efecto.idCaminata)
+                is SenderosEfecto.NavegarAHistorialDetalle -> navegarAHistorialActual(efecto.idRecorrido)
                 is SenderosEfecto.SolicitarPermisoUbicacionParaCaminar -> {
                     if (tienePermisoDeUbicacionPrecisa(contexto)) {
                         viewModel.procesarEvento(SenderosEvento.AlCaminarAhora)
@@ -156,6 +162,20 @@ fun SenderosPantalla(
         estadoAvisos = estadoAvisos,
         alNavegarASeccion = alNavegarASeccion
     )
+
+    // Un recorrido que quedó a medias se recupera o se descarta; tocar afuera no cierra el aviso para no perderlo sin querer
+    estadoVisual.recorridoInterrumpido?.let { interrumpido ->
+        DialogoConfirmacion(
+            titulo = "Recorrido interrumpido",
+            texto = "La app se cerró durante «${interrumpido.nombreSendero}» (${formatearFechaHora(interrumpido.inicioMilisegundos)}, " +
+                "${formatearDistanciaCorta(interrumpido.distanciaKilometros)} recorridos). ¿Querés recuperarlo? Se guarda en tu historial.",
+            textoConfirmar = "Recuperar",
+            alConfirmar = { viewModel.procesarEvento(SenderosEvento.AlRecuperarRecorrido) },
+            textoDescartar = "Descartar",
+            alDescartar = { viewModel.procesarEvento(SenderosEvento.AlDescartarRecorridoInterrumpido) },
+            alCerrar = {}
+        )
+    }
 }
 
 @Composable

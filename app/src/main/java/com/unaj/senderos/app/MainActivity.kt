@@ -178,6 +178,7 @@ class MainActivity : ComponentActivity() {
                                 listadoDeOrigen = DestinoPantalla.Explorar
                                 pantallaActual = DestinoPantalla.Recorrido(idCaminata)
                             },
+                            alNavegarAHistorialDetalle = { idRecorrido -> pantallaActual = DestinoPantalla.HistorialDetalle(idRecorrido) },
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.Mapa -> MapaSenderosPantalla(
