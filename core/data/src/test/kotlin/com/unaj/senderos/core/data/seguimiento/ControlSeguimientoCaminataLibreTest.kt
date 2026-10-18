@@ -11,6 +11,7 @@ import com.unaj.senderos.core.testing.FalsoProveedorUbicacion
 import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
 import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
+import com.unaj.senderos.core.testing.crearPuntoCapturadoDePrueba
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.plus
@@ -115,6 +116,37 @@ class ControlSeguimientoCaminataLibreTest {
         assertEquals("usuario-1", guardado.idUsuario)
         assertEquals(2, guardado.trazadoCaminado.size)
         assertNull(control.estado.value)
+    }
+
+    @Test
+    fun `cancelar una caminata libre descarta tambien los puntos que se habian marcado`() = runTest {
+        val control = crearControl()
+        control.iniciarCaminataLibre(ID_CAMINATA, "usuario-1", "Caminata")
+        ubicaciones.emit(lectura(0.0))
+        ubicaciones.emit(lectura(30.0))
+        control.capturarPunto(TipoPunto.AGUA, "Arroyo", null)
+        puntosCapturados.puntos.value += crearPuntoCapturadoDePrueba(id = "ajeno", idSendero = "otro-sendero")
+
+        control.cancelar()
+
+        val descartados = puntosCapturados.llamadasDescartar.single()
+        assertEquals("usuario-1", descartados.first)
+        assertEquals(1, descartados.second.size)
+        assertEquals(listOf("ajeno"), puntosCapturados.puntos.value.map { punto -> punto.id })
+    }
+
+    @Test
+    fun `detener una caminata libre conserva los puntos marcados para convertirla`() = runTest {
+        val control = crearControl()
+        control.iniciarCaminataLibre(ID_CAMINATA, "usuario-1", "Caminata")
+        ubicaciones.emit(lectura(0.0))
+        ubicaciones.emit(lectura(30.0))
+        control.capturarPunto(TipoPunto.AGUA, "Arroyo", null)
+
+        control.detener()
+
+        assertTrue(puntosCapturados.llamadasDescartar.isEmpty())
+        assertEquals(1, puntosCapturados.puntos.value.size)
     }
 
     @Test

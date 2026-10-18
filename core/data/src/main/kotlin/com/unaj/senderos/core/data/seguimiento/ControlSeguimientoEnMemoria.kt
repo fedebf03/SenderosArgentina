@@ -279,6 +279,8 @@ class ControlSeguimientoEnMemoria(
         generacion++
         if (guardar) {
             guardarRecorridoRealizado(estadoInterno.value, nombreSenderoActivo, idUsuarioActivo)
+        } else {
+            descartarPuntosDeCaminataLibre(estadoInterno.value, idUsuarioActivo)
         }
         trabajoUbicaciones?.cancel()
         trabajoUbicaciones = null
@@ -288,6 +290,22 @@ class ControlSeguimientoEnMemoria(
         motivoFinInterno.value = if (guardar) null else MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO
         estadoInterno.value = null
         Log.d(TAG, if (guardar) "Seguimiento detenido" else "Seguimiento cancelado sin guardar")
+    }
+
+    // Al cancelar una caminata libre, los puntos que se marcaron no tienen ningún sendero al que pertenecer: se descartan con sus fotos, en segundo plano.
+    // Los de un recorrido sobre un sendero se conservan porque se pueden revisar e incorporar al sendero
+    private fun descartarPuntosDeCaminataLibre(estadoCancelado: EstadoSeguimiento?, idUsuario: String) {
+        if (estadoCancelado == null || !estadoCancelado.esCaminataLibre || idUsuario.isBlank()) return
+        alcance.launch {
+            try {
+                val ids = puntosCapturadosRepositorio.observarPendientes(idUsuario, estadoCancelado.idSendero).first().map { punto -> punto.id }
+                if (ids.isNotEmpty()) puntosCapturadosRepositorio.descartar(idUsuario, ids)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Log.e(TAG, "No se pudieron descartar los puntos de la caminata cancelada", error)
+            }
+        }
     }
 
     // Reevaluar cada 5 s con el reloj la calidad de la señal (y lo derivado del tiempo, como detenido), porque el tiempo avanza aunque no lleguen lecturas
