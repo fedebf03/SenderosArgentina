@@ -38,7 +38,7 @@ class CalculadoraTrazadoCaminadoTest {
     private fun estadoInicial(): EstadoSeguimiento = CalculadoraSeguimiento.iniciar(sendero, INSTANTE_INICIAL)
 
     @Test
-    fun `una lectura imprecisa dentro del doble del umbral entra al trazado caminado`() {
+    fun `una lectura imprecisa dentro del limite del trazado entra al trazado caminado`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
 
         val estado = aplicar(primera, 0.0005, 50f, 4_000L)
@@ -46,24 +46,25 @@ class CalculadoraTrazadoCaminadoTest {
         assertEquals(listOf(posicion(0.0), posicion(0.0005)), estado.trazadoCaminado)
     }
 
-    // El límite del trazado es inclusivo en 60 m
+    // Con GPS el límite del trazado es 50 m (el doble del umbral, con tope de 50 m), inclusivo
     @Test
-    fun `una lectura peor que el doble del umbral queda fuera del trazado caminado`() {
+    fun `una lectura peor que el limite del trazado queda fuera del trazado caminado`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
 
-        val enElLimite = aplicar(primera, 0.0005, 60f, 4_000L)
-        val peor = aplicar(enElLimite, 0.001, 61f, 6_000L)
+        val enElLimite = aplicar(primera, 0.0005, 50f, 4_000L)
+        val peor = aplicar(enElLimite, 0.001, 51f, 6_000L)
 
         assertEquals(2, enElLimite.trazadoCaminado.size)
         assertEquals(enElLimite.trazadoCaminado, peor.trazadoCaminado)
     }
 
+    // Sin GPS el umbral de 100 m ya supera el tope: solo entran las lecturas válidas
     @Test
-    fun `sin GPS el trazado acepta hasta doscientos metros de precision`() {
+    fun `sin GPS el trazado acepta solo hasta el umbral de cien metros`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L, PRECISION_UMBRAL_SIN_GPS)
 
-        val aceptada = aplicar(primera, 0.0005, 200f, 4_000L, PRECISION_UMBRAL_SIN_GPS)
-        val descartada = aplicar(aceptada, 0.001, 201f, 6_000L, PRECISION_UMBRAL_SIN_GPS)
+        val aceptada = aplicar(primera, 0.0005, 100f, 4_000L, PRECISION_UMBRAL_SIN_GPS)
+        val descartada = aplicar(aceptada, 0.001, 101f, 6_000L, PRECISION_UMBRAL_SIN_GPS)
 
         assertEquals(2, aceptada.trazadoCaminado.size)
         assertEquals(2, descartada.trazadoCaminado.size)
@@ -95,71 +96,61 @@ class CalculadoraTrazadoCaminadoTest {
 
     @Test
     fun `una primera lectura demasiado imprecisa no abre el trazado`() {
-        val estado = aplicar(estadoInicial(), 0.0, 90f, 2_000L)
+        val estado = aplicar(estadoInicial(), 0.0, 51f, 2_000L)
 
         assertEquals(emptyList<Coordenada>(), estado.trazadoCaminado)
     }
 
-    // La separación mínima de 5 m también rige entre lecturas imprecisas
     @Test
     fun `las lecturas cercanas no se repiten en el trazado`() {
-        val primera = aplicar(estadoInicial(), 0.0, 50f, 2_000L)
+        val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
 
-        val estado = aplicar(primera, 0.00002, 50f, 4_000L)
+        val estado = aplicar(primera, 0.00002, 5f, 4_000L)
 
         assertEquals(1, estado.trazadoCaminado.size)
     }
 
-    // Hueco largo: más de 30 s
+    // Unos 33 m de separación con 50 m de precisión: puede ser solo error del GPS con el usuario quieto
     @Test
-    fun `una lectura valida cercana tras un hueco largo se agrega al trazado`() {
+    fun `una lectura imprecisa mas cerca que su propia precision no entra al trazado`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
 
-        val estado = aplicar(primera, 0.00002, 5f, 33_000L)
-
-        assertEquals(listOf(posicion(0.0), posicion(0.00002)), estado.trazadoCaminado)
-    }
-
-    @Test
-    fun `una lectura valida cercana sin hueco largo no se agrega al trazado`() {
-        val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
-
-        val estado = aplicar(primera, 0.00002, 5f, 32_000L)
+        val estado = aplicar(primera, 0.0003, 50f, 4_000L)
 
         assertEquals(1, estado.trazadoCaminado.size)
     }
 
     @Test
-    fun `una lectura imprecisa cercana tras un hueco largo no se agrega al trazado`() {
+    fun `quedarse quieto mucho tiempo no suma puntos repetidos`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
 
-        val estado = aplicar(primera, 0.00002, 50f, 60_000L)
+        val estado = aplicar(aplicar(primera, 0.00002, 5f, 40_000L), 0.0, 5f, 80_000L)
 
         assertEquals(1, estado.trazadoCaminado.size)
     }
 
     @Test
-    fun `cerrar el trazado agrega la ultima posicion conocida`() {
+    fun `cerrar el trazado agrega la ultima lectura que no habia entrado`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
-        val conUltima = primera.copy(ultimaPosicionConocida = posicion(0.0005))
+        val cercana = aplicar(primera, 0.00002, 5f, 4_000L)
 
-        assertEquals(listOf(posicion(0.0), posicion(0.0005)), CalculadoraSeguimiento.cerrarTrazadoCaminado(conUltima))
+        assertEquals(listOf(posicion(0.0), posicion(0.00002)), CalculadoraSeguimiento.cerrarTrazadoCaminado(cercana))
     }
 
     @Test
-    fun `cerrar el trazado no repite una ultima posicion cercana`() {
+    fun `cerrar el trazado no repite una lectura que ya entro`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
-        val cercana = aplicar(primera, 0.00002, 50f, 4_000L)
+        val lejana = aplicar(primera, 0.0005, 5f, 4_000L)
 
-        assertEquals(listOf(posicion(0.0)), CalculadoraSeguimiento.cerrarTrazadoCaminado(cercana))
+        assertEquals(listOf(posicion(0.0), posicion(0.0005)), CalculadoraSeguimiento.cerrarTrazadoCaminado(lejana))
     }
 
     @Test
-    fun `el trazado termina en la ultima posicion recibida`() {
+    fun `cerrar el trazado ignora una lectura fuera del limite de precision`() {
         val primera = aplicar(estadoInicial(), 0.0, 5f, 2_000L)
-        val ultima = aplicar(primera, 0.0005, 50f, 4_000L).copy(trazadoCaminado = primera.trazadoCaminado)
+        val descartada = aplicar(primera, 0.0005, 90f, 4_000L)
 
-        assertEquals(posicion(0.0005), CalculadoraSeguimiento.cerrarTrazadoCaminado(ultima).last())
+        assertEquals(listOf(posicion(0.0)), CalculadoraSeguimiento.cerrarTrazadoCaminado(descartada))
     }
 
     @Test

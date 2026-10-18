@@ -200,6 +200,12 @@ private class ControladorMapaRecorrido(
     private var fueEncuadrado = false
     private var seSuspendioSeguimiento = false
     private var puntosEncuadrados: List<PuntoRecorrido>? = null
+    // Referencias ya dibujadas: en navegación el estado se refresca con cada lectura y cada cambio de rumbo, y rehacer el GeoJSON
+    // de un trazado de miles de puntos en el hilo principal gasta batería sin cambiar nada en pantalla
+    private var puntosDibujados: List<PuntoRecorrido>? = null
+    private var tipoRecorridoDibujado: TipoRecorrido? = null
+    private var indiceSeleccionadoDibujado: Int? = null
+    private var trazadoCaminadoDibujado: List<Coordenada>? = null
     private var claveEnfoqueAplicada = claveEnfoqueInicial
 
     private var indiceArrastrado: Int? = null
@@ -300,6 +306,7 @@ private class ControladorMapaRecorrido(
         mapaListo.addOnCameraMoveStartedListener(escuchaInicioDeMovimiento)
         mapaListo.setStyle(Style.Builder().fromUri(ConfiguracionMapa.URL_ESTILO)) { estiloCargado ->
             estilo = estiloCargado
+            olvidarFuentesDibujadas()
             haFalladoLaCarga = false
             agregarImagenesFuentesYCapas(estiloCargado)
             refrescar()
@@ -456,28 +463,54 @@ private class ControladorMapaRecorrido(
             estiloActual.getLayerAs<LineLayer>(ID_CAPA_LINEA)?.setProperties(PropertyFactory.lineColor(colorLineaDeseado))
             colorLineaAplicado = colorLineaDeseado
         }
-        estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_LINEA)
-            ?.setGeoJson(ConstructorGeoJsonRecorrido.crearLinea(puntosVisibles, datos.tipoRecorrido))
-        estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_PUNTOS)
-            ?.setGeoJson(
-                ConstructorGeoJsonRecorrido.crearPuntos(puntosVisibles, datos.tipoRecorrido, datos.indiceSeleccionado)
-            )
-        estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_TRAZADO_CAMINADO)
-            ?.setGeoJson(ConstructorGeoJsonRecorrido.crearTrazadoCaminado(datos.trazadoCaminado))
+        val cambioElRecorrido = puntosVisibles !== puntosDibujados || datos.tipoRecorrido != tipoRecorridoDibujado
+        if (cambioElRecorrido) {
+            estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_LINEA)
+                ?.setGeoJson(ConstructorGeoJsonRecorrido.crearLinea(puntosVisibles, datos.tipoRecorrido))
+        }
+        if (cambioElRecorrido || datos.indiceSeleccionado != indiceSeleccionadoDibujado) {
+            estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_PUNTOS)
+                ?.setGeoJson(
+                    ConstructorGeoJsonRecorrido.crearPuntos(puntosVisibles, datos.tipoRecorrido, datos.indiceSeleccionado)
+                )
+        }
+        puntosDibujados = puntosVisibles
+        tipoRecorridoDibujado = datos.tipoRecorrido
+        indiceSeleccionadoDibujado = datos.indiceSeleccionado
+        if (datos.trazadoCaminado !== trazadoCaminadoDibujado) {
+            estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_TRAZADO_CAMINADO)
+                ?.setGeoJson(ConstructorGeoJsonRecorrido.crearTrazadoCaminado(datos.trazadoCaminado))
+            trazadoCaminadoDibujado = datos.trazadoCaminado
+        }
         estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_POSICION)
             ?.setGeoJson(ConstructorGeoJsonRecorrido.crearPosicion(datos.posicionUsuario, datos.modoNavegacion?.rumboGrados))
         if (indiceArrastrado == null) aplicarGestos()
         val estaSiguiendoAlUsuario = seguirAlUsuario()
-        val puntosAEncuadrar = datos.puntos + datos.trazadoCaminado.map { coordenada ->
-            PuntoRecorrido(latitud = coordenada.latitud, longitud = coordenada.longitud)
+        // En navegación el trazado caminado crece con cada lectura: reencuadrar pisaría el mapa que el usuario movió con el dedo,
+        // así que la lista a encuadrar solo se arma cuando puede usarse
+        val puedeEncuadrar = !fueEncuadrado || (!datos.esEditable && datos.modoNavegacion == null)
+        val puntosAEncuadrar = if (puedeEncuadrar) {
+            datos.puntos + datos.trazadoCaminado.map { coordenada ->
+                PuntoRecorrido(latitud = coordenada.latitud, longitud = coordenada.longitud)
+            }
+        } else {
+            emptyList()
         }
-        val debeEncuadrar = !fueEncuadrado || (!datos.esEditable && puntosEncuadrados != puntosAEncuadrar)
+        val debeEncuadrar = puedeEncuadrar && (!fueEncuadrado || puntosEncuadrados != puntosAEncuadrar)
         if (debeEncuadrar && indiceArrastrado == null && !estaSiguiendoAlUsuario) {
             encuadrar(puntosAEncuadrar)
             fueEncuadrado = true
             puntosEncuadrados = puntosAEncuadrar
         }
         aplicarEnfoque()
+    }
+
+    // Olvidar lo dibujado cuando el estilo se carga de nuevo, porque las fuentes nuevas empiezan vacías
+    private fun olvidarFuentesDibujadas() {
+        puntosDibujados = null
+        tipoRecorridoDibujado = null
+        indiceSeleccionadoDibujado = null
+        trazadoCaminadoDibujado = null
     }
 
     private fun seguirAlUsuario(): Boolean {

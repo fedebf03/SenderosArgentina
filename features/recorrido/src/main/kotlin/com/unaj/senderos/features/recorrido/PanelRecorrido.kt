@@ -75,6 +75,7 @@ internal fun PanelRecorrido(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            FranjaPerfilRecorrido(estadoVisual)
             Column(
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -265,22 +266,6 @@ private fun SeccionMasDatos(estadoVisual: RecorridoEstadoVisual) {
                     ),
                     armarDatoRumbo(estadoVisual)
                 )
-                val perfil = estadoVisual.sendero?.perfilElevacion
-                if (perfil != null && !estadoVisual.perfilEstaDesactualizado) {
-                    estadoVisual.subidaRestanteMetros?.let { subida ->
-                        DatoDelPanel(
-                            titulo = TEXTO_SUBIDA_RESTANTE,
-                            valor = formatearAlturaMetros(subida),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    GraficoPerfilElevacion(
-                        perfil = perfil,
-                        bioma = estadoVisual.sendero?.bioma ?: Bioma.SIN_DEFINIR,
-                        esCompacto = true,
-                        kilometroActual = estadoVisual.kilometroEnTrazado
-                    )
-                }
             }
         }
     }

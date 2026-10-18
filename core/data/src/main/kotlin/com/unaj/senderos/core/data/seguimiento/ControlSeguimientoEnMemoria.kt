@@ -423,9 +423,10 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Guardar en segundo plano, con el usuario que lo inició aunque la sesión ya se haya cerrado, el recorrido que terminó, sin bloquear ni romper la detención; no guarda si no hubo ninguna posición
+    // Guardar en segundo plano, con el usuario que lo inició aunque la sesión ya se haya cerrado, el recorrido que terminó, sin bloquear ni romper la detención;
+    // no guarda si no hubo ninguna posición válida (un recorrido con solo lecturas imprecisas no tiene distancia confiable)
     private fun guardarRecorridoRealizado(estadoFinal: EstadoSeguimiento?, nombreSendero: String, idUsuario: String) {
-        if (estadoFinal == null || estadoFinal.trazadoCaminado.isEmpty()) return
+        if (estadoFinal == null || estadoFinal.ultimaPosicionAceptada == null) return
         if (idUsuario.isBlank()) {
             Log.e(TAG, "No se guarda el recorrido de ${estadoFinal.idSendero}: se desconoce el usuario que lo inició")
             return

@@ -15,13 +15,11 @@ data class EstadoSeguimiento(
     val indiceProximoPunto: Int = 0,
     val rumboGrados: Float? = null,
     val velocidadMetrosPorSegundo: Float? = null,
-    // Trazado dibujado y guardado en el historial: la primera lectura recibida y cada lectura con precisión de hasta el doble del umbral vigente
-    // a 5 m o más de la anterior del trazado (o válida tras un hueco de más de 30 s), en orden de llegada. Las imprecisas entran aquí pero no mueven distancia ni avisos.
+    // Trazado dibujado y guardado en el historial: la primera lectura recibida y, en orden de llegada, cada lectura válida a 5 m o más del último
+    // punto o imprecisa (hasta el doble del umbral, con tope de 50 m) separada al menos su propia precisión. Las imprecisas no mueven distancia ni avisos.
     // Limitación: no tiene tope; cada lectura aceptada copia la lista (O(n)) y el recorrido guardado viaja en un único documento de Firestore de hasta 1 MiB
     val trazadoCaminado: List<Coordenada> = emptyList(),
-    // Instante del último punto agregado al trazado caminado, para detectar huecos de más de 30 s; null si todavía no hay ninguno
-    val instanteUltimoPuntoTrazadoMilisegundos: Long? = null,
-    // Última posición recibida con precisión suficiente para el trazado (aunque no fuera válida para el seguimiento); se agrega al cerrar el recorrido
+    // Última lectura con precisión suficiente para el trazado que no llegó a entrar; se agrega al cerrar el recorrido. null si la última entró
     val ultimaPosicionConocida: Coordenada? = null,
     // Mayor velocidad reportada por las lecturas tal cual llegan (en simulación con multiplicador mayor a 1 refleja la velocidad simulada); 0 si ninguna la informó
     val velocidadMaximaMetrosPorSegundo: Float = 0f,

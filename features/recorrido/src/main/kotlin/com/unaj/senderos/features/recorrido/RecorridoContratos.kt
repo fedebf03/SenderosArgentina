@@ -5,6 +5,7 @@ import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.ui.componentes.interpolarAltitud
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEstadoVisual
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
@@ -25,6 +26,8 @@ data class RecorridoEstadoVisual(
     val fase: FaseRecorrido = FaseRecorrido.INICIANDO,
     val sendero: Sendero? = null,
     val posicionUsuario: Coordenada? = null,
+    // Posiciones caminadas hasta ahora, para dibujar la línea naranja en vivo
+    val trazadoCaminado: List<Coordenada> = emptyList(),
     val rumboGrados: Float? = null,
     val estaSiguiendo: Boolean = true,
     val esSimulado: Boolean = false,
@@ -86,6 +89,14 @@ data class RecorridoEstadoVisual(
             val perfil = sendero?.perfilElevacion ?: return null
             val kilometro = kilometroEnTrazado ?: return null
             return CalculadoraPerfil.calcularSubidaRestanteMetros(perfil, kilometro)
+        }
+
+    // Obtener la altura del perfil en el kilómetro actual; nula cuando no se conoce la posición en el perfil
+    val altitudActualMetros: Double?
+        get() {
+            val perfil = sendero?.perfilElevacion ?: return null
+            val kilometro = kilometroEnTrazado ?: return null
+            return interpolarAltitud(perfil.puntos, kilometro)
         }
 
     // En simulación los pasos los estima el control

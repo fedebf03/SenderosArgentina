@@ -1,6 +1,7 @@
 package com.unaj.senderos.features.recorrido
 
 import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
+import com.unaj.senderos.core.ui.componentes.interpolarAltitud
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
@@ -171,6 +172,19 @@ class RecorridoViewModelTest {
         assertEquals(mirador, estadoVisual.proximoPunto)
         assertEquals(1_000L, estadoVisual.instanteInicioMilisegundos)
         assertFalse(estadoVisual.estaDesviado)
+    }
+
+    @Test
+    fun `el trazado caminado del seguimiento se refleja para dibujarlo en vivo`() = runTest(despachadorPrueba) {
+        val trazadoCaminado = listOf(
+            Coordenada(latitud = -41.100, longitud = -71.300),
+            Coordenada(latitud = -41.105, longitud = -71.305)
+        )
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado().copy(trazadoCaminado = trazadoCaminado)
+        advanceUntilIdle()
+
+        assertEquals(trazadoCaminado, viewModel.estadoVisual.value.trazadoCaminado)
     }
 
     @Test
@@ -746,6 +760,26 @@ class RecorridoViewModelTest {
         assertEquals(0.5, estadoVisual.kilometroEnTrazado ?: Double.NaN, 0.0001)
         assertEquals(CalculadoraPerfil.calcularSubidaRestanteMetros(requireNotNull(sendero.perfilElevacion), 0.5), estadoVisual.subidaRestanteMetros)
         assertTrue((estadoVisual.subidaRestanteMetros ?: 0) > 0)
+    }
+
+    @Test
+    fun `con perfil la altura actual es la del perfil en el kilometro recorrido`() = runTest(despachadorPrueba) {
+        val sendero = crearSenderoConPerfil(conPerfil = true)
+        val viewModel = crearViewModel(sendero = sendero)
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = 0.5)
+        advanceUntilIdle()
+
+        val esperada = interpolarAltitud(requireNotNull(sendero.perfilElevacion).puntos, 0.5)
+        assertEquals(esperada ?: Double.NaN, viewModel.estadoVisual.value.altitudActualMetros ?: Double.NaN, 0.0001)
+    }
+
+    @Test
+    fun `sin perfil no hay altura actual`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(sendero = crearSenderoConPerfil(conPerfil = false))
+        control.estadoEmitido.value = crearEstadoConAvance(kilometrosRecorridos = 0.5)
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.altitudActualMetros)
     }
 
     @Test
