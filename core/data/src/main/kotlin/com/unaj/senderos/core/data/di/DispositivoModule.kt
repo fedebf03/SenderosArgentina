@@ -9,6 +9,7 @@ import com.unaj.senderos.core.data.seguimiento.LanzadorSeguimientoAndroid
 import com.unaj.senderos.core.data.sensores.DetectorCapacidadesAndroid
 import com.unaj.senderos.core.data.sensores.FuenteAcelerometroAndroid
 import com.unaj.senderos.core.data.sensores.FuenteBrujulaAndroid
+import com.unaj.senderos.core.data.sensores.FuentePresionAndroid
 import com.unaj.senderos.core.data.sensores.ProveedorDeclinacionAndroid
 import com.unaj.senderos.core.data.ubicacion.ProveedorUbicacionCombinada
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
@@ -18,6 +19,7 @@ import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import com.unaj.senderos.core.domain.port.DetectorCapacidades
 import com.unaj.senderos.core.domain.port.FuenteAcelerometro
 import com.unaj.senderos.core.domain.port.FuenteBrujula
+import com.unaj.senderos.core.domain.port.FuentePresion
 import com.unaj.senderos.core.domain.port.GestorMapasSinConexion
 import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
 import com.unaj.senderos.core.domain.port.MonitorConectividad
@@ -79,6 +81,9 @@ abstract class DispositivoModule {
 
     @Binds
     abstract fun bindFuenteBrujula(impl: FuenteBrujulaAndroid): FuenteBrujula
+
+    @Binds
+    abstract fun bindFuentePresion(impl: FuentePresionAndroid): FuentePresion
 
     @Binds
     abstract fun bindProveedorDeclinacion(impl: ProveedorDeclinacionAndroid): ProveedorDeclinacion

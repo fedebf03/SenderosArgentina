@@ -34,6 +34,9 @@ private const val NOMBRE_CANAL_AVISOS = "Avisos del recorrido"
 private const val ID_NOTIFICACION_EN_CURSO = 2000
 private const val ID_NOTIFICACION_DESVIO = 2001
 private const val ID_NOTIFICACION_LLEGADA = 2002
+private const val BASE_ID_NOTIFICACION_CLIMA = 2010
+private const val BASE_ID_NOTIFICACION_PRESION = 2020
+private const val CANTIDAD_ID_NOTIFICACION_AMBIENTE = 10
 private const val BASE_ID_NOTIFICACION_PUNTO = 2100
 private const val CODIGO_PEDIDO_ABRIR = 20
 private const val CODIGO_PEDIDO_FINALIZAR = 21
@@ -133,6 +136,35 @@ class NotificadorRecorrido(private val contexto: Context) {
         }
     }
 
+    // Mostrar un aviso del clima o de la presión; cada tipo de aviso tiene su identificador, así uno nuevo reemplaza al anterior del mismo tipo
+    fun notificarAvisoAmbiente(idSendero: String, aviso: AvisoAmbiente) {
+        if (!tienePermisoDeNotificaciones()) {
+            Log.d(TAG, "Aviso del ambiente omitido: falta el permiso POST_NOTIFICATIONS")
+            return
+        }
+        crearCanales()
+        val (identificador, titulo, texto) = when (aviso) {
+            is AvisoAmbiente.Clima -> Triple(BASE_ID_NOTIFICACION_CLIMA + aviso.alerta.ordinal, "Aviso de clima: ${aviso.alerta.titulo}", aviso.alerta.detalle)
+            is AvisoAmbiente.Presion -> Triple(BASE_ID_NOTIFICACION_PRESION + aviso.aviso.ordinal, aviso.aviso.titulo, aviso.aviso.detalle)
+        }
+        val constructor = NotificationCompat.Builder(contexto, ID_CANAL_AVISOS)
+            .setSmallIcon(elegirIconoPequeno(TipoAvisoVisual.PELIGRO))
+            .setLargeIcon(crearIconoGrande(TipoAvisoVisual.PELIGRO))
+            .setColor(ContextCompat.getColor(contexto, elegirColor(TipoAvisoVisual.PELIGRO)))
+            .setContentTitle(titulo)
+            .setContentText(texto)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(texto))
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setContentIntent(obtenerAcciones(idSendero).abrir)
+            .setAutoCancel(true)
+        try {
+            administrador.notify(identificador, constructor.build())
+            Log.d(TAG, "Aviso del ambiente mostrado: $titulo")
+        } catch (error: SecurityException) {
+            Log.e(TAG, "El sistema rechazó el aviso del ambiente", error)
+        }
+    }
+
     @DrawableRes
     private fun elegirIconoPequeno(tipo: TipoAvisoVisual): Int {
         return when (tipo) {
@@ -182,6 +214,10 @@ class NotificadorRecorrido(private val contexto: Context) {
     fun cancelarAvisos() {
         administrador.cancel(ID_NOTIFICACION_DESVIO)
         administrador.cancel(ID_NOTIFICACION_LLEGADA)
+        for (desplazamiento in 0 until CANTIDAD_ID_NOTIFICACION_AMBIENTE) {
+            administrador.cancel(BASE_ID_NOTIFICACION_CLIMA + desplazamiento)
+            administrador.cancel(BASE_ID_NOTIFICACION_PRESION + desplazamiento)
+        }
         administrador.activeNotifications
             .filter { notificacion -> notificacion.id >= BASE_ID_NOTIFICACION_PUNTO }
             .forEach { notificacion -> administrador.cancel(notificacion.id) }
