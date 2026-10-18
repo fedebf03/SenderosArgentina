@@ -98,7 +98,7 @@ class SincronizadorSenderos(
         for (idSendero in idsConPerfilNuevo) {
             val entidad = senderoDao.obtenerPorId(idUsuario, idSendero) ?: continue
             if (entidad.estaEliminado || entidad.estadoSincronizacion != EstadoSincronizacion.PENDIENTE.name) continue
-            val error = subirEntidad(idUsuario, entidad)
+            val error = subirEntidad(idUsuario, entidad).error
             if (error != null) {
                 senderosConError++
                 if (primerError == null) primerError = error
@@ -145,18 +145,21 @@ class SincronizadorSenderos(
     private suspend fun subirPendientes(idUsuario: String, idsSubidos: MutableSet<String>): ResumenSincronizacion {
         val instanteInicio = reloj()
         val idsFallidos = mutableSetOf<String>()
+        val idsConFotosPendientes = mutableSetOf<String>()
         var primerError: Throwable? = null
         var senderosSubidos = 0
         var senderosGuardadosSinConexion = 0
         repeat(MAXIMO_PASADAS_SUBIDA) {
-            val pendientes = senderoDao.obtenerPendientes(idUsuario).filter { entidad -> entidad.id !in idsFallidos }
+            val pendientes = senderoDao.obtenerPendientes(idUsuario).filter { entidad -> entidad.id !in idsFallidos && entidad.id !in idsConFotosPendientes }
             if (pendientes.isEmpty()) {
                 return ResumenSincronizacion(
                     senderosSubidos, senderosGuardadosSinConexion, idsFallidos.size, primerError
                 )
             }
             pendientes.forEach { entidad ->
-                val error = subirEntidad(idUsuario, entidad)
+                val resultadoSubida = subirEntidad(idUsuario, entidad)
+                val error = resultadoSubida.error
+                if (resultadoSubida.hayFotosSinSubir) idsConFotosPendientes.add(entidad.id)
                 if (error != null) {
                     idsFallidos.add(entidad.id)
                     if (primerError == null) primerError = error
@@ -172,21 +175,23 @@ class SincronizadorSenderos(
         return ResumenSincronizacion(senderosSubidos, senderosGuardadosSinConexion, idsFallidos.size, primerError)
     }
 
-    private suspend fun subirEntidad(idUsuario: String, entidad: SenderoEntidad): Throwable? {
+    // Resultado de subir un sendero: el error si falló y si quedaron fotos locales sin subir, que se reintentan en la próxima sincronización
+    private class ResultadoSubida(val error: Throwable?, val hayFotosSinSubir: Boolean = false)
+
+    // Subir el documento del sendero aunque una foto no se pueda subir: el trazado no debe esperar a las fotos. En ese caso el documento
+    // viaja sin esa foto, la fila local conserva la ruta de la foto y queda PENDIENTE para volver a probar la próxima vez
+    private suspend fun subirEntidad(idUsuario: String, entidad: SenderoEntidad): ResultadoSubida {
         return try {
-            val entidadConFotoRemota = subirFotosSiSonLocales(idUsuario, entidad)
-            fuenteRemota.guardarSendero(idUsuario, entidadConFotoRemota.aRed())
+            val subida = subirFotosSiSonLocales(idUsuario, entidad)
+            fuenteRemota.guardarSendero(idUsuario, subida.entidadRemota.aRed())
             if (entidad.estaEliminado) {
                 senderoDao.borrarEliminadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion)
             } else {
-                senderoDao.actualizarEstadoSiNoCambio(
-                    idUsuario,
-                    entidad.id,
-                    entidad.fechaModificacion,
-                    EstadoSincronizacion.SINCRONIZADO.name
-                )
+                // Con fotos sin subir queda PENDIENTE (y no CON_ERROR): el trazado ya llegó y falta solo reintentar las fotos
+                val estadoFinal = if (subida.hayFotosSinSubir) EstadoSincronizacion.PENDIENTE else EstadoSincronizacion.SINCRONIZADO
+                senderoDao.actualizarEstadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, estadoFinal.name)
             }
-            null
+            ResultadoSubida(null, subida.hayFotosSinSubir)
         } catch (excepcion: CancellationException) {
             throw excepcion
         } catch (error: Exception) {
@@ -197,41 +202,69 @@ class SincronizadorSenderos(
                 entidad.fechaModificacion,
                 EstadoSincronizacion.CON_ERROR.name
             )
-            error
+            ResultadoSubida(error)
         }
     }
 
-    // Subir la foto local antes que el documento, porque Firestore solo debe guardar URLs que otros dispositivos puedan abrir
-    private suspend fun subirFotoSiEsLocal(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
-        if (entidad.estaEliminado || !esFotoLocal(entidad.foto)) return entidad
-        val urlRemota = subidorFotos.subir(entidad.foto)
-        Log.d(TAG, "Foto del sendero ${entidad.id} subida a $urlRemota")
-        senderoDao.actualizarFotoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, urlRemota)
-        return entidad.copy(foto = urlRemota)
-    }
-    private suspend fun subirFotosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
-        val conFotoPrincipal = subirFotoSiEsLocal(idUsuario, entidad)
-        return subirFotosDePuntosSiSonLocales(idUsuario, conFotoPrincipal)
+    // Entidad que se manda a la nube (sin las fotos que no se pudieron subir) y si alguna quedó sin subir
+    private class SubidaDeFotos(val entidadRemota: SenderoEntidad, val hayFotosSinSubir: Boolean)
+
+    // Subir la foto local antes que el documento, porque Firestore solo debe guardar URLs que otros dispositivos puedan abrir.
+    // Si la subida falla, el documento viaja sin foto y se avisa para reintentar después
+    private suspend fun subirFotoSiEsLocal(idUsuario: String, entidad: SenderoEntidad): SubidaDeFotos {
+        if (entidad.estaEliminado || !esFotoLocal(entidad.foto)) return SubidaDeFotos(entidad, false)
+        return try {
+            val urlRemota = subidorFotos.subir(entidad.foto)
+            Log.d(TAG, "Foto del sendero ${entidad.id} subida a $urlRemota")
+            senderoDao.actualizarFotoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, urlRemota)
+            SubidaDeFotos(entidad.copy(foto = urlRemota), false)
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "No se pudo subir la foto del sendero ${entidad.id}; el sendero se sube sin foto", error)
+            SubidaDeFotos(entidad.copy(foto = ""), true)
+        }
     }
 
-    // Subir en orden las fotos locales de los puntos del recorrido y guardar cada URL con la transición condicional,
-    // para no repetir la subida si una posterior falla; la excepción de una subida fallida sube al llamador
-    private suspend fun subirFotosDePuntosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SenderoEntidad {
-        if (entidad.estaEliminado || entidad.recorrido.none { punto -> esFotoLocal(punto.foto) }) return entidad
-        val recorrido = entidad.recorrido.toMutableList()
+    private suspend fun subirFotosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SubidaDeFotos {
+        val principal = subirFotoSiEsLocal(idUsuario, entidad)
+        val puntos = subirFotosDePuntosSiSonLocales(idUsuario, principal.entidadRemota)
+        return SubidaDeFotos(puntos.entidadRemota, principal.hayFotosSinSubir || puntos.hayFotosSinSubir)
+    }
+
+    // Subir en orden las fotos locales de los puntos del recorrido y guardar cada URL con la transición condicional, para no repetir la
+    // subida si una posterior falla. La foto de un punto que no se pudo subir se omite del documento remoto y la local se conserva
+    private suspend fun subirFotosDePuntosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SubidaDeFotos {
+        if (entidad.estaEliminado || entidad.recorrido.none { punto -> esFotoLocal(punto.foto) }) return SubidaDeFotos(entidad, false)
+        val recorridoLocal = entidad.recorrido.toMutableList()
+        val recorridoRemoto = entidad.recorrido.toMutableList()
+        var hayFotosSinSubir = false
         for (indice in entidad.recorrido.indices) {
             val punto = entidad.recorrido[indice]
             if (!esFotoLocal(punto.foto)) continue
-            // Si el archivo ya no existe (borrado o limpiado), la foto se limpia para no dejar el sendero en CON_ERROR para siempre
-            val fotoNueva = if (existeArchivo(punto.foto)) {
-                subidorFotos.subir(punto.foto).also { urlRemota -> Log.d(TAG, "Foto del punto $indice del sendero ${entidad.id} subida a $urlRemota") }
+            // Si el archivo ya no existe (borrado o limpiado), la foto se limpia para no dejar el sendero pendiente para siempre
+            val fotoNueva: String? = if (existeArchivo(punto.foto)) {
+                try {
+                    subidorFotos.subir(punto.foto).also { urlRemota -> Log.d(TAG, "Foto del punto $indice del sendero ${entidad.id} subida a $urlRemota") }
+                } catch (excepcion: CancellationException) {
+                    throw excepcion
+                } catch (error: Exception) {
+                    Log.e(TAG, "No se pudo subir la foto del punto $indice del sendero ${entidad.id}; el punto se sube sin foto", error)
+                    null
+                }
             } else {
                 Log.e(TAG, "Falta el archivo local de la foto del punto $indice del sendero ${entidad.id}; se limpia la foto")
                 ""
             }
-            recorrido[indice] = punto.copy(foto = fotoNueva)
-            senderoDao.actualizarRecorridoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, recorrido.toList())
+            if (fotoNueva == null) {
+                hayFotosSinSubir = true
+                recorridoRemoto[indice] = punto.copy(foto = "")
+            } else {
+                recorridoLocal[indice] = punto.copy(foto = fotoNueva)
+                recorridoRemoto[indice] = punto.copy(foto = fotoNueva)
+                senderoDao.actualizarRecorridoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, recorridoLocal.toList())
+            }
         }
-        return entidad.copy(recorrido = recorrido)
+        return SubidaDeFotos(entidad.copy(recorrido = recorridoRemoto), hayFotosSinSubir)
     }
 }
