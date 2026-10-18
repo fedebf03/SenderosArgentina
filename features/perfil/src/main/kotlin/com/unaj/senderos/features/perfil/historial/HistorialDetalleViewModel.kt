@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import com.unaj.senderos.core.domain.model.RecorridoRealizado
 import com.unaj.senderos.core.domain.model.Sendero
+import com.unaj.senderos.core.domain.usecase.EliminarRecorridoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarRecorridoUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,12 +26,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 private const val TAG = "HISTORIAL"
 private const val MENSAJE_NO_ENCONTRADO = "No se encontró el recorrido"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
+private const val MENSAJE_ERROR_AL_ELIMINAR = "No se pudo eliminar el recorrido. Probá de nuevo"
 
 @HiltViewModel(assistedFactory = HistorialDetalleViewModel.Fabrica::class)
 class HistorialDetalleViewModel @AssistedInject constructor(
     @Assisted private val idRecorrido: String,
     private val observarRecorridoUseCase: ObservarRecorridoUseCase,
-    private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase
+    private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
+    private val eliminarRecorridoUseCase: EliminarRecorridoUseCase
 ) : ViewModel() {
 
     @AssistedFactory
@@ -61,6 +65,40 @@ class HistorialDetalleViewModel @AssistedInject constructor(
                 viewModelScope.launch { canalEfectos.send(HistorialDetalleEfecto.VolverAlPerfil) }
             }
             is HistorialDetalleEvento.AlConvertirEnSendero -> convertirEnSendero()
+            is HistorialDetalleEvento.AlTocarEliminar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = true, errorAlEliminar = null) }
+            }
+            is HistorialDetalleEvento.AlCancelarEliminar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = false) }
+            }
+            is HistorialDetalleEvento.AlConfirmarEliminar -> eliminar()
+        }
+    }
+
+    // Eliminar el recorrido con el caso de uso y volver al perfil; un toque repetido mientras se elimina se ignora y un fallo deja la pantalla con el error
+    private fun eliminar() {
+        if (_estadoVisual.value.estaEliminando) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaEliminando = true, esDialogoEliminarVisible = false, errorAlEliminar = null) }
+        viewModelScope.launch {
+            val resultado = try {
+                eliminarRecorridoUseCase(idRecorrido)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+            resultado.fold(
+                onSuccess = {
+                    Log.d(TAG, "Recorrido $idRecorrido eliminado")
+                    canalEfectos.send(HistorialDetalleEfecto.VolverAlPerfil)
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo eliminar el recorrido $idRecorrido", error)
+                    _estadoVisual.update { estadoActual ->
+                        estadoActual.copy(estaEliminando = false, errorAlEliminar = MENSAJE_ERROR_AL_ELIMINAR)
+                    }
+                }
+            )
         }
     }
 

@@ -1,5 +1,7 @@
 package com.unaj.senderos.features.historial
 
+import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
+import com.unaj.senderos.core.domain.usecase.EliminarRecorridoUseCase
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarRecorridoUseCase
@@ -50,7 +52,8 @@ class HistorialDetalleViewModelTest {
         val viewModel = HistorialDetalleViewModel(
             idRecorrido = idRecorrido,
             observarRecorridoUseCase = ObservarRecorridoUseCase(repositorioRecorridos, autenticacion),
-            observarDetalleSenderoUseCase = ObservarDetalleSenderoUseCase(repositorioSenderos, autenticacion)
+            observarDetalleSenderoUseCase = ObservarDetalleSenderoUseCase(repositorioSenderos, autenticacion),
+            eliminarRecorridoUseCase = EliminarRecorridoUseCase(repositorioRecorridos, FalsoPuntosCapturadosRepositorio(), autenticacion)
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }

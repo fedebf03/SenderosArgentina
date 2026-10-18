@@ -9,7 +9,10 @@ data class HistorialDetalleEstadoVisual(
     val recorrido: RecorridoRealizado? = null,
     val sendero: Sendero? = null,
     val estaCargando: Boolean = true,
-    val mensajeError: String? = null
+    val mensajeError: String? = null,
+    val esDialogoEliminarVisible: Boolean = false,
+    val estaEliminando: Boolean = false,
+    val errorAlEliminar: String? = null
 ) {
     // Una caminata libre tiene identificador propio en lugar del de un sendero
     val esCaminataLibre: Boolean
@@ -23,6 +26,9 @@ data class HistorialDetalleEstadoVisual(
 sealed interface HistorialDetalleEvento {
     data object AlVolver : HistorialDetalleEvento
     data object AlConvertirEnSendero : HistorialDetalleEvento
+    data object AlTocarEliminar : HistorialDetalleEvento
+    data object AlCancelarEliminar : HistorialDetalleEvento
+    data object AlConfirmarEliminar : HistorialDetalleEvento
 }
 
 sealed interface HistorialDetalleEfecto {
