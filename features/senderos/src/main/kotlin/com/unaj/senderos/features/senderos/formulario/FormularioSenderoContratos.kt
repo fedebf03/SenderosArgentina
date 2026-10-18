@@ -26,6 +26,23 @@ enum class CampoFormulario {
     DISTANCIA_NUEVA_ETAPA
 }
 
+// Qué hace un toque en el mapa del editor: agregar un punto al final del camino o marcar un punto de interés
+enum class ModoEditorRecorrido { TRAZAR_CAMINO, MARCAR_PUNTO_DE_INTERES }
+
+// Punto de interés que se está describiendo en el menú, antes de insertarlo en el trazado; foto es la ruta de la copia local
+data class PuntoDeInteresNuevo(
+    val latitud: Double,
+    val longitud: Double,
+    val tipo: TipoPunto = TipoPunto.MIRADOR,
+    val nombre: String = "",
+    val foto: String = "",
+    val estaProcesandoFoto: Boolean = false,
+    val mensajeError: String? = null
+) {
+    val hayDatosCargados: Boolean
+        get() = nombre.isNotBlank() || foto.isNotEmpty() || estaProcesandoFoto
+}
+
 data class FormularioSenderoEstadoVisual(
     val esEdicion: Boolean = false,
     val estaCargando: Boolean = false,
@@ -57,6 +74,11 @@ data class FormularioSenderoEstadoVisual(
     val recorrido: List<PuntoRecorrido> = emptyList(),
     val esEditorMapaVisible: Boolean = false,
     val indicePuntoSeleccionado: Int? = null,
+    val modoEditor: ModoEditorRecorrido = ModoEditorRecorrido.TRAZAR_CAMINO,
+    // No nulo mientras el menú del punto de interés está abierto
+    val puntoDeInteresNuevo: PuntoDeInteresNuevo? = null,
+    // Índice del punto ya trazado cuya foto se está copiando; null si no hay ninguna copia en curso
+    val indicePuntoCopiandoFoto: Int? = null,
     val foto: String = "",
     val estaProcesandoFoto: Boolean = false
 ) {
@@ -88,6 +110,18 @@ sealed interface FormularioSenderoEvento {
     data class AlCambiarTipoPunto(val indice: Int, val tipo: TipoPunto) : FormularioSenderoEvento
     data class AlCambiarNombrePunto(val indice: Int, val nombre: String) : FormularioSenderoEvento
     data object AlInvertirSentido : FormularioSenderoEvento
+    data class AlInsertarPuntoAntes(val indice: Int) : FormularioSenderoEvento
+    data class AlCambiarModoEditor(val modo: ModoEditorRecorrido) : FormularioSenderoEvento
+    data class AlElegirTipoPuntoNuevo(val tipo: TipoPunto) : FormularioSenderoEvento
+    data class AlCambiarNombrePuntoNuevo(val nombre: String) : FormularioSenderoEvento
+    data class AlSeleccionarFotoPuntoNuevo(val uri: String) : FormularioSenderoEvento
+    data object AlQuitarFotoPuntoNuevo : FormularioSenderoEvento
+    data class AlFallarFotoPuntoNuevo(val mensaje: String) : FormularioSenderoEvento
+    data object AlCancelarPuntoNuevo : FormularioSenderoEvento
+    data class AlSeleccionarFotoDePunto(val indice: Int, val uri: String) : FormularioSenderoEvento
+    data class AlQuitarFotoDePunto(val indice: Int) : FormularioSenderoEvento
+    data class AlFallarFotoDePunto(val mensaje: String) : FormularioSenderoEvento
+    data object AlGuardarPuntoNuevo : FormularioSenderoEvento
     data class AlSeleccionarFoto(val uri: String) : FormularioSenderoEvento
     data object AlQuitarFoto : FormularioSenderoEvento
 }
