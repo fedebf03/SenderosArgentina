@@ -46,6 +46,21 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
+import androidx.compose.material.icons.outlined.PhotoCamera
+import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.unaj.senderos.core.ui.comun.recordarAccionesDeFoto
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -59,6 +74,8 @@ import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
 import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private val ANCHO_PANEL_PUNTO_HORIZONTAL = 340.dp
+private val ALTURA_MAXIMA_PANEL_PUNTO = 440.dp
+private val ALTURA_FOTO_PANEL_PUNTO = 120.dp
 
 @Composable
 fun EditorRecorridoMapa(
@@ -69,6 +86,18 @@ fun EditorRecorridoMapa(
     BackHandler { alProcesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa) }
 
     var esAyudaVisible by rememberSaveable { mutableStateOf(true) }
+    val accionesFotoPuntoExistente = recordarAccionesDeFoto(
+        alSeleccionarFoto = { uri ->
+            estadoVisual.indicePuntoSeleccionado?.let { indice ->
+                alProcesarEvento(FormularioSenderoEvento.AlSeleccionarFotoDePunto(indice, uri))
+            }
+        },
+        alMostrarAviso = { mensaje -> alProcesarEvento(FormularioSenderoEvento.AlFallarFotoDePunto(mensaje)) }
+    )
+    val accionesFotoPunto = recordarAccionesDeFoto(
+        alSeleccionarFoto = { uri -> alProcesarEvento(FormularioSenderoEvento.AlSeleccionarFotoPuntoNuevo(uri)) },
+        alMostrarAviso = { mensaje -> alProcesarEvento(FormularioSenderoEvento.AlFallarFotoPuntoNuevo(mensaje)) }
+    )
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -84,7 +113,8 @@ fun EditorRecorridoMapa(
                     )
                 }
             )
-            if (esAyudaVisible) AyudaDelEditor(alOcultar = { esAyudaVisible = false })
+            SelectorModoEditor(estadoVisual.modoEditor, alProcesarEvento)
+            if (esAyudaVisible) AyudaDelEditor(modo = estadoVisual.modoEditor, alOcultar = { esAyudaVisible = false })
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 val esHorizontal = maxWidth > maxHeight
                 MapaRecorrido(
@@ -109,7 +139,10 @@ fun EditorRecorridoMapa(
                     PanelPuntoSeleccionado(
                         indice = indiceSeleccionado,
                         punto = puntoSeleccionado,
+                        estaCopiandoFoto = estadoVisual.indicePuntoCopiandoFoto == indiceSeleccionado,
                         alProcesarEvento = alProcesarEvento,
+                        alSacarFoto = accionesFotoPuntoExistente.sacarFoto,
+                        alElegirDeGaleria = accionesFotoPuntoExistente.elegirDeGaleria,
                         modifier = if (esHorizontal) {
                             Modifier.align(Alignment.CenterEnd).width(ANCHO_PANEL_PUNTO_HORIZONTAL).padding(12.dp)
                         } else {
@@ -121,17 +154,51 @@ fun EditorRecorridoMapa(
             BarraInferiorEditor(estadoVisual, alProcesarEvento)
         }
     }
+    estadoVisual.puntoDeInteresNuevo?.let { punto ->
+        HojaPuntoDeInteres(
+            punto = punto,
+            alProcesarEvento = alProcesarEvento,
+            alSacarFoto = accionesFotoPunto.sacarFoto,
+            alElegirDeGaleria = accionesFotoPunto.elegirDeGaleria
+        )
+    }
 }
 
+// Elegir qué hace un toque en el mapa: agregar un punto al final del camino o marcar un punto de interés en ese lugar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AyudaDelEditor(alOcultar: () -> Unit) {
+private fun SelectorModoEditor(modo: ModoEditorRecorrido, alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
+    val opciones = listOf(
+        ModoEditorRecorrido.TRAZAR_CAMINO to "Trazar camino",
+        ModoEditorRecorrido.MARCAR_PUNTO_DE_INTERES to "Punto de interés"
+    )
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        opciones.forEachIndexed { posicion, (modoOpcion, texto) ->
+            SegmentedButton(
+                selected = modo == modoOpcion,
+                onClick = { alProcesarEvento(FormularioSenderoEvento.AlCambiarModoEditor(modoOpcion)) },
+                shape = SegmentedButtonDefaults.itemShape(index = posicion, count = opciones.size)
+            ) {
+                Text(texto)
+            }
+        }
+    }
+}
+
+// Mostrar la ayuda del modo elegido con el botón para ocultarla
+@Composable
+private fun AyudaDelEditor(modo: ModoEditorRecorrido, alOcultar: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(start = 24.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Tocá el mapa para agregar puntos. Arrastrá un punto para moverlo o tocalo para editarlo.",
+                text = if (modo == ModoEditorRecorrido.TRAZAR_CAMINO) {
+                    "Tocá el mapa para agregar puntos. Arrastrá un punto para moverlo o tocalo para editarlo."
+                } else {
+                    "Tocá el lugar del mapa donde está lo que querés marcar: agua, un mirador, un refugio…"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.weight(1f)
             )
@@ -169,54 +236,74 @@ private fun BarraInferiorEditor(
     }
 }
 
+// Editar el punto tocado: nombre, tipo, foto e insertar un punto antes arriba, que se desplaza si no entra, y Eliminar y Guardar fijos al pie.
+// La foto se aplica al instante; el nombre y el tipo, al tocar Guardar
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PanelPuntoSeleccionado(
     indice: Int,
     punto: PuntoRecorrido,
+    estaCopiandoFoto: Boolean,
     alProcesarEvento: (FormularioSenderoEvento) -> Unit,
+    alSacarFoto: () -> Unit,
+    alElegirDeGaleria: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var nombre by remember(indice, punto.nombre) { mutableStateOf(punto.nombre) }
     var tipo by remember(indice, punto.tipo) { mutableStateOf(punto.tipo) }
     Card(
-        modifier = modifier.fillMaxWidth().heightIn(max = 320.dp),
+        modifier = modifier.fillMaxWidth().heightIn(max = ALTURA_MAXIMA_PANEL_PUNTO),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Punto ${indice + 1}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlSeleccionarPunto(null)) }) {
-                    Icon(imageVector = Icons.Filled.Close, contentDescription = "Cerrar el panel del punto")
-                }
-            }
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { texto -> nombre = texto },
-                label = { Text("Nombre (opcional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TipoPunto.entries.forEach { tipoDisponible ->
-                    FilterChip(
-                        selected = tipo == tipoDisponible,
-                        onClick = { tipo = tipoDisponible },
-                        label = { Text(obtenerTextoTipoPunto(tipoDisponible)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Punto ${indice + 1}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
                     )
+                    IconButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlSeleccionarPunto(null)) }) {
+                        Icon(imageVector = Icons.Filled.Close, contentDescription = "Cerrar el panel del punto")
+                    }
+                }
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { texto -> nombre = texto },
+                    label = { Text("Nombre (opcional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TipoPunto.entries.forEach { tipoDisponible ->
+                        FilterChip(
+                            selected = tipo == tipoDisponible,
+                            onClick = { tipo = tipoDisponible },
+                            label = { Text(obtenerTextoTipoPunto(tipoDisponible)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+                    }
+                }
+                FotoDelPuntoSeleccionado(
+                    indice = indice,
+                    foto = punto.foto,
+                    estaCopiandoFoto = estaCopiandoFoto,
+                    alProcesarEvento = alProcesarEvento,
+                    alSacarFoto = alSacarFoto,
+                    alElegirDeGaleria = alElegirDeGaleria
+                )
+                if (indice > 0) {
+                    TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlInsertarPuntoAntes(indice)) }) {
+                        Text("Insertar punto antes")
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
@@ -246,6 +333,55 @@ private fun PanelPuntoSeleccionado(
     }
 }
 
+// Mostrar la foto del punto con el botón para quitarla, o el indicador mientras se copia, y los botones de cámara y galería
+@Composable
+private fun FotoDelPuntoSeleccionado(
+    indice: Int,
+    foto: String,
+    estaCopiandoFoto: Boolean,
+    alProcesarEvento: (FormularioSenderoEvento) -> Unit,
+    alSacarFoto: () -> Unit,
+    alElegirDeGaleria: () -> Unit
+) {
+    when {
+        estaCopiandoFoto -> Box(modifier = Modifier.fillMaxWidth().height(ALTURA_FOTO_PANEL_PUNTO), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        foto.isNotEmpty() -> Box(
+            modifier = Modifier.fillMaxWidth().height(ALTURA_FOTO_PANEL_PUNTO).clip(RoundedCornerShape(12.dp))
+        ) {
+            FotoDePunto(
+                foto = foto,
+                descripcion = "Foto del punto ${indice + 1}",
+                modifier = Modifier.fillMaxWidth().height(ALTURA_FOTO_PANEL_PUNTO),
+                contentScale = ContentScale.Crop
+            )
+            FilledTonalButton(
+                onClick = { alProcesarEvento(FormularioSenderoEvento.AlQuitarFotoDePunto(indice)) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp)
+            ) {
+                Text("Quitar")
+            }
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        BotonSecundario(
+            texto = "Sacar foto",
+            alTocar = alSacarFoto,
+            icono = { IconoDeBoton(Icons.Outlined.PhotoCamera) },
+            estaHabilitado = !estaCopiandoFoto,
+            modifier = Modifier.weight(1f)
+        )
+        BotonSecundario(
+            texto = "Galería",
+            alTocar = alElegirDeGaleria,
+            icono = { IconoDeBoton(Icons.Outlined.AddPhotoAlternate) },
+            estaHabilitado = !estaCopiandoFoto,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun PrevisualizacionPanelPuntoSeleccionado() {
@@ -253,7 +389,10 @@ private fun PrevisualizacionPanelPuntoSeleccionado() {
         PanelPuntoSeleccionado(
             indice = 1,
             punto = PuntoRecorrido(-40.5, -71.3, TipoPunto.AGUA, "Arroyo"),
-            alProcesarEvento = {}
+            estaCopiandoFoto = false,
+            alProcesarEvento = {},
+            alSacarFoto = {},
+            alElegirDeGaleria = {}
         )
     }
 }

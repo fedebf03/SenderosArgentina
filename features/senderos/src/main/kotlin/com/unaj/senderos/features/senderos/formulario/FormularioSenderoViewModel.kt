@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.core.domain.recorrido.EdicionRecorrido
 import com.unaj.senderos.core.domain.model.CampoSendero
 import com.unaj.senderos.core.domain.model.Etapa
+import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.SenderoInvalidoException
 import com.unaj.senderos.core.domain.port.AlmacenFotos
@@ -32,6 +33,7 @@ private const val MENSAJE_SENDERO_NO_ENCONTRADO = "No se encontró el sendero"
 private const val MENSAJE_REVISAR_CAMPOS = "Revisá los campos marcados"
 private const val MENSAJE_ETAPA_INVALIDA = "Completá el nombre y los km de la etapa"
 private const val MENSAJE_FOTO_INVALIDA = "No se pudo usar esa foto"
+private const val MENSAJE_FOTO_PUNTO_INVALIDA = "No se pudo guardar la foto del punto"
 
 @HiltViewModel(assistedFactory = FormularioSenderoViewModel.Fabrica::class)
 class FormularioSenderoViewModel @AssistedInject constructor(
@@ -56,6 +58,8 @@ class FormularioSenderoViewModel @AssistedInject constructor(
 
     // Sendero original en edición, para conservar sus datos no editables al guardar
     private var senderoOriginal: Sendero? = null
+    // Cambia cada vez que se abre el menú de un punto de interés: una copia de foto que termina tarde no se pega a otro punto
+    private var generacionPuntoNuevo = 0
 
     init {
         if (idSendero != null) cargarSendero(idSendero)
@@ -109,12 +113,13 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esEditorMapaVisible = true) }
             }
             is FormularioSenderoEvento.AlCerrarEditorMapa -> {
+                cancelarPuntoNuevo()
                 _estadoVisual.update { estadoActual ->
                     estadoActual.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null)
                 }
                 completarDistanciaConLaDelMapa()
             }
-            is FormularioSenderoEvento.AlAgregarPunto -> editarRecorrido { it.agregar(evento.latitud, evento.longitud) }
+            is FormularioSenderoEvento.AlAgregarPunto -> tocarMapa(evento.latitud, evento.longitud)
             is FormularioSenderoEvento.AlMoverPunto -> {
                 editarRecorrido { it.mover(evento.indice, evento.latitud, evento.longitud) }
             }
@@ -127,6 +132,22 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 editarRecorrido { it.reemplazar(evento.indice) { punto -> punto.copy(nombre = evento.nombre) } }
             }
             is FormularioSenderoEvento.AlInvertirSentido -> editarRecorrido { it.invertir() }
+            is FormularioSenderoEvento.AlInsertarPuntoAntes -> editarRecorrido { edicion -> edicion.insertarAntes(evento.indice) }
+            is FormularioSenderoEvento.AlCambiarModoEditor -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(modoEditor = evento.modo, indicePuntoSeleccionado = null) }
+            }
+            is FormularioSenderoEvento.AlElegirTipoPuntoNuevo -> editarPuntoNuevo { punto -> punto.copy(tipo = evento.tipo) }
+            is FormularioSenderoEvento.AlCambiarNombrePuntoNuevo -> editarPuntoNuevo { punto -> punto.copy(nombre = evento.nombre) }
+            is FormularioSenderoEvento.AlSeleccionarFotoPuntoNuevo -> seleccionarFotoPuntoNuevo(evento.uri)
+            is FormularioSenderoEvento.AlQuitarFotoPuntoNuevo -> quitarFotoPuntoNuevo()
+            is FormularioSenderoEvento.AlFallarFotoPuntoNuevo -> editarPuntoNuevo { punto -> punto.copy(mensajeError = evento.mensaje) }
+            is FormularioSenderoEvento.AlCancelarPuntoNuevo -> cancelarPuntoNuevo()
+            is FormularioSenderoEvento.AlSeleccionarFotoDePunto -> seleccionarFotoDePunto(evento.indice, evento.uri)
+            is FormularioSenderoEvento.AlQuitarFotoDePunto -> {
+                editarRecorrido { edicion -> edicion.reemplazar(evento.indice) { punto -> punto.copy(foto = "") } }
+            }
+            is FormularioSenderoEvento.AlFallarFotoDePunto -> emitirEfecto(FormularioSenderoEfecto.MostrarAviso(evento.mensaje))
+            is FormularioSenderoEvento.AlGuardarPuntoNuevo -> guardarPuntoNuevo()
             is FormularioSenderoEvento.AlSeleccionarFoto -> seleccionarFoto(evento.uri)
             is FormularioSenderoEvento.AlQuitarFoto -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(foto = "", hayCambiosSinGuardar = true) }
@@ -205,6 +226,110 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 estado.copy(recorrido = editado.puntos, indicePuntoSeleccionado = editado.seleccion, hayCambiosSinGuardar = true)
             }
         }
+    }
+
+    // Según el modo, agregar un punto al final del camino o abrir el menú para describir un punto de interés en ese lugar
+    private fun tocarMapa(latitud: Double, longitud: Double) {
+        val estadoActual = _estadoVisual.value
+        if (estadoActual.modoEditor == ModoEditorRecorrido.TRAZAR_CAMINO) {
+            editarRecorrido { edicion -> edicion.agregar(latitud, longitud) }
+            return
+        }
+        if (estadoActual.puntoDeInteresNuevo != null) return
+        generacionPuntoNuevo++
+        _estadoVisual.update { estado ->
+            estado.copy(puntoDeInteresNuevo = PuntoDeInteresNuevo(latitud = latitud, longitud = longitud), indicePuntoSeleccionado = null)
+        }
+    }
+
+    // Cambiar un dato del punto de interés del menú; no hace nada si el menú está cerrado
+    private fun editarPuntoNuevo(cambio: (PuntoDeInteresNuevo) -> PuntoDeInteresNuevo) {
+        _estadoVisual.update { estadoActual ->
+            estadoActual.puntoDeInteresNuevo?.let { punto -> estadoActual.copy(puntoDeInteresNuevo = cambio(punto)) } ?: estadoActual
+        }
+    }
+
+    // Copiar la foto del punto de interés a la carpeta de la app; si había otra, la reemplaza y la borra
+    private fun seleccionarFotoPuntoNuevo(uri: String) {
+        val fotoAnterior = _estadoVisual.value.puntoDeInteresNuevo?.foto ?: return
+        val generacion = generacionPuntoNuevo
+        editarPuntoNuevo { punto -> punto.copy(estaProcesandoFoto = true, mensajeError = null) }
+        viewModelScope.launch {
+            almacenFotos.guardarCopia(uri).fold(
+                onSuccess = { rutaLocal ->
+                    if (_estadoVisual.value.puntoDeInteresNuevo == null || generacion != generacionPuntoNuevo) {
+                        // El menú se cerró (o ya es otro punto) mientras se copiaba: la copia ya no tiene dueño
+                        almacenFotos.borrar(rutaLocal)
+                        return@fold
+                    }
+                    editarPuntoNuevo { punto -> punto.copy(foto = rutaLocal, estaProcesandoFoto = false) }
+                    if (fotoAnterior.isNotEmpty()) almacenFotos.borrar(fotoAnterior)
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo copiar la foto del punto de interés", error)
+                    if (generacion != generacionPuntoNuevo) return@fold
+                    editarPuntoNuevo { punto -> punto.copy(estaProcesandoFoto = false, mensajeError = MENSAJE_FOTO_PUNTO_INVALIDA) }
+                }
+            )
+        }
+    }
+
+    // Copiar la foto de un punto ya trazado y asignársela; si mientras tanto el punto se borró o cambió de lugar en la lista, la copia se descarta
+    private fun seleccionarFotoDePunto(indice: Int, uri: String) {
+        val estadoActual = _estadoVisual.value
+        val punto = estadoActual.recorrido.getOrNull(indice) ?: return
+        if (estadoActual.indicePuntoCopiandoFoto != null) return
+        _estadoVisual.update { estado -> estado.copy(indicePuntoCopiandoFoto = indice) }
+        viewModelScope.launch {
+            almacenFotos.guardarCopia(uri).fold(
+                onSuccess = { rutaLocal ->
+                    val puntoActual = _estadoVisual.value.recorrido.getOrNull(indice)
+                    val sigueEnSuLugar = puntoActual != null &&
+                        puntoActual.latitud == punto.latitud && puntoActual.longitud == punto.longitud
+                    _estadoVisual.update { estado -> estado.copy(indicePuntoCopiandoFoto = null) }
+                    if (sigueEnSuLugar) {
+                        editarRecorrido { edicion -> edicion.reemplazar(indice) { anterior -> anterior.copy(foto = rutaLocal) } }
+                    } else {
+                        almacenFotos.borrar(rutaLocal)
+                    }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo copiar la foto del punto ${indice + 1}", error)
+                    _estadoVisual.update { estado -> estado.copy(indicePuntoCopiandoFoto = null) }
+                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(MENSAJE_FOTO_PUNTO_INVALIDA))
+                }
+            )
+        }
+    }
+
+    // Quitar la foto del punto de interés y borrar su copia
+    private fun quitarFotoPuntoNuevo() {
+        val foto = _estadoVisual.value.puntoDeInteresNuevo?.foto.orEmpty()
+        editarPuntoNuevo { punto -> punto.copy(foto = "") }
+        if (foto.isNotEmpty()) viewModelScope.launch { almacenFotos.borrar(foto) }
+    }
+
+    // Cerrar el menú sin agregar el punto y borrar la foto que se había copiado para él
+    private fun cancelarPuntoNuevo() {
+        val foto = _estadoVisual.value.puntoDeInteresNuevo?.foto.orEmpty()
+        _estadoVisual.update { estadoActual -> estadoActual.copy(puntoDeInteresNuevo = null) }
+        if (foto.isNotEmpty()) viewModelScope.launch { almacenFotos.borrar(foto) }
+    }
+
+    // Insertar el punto de interés en el tramo más cercano del trazado y cerrar el menú; con la foto todavía copiándose espera
+    private fun guardarPuntoNuevo() {
+        val punto = _estadoVisual.value.puntoDeInteresNuevo ?: return
+        if (punto.estaProcesandoFoto) return
+        val puntoDelRecorrido = PuntoRecorrido(
+            latitud = punto.latitud,
+            longitud = punto.longitud,
+            tipo = punto.tipo,
+            nombre = punto.nombre.trim(),
+            foto = punto.foto
+        )
+        editarRecorrido { edicion -> edicion.insertarPuntoDeInteres(puntoDelRecorrido, _estadoVisual.value.tipoRecorrido) }
+        _estadoVisual.update { estadoActual -> estadoActual.copy(puntoDeInteresNuevo = null) }
+        Log.d(TAG, "Punto de interés ${punto.tipo} agregado al recorrido")
     }
 
     private fun seleccionarPunto(indice: Int?) {

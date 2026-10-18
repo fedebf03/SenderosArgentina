@@ -1,15 +1,7 @@
 package com.unaj.senderos.features.recorrido
 
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.Surface
 import com.unaj.senderos.core.ui.componentes.BotonPrincipal
 import com.unaj.senderos.core.ui.componentes.BotonSecundario
 import com.unaj.senderos.core.ui.componentes.IconoDeBoton
@@ -22,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,15 +21,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -53,19 +39,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.ui.componentes.GrillaTiposDePunto
 import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
-import com.unaj.senderos.core.ui.sendero.obtenerIconoTipoPunto
-import com.unaj.senderos.core.ui.sendero.obtenerTextoTipoPunto
 
 private const val LONGITUD_MAXIMA_NOTA = 200
-
-// En el orden de la grilla, de a tres por fila: lo más urgente (agua y peligro) primero y "Otro" al final
-private val TIPOS_DE_PUNTO_CAPTURABLES: List<TipoPunto> = listOf(
-    TipoPunto.AGUA, TipoPunto.PELIGRO, TipoPunto.MIRADOR,
-    TipoPunto.REFUGIO, TipoPunto.CAMPING, TipoPunto.OTRO
-)
-private const val COLUMNAS_GRILLA_TIPOS = 3
 
 // Mostrar la hoja para describir el punto marcado: grilla de tipos, nota opcional, foto, Cancelar y Guardar.
 // Tocar afuera o deslizar hacia abajo la cierra solo si no se escribió una nota ni se eligió una foto, para no perderlas por un toque sin querer
@@ -141,56 +118,6 @@ fun HojaCapturaPunto(
                     modifier = Modifier.weight(1f)
                 )
             }
-        }
-    }
-}
-
-// Mostrar los tipos como baldosas grandes, fáciles de tocar caminando o con guantes; la elegida queda resaltada
-@Composable
-private fun GrillaTiposDePunto(tipoElegido: TipoPunto, alElegir: (TipoPunto) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {
-        TIPOS_DE_PUNTO_CAPTURABLES.chunked(COLUMNAS_GRILLA_TIPOS).forEach { fila ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                fila.forEach { tipo ->
-                    BaldosaTipoDePunto(
-                        tipo = tipo,
-                        estaElegido = tipo == tipoElegido,
-                        alTocar = { alElegir(tipo) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-// Dibujar una baldosa con el ícono y el nombre del tipo; se anuncia como opción seleccionable para el lector de pantalla
-@Composable
-private fun BaldosaTipoDePunto(tipo: TipoPunto, estaElegido: Boolean, alTocar: () -> Unit, modifier: Modifier = Modifier) {
-    val esquema = MaterialTheme.colorScheme
-    Surface(
-        selected = estaElegido,
-        onClick = alTocar,
-        shape = RoundedCornerShape(16.dp),
-        color = if (estaElegido) esquema.primaryContainer else esquema.surfaceContainerHigh,
-        contentColor = if (estaElegido) esquema.onPrimaryContainer else esquema.onSurface,
-        border = if (estaElegido) BorderStroke(2.dp, esquema.primary) else null,
-        modifier = modifier.heightIn(min = 88.dp).semantics { role = Role.RadioButton }
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Icon(imageVector = obtenerIconoTipoPunto(tipo), contentDescription = null, modifier = Modifier.size(32.dp))
-            Text(
-                text = obtenerTextoTipoPunto(tipo),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (estaElegido) FontWeight.Bold else FontWeight.Normal,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }
