@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.senderos.listado
 
+import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
+import com.unaj.senderos.core.testing.FalsoControlSeguimiento
+import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.Dificultad
 import com.unaj.senderos.core.domain.model.Usuario
@@ -59,7 +62,16 @@ class SenderosViewModelTest {
         val autenticacion = FalsoAutenticacionRepositorio(Usuario(id = "usuario-1", email = "a@b.com"))
         val propiosCasoDeUso = ObservarSenderosDelUsuarioUseCase(FalsoSenderoRepositorio(propios), autenticacion)
         val publicosCasoDeUso = ObservarSenderosPublicosUseCase(repositorioPublicos, autenticacion)
-        val viewModel = SenderosViewModel(modo, propiosCasoDeUso, publicosCasoDeUso, proveedorUbicacion, monitorConectividad)
+        val viewModel = SenderosViewModel(
+            modo,
+            propiosCasoDeUso,
+            publicosCasoDeUso,
+            proveedorUbicacion,
+            monitorConectividad,
+            FalsoControlSeguimiento(),
+            FalsoLanzadorSeguimiento(),
+            ObtenerUsuarioActualUseCase(autenticacion)
+        ) { 0L }
         if (recolectarEfectos) {
             CoroutineScope(despachadorPrueba).launch {
                 viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }

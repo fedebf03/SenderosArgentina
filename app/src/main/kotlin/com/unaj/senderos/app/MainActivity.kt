@@ -58,6 +58,7 @@ import com.unaj.senderos.R
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import com.unaj.senderos.navegacion.DestinoPantalla
 import com.unaj.senderos.navegacion.claveDeAlmacen
 import com.unaj.senderos.navegacion.guardadorDeDestino
@@ -173,6 +174,10 @@ class MainActivity : ComponentActivity() {
                             },
                             alNavegarADetalle = abrirDetalleDesde(DestinoPantalla.Explorar),
                             alNavegarADetallePublico = { idSendero -> pantallaActual = DestinoPantalla.DetallePublico(idSendero) },
+                            alNavegarACaminata = { idCaminata ->
+                                listadoDeOrigen = DestinoPantalla.Explorar
+                                pantallaActual = DestinoPantalla.Recorrido(idCaminata)
+                            },
                             alNavegarASeccion = navegarASeccion
                         )
                         is DestinoPantalla.Mapa -> MapaSenderosPantalla(
@@ -258,16 +263,26 @@ class MainActivity : ComponentActivity() {
                                 },
                                 // Volver no detiene el seguimiento: sigue en segundo plano con su notificación
                                 alVolverAlDetalle = {
-                                    pantallaActual = DestinoPantalla.Detalle(destino.idSendero)
+                                    // Una caminata libre no tiene detalle: se vuelve al listado desde el que se la inició
+                                    pantallaActual = if (IdentificadorCaminataLibre.esDeCaminataLibre(destino.idSendero)) {
+                                        listadoDeOrigen
+                                    } else {
+                                        DestinoPantalla.Detalle(destino.idSendero)
+                                    }
+                                    almacenDestinos.liberarDestino(clave)
+                                },
+                                alNavegarAFormularioDesdeCaminata = { idCaminata ->
+                                    pantallaActual = DestinoPantalla.Formulario(null, idCaminata)
                                     almacenDestinos.liberarDestino(clave)
                                 }
                             )
                         }
                         is DestinoPantalla.Formulario -> {
                             val idEditado = destino.idSendero
-                            val clave = "formulario-$idUsuario-${idEditado ?: "nuevo"}"
+                            val idCaminata = destino.idCaminata
+                            val clave = "formulario-$idUsuario-${idEditado ?: idCaminata ?: "nuevo"}"
                             val salir = { idSendero: String? ->
-                                pantallaActual = if (idEditado != null && idSendero != null) {
+                                pantallaActual = if ((idEditado != null || idCaminata != null) && idSendero != null) {
                                     DestinoPantalla.Detalle(idSendero)
                                 } else {
                                     listadoDeOrigen
@@ -276,7 +291,7 @@ class MainActivity : ComponentActivity() {
                             }
                             FormularioSenderoPantalla(
                                 viewModel = viewModelAsistidoDeDestino<FormularioSenderoViewModel, FormularioSenderoViewModel.Fabrica>(clave) { fabrica ->
-                                    fabrica.crear(idEditado, null)
+                                    fabrica.crear(idEditado, idCaminata)
                                 },
                                 alVolver = { salir(idEditado) },
                                 alGuardar = { idGuardado -> salir(idGuardado) }

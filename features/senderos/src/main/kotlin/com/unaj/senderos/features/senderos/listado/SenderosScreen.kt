@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Hiking
@@ -58,6 +59,7 @@ import com.unaj.senderos.core.ui.componentes.MensajeCentrado
 import com.unaj.senderos.core.ui.componentes.MensajeVacio
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.core.ui.tema.TemaSenderos
 
@@ -69,12 +71,14 @@ fun SenderosPantalla(
     alNavegarADetalle: (String) -> Unit = {},
     alNavegarADetallePublico: (String) -> Unit = {},
     alNavegarACreacion: () -> Unit = {},
+    alNavegarACaminata: (String) -> Unit = {},
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarADetalleActual by rememberUpdatedState(alNavegarADetalle)
     val navegarADetallePublicoActual by rememberUpdatedState(alNavegarADetallePublico)
     val navegarACreacionActual by rememberUpdatedState(alNavegarACreacion)
+    val navegarACaminataActual by rememberUpdatedState(alNavegarACaminata)
     val contexto = LocalContext.current
     var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
     val estadoAvisos = remember { SnackbarHostState() }
@@ -88,6 +92,15 @@ fun SenderosPantalla(
             Log.d(TAG, "Permiso de ubicación denegado")
             viewModel.procesarEvento(SenderosEvento.AlCambiarOrdenCercania(activado = false))
             alcance.launch { estadoAvisos.showSnackbar("Sin permiso de ubicación no podemos ordenar por cercanía") }
+        }
+    }
+    // Una caminata libre exige la ubicación precisa; la aproximada no alcanza para registrar el trazado
+    val pedirPermisoParaCaminar = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
+        if (respuesta[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            viewModel.procesarEvento(SenderosEvento.AlCaminarAhora)
+        } else {
+            Log.d(TAG, "Permiso de ubicación precisa denegado para la caminata")
+            viewModel.procesarEvento(SenderosEvento.AlDenegarPermisoParaCaminar)
         }
     }
     val pedirPermisoNotificaciones = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { otorgado ->
@@ -115,6 +128,14 @@ fun SenderosPantalla(
                 is SenderosEfecto.NavegarADetalle -> navegarADetalleActual(efecto.idSendero)
                 is SenderosEfecto.NavegarADetallePublico -> navegarADetallePublicoActual(efecto.idSendero)
                 is SenderosEfecto.NavegarACreacion -> navegarACreacionActual()
+                is SenderosEfecto.NavegarACaminata -> navegarACaminataActual(efecto.idCaminata)
+                is SenderosEfecto.SolicitarPermisoUbicacionParaCaminar -> {
+                    if (tienePermisoDeUbicacionPrecisa(contexto)) {
+                        viewModel.procesarEvento(SenderosEvento.AlCaminarAhora)
+                    } else {
+                        pedirPermisoParaCaminar.launch(PERMISOS_UBICACION)
+                    }
+                }
                 is SenderosEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
         }
@@ -166,7 +187,15 @@ fun SenderosContenido(
             )
         },
         floatingActionButton = {
-            if (!esExplorar) {
+            if (esExplorar) {
+                ExtendedFloatingActionButton(
+                    onClick = { alProcesarEvento(SenderosEvento.AlTocarCaminarAhora) },
+                    icon = { Icon(imageVector = Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null) },
+                    text = { Text("Caminar ahora") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
                 ExtendedFloatingActionButton(
                     onClick = { alProcesarEvento(SenderosEvento.AlTocarCrearSendero) },
                     icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },

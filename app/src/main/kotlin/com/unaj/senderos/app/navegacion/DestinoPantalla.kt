@@ -11,7 +11,8 @@ sealed interface DestinoPantalla {
     data object Perfil : DestinoPantalla
     data class Detalle(val idSendero: String) : DestinoPantalla
     data class DetallePublico(val idSendero: String) : DestinoPantalla
-    data class Formulario(val idSendero: String?) : DestinoPantalla
+    // idCaminata no nulo: sendero nuevo armado desde una caminata libre ya terminada
+    data class Formulario(val idSendero: String?, val idCaminata: String? = null) : DestinoPantalla
     data class Recorrido(val idSendero: String) : DestinoPantalla
     data class HistorialDetalle(val idRecorrido: String) : DestinoPantalla
 }
@@ -25,7 +26,7 @@ internal fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String
         is DestinoPantalla.Perfil -> "perfil-$idUsuario"
         is DestinoPantalla.Detalle -> "detalle-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.DetallePublico -> "detallepublico-$idUsuario-${destino.idSendero}"
-        is DestinoPantalla.Formulario -> "formulario-$idUsuario-${destino.idSendero ?: "nuevo"}"
+        is DestinoPantalla.Formulario -> "formulario-$idUsuario-${destino.idSendero ?: destino.idCaminata ?: "nuevo"}"
         is DestinoPantalla.Recorrido -> "recorrido-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.HistorialDetalle -> "historial-$idUsuario-${destino.idRecorrido}"
     }
@@ -43,7 +44,11 @@ internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
             is DestinoPantalla.Perfil -> "perfil"
             is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
             is DestinoPantalla.DetallePublico -> "detallepublico:${destino.idSendero}"
-            is DestinoPantalla.Formulario -> "formulario:${destino.idSendero.orEmpty()}"
+            is DestinoPantalla.Formulario -> if (destino.idCaminata != null) {
+                "formulariocaminata:${destino.idCaminata}"
+            } else {
+                "formulario:${destino.idSendero.orEmpty()}"
+            }
             is DestinoPantalla.Recorrido -> "recorrido:${destino.idSendero}"
             is DestinoPantalla.HistorialDetalle -> "historial:${destino.idRecorrido}"
         }
@@ -58,6 +63,7 @@ internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
             texto == "perfil" -> DestinoPantalla.Perfil
             texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
             texto.startsWith("detallepublico:") -> DestinoPantalla.DetallePublico(texto.removePrefix("detallepublico:"))
+            texto.startsWith("formulariocaminata:") -> DestinoPantalla.Formulario(null, texto.removePrefix("formulariocaminata:"))
             texto.startsWith("formulario:") -> DestinoPantalla.Formulario(texto.removePrefix("formulario:").ifEmpty { null })
             texto.startsWith("recorrido:") -> DestinoPantalla.Recorrido(texto.removePrefix("recorrido:"))
             texto.startsWith("historial:") -> DestinoPantalla.HistorialDetalle(texto.removePrefix("historial:"))
