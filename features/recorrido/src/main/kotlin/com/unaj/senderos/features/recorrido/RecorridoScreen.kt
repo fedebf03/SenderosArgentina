@@ -187,10 +187,14 @@ fun RecorridoContenido(
                                 alMoverConGesto = { alProcesarEvento(RecorridoEvento.AlMoverMapaConGesto) }
                             )
                         )
-                        obtenerPuntosDeInteres(sendero)
-                            .firstOrNull { punto -> punto.indice == estadoVisual.indicePuntoSeleccionado }
-                            ?.let { punto ->
-                                Box(modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)) {
+                        Column(
+                            modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            DatosFlotantesRecorrido(estadoVisual, leerAhoraMilisegundos)
+                            obtenerPuntosDeInteres(sendero)
+                                .firstOrNull { punto -> punto.indice == estadoVisual.indicePuntoSeleccionado }
+                                ?.let { punto ->
                                     TarjetaPuntoSeleccionado(
                                         punto = punto,
                                         alAmpliarFoto = { foto -> fotoAmpliada = foto },
@@ -198,7 +202,7 @@ fun RecorridoContenido(
                                         alturaFoto = 110.dp
                                     )
                                 }
-                            }
+                        }
                         Column(
                             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                             horizontalAlignment = Alignment.End,
@@ -232,7 +236,6 @@ fun RecorridoContenido(
                 val panel: @Composable (Modifier) -> Unit = { modificadorPanel ->
                     PanelRecorrido(
                         estadoVisual = estadoVisual,
-                        leerAhoraMilisegundos = leerAhoraMilisegundos,
                         alProcesarEvento = alProcesarEvento,
                         modifier = modificadorPanel
                     )

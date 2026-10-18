@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,7 +62,6 @@ import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 @Composable
 internal fun PanelRecorrido(
     estadoVisual: RecorridoEstadoVisual,
-    leerAhoraMilisegundos: () -> Long,
     alProcesarEvento: (RecorridoEvento) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -76,7 +76,6 @@ internal fun PanelRecorrido(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CartelDeSenal(estadoVisual.calidadSenal)
-                GrillaCompacta(estadoVisual, leerAhoraMilisegundos)
                 if (estadoVisual.esSimulado) {
                     ControlesSimulacion(estadoVisual.multiplicadorSimulacion, alProcesarEvento)
                 }
@@ -140,21 +139,38 @@ private fun AvisoDeDesvio() {
     }
 }
 
+// Mostrar recorrido, restante, tiempo y velocidad en una tarjeta translúcida sobre el mapa, para que se vean aunque el panel de abajo no entre
 @Composable
-private fun GrillaCompacta(estadoVisual: RecorridoEstadoVisual, leerAhoraMilisegundos: () -> Long) {
+internal fun DatosFlotantesRecorrido(
+    estadoVisual: RecorridoEstadoVisual,
+    leerAhoraMilisegundos: () -> Long,
+    modifier: Modifier = Modifier
+) {
     val confiable = estadoVisual.sonConfiablesLosDatosDeDistancia
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilaDeDatos(
-            DatoDeGrilla(
-                "Recorrido",
-                if (confiable) formatearDistanciaCorta(estadoVisual.distanciaRecorridaKilometros) else TEXTO_SIN_DATO
-            ),
-            DatoDeGrilla(
-                "Restante",
-                if (confiable) formatearDistanciaCorta(estadoVisual.distanciaRestanteKilometros) else TEXTO_SIN_DATO
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CeldaDelPanel(
+                DatoDeGrilla(
+                    "Recorrido",
+                    if (confiable) formatearDistanciaCorta(estadoVisual.distanciaRecorridaKilometros) else TEXTO_SIN_DATO
+                ),
+                Modifier.weight(1f)
             )
-        )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CeldaDelPanel(
+                DatoDeGrilla(
+                    "Restante",
+                    if (confiable) formatearDistanciaCorta(estadoVisual.distanciaRestanteKilometros) else TEXTO_SIN_DATO
+                ),
+                Modifier.weight(1f)
+            )
             CeldaTiempo(estadoVisual.instanteInicioMilisegundos, leerAhoraMilisegundos, Modifier.weight(1f))
             CeldaDelPanel(
                 DatoDeGrilla(
