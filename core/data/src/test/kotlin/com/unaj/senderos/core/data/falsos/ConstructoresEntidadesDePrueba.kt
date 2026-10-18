@@ -56,7 +56,8 @@ fun crearEntidadRecorridoDePrueba(
     id: String = "recorrido-1",
     idUsuario: String = "usuario-1",
     fechaModificacion: Long = 1_000L,
-    estadoSincronizacion: String = "PENDIENTE"
+    estadoSincronizacion: String = "PENDIENTE",
+    estaEliminado: Boolean = false
 ): RecorridoEntidad {
     return RecorridoEntidad(
         id = id,
@@ -74,7 +75,8 @@ fun crearEntidadRecorridoDePrueba(
         trazadoCaminado = listOf(CoordenadaEntidad(-39.95, -71.07), CoordenadaEntidad(-39.96, -71.07)),
         esSimulado = false,
         estadoSincronizacion = estadoSincronizacion,
-        fechaModificacion = fechaModificacion
+        fechaModificacion = fechaModificacion,
+        estaEliminado = estaEliminado
     )
 }
 

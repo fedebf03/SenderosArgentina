@@ -13,4 +13,6 @@ interface RecorridoRepositorio {
 
     // Queda pendiente de sincronizar
     suspend fun guardar(recorrido: RecorridoRealizado): Result<Unit>
+    // Borrar un recorrido del historial: se oculta al instante y se borra de la nube en cuanto hay conexión; no falla si no existe
+    suspend fun eliminar(idUsuario: String, idRecorrido: String): Result<Unit>
 }

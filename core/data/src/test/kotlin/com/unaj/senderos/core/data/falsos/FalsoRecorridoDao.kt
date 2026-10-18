@@ -17,14 +17,14 @@ class FalsoRecorridoDao(
 
     override fun observarPorUsuario(idUsuario: String): Flow<List<RecorridoEntidad>> {
         return entidades.map { lista ->
-            lista.filter { entidad -> entidad.idUsuario == idUsuario }
+            lista.filter { entidad -> entidad.idUsuario == idUsuario && !entidad.estaEliminado }
                 .sortedByDescending { entidad -> entidad.inicioMilisegundos }
         }
     }
 
     override fun observarPorId(idUsuario: String, idRecorrido: String): Flow<RecorridoEntidad?> {
         return entidades.map { lista ->
-            lista.firstOrNull { entidad -> entidad.idUsuario == idUsuario && entidad.id == idRecorrido }
+            lista.firstOrNull { entidad -> entidad.idUsuario == idUsuario && entidad.id == idRecorrido && !entidad.estaEliminado }
         }
     }
 
@@ -43,6 +43,18 @@ class FalsoRecorridoDao(
         entidades.update { lista ->
             lista.filterNot { existente -> existente.idUsuario == entidad.idUsuario && existente.id == entidad.id } + entidad
         }
+    }
+
+    override suspend fun borrarEliminadoSiNoCambio(idUsuario: String, idRecorrido: String, fechaLeida: Long): Int {
+        var filasAfectadas = 0
+        entidades.update { lista ->
+            val resto = lista.filterNot { existente ->
+                (existente.idUsuario == idUsuario && existente.id == idRecorrido && existente.estaEliminado && existente.fechaModificacion == fechaLeida)
+                    .also { coincide -> if (coincide) filasAfectadas++ }
+            }
+            resto
+        }
+        return filasAfectadas
     }
 
     override suspend fun actualizarEstadoSiNoCambio(

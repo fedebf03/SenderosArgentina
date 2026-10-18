@@ -31,6 +31,17 @@ class FalsoRecorridoRepositorio : RecorridoRepositorio {
         }
     }
 
+    val eliminados: MutableList<Pair<String, String>> = mutableListOf()
+    var resultadoEliminar: Result<Unit> = Result.success(Unit)
+
+    override suspend fun eliminar(idUsuario: String, idRecorrido: String): Result<Unit> {
+        eliminados.add(idUsuario to idRecorrido)
+        if (resultadoEliminar.isSuccess) {
+            recorridos.value = recorridos.value.filterNot { recorrido -> recorrido.idUsuario == idUsuario && recorrido.id == idRecorrido }
+        }
+        return resultadoEliminar
+    }
+
     override suspend fun guardar(recorrido: RecorridoRealizado): Result<Unit> {
         guardados.add(recorrido)
         errorAlGuardar?.let { error -> throw error }
