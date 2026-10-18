@@ -61,7 +61,9 @@ data class RecorridoEstadoVisual(
     val mensajeErrorPunto: String? = null,
     val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual(),
     val largoTrazadoKilometros: Double = 0.0,
-    val perfilEstaDesactualizado: Boolean = false
+    val perfilEstaDesactualizado: Boolean = false,
+    // Caminata sin sendero previo: no hay trazado planificado, restante ni perfil; al finalizar se ofrece convertirla en un sendero nuevo
+    val esCaminataLibre: Boolean = false
 ) {
     val puedeAgregarPunto: Boolean
         get() = fase == FaseRecorrido.EN_CURSO
@@ -128,9 +130,11 @@ sealed interface RecorridoEvento {
     data class AlFallarFotoPunto(val mensaje: String) : RecorridoEvento
     data object AlGuardarPunto : RecorridoEvento
     data class AlRevisarPuntos(val evento: RevisionPuntosEvento) : RecorridoEvento
+    data object AlConvertirEnSendero : RecorridoEvento
 }
 
 sealed interface RecorridoEfecto {
     data object VolverAlDetalle : RecorridoEfecto
     data class MostrarAviso(val mensaje: String) : RecorridoEfecto
+    data class NavegarAFormularioDesdeCaminata(val idCaminata: String) : RecorridoEfecto
 }

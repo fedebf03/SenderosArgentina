@@ -164,13 +164,15 @@ internal fun DatosFlotantesRecorrido(
                 ),
                 Modifier.weight(1f)
             )
-            CeldaDelPanel(
-                DatoDeGrilla(
-                    "Restante",
-                    if (confiable) formatearDistanciaCorta(estadoVisual.distanciaRestanteKilometros) else TEXTO_SIN_DATO
-                ),
-                Modifier.weight(1f)
-            )
+            if (!estadoVisual.esCaminataLibre) {
+                CeldaDelPanel(
+                    DatoDeGrilla(
+                        "Restante",
+                        if (confiable) formatearDistanciaCorta(estadoVisual.distanciaRestanteKilometros) else TEXTO_SIN_DATO
+                    ),
+                    Modifier.weight(1f)
+                )
+            }
             CeldaTiempo(estadoVisual.instanteInicioMilisegundos, leerAhoraMilisegundos, Modifier.weight(1f))
             CeldaDelPanel(
                 DatoDeGrilla(

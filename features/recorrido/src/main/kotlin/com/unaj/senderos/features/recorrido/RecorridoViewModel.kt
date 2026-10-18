@@ -7,6 +7,7 @@ import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
@@ -63,7 +64,8 @@ class RecorridoViewModel @AssistedInject constructor(
     private val _estadoVisual = MutableStateFlow(
         RecorridoEstadoVisual(
             tieneAcelerometro = capacidadesDispositivo.tieneAcelerometro,
-            tieneBrujula = capacidadesDispositivo.tieneBrujula
+            tieneBrujula = capacidadesDispositivo.tieneBrujula,
+            esCaminataLibre = IdentificadorCaminataLibre.esDeCaminataLibre(idSendero)
         )
     )
     val estadoVisual: StateFlow<RecorridoEstadoVisual> = _estadoVisual.asStateFlow()
@@ -89,7 +91,8 @@ class RecorridoViewModel @AssistedInject constructor(
 
     init {
         Log.d(TAG, "ViewModel → creado (${hashCode()})")
-        observarSendero()
+        // Una caminata libre no tiene sendero que observar
+        if (!IdentificadorCaminataLibre.esDeCaminataLibre(idSendero)) observarSendero()
         observarSeguimiento()
         observarAvisos()
         observarRevisionDePuntos()
@@ -160,6 +163,7 @@ class RecorridoViewModel @AssistedInject constructor(
             }
             is RecorridoEvento.AlGuardarPunto -> guardarPunto()
             is RecorridoEvento.AlRevisarPuntos -> controladorRevision.procesarEvento(evento.evento)
+            is RecorridoEvento.AlConvertirEnSendero -> emitirEfecto(RecorridoEfecto.NavegarAFormularioDesdeCaminata(idSendero))
             is RecorridoEvento.AlTocarCentrar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(estaSiguiendo = true) }
             }
