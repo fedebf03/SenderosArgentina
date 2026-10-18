@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.util.Log
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import androidx.compose.foundation.background
@@ -63,6 +64,8 @@ data class ModoNavegacion(
 
 private const val ID_FUENTE_LINEA = "fuente-linea-recorrido"
 private const val ID_FUENTE_PUNTOS = "fuente-puntos-recorrido"
+private const val MARGEN_BRUJULA_DP = 12f
+private const val MARGEN_INFERIOR_BRUJULA_DP = 44f
 private const val ID_FUENTE_TRAZADO_CAMINADO = "fuente-trazado-caminado"
 private const val ID_CAPA_TRAZADO_CAMINADO = "capa-trazado-caminado"
 private const val ID_FUENTE_POSICION = "fuente-posicion-usuario"
@@ -537,6 +540,11 @@ private class ControladorMapaRecorrido(
     private fun aplicarGestos() {
         val ajustes = mapa?.uiSettings ?: return
         ajustes.setAllGesturesEnabled(datos.sonGestosHabilitados)
+        // La brújula va abajo a la izquierda, encima del logo de MapLibre, para no chocar con los datos flotantes de arriba
+        ajustes.setCompassGravity(Gravity.BOTTOM or Gravity.START)
+        ajustes.setCompassMargins(
+            (MARGEN_BRUJULA_DP * densidad).toInt(), 0, 0, (MARGEN_INFERIOR_BRUJULA_DP * densidad).toInt()
+        )
         ajustes.setRotateGesturesEnabled(false)
         ajustes.setTiltGesturesEnabled(false)
     }
