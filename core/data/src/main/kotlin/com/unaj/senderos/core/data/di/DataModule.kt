@@ -2,6 +2,7 @@ package com.unaj.senderos.core.data.di
 
 import android.content.Context
 import androidx.work.WorkManager
+import com.unaj.senderos.core.data.archivos.AlmacenBorradorRecorridoArchivo
 import com.unaj.senderos.core.data.archivos.EscritorArchivosAndroid
 import com.unaj.senderos.core.data.archivos.LectorArchivosAndroid
 import com.unaj.senderos.core.data.mapeo.CopiaSeguridadJson
@@ -18,6 +19,7 @@ import com.unaj.senderos.core.database.EjecutorTransacciones
 import com.unaj.senderos.core.database.PuntoCapturadoDao
 import com.unaj.senderos.core.database.RecorridoDao
 import com.unaj.senderos.core.database.SenderoDao
+import com.unaj.senderos.core.domain.port.AlmacenBorradorRecorrido
 import com.unaj.senderos.core.domain.port.AlmacenFotos
 import com.unaj.senderos.core.domain.port.EscritorArchivos
 import com.unaj.senderos.core.domain.port.FormatoCopiaSeguridad
@@ -55,6 +57,10 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindAlmacenFotos(impl: AlmacenFotosLocal): AlmacenFotos
+
+    @Binds
+    @Singleton
+    abstract fun bindAlmacenBorradorRecorrido(impl: AlmacenBorradorRecorridoArchivo): AlmacenBorradorRecorrido
 
     @Binds
     abstract fun bindLectorArchivos(impl: LectorArchivosAndroid): LectorArchivos
