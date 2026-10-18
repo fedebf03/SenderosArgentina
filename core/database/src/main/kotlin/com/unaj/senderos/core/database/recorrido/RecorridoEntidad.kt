@@ -1,5 +1,6 @@
 package com.unaj.senderos.core.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import kotlinx.serialization.Serializable
 
@@ -26,5 +27,8 @@ data class RecorridoEntidad(
     val trazadoCaminado: List<CoordenadaEntidad>,
     val esSimulado: Boolean,
     val estadoSincronizacion: String,
-    val fechaModificacion: Long
+    val fechaModificacion: Long,
+    // Borrado lógico: el recorrido queda oculto hasta que se borra de la nube y recién entonces se quita la fila
+    @ColumnInfo(defaultValue = "0")
+    val estaEliminado: Boolean = false
 )

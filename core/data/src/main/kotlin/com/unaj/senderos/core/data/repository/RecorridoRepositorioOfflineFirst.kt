@@ -35,6 +35,32 @@ class RecorridoRepositorioOfflineFirst(
             .map { entidad -> entidad?.aDominio() }
     }
 
+    // Marcar el recorrido como eliminado y pendiente con la fecha actual y pedir la sincronización, que borra el documento de Firestore y recién
+    // entonces la fila local. Sin la sesión del dueño queda marcado y se limpia en su próximo ingreso
+    override suspend fun eliminar(idUsuario: String, idRecorrido: String): Result<Unit> {
+        return try {
+            val existente = recorridoDao.obtenerPorId(idUsuario, idRecorrido)
+            if (existente == null || existente.estaEliminado) return Result.success(Unit)
+            recorridoDao.guardar(
+                existente.copy(
+                    estaEliminado = true,
+                    estadoSincronizacion = EstadoSincronizacion.PENDIENTE.name,
+                    fechaModificacion = reloj()
+                )
+            )
+            if (autenticacionRepositorio.obtenerUsuarioActual()?.id == idUsuario) {
+                planificadorSincronizacion.solicitarSincronizacion(idUsuario)
+            }
+            Log.d(TAG, "Recorrido $idRecorrido marcado como eliminado")
+            Result.success(Unit)
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "Fallo la eliminación local del recorrido $idRecorrido", error)
+            Result.failure(error)
+        }
+    }
+
     // Guardar en Room como pendiente con la fecha del reloj y pedir la sincronización solo si la escritura salió bien y el dueño tiene la sesión activa
     override suspend fun guardar(recorrido: RecorridoRealizado): Result<Unit> {
         return try {

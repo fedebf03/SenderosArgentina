@@ -59,6 +59,12 @@ class SincronizadorRecorridos @Inject constructor(
     // Subir una entidad y transicionar su estado solo si no cambió durante la subida; devolver el error o null
     private suspend fun subirEntidad(idUsuario: String, entidad: RecorridoEntidad): Throwable? {
         return try {
+            if (entidad.estaEliminado) {
+                // El borrado se completa con el documento remoto ya borrado; la fila local se quita solo si nadie la tocó durante tanto tiempo
+                fuenteRemota.eliminarRecorrido(idUsuario, entidad.id)
+                recorridoDao.borrarEliminadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion)
+                return null
+            }
             fuenteRemota.guardarRecorrido(idUsuario, entidad.aRed())
             recorridoDao.actualizarEstadoSiNoCambio(
                 idUsuario,

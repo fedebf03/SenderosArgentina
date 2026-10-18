@@ -25,4 +25,8 @@ class FirestoreRecorridoFuenteRemota @Inject constructor(
     override suspend fun guardarRecorrido(idUsuario: String, recorrido: RecorridoRed) {
         documentoUsuario(idUsuario).collection(COLECCION_RECORRIDOS).document(recorrido.id).set(recorrido).await()
     }
+
+    override suspend fun eliminarRecorrido(idUsuario: String, idRecorrido: String) {
+        documentoUsuario(idUsuario).collection(COLECCION_RECORRIDOS).document(idRecorrido).delete().await()
+    }
 }
