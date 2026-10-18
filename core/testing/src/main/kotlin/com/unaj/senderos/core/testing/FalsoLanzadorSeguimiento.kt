@@ -14,6 +14,12 @@ class FalsoLanzadorSeguimiento(private val registro: MutableList<String> = mutab
         iniciosSimulados.add(esSimulado)
     }
 
+    val caminatasLibresIniciadas: MutableList<Pair<String, String>> = mutableListOf()
+
+    override fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+        caminatasLibresIniciadas.add(idUsuario to nombre)
+    }
+
     var cantidadCancelaciones: Int = 0
         private set
 

@@ -7,7 +7,9 @@ data class ContenidoNotificacionRecorrido(
     val textoExpandido: String,
     val progresoPorcentaje: Int?,
     // Instante de inicio para el cronómetro del sistema; nulo si se desconoce
-    val instanteInicioMilisegundos: Long? = null
+    val instanteInicioMilisegundos: Long? = null,
+    // Falso en una caminata libre, que no tiene un largo contra el cual medir el avance: no se dibuja ninguna barra
+    val tieneProgreso: Boolean = true
 )
 
 data class ContenidoAvisoRecorrido(

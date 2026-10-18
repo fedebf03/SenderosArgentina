@@ -29,13 +29,15 @@ object RedactorNotificacionRecorrido {
     fun redactarPersistente(estado: EstadoSeguimiento?, esSimulado: Boolean): ContenidoNotificacionRecorrido {
         val nombre = estado?.nombreSendero.orEmpty().ifBlank { "el sendero" }
         val prefijo = if (esSimulado) "Simulación · " else ""
+        val esCaminataLibre = estado?.esCaminataLibre == true
         val textoCorto = redactarTextoCorto(estado)
         return ContenidoNotificacionRecorrido(
-            titulo = "${prefijo}Recorriendo $nombre",
+            titulo = if (esCaminataLibre) "${prefijo}Caminata libre" else "${prefijo}Recorriendo $nombre",
             textoCorto = textoCorto,
             textoExpandido = redactarTextoExpandido(estado, textoCorto),
             progresoPorcentaje = calcularProgresoPorcentaje(estado),
-            instanteInicioMilisegundos = estado?.instanteInicioMilisegundos?.takeIf { instante -> instante > 0L }
+            instanteInicioMilisegundos = estado?.instanteInicioMilisegundos?.takeIf { instante -> instante > 0L },
+            tieneProgreso = !esCaminataLibre
         )
     }
 
@@ -49,6 +51,7 @@ object RedactorNotificacionRecorrido {
     }
 
     private fun redactarDistancias(estado: EstadoSeguimiento): String {
+        if (estado.esCaminataLibre) return "${formatearDecimal(estado.distanciaRecorridaKilometros)} km recorridos"
         return "${formatearDecimal(estado.distanciaRestanteKilometros)} km restantes · " +
             "${formatearDecimal(estado.distanciaRecorridaKilometros)} km recorridos"
     }

@@ -29,10 +29,13 @@ import javax.inject.Inject
 
 private const val TAG = "SERVICIO_RECORRIDO"
 private const val ACCION_INICIAR = "com.example.senderosargentina.seguimiento.INICIAR"
+private const val ACCION_INICIAR_CAMINATA_LIBRE = "com.example.senderosargentina.seguimiento.INICIAR_CAMINATA_LIBRE"
 private const val ACCION_DETENER = "com.example.senderosargentina.seguimiento.DETENER"
 private const val ACCION_CANCELAR = "com.example.senderosargentina.seguimiento.CANCELAR"
 private const val EXTRA_ID_SENDERO = "idSendero"
 private const val EXTRA_ES_SIMULADO = "esSimulado"
+private const val EXTRA_ID_USUARIO = "idUsuario"
+private const val EXTRA_NOMBRE = "nombre"
 private const val ETIQUETA_BLOQUEO = "senderos:seguimiento"
 private const val DURACION_MAXIMA_BLOQUEO_MILISEGUNDOS = 6L * 60L * 60L * 1000L
 private const val INTERVALO_NOTIFICACION_MILISEGUNDOS = 1_000L
@@ -68,6 +71,13 @@ class ServicioSeguimientoRecorrido : Service() {
                 .setAction(ACCION_INICIAR)
                 .putExtra(EXTRA_ID_SENDERO, idSendero)
                 .putExtra(EXTRA_ES_SIMULADO, esSimulado)
+        }
+
+        fun crearIntencionIniciarCaminataLibre(contexto: Context, idUsuario: String, nombre: String): Intent {
+            return Intent(contexto, ServicioSeguimientoRecorrido::class.java)
+                .setAction(ACCION_INICIAR_CAMINATA_LIBRE)
+                .putExtra(EXTRA_ID_USUARIO, idUsuario)
+                .putExtra(EXTRA_NOMBRE, nombre)
         }
 
         fun crearIntencionDetener(contexto: Context): Intent {
@@ -131,6 +141,10 @@ class ServicioSeguimientoRecorrido : Service() {
             detenerServicio()
             return START_NOT_STICKY
         }
+        if (intent?.action == ACCION_INICIAR_CAMINATA_LIBRE) {
+            iniciarCaminataLibre(intent.getStringExtra(EXTRA_ID_USUARIO).orEmpty(), intent.getStringExtra(EXTRA_NOMBRE).orEmpty())
+            return START_NOT_STICKY
+        }
         val idSendero = intent?.getStringExtra(EXTRA_ID_SENDERO)
         val esSimulado = intent?.getBooleanExtra(EXTRA_ES_SIMULADO, false) ?: false
         esSimuladoActual = esSimulado
@@ -154,6 +168,29 @@ class ServicioSeguimientoRecorrido : Service() {
             }
         }
         return START_NOT_STICKY
+    }
+
+    // Pasar a primer plano y comenzar una caminata libre con GPS real; el identificador de la caminata lo conoce el control y llega a la notificación con el primer estado
+    private fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+        esSimuladoActual = false
+        if (!pasarAPrimerPlano("")) return
+        if (idUsuario.isBlank()) {
+            Log.e(TAG, "Se inició una caminata libre sin usuario")
+            detenerServicio()
+            return
+        }
+        if (tieneAcelerometro) adquirirBloqueoParcial()
+        trabajoInicio?.cancel()
+        trabajoInicio = alcance.launch {
+            try {
+                control.iniciarCaminataLibre(idUsuario, nombre)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Log.e(TAG, "No se pudo iniciar la caminata libre", error)
+                detenerServicio()
+            }
+        }
     }
 
     override fun onDestroy() {
