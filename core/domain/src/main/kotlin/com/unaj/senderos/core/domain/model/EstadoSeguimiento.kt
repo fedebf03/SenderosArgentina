@@ -44,7 +44,9 @@ data class EstadoSeguimiento(
     // BUSCANDO hasta la primera lectura válida; BUENA si la última válida tiene 15 s o menos; DEBIL si no (siempre BUENA en simulación)
     val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO,
     // Instante de la última lectura válida (precisión de 30 m o mejor, o sin precisión informada); null si todavía no hubo ninguna
-    val instanteUltimaLecturaValidaMilisegundos: Long? = null
+    val instanteUltimaLecturaValidaMilisegundos: Long? = null,
+    // Caminata sin sendero previo: no hay trazado que seguir, así que no hay restante, desvío ni llegada; solo se registra lo caminado
+    val esCaminataLibre: Boolean = false
 ) {
 
     // Rumbo a mostrar: el de la brújula si el usuario está detenido y hay brújula (el GPS no da rumbo fiable sin movimiento);
