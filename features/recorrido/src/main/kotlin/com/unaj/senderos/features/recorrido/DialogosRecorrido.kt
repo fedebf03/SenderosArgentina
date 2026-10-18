@@ -62,6 +62,7 @@ internal fun DialogoResumen(
     resumen: ResumenRecorrido,
     revision: RevisionPuntosEstadoVisual,
     esCaminataLibre: Boolean,
+    sePuedeConvertir: Boolean,
     alProcesarEvento: (RecorridoEvento) -> Unit
 ) {
     AlertDialog(
@@ -74,7 +75,12 @@ internal fun DialogoResumen(
             ) {
                 DatoDelPanel("Distancia recorrida", formatearDistanciaCorta(resumen.distanciaRecorridaKilometros))
                 DatoDelPanel("Tiempo", formatearTiempoTranscurrido(resumen.tiempoTranscurridoMilisegundos))
-                if (esCaminataLibre) {
+                if (esCaminataLibre && !sePuedeConvertir) {
+                    Text(
+                        text = "La caminata fue muy corta (menos de 50 m) para convertirla en un sendero. Se guardó en tu historial.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else if (esCaminataLibre) {
                     Text(
                         text = "¿Querés convertir esta caminata en un sendero nuevo? Vas a poder completar sus datos antes de guardarlo." +
                             if (revision.hayPuntosPorRevisar) " Los puntos que marcaste (${revision.puntosPendientes.size}) van incluidos." else "",
@@ -90,7 +96,7 @@ internal fun DialogoResumen(
             }
         },
         confirmButton = {
-            if (esCaminataLibre) {
+            if (esCaminataLibre && sePuedeConvertir) {
                 TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlConvertirEnSendero) }) {
                     Text("Convertir en sendero nuevo")
                 }
@@ -100,7 +106,7 @@ internal fun DialogoResumen(
                 }
             }
         },
-        dismissButton = if (esCaminataLibre) {
+        dismissButton = if (esCaminataLibre && sePuedeConvertir) {
             { TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlCerrarResumen) }) { Text("Solo guardar") } }
         } else {
             null

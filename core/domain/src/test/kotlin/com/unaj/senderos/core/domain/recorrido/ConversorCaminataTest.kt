@@ -110,6 +110,24 @@ class ConversorCaminataTest {
     }
 
     @Test
+    fun `una caminata de menos de 50 metros es muy corta para ser un sendero`() {
+        val corta = List(5) { indice -> Coordenada(-41.13, -71.30 + indice * 0.00005) }
+
+        val resultado = ConversorCaminata.aTrazado(corta, emptyList(), "Caminata")
+
+        assertTrue(resultado.isFailure)
+        assertTrue(resultado.exceptionOrNull()?.message.orEmpty().contains("muy corta"))
+    }
+
+    @Test
+    fun `la distancia minima para convertir es de 50 metros`() {
+        assertTrue(!ConversorCaminata.esConvertible(0.0))
+        assertTrue(!ConversorCaminata.esConvertible(0.049))
+        assertTrue(ConversorCaminata.esConvertible(0.05))
+        assertTrue(ConversorCaminata.esConvertible(3.2))
+    }
+
+    @Test
     fun `una caminata sin dos posiciones distintas no se puede convertir`() {
         val quieta = List(5) { Coordenada(-41.13, -71.30) }
 

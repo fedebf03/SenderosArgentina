@@ -142,6 +142,39 @@ class RecorridoCaminataLibreViewModelTest {
     }
 
     @Test
+    fun `una caminata de mas de 50 metros se puede convertir en sendero`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = estadoDeCaminata(kilometros = 0.2)
+        advanceUntilIdle()
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarFinalizar)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.sePuedeConvertirEnSendero)
+    }
+
+    @Test
+    fun `una caminata de menos de 50 metros no ofrece convertirla`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = estadoDeCaminata(kilometros = 0.01)
+        advanceUntilIdle()
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarFinalizar)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.sePuedeConvertirEnSendero)
+    }
+
+    @Test
+    fun `un recorrido de sendero nunca ofrece convertirse en sendero`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(idSendero = "sendero-1")
+        control.estadoEmitido.value = estadoDeCaminata(kilometros = 5.0, id = "sendero-1").copy(esCaminataLibre = false)
+        advanceUntilIdle()
+        viewModel.procesarEvento(RecorridoEvento.AlConfirmarFinalizar)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.sePuedeConvertirEnSendero)
+    }
+
+    @Test
     fun `cerrar el resumen sin convertir vuelve atras y no abre el formulario`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = estadoDeCaminata()
