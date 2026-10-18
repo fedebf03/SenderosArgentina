@@ -68,6 +68,9 @@ private const val MARGEN_BRUJULA_DP = 12f
 private const val MARGEN_INFERIOR_BRUJULA_DP = 44f
 private const val ID_FUENTE_TRAZADO_CAMINADO = "fuente-trazado-caminado"
 private const val ID_CAPA_TRAZADO_CAMINADO = "capa-trazado-caminado"
+private const val ID_FUENTE_PUNTOS_MARCADOS = "fuente-puntos-marcados"
+private const val ID_CAPA_PUNTOS_MARCADOS = "capa-puntos-marcados"
+private const val ID_CAPA_FOTOS_MARCADOS = "capa-fotos-marcados"
 private const val ID_FUENTE_POSICION = "fuente-posicion-usuario"
 private const val ID_CAPA_POSICION_HALO = "capa-posicion-usuario-halo"
 private const val ID_CAPA_POSICION = "capa-posicion-usuario"
@@ -95,6 +98,7 @@ fun MapaRecorrido(
     puntoEnfocado: Coordenada? = null,
     claveEnfoque: Int = 0,
     trazadoCaminado: List<Coordenada> = emptyList(),
+    puntosMarcados: List<PuntoRecorrido> = emptyList(),
     colorLinea: Color? = null,
     alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
@@ -138,6 +142,7 @@ fun MapaRecorrido(
                 puntoEnfocado = puntoEnfocado,
                 claveEnfoque = claveEnfoque,
                 trazadoCaminado = trazadoCaminado,
+                puntosMarcados = puntosMarcados,
                 colorLinea = colorLinea?.toArgb(),
                 alAgregarPunto = alAgregarPunto,
                 alMoverPunto = alMoverPunto,
@@ -181,6 +186,7 @@ private data class DatosMapa(
     val puntoEnfocado: Coordenada? = null,
     val claveEnfoque: Int = 0,
     val trazadoCaminado: List<Coordenada> = emptyList(),
+    val puntosMarcados: List<PuntoRecorrido> = emptyList(),
     val colorLinea: Int? = null,
     val alAgregarPunto: (Double, Double) -> Unit = { _, _ -> },
     val alMoverPunto: (Int, Double, Double) -> Unit = { _, _, _ -> },
@@ -209,6 +215,7 @@ private class ControladorMapaRecorrido(
     private var tipoRecorridoDibujado: TipoRecorrido? = null
     private var indiceSeleccionadoDibujado: Int? = null
     private var trazadoCaminadoDibujado: List<Coordenada>? = null
+    private var puntosMarcadosDibujados: List<PuntoRecorrido>? = null
     private var claveEnfoqueAplicada = claveEnfoqueInicial
 
     private var indiceArrastrado: Int? = null
@@ -262,6 +269,7 @@ private class ControladorMapaRecorrido(
     fun actualizar(nuevosDatos: DatosMapa) {
         val hayCambios = nuevosDatos.puntos != datos.puntos ||
             nuevosDatos.trazadoCaminado != datos.trazadoCaminado ||
+            nuevosDatos.puntosMarcados != datos.puntosMarcados ||
             nuevosDatos.colorLinea != datos.colorLinea ||
             nuevosDatos.tipoRecorrido != datos.tipoRecorrido ||
             nuevosDatos.indiceSeleccionado != datos.indiceSeleccionado ||
@@ -323,6 +331,7 @@ private class ControladorMapaRecorrido(
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_LINEA))
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_PUNTOS))
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_TRAZADO_CAMINADO))
+        estiloBase.addSource(GeoJsonSource(ID_FUENTE_PUNTOS_MARCADOS))
         estiloBase.addSource(GeoJsonSource(ID_FUENTE_POSICION))
 
         estiloBase.addLayer(
@@ -423,6 +432,28 @@ private class ControladorMapaRecorrido(
                     PropertyFactory.iconIgnorePlacement(true)
                 )
         )
+        // Los puntos marcados caminando van con el icono de su tipo centrado, sobre el trazado y bajo la posición del usuario
+        estiloBase.addLayer(
+            SymbolLayer(ID_CAPA_PUNTOS_MARCADOS, ID_FUENTE_PUNTOS_MARCADOS).withProperties(
+                PropertyFactory.iconImage(
+                    Expression.concat(Expression.literal(NombresImagenMapa.PREFIJO_TIPO), Expression.get(PropiedadesPunto.TIPO))
+                ),
+                PropertyFactory.iconAnchor(Property.ICON_ANCHOR_CENTER),
+                PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true)
+            )
+        )
+        estiloBase.addLayer(
+            SymbolLayer(ID_CAPA_FOTOS_MARCADOS, ID_FUENTE_PUNTOS_MARCADOS)
+                .withFilter(Expression.eq(Expression.get(PropiedadesPunto.FOTO), true))
+                .withProperties(
+                    PropertyFactory.iconImage(NombresImagenMapa.FOTO),
+                    PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM_LEFT),
+                    PropertyFactory.iconOffset(arrayOf(6f, -6f)),
+                    PropertyFactory.iconAllowOverlap(true),
+                    PropertyFactory.iconIgnorePlacement(true)
+                )
+        )
         // La posición del usuario va sobre el resto de las capas: sin rumbo, un halo y un punto; con rumbo, una flecha
         val tieneRumbo = Expression.has(PropiedadesPunto.RUMBO)
         estiloBase.addLayer(
@@ -480,6 +511,11 @@ private class ControladorMapaRecorrido(
         puntosDibujados = puntosVisibles
         tipoRecorridoDibujado = datos.tipoRecorrido
         indiceSeleccionadoDibujado = datos.indiceSeleccionado
+        if (datos.puntosMarcados != puntosMarcadosDibujados) {
+            estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_PUNTOS_MARCADOS)
+                ?.setGeoJson(ConstructorGeoJsonRecorrido.crearPuntosMarcados(datos.puntosMarcados))
+            puntosMarcadosDibujados = datos.puntosMarcados
+        }
         if (datos.trazadoCaminado !== trazadoCaminadoDibujado) {
             estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_TRAZADO_CAMINADO)
                 ?.setGeoJson(ConstructorGeoJsonRecorrido.crearTrazadoCaminado(datos.trazadoCaminado))
@@ -514,6 +550,7 @@ private class ControladorMapaRecorrido(
         tipoRecorridoDibujado = null
         indiceSeleccionadoDibujado = null
         trazadoCaminadoDibujado = null
+        puntosMarcadosDibujados = null
     }
 
     private fun seguirAlUsuario(): Boolean {

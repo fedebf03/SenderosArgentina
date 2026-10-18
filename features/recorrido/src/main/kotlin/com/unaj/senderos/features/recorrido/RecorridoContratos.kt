@@ -73,6 +73,18 @@ data class RecorridoEstadoVisual(
     val sePuedeConvertirEnSendero: Boolean
         get() = esCaminataLibre && resumen != null && ConversorCaminata.esConvertible(resumen.distanciaRecorridaKilometros)
 
+    // Puntos que el usuario marcó y todavía no entraron a un sendero, para dibujarlos en el mapa con el icono de su tipo
+    val puntosMarcados: List<PuntoRecorrido>
+        get() = revision.puntosPendientes.map { conDistancia ->
+            PuntoRecorrido(
+                latitud = conDistancia.punto.latitud,
+                longitud = conDistancia.punto.longitud,
+                tipo = conDistancia.punto.tipo,
+                nombre = conDistancia.punto.nota.trim(),
+                foto = conDistancia.punto.foto
+            )
+        }
+
     val cantidadPuntosCapturados: Int
         get() = revision.puntosPendientes.size
 
