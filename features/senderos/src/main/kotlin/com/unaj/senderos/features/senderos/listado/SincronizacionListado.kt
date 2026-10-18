@@ -24,7 +24,9 @@ import com.unaj.senderos.core.domain.port.EstadoTrabajoSincronizacion
 // Describir en una frase qué falta sincronizar: lo que se está haciendo ahora y, si no, cuántos senderos esperan subir o fallaron
 internal fun describirSincronizacion(estadoVisual: SenderosEstadoVisual): String = when {
     estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_CURSO -> "Sincronizando…"
-    estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_COLA -> "Esperando conexión para sincronizar"
+    estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_REINTENTO -> "Falló el último intento; se reintenta solo en unos instantes"
+    estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_COLA ->
+        if (estadoVisual.estaSinConexion) "Esperando conexión para sincronizar" else "Sincronización en cola…"
     estadoVisual.cantidadConErrorDeSubida > 0 -> "${estadoVisual.cantidadConErrorDeSubida} con error al subir"
     estadoVisual.cantidadSinSubir > 0 -> "${estadoVisual.cantidadSinSubir} sin subir a tu cuenta"
     else -> "Todo sincronizado con tu cuenta"
