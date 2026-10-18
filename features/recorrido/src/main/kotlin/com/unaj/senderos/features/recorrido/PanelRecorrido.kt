@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.ui.clima.formatearTemperaturaClima
+import com.unaj.senderos.core.ui.clima.elegirIconoClima
+import androidx.compose.material.icons.filled.Warning
 import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -144,7 +147,8 @@ private fun AvisoDeDesvio() {
 internal fun DatosFlotantesRecorrido(
     estadoVisual: RecorridoEstadoVisual,
     leerAhoraMilisegundos: () -> Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    alTocarClima: () -> Unit = {}
 ) {
     val confiable = estadoVisual.sonConfiablesLosDatosDeDistancia
     Surface(
@@ -153,6 +157,7 @@ internal fun DatosFlotantesRecorrido(
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
         shadowElevation = 4.dp
     ) {
+        Column {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -180,6 +185,50 @@ internal fun DatosFlotantesRecorrido(
                     if (confiable) formatearVelocidadDesdeMetrosPorSegundo(estadoVisual.velocidadActualMetrosPorSegundo) else TEXTO_SIN_DATO
                 ),
                 Modifier.weight(1f)
+            )
+        }
+        ClimaDelRecorrido(estadoVisual, alTocarClima)
+        }
+    }
+}
+
+// Mostrar debajo de los datos el icono del clima con la temperatura de donde está el usuario y, si hay, el primer aviso; tocarlo abre el detalle.
+// Sin clima (sin conexión y sin copia guardada) no se dibuja nada
+@Composable
+private fun ClimaDelRecorrido(estadoVisual: RecorridoEstadoVisual, alTocar: () -> Unit) {
+    val resultado = estadoVisual.clima ?: return
+    val actual = resultado.pronostico.actual
+    val alertas = estadoVisual.alertasClima
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accionable("Ver el clima", alTocar = alTocar)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = elegirIconoClima(actual.condicion, actual.esDeDia),
+            contentDescription = actual.condicion.descripcion,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(text = formatearTemperaturaClima(actual.temperaturaCelsius), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = if (resultado.estaDesactualizado) "${actual.condicion.descripcion} · sin conexión" else actual.condicion.descripcion,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        if (alertas.isNotEmpty()) {
+            Icon(imageVector = Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = alertas.first().titulo + if (alertas.size > 1) " +${alertas.size - 1}" else "",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error
             )
         }
     }

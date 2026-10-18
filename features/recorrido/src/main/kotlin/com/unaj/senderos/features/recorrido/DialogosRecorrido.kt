@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.ui.clima.formatearTemperaturaClima
+import com.unaj.senderos.core.ui.clima.describirVientoClima
+import com.unaj.senderos.core.ui.clima.describirAvisoPronosticoViejo
+import com.unaj.senderos.core.ui.clima.describirAntiguedadClima
 import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -111,5 +115,44 @@ internal fun DialogoResumen(
         } else {
             null
         }
+    )
+}
+
+// Mostrar el clima de donde está el usuario con el detalle de cada aviso, para decidir si sigue, se refugia o vuelve
+@Composable
+internal fun DialogoClimaRecorrido(estadoVisual: RecorridoEstadoVisual, alCerrar: () -> Unit) {
+    val resultado = estadoVisual.clima ?: return
+    val actual = resultado.pronostico.actual
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        title = { Text("Clima donde estás") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "${formatearTemperaturaClima(actual.temperaturaCelsius)} · ${actual.condicion.descripcion}",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(text = describirVientoClima(actual.vientoKilometrosPorHora, actual.rafagasKilometrosPorHora), style = MaterialTheme.typography.bodyMedium)
+                estadoVisual.alertasClima.forEach { alerta ->
+                    Column {
+                        Text(text = alerta.titulo, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error)
+                        Text(text = alerta.detalle, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Text(
+                    text = if (resultado.estaDesactualizado) {
+                        describirAvisoPronosticoViejo(resultado.antiguedadMilisegundos)
+                    } else {
+                        "Actualizado ${describirAntiguedadClima(resultado.antiguedadMilisegundos)}"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = alCerrar) { Text("Entendido") } }
     )
 }
