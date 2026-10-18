@@ -50,5 +50,7 @@ fun describirDiaClima(fecha: String, hoy: String): String {
 fun describirProbabilidadLluvia(porcentaje: Int?): String = if (porcentaje == null) "" else "$porcentaje %"
 
 // Avisar que el pronóstico mostrado es una copia vieja porque no hubo conexión para renovarlo
-fun describirAvisoPronosticoViejo(antiguedadMilisegundos: Long): String =
-    "Sin conexión: pronóstico guardado ${describirAntiguedadClima(antiguedadMilisegundos)}"
+fun describirAvisoPronosticoViejo(antiguedadMilisegundos: Long): String {
+    if (antiguedadMilisegundos < MILISEGUNDOS_POR_MINUTO) return "Sin conexión: mostrando el último pronóstico guardado"
+    return "Sin conexión: pronóstico guardado ${describirAntiguedadClima(antiguedadMilisegundos)}"
+}

@@ -67,6 +67,11 @@ class TextosClimaTest {
     }
 
     @Test
+    fun `si el pronostico guardado es de hace instantes el aviso no dice recien`() {
+        assertEquals("Sin conexión: mostrando el último pronóstico guardado", describirAvisoPronosticoViejo(20_000L))
+    }
+
+    @Test
     fun `el aviso de datos viejos explica que no hay conexion y cuanto tiempo pasó`() {
         assertEquals(
             "Sin conexión: pronóstico guardado hace 3 h",
