@@ -50,6 +50,17 @@ class FalsoPuntosCapturadosRepositorio(
         return resultadoDescartar
     }
 
+    val llamadasRetirar: MutableList<Pair<String, Collection<String>>> = mutableListOf()
+    var resultadoRetirar: Result<Unit> = Result.success(Unit)
+
+    override suspend fun retirarIncorporados(idUsuario: String, ids: Collection<String>): Result<Unit> {
+        llamadasRetirar.add(idUsuario to ids)
+        if (resultadoRetirar.isSuccess) {
+            puntos.update { lista -> lista.filterNot { punto -> punto.idUsuario == idUsuario && punto.id in ids } }
+        }
+        return resultadoRetirar
+    }
+
     override suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         llamadasIncorporar.add(Triple(idUsuario, idSendero, idsElegidos))
         resultadoIncorporar?.let { configurado -> return configurado }

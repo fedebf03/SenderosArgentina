@@ -82,6 +82,20 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
+    // Borrar solo las filas de los puntos: sus fotos ya pertenecen al sendero nuevo y no se deben tocar
+    override suspend fun retirarIncorporados(idUsuario: String, ids: Collection<String>): Result<Unit> {
+        return try {
+            if (ids.isNotEmpty()) puntoCapturadoDao.borrar(idUsuario, ids.toList())
+            Log.d(TAG, "Puntos retirados tras incorporarlos a un sendero nuevo: ${ids.size}")
+            Result.success(Unit)
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "Fallo al retirar los puntos incorporados", error)
+            Result.failure(IllegalStateException("No se pudieron retirar los puntos incorporados"))
+        }
+    }
+
     // Incorporar los puntos elegidos en un alcance de proceso: si la pantalla se cancela, la operación termina igual
     override suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         return try {

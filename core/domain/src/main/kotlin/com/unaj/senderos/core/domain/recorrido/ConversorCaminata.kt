@@ -4,6 +4,8 @@ import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.PuntoCapturado
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 
+private const val MENSAJE_CAMINATA_CORTA = "La caminata necesita al menos dos posiciones distintas para ser un sendero"
+
 object ConversorCaminata {
 
     // Convertir una caminata libre en el borrador de un sendero para el formulario: el trazado caminado se simplifica y se detecta su tipo
@@ -19,7 +21,8 @@ object ConversorCaminata {
             puntos = trazadoCaminado.map { coordenada -> PuntoLeido(coordenada.latitud, coordenada.longitud, altitudMetros = null) },
             puntosDeInteres = emptyList()
         )
-        val base = ImportadorTrazado.importar(leido, nombreSugerido).getOrElse { fallo -> return Result.failure(fallo) }
+        val base = ImportadorTrazado.importar(leido, nombreSugerido)
+            .getOrElse { return Result.failure(IllegalArgumentException(MENSAJE_CAMINATA_CORTA)) }
         val puntosDeInteres = puntosCapturados.sortedBy { punto -> punto.instanteMilisegundos }.map { punto ->
             PuntoRecorrido(
                 latitud = punto.latitud,
