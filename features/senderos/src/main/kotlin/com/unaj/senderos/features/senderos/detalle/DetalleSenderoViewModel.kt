@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.tieneCoordenadasValidas
 import com.unaj.senderos.core.domain.model.Dificultad
 import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
@@ -33,6 +35,8 @@ import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
 import com.unaj.senderos.core.ui.revisionpuntos.ControladorRevisionPuntos
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
 import com.unaj.senderos.core.domain.port.ErrorElevacionException
+import com.unaj.senderos.core.domain.port.ErrorPronosticoException
+import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilElevacionUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -58,6 +62,7 @@ private val CARACTERES_NO_VALIDOS_EN_ARCHIVOS = Regex("[\\\\/:*?\"<>|]")
 private const val TAG = "DETALLE_SENDERO"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
 private const val MENSAJE_ERROR_PERFIL = "No se pudo calcular el perfil de elevación"
+private const val MENSAJE_ERROR_CLIMA = "No se pudo consultar el clima"
 private const val MENSAJE_SIN_RECORRIDO = "Este sendero no tiene recorrido"
 private const val MENSAJE_PERMISO_DENEGADO =
     "Necesitamos el permiso de ubicación para seguir tu recorrido. Podés concederlo desde los ajustes del teléfono."
@@ -87,7 +92,8 @@ class DetalleSenderoViewModel @AssistedInject constructor(
     private val publicarSenderoUseCase: PublicarSenderoUseCase,
     private val despublicarSenderoUseCase: DespublicarSenderoUseCase,
     private val calcularPerfilElevacionUseCase: CalcularPerfilElevacionUseCase,
-    private val exportarSenderoUseCase: ExportarSenderoUseCase
+    private val exportarSenderoUseCase: ExportarSenderoUseCase,
+    private val obtenerPronosticoUseCase: ObtenerPronosticoUseCase
 ) : ViewModel() {
 
     @AssistedFactory
@@ -113,6 +119,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
     private var estaEliminando = false
 
     private var trabajoAlternarFavorito: Job? = null
+    private var lugarDelClima: Coordenada? = null
 
     private var trabajoMapaSinConexion: Job? = null
     private var trabajoDescargaMapa: Job? = null
@@ -141,6 +148,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
             }
             is DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil -> enfocarKilometroDelPerfil(evento.kilometros)
             is DetalleSenderoEvento.AlCalcularPerfil -> calcularPerfil()
+            is DetalleSenderoEvento.AlActualizarClima -> lugarDelClima?.let { lugar -> cargarClima(lugar, forzar = true) }
             is DetalleSenderoEvento.AlTocarExportar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoExportarVisible = true, esMenuOpcionesVisible = false) }
             }
@@ -325,8 +333,50 @@ class DetalleSenderoViewModel @AssistedInject constructor(
                 )
             }
             observarMapaSinConexion(senderoEmitido)
+            pedirClimaDelPuntoDeInicio(senderoEmitido)
         } else if (!estaEliminando) {
             mostrarError("No se encontró el sendero")
+        }
+    }
+
+    // Pedir el clima del primer punto del recorrido la primera vez que se conoce o cuando cambia de lugar; sin recorrido no hay lugar y no se pide nada
+    private fun pedirClimaDelPuntoDeInicio(sendero: Sendero) {
+        val lugar = sendero.recorrido
+            .map { punto -> Coordenada(punto.latitud, punto.longitud) }
+            .firstOrNull { coordenada -> coordenada.tieneCoordenadasValidas() } ?: return
+        if (lugarDelClima == lugar) return
+        lugarDelClima = lugar
+        cargarClima(lugar, forzar = false)
+    }
+
+    // Cargar el clima con el caso de uso, que decide entre la copia guardada y la red; un toque repetido mientras carga se ignora
+    private fun cargarClima(lugar: Coordenada, forzar: Boolean) {
+        if (_estadoVisual.value.estaCargandoClima) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaCargandoClima = true, errorClima = null) }
+        viewModelScope.launch {
+            val resultado = try {
+                obtenerPronosticoUseCase(lugar, forzar)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+            resultado.fold(
+                onSuccess = { pronostico ->
+                    _estadoVisual.update { estadoActual ->
+                        estadoActual.copy(clima = pronostico, estaCargandoClima = false, errorClima = null)
+                    }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo obtener el clima", error)
+                    val mensaje = if (error is ErrorPronosticoException) {
+                        error.message?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_CLIMA
+                    } else {
+                        MENSAJE_ERROR_CLIMA
+                    }
+                    _estadoVisual.update { estadoActual -> estadoActual.copy(estaCargandoClima = false, errorClima = mensaje) }
+                }
+            )
         }
     }
 
