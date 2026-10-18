@@ -3,6 +3,7 @@ package com.unaj.senderos.core.data.di
 import android.content.Context
 import androidx.work.WorkManager
 import com.unaj.senderos.core.data.archivos.AlmacenBorradorRecorridoArchivo
+import com.unaj.senderos.core.data.archivos.AlmacenPronosticosArchivo
 import com.unaj.senderos.core.data.clima.FuentePronosticoOpenMeteo
 import com.unaj.senderos.core.data.archivos.EscritorArchivosAndroid
 import com.unaj.senderos.core.data.archivos.LectorArchivosAndroid
@@ -22,6 +23,7 @@ import com.unaj.senderos.core.database.RecorridoDao
 import com.unaj.senderos.core.database.SenderoDao
 import com.unaj.senderos.core.domain.port.AlmacenBorradorRecorrido
 import com.unaj.senderos.core.domain.port.AlmacenFotos
+import com.unaj.senderos.core.domain.port.AlmacenPronosticos
 import com.unaj.senderos.core.domain.port.EscritorArchivos
 import com.unaj.senderos.core.domain.port.FormatoCopiaSeguridad
 import com.unaj.senderos.core.domain.port.FuentePronostico
@@ -72,6 +74,9 @@ abstract class DataModule {
 
     @Binds
     abstract fun bindFormatoCopiaSeguridad(impl: CopiaSeguridadJson): FormatoCopiaSeguridad
+
+    @Binds
+    abstract fun bindAlmacenPronosticos(impl: AlmacenPronosticosArchivo): AlmacenPronosticos
 
     @Binds
     abstract fun bindFuentePronostico(impl: FuentePronosticoOpenMeteo): FuentePronostico
