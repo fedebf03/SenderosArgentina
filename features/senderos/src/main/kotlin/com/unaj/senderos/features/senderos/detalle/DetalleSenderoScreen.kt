@@ -419,6 +419,15 @@ private fun CuerpoDetalle(
                 )
             }
         }
+        if (sendero.recorrido.isNotEmpty()) {
+            item {
+                SeccionClima(
+                    estadoVisual = estadoVisual,
+                    alProcesarEvento = alProcesarEvento,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+        }
         if (estadoVisual.hayPuntosPorRevisar) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
