@@ -12,6 +12,9 @@ import androidx.core.app.ServiceCompat
 import com.unaj.senderos.core.domain.notificaciones.RedactorNotificacionRecorrido
 import com.unaj.senderos.core.domain.notificaciones.ContenidoNotificacionRecorrido
 import com.unaj.senderos.core.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.port.FuentePresion
+import com.unaj.senderos.core.domain.port.Reloj
+import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,6 +57,17 @@ class ServicioSeguimientoRecorrido : Service() {
 
     @Inject
     lateinit var capacidadesDispositivo: CapacidadesDispositivo
+
+    @Inject
+    lateinit var fuentePresion: FuentePresion
+
+    @Inject
+    lateinit var obtenerPronosticoUseCase: ObtenerPronosticoUseCase
+
+    @Inject
+    lateinit var reloj: Reloj
+
+    private var vigilanteAmbiente: VigilanteAmbienteRecorrido? = null
 
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var notificador: NotificadorRecorrido
@@ -126,6 +140,14 @@ class ServicioSeguimientoRecorrido : Service() {
         alcance.launch {
             control.avisos.collect { aviso -> notificador.notificarAviso(idSenderoActual, aviso, control.estado.value) }
         }
+        vigilanteAmbiente = VigilanteAmbienteRecorrido(
+            alcance = alcance,
+            estado = control.estado,
+            fuentePresion = fuentePresion,
+            obtenerPronostico = { lugar -> obtenerPronosticoUseCase(lugar) },
+            reloj = reloj,
+            alAvisar = { aviso -> notificador.notificarAvisoAmbiente(idSenderoActual, aviso) }
+        ).also { vigilante -> vigilante.iniciar() }
         Log.d(TAG, "Servicio creado")
     }
 
@@ -201,6 +223,7 @@ class ServicioSeguimientoRecorrido : Service() {
 
     override fun onDestroy() {
         control.detener()
+        vigilanteAmbiente?.detener()
         liberarBloqueoParcial()
         notificador.cancelarAvisos()
         alcance.cancel()
