@@ -10,15 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AcUnit
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Dehaze
-import androidx.compose.material.icons.filled.Grain
-import androidx.compose.material.icons.filled.NightsStay
-import androidx.compose.material.icons.filled.Thunderstorm
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.WbCloudy
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +27,13 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.clima.AlertaClima
 import com.unaj.senderos.core.domain.clima.CondicionClima
 import com.unaj.senderos.core.domain.clima.PronosticoDia
+import com.unaj.senderos.core.ui.clima.describirAntiguedadClima
+import com.unaj.senderos.core.ui.clima.describirAvisoPronosticoViejo
+import com.unaj.senderos.core.ui.clima.describirDiaClima
+import com.unaj.senderos.core.ui.clima.describirProbabilidadLluvia
+import com.unaj.senderos.core.ui.clima.describirVientoClima
+import com.unaj.senderos.core.ui.clima.elegirIconoClima
+import com.unaj.senderos.core.ui.clima.formatearTemperaturaClima
 import com.unaj.senderos.core.ui.componentes.BotonSecundario
 import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
 import java.time.LocalDate
@@ -45,17 +43,6 @@ private const val TEXTO_CONSULTANDO_CLIMA = "Consultando el clima…"
 private const val CREDITO_CLIMA = "Pronóstico: Open-Meteo"
 private val TAMANO_ICONO_ACTUAL = 44.dp
 private val TAMANO_ICONO_DIA = 28.dp
-
-// Elegir el icono de cada condición; de noche el cielo despejado se muestra como luna
-internal fun elegirIconoClima(condicion: CondicionClima, esDeDia: Boolean): ImageVector = when (condicion) {
-    CondicionClima.DESPEJADO, CondicionClima.POCO_NUBLADO -> if (esDeDia) Icons.Filled.WbSunny else Icons.Filled.NightsStay
-    CondicionClima.PARCIALMENTE_NUBLADO -> Icons.Filled.WbCloudy
-    CondicionClima.NUBLADO, CondicionClima.VARIABLE -> Icons.Filled.Cloud
-    CondicionClima.NIEBLA -> Icons.Filled.Dehaze
-    CondicionClima.LLOVIZNA, CondicionClima.LLUVIA, CondicionClima.LLUVIA_FUERTE, CondicionClima.CHUBASCOS -> Icons.Filled.Grain
-    CondicionClima.NIEVE -> Icons.Filled.AcUnit
-    CondicionClima.TORMENTA, CondicionClima.TORMENTA_CON_GRANIZO -> Icons.Filled.Thunderstorm
-}
 
 // Mostrar el clima del punto de inicio del sendero: avisos, clima de ahora, próximos días y qué tan viejo es el dato
 @Composable

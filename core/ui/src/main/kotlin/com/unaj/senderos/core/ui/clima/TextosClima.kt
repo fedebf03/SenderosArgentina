@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.senderos.detalle
+package com.unaj.senderos.core.ui.clima
 
 import java.time.LocalDate
 import kotlin.math.roundToInt
