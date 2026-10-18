@@ -19,6 +19,14 @@ class LanzadorSeguimientoAndroid @Inject constructor(@param:ApplicationContext p
         )
     }
 
+    override fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+        Log.d(TAG, "Solicitud de inicio de una caminata libre")
+        ContextCompat.startForegroundService(
+            contexto,
+            ServicioSeguimientoRecorrido.crearIntencionIniciarCaminataLibre(contexto, idUsuario, nombre)
+        )
+    }
+
     // El servicio detiene el control al destruirse
     override fun detener() {
         Log.d(TAG, "Solicitud de fin del recorrido")

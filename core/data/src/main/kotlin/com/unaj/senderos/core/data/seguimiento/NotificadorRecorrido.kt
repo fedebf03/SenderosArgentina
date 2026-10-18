@@ -83,7 +83,9 @@ class NotificadorRecorrido(private val contexto: Context) {
             constructor.setShowWhen(false)
         }
         val progreso = contenido.progresoPorcentaje
-        if (progreso != null) {
+        if (!contenido.tieneProgreso) {
+            constructor.setProgress(0, 0, false)
+        } else if (progreso != null) {
             constructor.setProgress(PROGRESO_MAXIMO, progreso, false)
         } else {
             constructor.setProgress(0, 0, true)
