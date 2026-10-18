@@ -136,6 +136,9 @@ internal fun DialogoClimaRecorrido(estadoVisual: RecorridoEstadoVisual, alCerrar
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(text = describirVientoClima(actual.vientoKilometrosPorHora, actual.rafagasKilometrosPorHora), style = MaterialTheme.typography.bodyMedium)
+                estadoVisual.presionHectopascales?.let { presion ->
+                    Text(text = "Presión: $presion hPa", style = MaterialTheme.typography.bodyMedium)
+                }
                 estadoVisual.alertasClima.forEach { alerta ->
                     Column {
                         Text(text = alerta.titulo, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error)

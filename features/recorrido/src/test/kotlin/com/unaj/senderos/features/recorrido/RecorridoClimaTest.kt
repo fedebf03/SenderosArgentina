@@ -52,6 +52,7 @@ class RecorridoClimaTest {
     private val almacen = FalsoAlmacenPronosticos()
     private val efectosRecibidos = mutableListOf<RecorridoEfecto>()
     private var relojActual = 1_000L
+    private var fuentePresion = com.unaj.senderos.core.domain.port.FuentePresion { kotlinx.coroutines.flow.flowOf(1013.4, 1013.2, 1012.8) }
 
     @Before
     fun configurar() {
@@ -78,6 +79,7 @@ class RecorridoClimaTest {
             incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(puntos, autenticacion),
             descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(puntos, autenticacion),
             obtenerPronosticoUseCase = ObtenerPronosticoUseCase(fuente, almacen) { relojActual },
+            fuentePresion = fuentePresion,
             reloj = { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) } }
@@ -202,5 +204,24 @@ class RecorridoClimaTest {
         advanceUntilIdle()
 
         assertEquals(setOf(AlertaClima.LLUVIA_INTENSA), viewModel.estadoVisual.value.alertasClima)
+    }
+
+    @Test
+    fun `la presion del barometro se muestra en hectopascales enteros`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertEquals(1013, viewModel.estadoVisual.value.presionHectopascales)
+    }
+
+    @Test
+    fun `sin barometro la presion queda sin dato y la pantalla sigue funcionando`() = runTest(despachadorPrueba) {
+        fuentePresion = com.unaj.senderos.core.domain.port.FuentePresion { kotlinx.coroutines.flow.flow { throw IllegalStateException("Sin barómetro") } }
+        val viewModel = crearViewModel()
+        publicarEstado()
+        advanceUntilIdle()
+
+        assertEquals(null, viewModel.estadoVisual.value.presionHectopascales)
+        assertEquals(1, fuente.lugaresPedidos.size)
     }
 }
