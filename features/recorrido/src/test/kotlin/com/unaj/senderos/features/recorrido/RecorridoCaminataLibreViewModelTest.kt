@@ -4,6 +4,8 @@ import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.testing.crearPuntoCapturadoDePrueba
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.DescartarPuntosCapturadosUseCase
 import com.unaj.senderos.core.domain.usecase.IncorporarPuntosCapturadosUseCase
@@ -43,6 +45,7 @@ class RecorridoCaminataLibreViewModelTest {
     private val control = FalsoControlSeguimiento(registro)
     private val lanzador = FalsoLanzadorSeguimiento(registro)
     private val efectosRecibidos = mutableListOf<RecorridoEfecto>()
+    private val puntosCapturados = FalsoPuntosCapturadosRepositorio()
     private var relojActual = 0L
 
     @Before
@@ -65,9 +68,9 @@ class RecorridoCaminataLibreViewModelTest {
             controlSeguimiento = control,
             lanzadorSeguimiento = lanzador,
             capacidadesDispositivo = CapacidadesDispositivo(tieneGps = true, tieneAcelerometro = true, tieneBrujula = true),
-            observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorio, FalsoPuntosCapturadosRepositorio(), autenticacion),
-            incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion),
-            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion),
+            observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorio, puntosCapturados, autenticacion),
+            incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(puntosCapturados, autenticacion),
+            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(puntosCapturados, autenticacion),
             reloj = { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) } }
@@ -172,6 +175,33 @@ class RecorridoCaminataLibreViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.estadoVisual.value.sePuedeConvertirEnSendero)
+    }
+
+    @Test
+    fun `los puntos marcados durante la caminata se exponen para dibujarlos en el mapa`() = runTest(despachadorPrueba) {
+        puntosCapturados.puntos.value = listOf(
+            crearPuntoCapturadoDePrueba(id = "p1", idSendero = ID_CAMINATA, latitud = -41.13, longitud = -71.30, tipo = TipoPunto.AGUA, nota = "Arroyo", foto = "/fotos/a.jpg"),
+            crearPuntoCapturadoDePrueba(id = "p2", idSendero = "libre-9999", latitud = -41.20, longitud = -71.40)
+        )
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = estadoDeCaminata()
+        advanceUntilIdle()
+
+        val marcados = viewModel.estadoVisual.value.puntosMarcados
+        assertEquals(1, marcados.size)
+        assertEquals(TipoPunto.AGUA, marcados.single().tipo)
+        assertEquals("Arroyo", marcados.single().nombre)
+        assertEquals("/fotos/a.jpg", marcados.single().foto)
+        assertEquals(-41.13, marcados.single().latitud, 0.0)
+    }
+
+    @Test
+    fun `sin puntos marcados el mapa no dibuja ninguno`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = estadoDeCaminata()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.puntosMarcados.isEmpty())
     }
 
     @Test

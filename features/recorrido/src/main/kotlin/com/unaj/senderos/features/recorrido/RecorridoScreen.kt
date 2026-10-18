@@ -184,6 +184,7 @@ fun RecorridoContenido(
                             colorLinea = obtenerColorLineaBioma(sendero?.bioma ?: Bioma.SIN_DEFINIR, MaterialTheme.colorScheme.primary),
                             posicionUsuario = estadoVisual.posicionUsuario,
                             trazadoCaminado = estadoVisual.trazadoCaminado,
+                            puntosMarcados = estadoVisual.puntosMarcados,
                             indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
                             alSeleccionarPunto = { indice -> alProcesarEvento(RecorridoEvento.AlSeleccionarPuntoEnMapa(indice)) },
                             modoNavegacion = ModoNavegacion(
