@@ -3,7 +3,12 @@ package com.unaj.senderos.features.senderos.listado
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
+import com.unaj.senderos.core.domain.port.ControlSeguimiento
+import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
 import com.unaj.senderos.core.domain.port.MonitorConectividad
+import com.unaj.senderos.core.domain.port.Reloj
+import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.core.domain.port.ProveedorUbicacion
 import com.unaj.senderos.core.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarSenderosPublicosUseCase
@@ -24,6 +29,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 
 private const val TAG = "SENDEROS"
+private const val NOMBRE_CAMINATA_LIBRE = "Caminata libre"
+private const val MENSAJE_SIN_PERMISO_PARA_CAMINAR = "Sin el permiso de ubicación precisa no podemos registrar tu caminata"
+private const val MENSAJE_RECORRIDO_EN_CURSO = "Ya tenés un recorrido en curso: terminalo antes de empezar una caminata"
+private const val MENSAJE_SIN_SESION = "Iniciá sesión para empezar una caminata"
 
 @HiltViewModel(assistedFactory = SenderosViewModel.Fabrica::class)
 class SenderosViewModel @AssistedInject constructor(
@@ -31,7 +40,11 @@ class SenderosViewModel @AssistedInject constructor(
     observarSenderosDelUsuarioUseCase: ObservarSenderosDelUsuarioUseCase,
     observarSenderosPublicosUseCase: ObservarSenderosPublicosUseCase,
     private val proveedorUbicacion: ProveedorUbicacion,
-    monitorConectividad: MonitorConectividad
+    monitorConectividad: MonitorConectividad,
+    private val controlSeguimiento: ControlSeguimiento,
+    private val lanzadorSeguimiento: LanzadorSeguimiento,
+    private val obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
+    private val reloj: Reloj
 ) : ViewModel() {
 
     @AssistedFactory
@@ -110,6 +123,9 @@ class SenderosViewModel @AssistedInject constructor(
                 _estadoVisual.update { estado -> estado.copy(seSolicitoPermisoNotificaciones = true) }
             }
             is SenderosEvento.AlTocarCrearSendero -> emitir(SenderosEfecto.NavegarACreacion)
+            is SenderosEvento.AlTocarCaminarAhora -> emitir(SenderosEfecto.SolicitarPermisoUbicacionParaCaminar)
+            is SenderosEvento.AlCaminarAhora -> caminarAhora()
+            is SenderosEvento.AlDenegarPermisoParaCaminar -> emitir(SenderosEfecto.MostrarAviso(MENSAJE_SIN_PERMISO_PARA_CAMINAR))
             is SenderosEvento.AlSeleccionarSendero -> {
                 val esPublicoDeOtro = _estadoVisual.value.esPublicoDeOtro(evento.idSendero)
                 emitir(
@@ -121,6 +137,29 @@ class SenderosViewModel @AssistedInject constructor(
                 )
             }
         }
+    }
+
+    // Iniciar una caminata libre con un identificador nuevo y abrir su pantalla; si ya hay una caminata libre en curso vuelve a ella, y con un
+    // recorrido de sendero en curso avisa en lugar de reemplazarlo en silencio
+    private fun caminarAhora() {
+        val enCurso = controlSeguimiento.estado.value
+        if (enCurso != null) {
+            if (enCurso.esCaminataLibre) {
+                emitir(SenderosEfecto.NavegarACaminata(enCurso.idSendero))
+            } else {
+                emitir(SenderosEfecto.MostrarAviso(MENSAJE_RECORRIDO_EN_CURSO))
+            }
+            return
+        }
+        val usuario = obtenerUsuarioActualUseCase()
+        if (usuario == null) {
+            emitir(SenderosEfecto.MostrarAviso(MENSAJE_SIN_SESION))
+            return
+        }
+        val idCaminata = IdentificadorCaminataLibre.crear(reloj())
+        Log.d(TAG, "Se inicia una caminata libre: $idCaminata")
+        lanzadorSeguimiento.iniciarCaminataLibre(idCaminata, usuario.id, NOMBRE_CAMINATA_LIBRE)
+        emitir(SenderosEfecto.NavegarACaminata(idCaminata))
     }
 
     private fun observarPublicos(casoDeUso: ObservarSenderosPublicosUseCase) {

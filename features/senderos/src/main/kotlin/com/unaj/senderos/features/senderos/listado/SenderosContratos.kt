@@ -86,6 +86,10 @@ sealed interface SenderosEvento {
     data object AlObtenerUbicacion : SenderosEvento
     data object AlSolicitarPermisoNotificaciones : SenderosEvento
     data object AlTocarCrearSendero : SenderosEvento
+    // Explorar: el botón pide primero el permiso de ubicación; con él (o al concederse) se inicia la caminata
+    data object AlTocarCaminarAhora : SenderosEvento
+    data object AlCaminarAhora : SenderosEvento
+    data object AlDenegarPermisoParaCaminar : SenderosEvento
     data class AlSeleccionarSendero(val idSendero: String) : SenderosEvento
 }
 
@@ -93,5 +97,7 @@ sealed interface SenderosEfecto {
     data class NavegarADetalle(val idSendero: String) : SenderosEfecto
     data class NavegarADetallePublico(val idSendero: String) : SenderosEfecto
     data object NavegarACreacion : SenderosEfecto
+    data object SolicitarPermisoUbicacionParaCaminar : SenderosEfecto
+    data class NavegarACaminata(val idCaminata: String) : SenderosEfecto
     data class MostrarAviso(val mensaje: String) : SenderosEfecto
 }
