@@ -18,6 +18,7 @@ import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import com.unaj.senderos.core.testing.crearSenderoPublicoDePrueba
 import kotlinx.coroutines.CoroutineScope
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsaSolicitudSincronizacion
 import com.unaj.senderos.core.testing.FalsoMonitorConectividad
 import com.unaj.senderos.core.testing.FalsoProveedorUbicacion
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
@@ -58,6 +59,8 @@ class SenderosViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private val solicitudSincronizacion = FalsaSolicitudSincronizacion()
+
     private fun crearViewModel(
         propios: List<Sendero> = emptyList(),
         modo: ModoListado = ModoListado.MIS_SENDEROS,
@@ -75,7 +78,8 @@ class SenderosViewModelTest {
             FalsoControlSeguimiento(),
             FalsoLanzadorSeguimiento(),
             ObtenerUsuarioActualUseCase(autenticacion),
-            RecuperarRecorridoInterrumpidoUseCase(FalsoAlmacenBorradorRecorrido(), FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion)
+            RecuperarRecorridoInterrumpidoUseCase(FalsoAlmacenBorradorRecorrido(), FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion),
+            solicitudSincronizacion
         ) { 0L }
         if (recolectarEfectos) {
             CoroutineScope(despachadorPrueba).launch {
@@ -424,5 +428,40 @@ class SenderosViewModelTest {
         monitorConectividad.hayConexionActual = true
         advanceUntilIdle()
         assertFalse(viewModel.estadoVisual.value.estaSinConexion)
+    }
+
+    @Test
+    fun `tocar sincronizar pide la sincronizacion del usuario`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(propios = listOf(propio))
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(SenderosEvento.AlTocarSincronizar)
+
+        assertEquals(listOf("usuario-1"), solicitudSincronizacion.usuariosPedidos)
+    }
+
+    @Test
+    fun `el estado del trabajo de sincronizacion llega al estado visual`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(propios = listOf(propio))
+        advanceUntilIdle()
+
+        solicitudSincronizacion.estado.value = com.unaj.senderos.core.domain.port.EstadoTrabajoSincronizacion.EN_CURSO
+        advanceUntilIdle()
+
+        assertEquals(
+            com.unaj.senderos.core.domain.port.EstadoTrabajoSincronizacion.EN_CURSO,
+            viewModel.estadoVisual.value.estadoTrabajoSincronizacion
+        )
+    }
+
+    @Test
+    fun `cuenta los senderos sin subir y los que fallaron`() = runTest(despachadorPrueba) {
+        val pendiente = crearSenderoDePrueba(id = "p", estadoSincronizacion = com.unaj.senderos.core.domain.model.EstadoSincronizacion.PENDIENTE)
+        val conError = crearSenderoDePrueba(id = "e", estadoSincronizacion = com.unaj.senderos.core.domain.model.EstadoSincronizacion.CON_ERROR)
+        val viewModel = crearViewModel(propios = listOf(propio, pendiente, conError))
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.estadoVisual.value.cantidadSinSubir)
+        assertEquals(1, viewModel.estadoVisual.value.cantidadConErrorDeSubida)
     }
 }

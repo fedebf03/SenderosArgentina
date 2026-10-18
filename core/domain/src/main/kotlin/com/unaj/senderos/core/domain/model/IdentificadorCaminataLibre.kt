@@ -1,6 +1,7 @@
 package com.unaj.senderos.core.domain.model
 
 private const val PREFIJO_CAMINATA_LIBRE = "libre-"
+private const val PREFIJO_SENDERO_DESDE_CAMINATA = "desde-"
 
 object IdentificadorCaminataLibre {
 
@@ -9,4 +10,8 @@ object IdentificadorCaminataLibre {
 
     // Indicar si un idSendero corresponde a una caminata libre y no a un sendero guardado
     fun esDeCaminataLibre(idSendero: String): Boolean = idSendero.startsWith(PREFIJO_CAMINATA_LIBRE)
+
+    // Calcular el identificador del sendero que nace de una caminata: siempre el mismo, así convertirla dos veces reemplaza al sendero
+    // en lugar de duplicarlo y la app puede saber si ya se convirtió
+    fun idSenderoDesde(idCaminata: String): String = "$PREFIJO_SENDERO_DESDE_CAMINATA$idCaminata"
 }

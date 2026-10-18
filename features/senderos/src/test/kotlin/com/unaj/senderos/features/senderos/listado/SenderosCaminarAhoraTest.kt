@@ -12,6 +12,7 @@ import com.unaj.senderos.core.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarSenderosPublicosUseCase
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsaSolicitudSincronizacion
 import com.unaj.senderos.core.testing.FalsoControlSeguimiento
 import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
 import com.unaj.senderos.core.testing.FalsoMonitorConectividad
@@ -66,6 +67,7 @@ class SenderosCaminarAhoraTest {
             lanzador,
             ObtenerUsuarioActualUseCase(autenticacion),
             RecuperarRecorridoInterrumpidoUseCase(FalsoAlmacenBorradorRecorrido(), FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion),
+            FalsaSolicitudSincronizacion(),
             { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) } }

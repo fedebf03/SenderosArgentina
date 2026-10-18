@@ -74,12 +74,14 @@ private val ANCHO_MAXIMO_FORMULARIO = 480.dp
 fun FormularioSenderoPantalla(
     viewModel: FormularioSenderoViewModel,
     alVolver: () -> Unit,
-    alGuardar: (String) -> Unit
+    alGuardar: (String) -> Unit,
+    alEditarSenderoExistente: (String) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val volverActual by rememberUpdatedState(alVolver)
     val guardarActual by rememberUpdatedState(alGuardar)
+    val editarExistenteActual by rememberUpdatedState(alEditarSenderoExistente)
 
     var mostrarDialogoOrigenFoto by rememberSaveable { mutableStateOf(false) }
     val contexto = LocalContext.current
@@ -101,6 +103,7 @@ fun FormularioSenderoPantalla(
             when (efecto) {
                 is FormularioSenderoEfecto.VolverAtras -> volverActual()
                 is FormularioSenderoEfecto.SenderoGuardado -> guardarActual(efecto.idSendero)
+                is FormularioSenderoEfecto.EditarSenderoExistente -> editarExistenteActual(efecto.idSendero)
                 is FormularioSenderoEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
         }
@@ -112,6 +115,18 @@ fun FormularioSenderoPantalla(
         estadoAvisos = estadoAvisos,
         alElegirFoto = { mostrarDialogoOrigenFoto = true }
     )
+    estadoVisual.nombreSenderoYaConvertido?.let { nombre ->
+        DialogoConfirmacion(
+            titulo = "Esta caminata ya es un sendero",
+            texto = "Ya la convertiste en «$nombre». Si la reemplazás se vuelve a crear desde el trazado y se pierden los cambios " +
+                "que le hiciste y los puntos de interés que ya tenía. Si preferís, abrí ese sendero para editarlo.",
+            textoConfirmar = "Reemplazar",
+            alConfirmar = { viewModel.procesarEvento(FormularioSenderoEvento.AlReemplazarSenderoDeCaminata) },
+            textoDescartar = "Editar el existente",
+            alDescartar = { viewModel.procesarEvento(FormularioSenderoEvento.AlEditarSenderoDeCaminata) },
+            esDestructivo = true
+        )
+    }
 
     if (mostrarDialogoOrigenFoto) {
         DialogoOrigenFoto(

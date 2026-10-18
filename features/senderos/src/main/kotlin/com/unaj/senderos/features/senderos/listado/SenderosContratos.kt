@@ -1,6 +1,8 @@
 package com.unaj.senderos.features.senderos.listado
 
 import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.model.EstadoSincronizacion
+import com.unaj.senderos.core.domain.port.EstadoTrabajoSincronizacion
 import com.unaj.senderos.core.domain.model.Dificultad
 import com.unaj.senderos.core.domain.model.RecorridoRealizado
 import com.unaj.senderos.core.domain.model.Sendero
@@ -29,8 +31,13 @@ data class SenderosEstadoVisual(
     val seSolicitoPermisoNotificaciones: Boolean = false,
     val estaSinConexion: Boolean = false,
     // Recorrido que quedó a medias porque Android cerró la app; se ofrece recuperarlo al volver a abrir Explorar
-    val recorridoInterrumpido: RecorridoRealizado? = null
+    val recorridoInterrumpido: RecorridoRealizado? = null,
+    val estadoTrabajoSincronizacion: EstadoTrabajoSincronizacion = EstadoTrabajoSincronizacion.INACTIVO
 ) {
+    // Senderos propios que todavía no se subieron o que fallaron al subir, para decirle al usuario qué falta sincronizar
+    val cantidadSinSubir: Int = senderos.count { sendero -> sendero.estadoSincronizacion == EstadoSincronizacion.PENDIENTE }
+    val cantidadConErrorDeSubida: Int = senderos.count { sendero -> sendero.estadoSincronizacion == EstadoSincronizacion.CON_ERROR }
+
     // Devuelve null sin recorrido o sin ubicación
     fun distanciaKilometrosA(sendero: Sendero): Double? {
         val ubicacion = ubicacionActual ?: return null
@@ -88,6 +95,7 @@ sealed interface SenderosEvento {
     data object AlAlternarGuardados : SenderosEvento
     data object AlObtenerUbicacion : SenderosEvento
     data object AlSolicitarPermisoNotificaciones : SenderosEvento
+    data object AlTocarSincronizar : SenderosEvento
     data object AlTocarCrearSendero : SenderosEvento
     // Explorar: el botón pide primero el permiso de ubicación; con él (o al concederse) se inicia la caminata
     data object AlTocarCaminarAhora : SenderosEvento

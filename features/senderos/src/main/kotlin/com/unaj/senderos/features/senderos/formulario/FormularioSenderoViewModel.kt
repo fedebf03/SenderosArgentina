@@ -28,6 +28,7 @@ import com.unaj.senderos.core.ui.comun.formatearDecimalEditable
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.channels.Channel
+import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -147,6 +148,12 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             is FormularioSenderoEvento.AlImportarTrazado -> importarTrazado(evento.uri)
             is FormularioSenderoEvento.AlConfirmarReemplazoTrazado -> {
                 _estadoVisual.value.trazadoImportadoPendiente?.let { trazado -> aplicarTrazadoImportado(trazado) }
+            }
+            is FormularioSenderoEvento.AlReemplazarSenderoDeCaminata -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(nombreSenderoYaConvertido = null) }
+            }
+            is FormularioSenderoEvento.AlEditarSenderoDeCaminata -> {
+                idCaminata?.let { id -> emitirEfecto(FormularioSenderoEfecto.EditarSenderoExistente(IdentificadorCaminataLibre.idSenderoDesde(id))) }
             }
             is FormularioSenderoEvento.AlCancelarReemplazoTrazado -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(trazadoImportadoPendiente = null) }
@@ -455,6 +462,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
     // Convertir la caminata libre de origen en el recorrido del sendero nuevo; si no se puede, el formulario queda vacío y se avisa el motivo
     private fun cargarCaminata(idCaminataOrigen: String) {
         viewModelScope.launch {
+            avisarSiLaCaminataYaSeConvirtio(idCaminataOrigen)
             val resultado = try {
                 convertirCaminataEnBorradorUseCase(idCaminataOrigen)
             } catch (excepcion: CancellationException) {
@@ -474,6 +482,22 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                     canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensaje?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_CAMINATA_ERROR))
                 }
             )
+        }
+    }
+
+    // Si ya existe el sendero creado desde esta caminata, guardar su nombre para preguntar si se edita o se reemplaza antes de pisarlo
+    private suspend fun avisarSiLaCaminataYaSeConvirtio(idCaminataOrigen: String) {
+        val existente = try {
+            observarDetalleSenderoUseCase(IdentificadorCaminataLibre.idSenderoDesde(idCaminataOrigen)).getOrNull()?.first()
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "No se pudo comprobar si la caminata ya se convirtió", error)
+            null
+        }
+        if (existente != null) {
+            Log.d(TAG, "La caminata $idCaminataOrigen ya es el sendero ${existente.id}")
+            _estadoVisual.update { estadoActual -> estadoActual.copy(nombreSenderoYaConvertido = existente.nombre) }
         }
     }
 
@@ -729,7 +753,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
 
         val senderoBase = senderoOriginal ?: Sendero(
-            id = "",
+            id = idCaminata?.let { id -> IdentificadorCaminataLibre.idSenderoDesde(id) }.orEmpty(),
             idUsuario = "",
             nombre = "",
             region = "",

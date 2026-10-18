@@ -92,7 +92,9 @@ data class FormularioSenderoEstadoVisual(
     // Trazado importado que espera confirmación porque reemplazaría el recorrido ya marcado
     val trazadoImportadoPendiente: TrazadoImportado? = null,
     val foto: String = "",
-    val estaProcesandoFoto: Boolean = false
+    val estaProcesandoFoto: Boolean = false,
+    // Nombre del sendero que ya se creó desde esta misma caminata; mientras tenga valor se pregunta si se edita o se reemplaza
+    val nombreSenderoYaConvertido: String? = null
 ) {
     val distanciaCalculadaKilometros: Double
         get() = CalculadoraRecorrido.distanciaKilometros(recorrido, tipoRecorrido)
@@ -116,6 +118,10 @@ sealed interface FormularioSenderoEvento {
     data class AlImportarTrazado(val uri: String) : FormularioSenderoEvento
     data object AlConfirmarReemplazoTrazado : FormularioSenderoEvento
     data object AlCancelarReemplazoTrazado : FormularioSenderoEvento
+    // Caminata ya convertida: seguir creando el sendero de nuevo, que reemplaza al anterior
+    data object AlReemplazarSenderoDeCaminata : FormularioSenderoEvento
+    // Caminata ya convertida: abrir el sendero que ya existe para editarlo
+    data object AlEditarSenderoDeCaminata : FormularioSenderoEvento
     data class AlQuitarRecomendacion(val indice: Int) : FormularioSenderoEvento
     data object AlAgregarServicio : FormularioSenderoEvento
     data class AlQuitarServicio(val indice: Int) : FormularioSenderoEvento
@@ -153,5 +159,6 @@ sealed interface FormularioSenderoEvento {
 sealed interface FormularioSenderoEfecto {
     data object VolverAtras : FormularioSenderoEfecto
     data class SenderoGuardado(val idSendero: String) : FormularioSenderoEfecto
+    data class EditarSenderoExistente(val idSendero: String) : FormularioSenderoEfecto
     data class MostrarAviso(val mensaje: String) : FormularioSenderoEfecto
 }

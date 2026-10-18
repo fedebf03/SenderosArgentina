@@ -16,6 +16,8 @@ import com.unaj.senderos.core.data.repository.SenderoPublicoRepositorioImpl
 import com.unaj.senderos.core.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacionWorkManager
+import com.unaj.senderos.core.data.sincronizacion.SolicitudSincronizacionWorkManager
+import com.unaj.senderos.core.domain.port.SolicitudSincronizacion
 import com.unaj.senderos.core.data.sincronizacion.SincronizadorSenderos
 import com.unaj.senderos.core.database.EjecutorTransacciones
 import com.unaj.senderos.core.database.PuntoCapturadoDao
@@ -87,6 +89,9 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindPlanificadorSincronizacion(impl: PlanificadorSincronizacionWorkManager): PlanificadorSincronizacion
+
+    @Binds
+    abstract fun bindSolicitudSincronizacion(impl: SolicitudSincronizacionWorkManager): SolicitudSincronizacion
 
     companion object {
 
