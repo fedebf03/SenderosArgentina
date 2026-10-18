@@ -174,6 +174,8 @@ private fun CuerpoPerfil(
             Switch(checked = estadoVisual.esModoDemostracion, onCheckedChange = null)
         }
 
+        SeccionEstadisticas(estadoVisual, modifier = Modifier.padding(top = 24.dp))
+
         HistorialDeRecorridos(
             recorridos = estadoVisual.recorridos,
             mensajeError = estadoVisual.mensajeError,
