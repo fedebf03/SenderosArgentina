@@ -21,6 +21,7 @@ import com.unaj.senderos.core.domain.model.ResultadoCaptura
 import com.unaj.senderos.core.domain.model.RecorridoRealizado
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
+import com.unaj.senderos.core.domain.port.AlmacenBorradorRecorrido
 import com.unaj.senderos.core.domain.port.AlmacenFotos
 import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import com.unaj.senderos.core.domain.port.ProveedorUbicacion
@@ -54,6 +55,7 @@ private const val CAPACIDAD_AVISOS = 16
 private const val PRECISION_MAXIMA_CON_GPS_METROS = 30f
 private const val PRECISION_MAXIMA_SIN_GPS_METROS = 100f
 private const val INTERVALO_REEVALUACION_MILISEGUNDOS = 5_000L
+private const val INTERVALO_AUTOGUARDADO_MILISEGUNDOS = 30_000L
 private const val MILISEGUNDOS_POR_HORA = 3_600_000.0
 private const val KILOMETROS_POR_HORA_POR_METRO_POR_SEGUNDO = 3.6
 private const val METROS_POR_KILOMETRO = 1000.0
@@ -75,6 +77,7 @@ class ControlSeguimientoEnMemoria(
     private val fuenteAcelerometro: FuenteAcelerometro? = null,
     private val fuenteBrujula: FuenteBrujula? = null,
     private val proveedorDeclinacion: ProveedorDeclinacion? = null,
+    private val almacenBorrador: AlmacenBorradorRecorrido? = null,
     private val generarIdentificador: () -> String = { UUID.randomUUID().toString() },
     private val reloj: () -> Long = System::currentTimeMillis
 ) : ControlSeguimiento {
@@ -192,7 +195,8 @@ class ControlSeguimientoEnMemoria(
         estadoInterno.value = estadoInicial
         Log.d(TAG, "Seguimiento iniciado: ${estadoInicial.idSendero} (simulado: ${estadoInicial.esSimulado}, libre: ${estadoInicial.esCaminataLibre})")
         trabajosSensores = (if (estadoInicial.esSimulado) emptyList() else lanzarRecoleccionDeSensores()) +
-            alcance.launch { reevaluarCalidadPeriodicamente() }
+            alcance.launch { reevaluarCalidadPeriodicamente() } +
+            listOfNotNull(if (estadoInicial.esSimulado) null else alcance.launch { autoguardarPeriodicamente() })
         trabajoUbicaciones = alcance.launch { recolectarUbicaciones(proveedorActivo) }
     }
 
@@ -281,6 +285,7 @@ class ControlSeguimientoEnMemoria(
             guardarRecorridoRealizado(estadoInterno.value, nombreSenderoActivo, idUsuarioActivo)
         } else {
             descartarPuntosDeCaminataLibre(estadoInterno.value, idUsuarioActivo)
+            estadoInterno.value?.let { cancelado -> alcance.launch { borrarBorradorDe("recorrido-${cancelado.instanteInicioMilisegundos}") } }
         }
         trabajoUbicaciones?.cancel()
         trabajoUbicaciones = null
@@ -306,6 +311,25 @@ class ControlSeguimientoEnMemoria(
                 Log.e(TAG, "No se pudieron descartar los puntos de la caminata cancelada", error)
             }
         }
+    }
+
+    // Guardar cada 30 s una copia local del recorrido en curso, para recuperarlo si Android cierra la app; un fallo solo se registra y el seguimiento sigue.
+    // No guarda hasta tener una posición aceptada, y la simulación no se autoguarda
+    private suspend fun autoguardarPeriodicamente() {
+        val almacen = almacenBorrador ?: return
+        while (true) {
+            delay(INTERVALO_AUTOGUARDADO_MILISEGUNDOS)
+            val estadoActual = estadoInterno.value ?: continue
+            if (estadoActual.ultimaPosicionAceptada == null || idUsuarioActivo.isBlank()) continue
+            val copia = construirRecorridoRealizado(estadoActual, idUsuarioActivo, nombreSenderoActivo, reloj())
+            almacen.guardar(copia).onFailure { error -> Log.e(TAG, "No se pudo autoguardar el recorrido", error) }
+        }
+    }
+
+    // Borrar el borrador solo si es el del recorrido indicado: un recorrido nuevo puede haber empezado a autoguardarse mientras el anterior terminaba de escribirse
+    private suspend fun borrarBorradorDe(idRecorrido: String) {
+        val almacen = almacenBorrador ?: return
+        if (almacen.leer()?.id == idRecorrido) almacen.borrar()
     }
 
     // Reevaluar cada 5 s con el reloj la calidad de la señal (y lo derivado del tiempo, como detenido), porque el tiempo avanza aunque no lleguen lecturas
@@ -491,9 +515,9 @@ class ControlSeguimientoEnMemoria(
         val recorrido = construirRecorridoRealizado(estadoFinal, idUsuario, nombreSendero, reloj())
         alcance.launch {
             try {
-                recorridoRepositorio.guardar(recorrido).onFailure { error ->
-                    Log.e(TAG, "No se pudo guardar el recorrido ${recorrido.id}", error)
-                }
+                recorridoRepositorio.guardar(recorrido)
+                    .onSuccess { borrarBorradorDe(recorrido.id) }
+                    .onFailure { error -> Log.e(TAG, "No se pudo guardar el recorrido ${recorrido.id}", error) }
             } catch (excepcion: CancellationException) {
                 throw excepcion
             } catch (error: Exception) {

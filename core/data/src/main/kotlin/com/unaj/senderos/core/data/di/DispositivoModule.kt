@@ -12,6 +12,7 @@ import com.unaj.senderos.core.data.sensores.FuenteBrujulaAndroid
 import com.unaj.senderos.core.data.sensores.ProveedorDeclinacionAndroid
 import com.unaj.senderos.core.data.ubicacion.ProveedorUbicacionCombinada
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
+import com.unaj.senderos.core.domain.port.AlmacenBorradorRecorrido
 import com.unaj.senderos.core.domain.port.AlmacenFotos
 import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import com.unaj.senderos.core.domain.port.DetectorCapacidades
@@ -112,7 +113,8 @@ abstract class DispositivoModule {
             capacidades: CapacidadesDispositivo,
             fuenteAcelerometro: FuenteAcelerometro,
             fuenteBrujula: FuenteBrujula,
-            proveedorDeclinacion: ProveedorDeclinacion
+            proveedorDeclinacion: ProveedorDeclinacion,
+            almacenBorrador: AlmacenBorradorRecorrido
         ): ControlSeguimiento = ControlSeguimientoEnMemoria(
             proveedorUbicacion,
             observarDetalleSendero,
@@ -123,7 +125,8 @@ abstract class DispositivoModule {
             capacidades,
             fuenteAcelerometro,
             fuenteBrujula,
-            proveedorDeclinacion
+            proveedorDeclinacion,
+            almacenBorrador
         )
     }
 }
