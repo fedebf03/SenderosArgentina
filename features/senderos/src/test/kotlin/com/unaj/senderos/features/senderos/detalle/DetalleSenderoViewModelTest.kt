@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.senderos.detalle
 
+import com.unaj.senderos.core.testing.FalsoAlmacenPronosticos
+import com.unaj.senderos.core.testing.FalsaFuentePronostico
+import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
 import com.unaj.senderos.core.testing.FalsoEscritorArchivos
 import com.unaj.senderos.core.testing.FalsoFormatoCopiaSeguridad
 import com.unaj.senderos.core.domain.usecase.ExportarSenderoUseCase
@@ -187,7 +190,8 @@ class DetalleSenderoViewModelTest {
             publicarSenderoUseCase = PublicarSenderoUseCase(repositorioPublicos, autenticacion),
             despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion),
             calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion),
-            exportarSenderoUseCase = ExportarSenderoUseCase(repositorio, autenticacion, escritorArchivos, FalsoFormatoCopiaSeguridad(), despachadorCalculo = despachadorPrueba)
+            exportarSenderoUseCase = ExportarSenderoUseCase(repositorio, autenticacion, escritorArchivos, FalsoFormatoCopiaSeguridad(), despachadorCalculo = despachadorPrueba),
+            obtenerPronosticoUseCase = ObtenerPronosticoUseCase(FalsaFuentePronostico(), FalsoAlmacenPronosticos()) { 0L }
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }
@@ -389,7 +393,8 @@ class DetalleSenderoViewModelTest {
             publicarSenderoUseCase = PublicarSenderoUseCase(repositorioPublicos, autenticacion),
             despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion),
             calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion),
-            exportarSenderoUseCase = ExportarSenderoUseCase(repositorio, autenticacion, escritorArchivos, FalsoFormatoCopiaSeguridad(), despachadorCalculo = despachadorPrueba)
+            exportarSenderoUseCase = ExportarSenderoUseCase(repositorio, autenticacion, escritorArchivos, FalsoFormatoCopiaSeguridad(), despachadorCalculo = despachadorPrueba),
+            obtenerPronosticoUseCase = ObtenerPronosticoUseCase(FalsaFuentePronostico(), FalsoAlmacenPronosticos()) { 0L }
         )
         advanceUntilIdle()
         control.estadoEmitido.value = EstadoSeguimiento(idSendero = "sendero-2", trazado = recorridoValido)

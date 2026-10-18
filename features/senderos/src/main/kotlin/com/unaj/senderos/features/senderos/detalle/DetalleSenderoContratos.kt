@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.senderos.detalle
 
+import com.unaj.senderos.core.domain.clima.AlertaClima
+import com.unaj.senderos.core.domain.clima.EvaluadorAlertasClima
+import com.unaj.senderos.core.domain.usecase.ResultadoPronostico
 import com.unaj.senderos.core.ui.sendero.PuntoDeInteres
 import com.unaj.senderos.core.domain.usecase.FormatoExportacion
 import com.unaj.senderos.core.domain.model.Coordenada
@@ -38,14 +41,26 @@ data class DetalleSenderoEstadoVisual(
     val esDialogoHacerPrivadoVisible: Boolean = false,
     val estaCalculandoPerfil: Boolean = false,
     val perfilEstaDesactualizado: Boolean = false,
-    val debeDesplazarAlMapa: Boolean = true
+    val debeDesplazarAlMapa: Boolean = true,
+    // Clima en el punto de inicio del sendero: el último pronóstico (de la red o guardado), si se está pidiendo y el error si no se pudo
+    val clima: ResultadoPronostico? = null,
+    val estaCargandoClima: Boolean = false,
+    val errorClima: String? = null
 ) {
+    // Avisos del clima de ahora (viento fuerte, tormenta) y de los próximos días, agrupados por fecha
+    val alertasClimaAhora: Set<AlertaClima>
+        get() = clima?.let { resultado -> EvaluadorAlertasClima.evaluarActual(resultado.pronostico.actual) }.orEmpty()
+
+    val alertasClimaPorDia: Map<String, Set<AlertaClima>>
+        get() = clima?.let { resultado -> EvaluadorAlertasClima.evaluarDias(resultado.pronostico) }.orEmpty()
+
     // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
     val hayPuntosPorRevisar: Boolean
         get() = revision.hayPuntosPorRevisar && !hayRecorridoEnCursoEnEsteSendero
 }
 
 sealed interface DetalleSenderoEvento {
+    data object AlActualizarClima : DetalleSenderoEvento
     data object AlTocarExportar : DetalleSenderoEvento
     data object AlCerrarExportar : DetalleSenderoEvento
     data class AlElegirFormatoExportacion(val formato: FormatoExportacion) : DetalleSenderoEvento
