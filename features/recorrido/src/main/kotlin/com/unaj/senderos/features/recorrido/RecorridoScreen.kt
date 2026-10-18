@@ -283,7 +283,7 @@ fun RecorridoContenido(
         )
     }
     estadoVisual.resumen?.let { resumen ->
-        DialogoResumen(resumen, estadoVisual.revision, estadoVisual.esCaminataLibre, alProcesarEvento)
+        DialogoResumen(resumen, estadoVisual.revision, estadoVisual.esCaminataLibre, estadoVisual.sePuedeConvertirEnSendero, alProcesarEvento)
     }
     fotoAmpliada?.let { foto -> DialogoFotoAmpliada(foto = foto, alCerrar = { fotoAmpliada = null }) }
 }

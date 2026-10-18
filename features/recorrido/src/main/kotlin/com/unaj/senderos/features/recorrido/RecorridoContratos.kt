@@ -2,6 +2,7 @@ package com.unaj.senderos.features.recorrido
 
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.Coordenada
+import com.unaj.senderos.core.domain.recorrido.ConversorCaminata
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
@@ -67,6 +68,10 @@ data class RecorridoEstadoVisual(
 ) {
     val puedeAgregarPunto: Boolean
         get() = fase == FaseRecorrido.EN_CURSO
+
+    // Solo una caminata libre terminada con al menos 50 m ofrece convertirse en un sendero nuevo
+    val sePuedeConvertirEnSendero: Boolean
+        get() = esCaminataLibre && resumen != null && ConversorCaminata.esConvertible(resumen.distanciaRecorridaKilometros)
 
     val cantidadPuntosCapturados: Int
         get() = revision.puntosPendientes.size
