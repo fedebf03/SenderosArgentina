@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.senderos.formulario
 
+import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.domain.usecase.RetirarPuntosIncorporadosUseCase
+import com.unaj.senderos.core.domain.usecase.ConvertirCaminataEnBorradorUseCase
 import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.port.ArchivoLeido
@@ -63,11 +67,14 @@ class FormularioImportacionTest {
         val repositorio = FalsoSenderoRepositorio()
         val viewModel = FormularioSenderoViewModel(
             null,
+            null,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             GuardarSenderoUseCase(repositorio, autenticacion),
             FalsoAlmacenFotos(),
             CalcularPerfilDeTrazadoUseCase(fuente),
-            ImportarTrazadoUseCase(lector, despachadorPrueba)
+            ImportarTrazadoUseCase(lector, despachadorPrueba),
+            ConvertirCaminataEnBorradorUseCase(FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion),
+            RetirarPuntosIncorporadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion)
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }

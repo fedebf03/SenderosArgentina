@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.senderos.formulario
 
+import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.domain.usecase.RetirarPuntosIncorporadosUseCase
+import com.unaj.senderos.core.domain.usecase.ConvertirCaminataEnBorradorUseCase
 import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException
@@ -55,11 +59,14 @@ class FormularioPerfilTest {
     private fun crearViewModel(idSendero: String? = null): FormularioSenderoViewModel {
         return FormularioSenderoViewModel(
             idSendero,
+            null,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             GuardarSenderoUseCase(repositorio, autenticacion),
             FalsoAlmacenFotos(),
             CalcularPerfilDeTrazadoUseCase(fuente),
-            ImportarTrazadoUseCase(FalsoLectorArchivos())
+            ImportarTrazadoUseCase(FalsoLectorArchivos()),
+            ConvertirCaminataEnBorradorUseCase(FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion),
+            RetirarPuntosIncorporadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion)
         )
     }
 

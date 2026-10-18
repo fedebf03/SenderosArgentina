@@ -14,7 +14,9 @@ import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.port.ErrorElevacionException
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
+import com.unaj.senderos.core.domain.usecase.ConvertirCaminataEnBorradorUseCase
 import com.unaj.senderos.core.domain.usecase.ImportarTrazadoUseCase
+import com.unaj.senderos.core.domain.usecase.RetirarPuntosIncorporadosUseCase
 import com.unaj.senderos.core.domain.recorrido.TrazadoImportado
 import kotlinx.coroutines.Job
 import kotlin.math.roundToInt
@@ -50,20 +52,27 @@ private const val MENSAJE_DESNIVEL_INVALIDO_PARA_DURACION = "Revisá el desnivel
 private const val MENSAJE_PERFIL_SIN_CONEXION = "Sin conexión: el perfil se calculará al sincronizar"
 private const val MENSAJE_PERFIL_ERROR = "No se pudo calcular el perfil de elevación"
 private const val MENSAJE_IMPORTACION_ERROR = "No se pudo importar el archivo"
+private const val MENSAJE_CAMINATA_ERROR = "No se pudo cargar la caminata"
 
 @HiltViewModel(assistedFactory = FormularioSenderoViewModel.Fabrica::class)
 class FormularioSenderoViewModel @AssistedInject constructor(
-    @Assisted private val idSendero: String?,
+    @Assisted("idSendero") private val idSendero: String?,
+    @Assisted("idCaminata") private val idCaminata: String?,
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val guardarSenderoUseCase: GuardarSenderoUseCase,
     private val almacenFotos: AlmacenFotos,
     private val calcularPerfilDeTrazadoUseCase: CalcularPerfilDeTrazadoUseCase,
-    private val importarTrazadoUseCase: ImportarTrazadoUseCase
+    private val importarTrazadoUseCase: ImportarTrazadoUseCase,
+    private val convertirCaminataEnBorradorUseCase: ConvertirCaminataEnBorradorUseCase,
+    private val retirarPuntosIncorporadosUseCase: RetirarPuntosIncorporadosUseCase
 ) : ViewModel() {
 
     @AssistedFactory
     interface Fabrica {
-        fun crear(idSendero: String?): FormularioSenderoViewModel
+        fun crear(
+            @Assisted("idSendero") idSendero: String?,
+            @Assisted("idCaminata") idCaminata: String? = null
+        ): FormularioSenderoViewModel
     }
 
     private val _estadoVisual = MutableStateFlow(
@@ -86,8 +95,12 @@ class FormularioSenderoViewModel @AssistedInject constructor(
     // Cálculo del perfil en curso; uno nuevo cancela al anterior
     private var trabajoPerfil: Job? = null
 
+    // Puntos capturados de la caminata de origen que ya van dentro del recorrido; se retiran de los pendientes cuando el sendero se guarda
+    private var idsPuntosDeCaminata: Set<String> = emptySet()
+
     init {
         if (idSendero != null) cargarSendero(idSendero)
+        if (idSendero == null && idCaminata != null) cargarCaminata(idCaminata)
     }
 
     // Procesar cada evento de la pantalla y traducirlo en cambios del estado del formulario
@@ -439,6 +452,31 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
+    // Convertir la caminata libre de origen en el recorrido del sendero nuevo; si no se puede, el formulario queda vacío y se avisa el motivo
+    private fun cargarCaminata(idCaminataOrigen: String) {
+        viewModelScope.launch {
+            val resultado = try {
+                convertirCaminataEnBorradorUseCase(idCaminataOrigen)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+            resultado.fold(
+                onSuccess = { borrador ->
+                    Log.d(TAG, "Caminata $idCaminataOrigen cargada: ${borrador.trazado.recorrido.size} puntos")
+                    idsPuntosDeCaminata = borrador.idsPuntosCapturados
+                    aplicarTrazadoImportado(borrador.trazado, "Caminata cargada")
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo cargar la caminata $idCaminataOrigen", error)
+                    val mensaje = if (error is IllegalArgumentException || error is IllegalStateException) error.message else null
+                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensaje?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_CAMINATA_ERROR))
+                }
+            )
+        }
+    }
+
     // Leer el archivo elegido e importar su trazado; si ya hay un recorrido marcado, pide confirmar antes de reemplazarlo
     private fun importarTrazado(uri: String) {
         if (_estadoVisual.value.estaImportandoTrazado) return
@@ -473,7 +511,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
 
     // Cargar el trazado importado: recorrido, tipo, nombre si estaba vacío y distancia del mapa; con alturas en el archivo usa ese
     // perfil y, si no, lo pide a la red como al cerrar el editor
-    private fun aplicarTrazadoImportado(trazado: TrazadoImportado) {
+    private fun aplicarTrazadoImportado(trazado: TrazadoImportado, origen: String = "Recorrido importado") {
         _estadoVisual.update { estadoActual ->
             val conTrazado = seguirDistanciaDelMapa(
                 estadoActual.copy(
@@ -492,7 +530,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         // Un cálculo anterior ya no corresponde a este trazado
         if (trazado.perfil != null) trabajoPerfil?.cancel()
         if (trazado.perfil == null) calcularPerfil(forzar = false)
-        emitirEfecto(FormularioSenderoEfecto.MostrarAviso("Recorrido importado: ${trazado.recorrido.size} puntos"))
+        emitirEfecto(FormularioSenderoEfecto.MostrarAviso("$origen: ${trazado.recorrido.size} puntos"))
     }
 
     // Guardar el perfil en el estado y completar desnivel y alturas con la misma regla que la sincronización
@@ -732,11 +770,22 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                     _estadoVisual.update { estadoPrevio ->
                         estadoPrevio.copy(estaGuardando = false, hayCambiosSinGuardar = false)
                     }
+                    retirarPuntosDeLaCaminata()
                     canalEfectos.send(FormularioSenderoEfecto.SenderoGuardado(senderoGuardado.id))
                 },
                 onFailure = { error -> manejarFalloDeGuardado(error) }
             )
         }
+    }
+
+    // Retirar de los pendientes los puntos de la caminata de origen, que ya quedaron dentro del sendero guardado; si falla solo se registra,
+    // porque el sendero ya está guardado y los puntos pendientes se pueden volver a ver desde el historial
+    private suspend fun retirarPuntosDeLaCaminata() {
+        if (idsPuntosDeCaminata.isEmpty()) return
+        retirarPuntosIncorporadosUseCase(idsPuntosDeCaminata).onFailure { error ->
+            Log.e(TAG, "No se pudieron retirar los puntos de la caminata", error)
+        }
+        idsPuntosDeCaminata = emptySet()
     }
 
     private suspend fun manejarFalloDeGuardado(error: Throwable) {

@@ -276,7 +276,7 @@ class MainActivity : ComponentActivity() {
                             }
                             FormularioSenderoPantalla(
                                 viewModel = viewModelAsistidoDeDestino<FormularioSenderoViewModel, FormularioSenderoViewModel.Fabrica>(clave) { fabrica ->
-                                    fabrica.crear(idEditado)
+                                    fabrica.crear(idEditado, null)
                                 },
                                 alVolver = { salir(idEditado) },
                                 alGuardar = { idGuardado -> salir(idGuardado) }
