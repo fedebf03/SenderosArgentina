@@ -27,6 +27,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -56,6 +59,7 @@ fun PerfilPantalla(
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarALoginActual by rememberUpdatedState(alNavegarALogin)
     val navegarAHistorialActual by rememberUpdatedState(alNavegarAHistorialDetalle)
+    val estadoAvisos = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         Log.d(TAG, "Pantalla inicializada / rotación completada")
@@ -66,6 +70,7 @@ fun PerfilPantalla(
                     navegarALoginActual()
                 }
                 is PerfilEfecto.NavegarAHistorialDetalle -> navegarAHistorialActual(efecto.idRecorrido)
+                is PerfilEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
         }
     }
@@ -75,7 +80,8 @@ fun PerfilPantalla(
     PerfilContenido(
         estadoVisual = estadoVisual,
         alProcesarEvento = viewModel::procesarEvento,
-        alNavegarASeccion = alNavegarASeccion
+        alNavegarASeccion = alNavegarASeccion,
+        estadoAvisos = estadoAvisos
     )
 }
 
@@ -84,10 +90,12 @@ fun PerfilContenido(
     estadoVisual: PerfilEstadoVisual,
     alProcesarEvento: (PerfilEvento) -> Unit,
     modifier: Modifier = Modifier,
-    alNavegarASeccion: (SeccionPrincipal) -> Unit = {}
+    alNavegarASeccion: (SeccionPrincipal) -> Unit = {},
+    estadoAvisos: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(hostState = estadoAvisos) },
         topBar = { CabeceraPrincipal(usuario = estadoVisual.usuario, alTocarAvatar = null) },
         bottomBar = { BotoneraInferior(SeccionPrincipal.PERFIL, alNavegarASeccion) }
     ) { espaciadoInterno ->
@@ -171,6 +179,8 @@ private fun CuerpoPerfil(
             mensajeError = estadoVisual.mensajeError,
             alSeleccionar = { idRecorrido -> alProcesarEvento(PerfilEvento.AlSeleccionarRecorrido(idRecorrido)) }
         )
+
+        SeccionCopiaSeguridad(estadoVisual, alProcesarEvento)
 
         BotonSecundario(
             texto = "Cerrar sesión",

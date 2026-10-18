@@ -12,6 +12,12 @@ import com.unaj.senderos.core.testing.FalsoPreferenciasAplicacion
 import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
 import com.unaj.senderos.core.testing.crearRecorridoDePrueba
 import com.unaj.senderos.core.domain.usecase.ObservarRecorridosUseCase
+import com.unaj.senderos.core.domain.usecase.ExportarCopiaSeguridadUseCase
+import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.ImportarCopiaSeguridadUseCase
+import com.unaj.senderos.core.testing.FalsoEscritorArchivos
+import com.unaj.senderos.core.testing.FalsoFormatoCopiaSeguridad
+import com.unaj.senderos.core.testing.FalsoLectorArchivos
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
@@ -56,7 +62,14 @@ class PerfilViewModelTest {
             cerrarSesionUseCase = CerrarSesionUseCase(autenticacion, FalsoSenderoRepositorio(), FalsoLanzadorSeguimiento(), FalsoNotificador()),
             preferenciasAplicacion = preferencias,
             observarRecorridosUseCase = ObservarRecorridosUseCase(repositorioRecorridos, autenticacion),
-            controlSeguimiento = controlSeguimiento
+            controlSeguimiento = controlSeguimiento,
+            exportarCopiaSeguridadUseCase = ExportarCopiaSeguridadUseCase(
+                FalsoSenderoRepositorio(), autenticacion, FalsoEscritorArchivos(), FalsoFormatoCopiaSeguridad()
+            ),
+            importarCopiaSeguridadUseCase = ImportarCopiaSeguridadUseCase(
+                FalsoSenderoRepositorio(), autenticacion, FalsoLectorArchivos(), FalsoFormatoCopiaSeguridad(),
+                GuardarSenderoUseCase(FalsoSenderoRepositorio(), autenticacion)
+            )
         )
     }
 

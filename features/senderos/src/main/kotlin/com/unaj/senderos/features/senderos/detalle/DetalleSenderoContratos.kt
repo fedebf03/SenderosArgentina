@@ -1,6 +1,7 @@
 package com.unaj.senderos.features.senderos.detalle
 
 import com.unaj.senderos.core.ui.sendero.PuntoDeInteres
+import com.unaj.senderos.core.domain.usecase.FormatoExportacion
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.core.domain.model.Sendero
@@ -16,6 +17,7 @@ data class DetalleSenderoEstadoVisual(
     val seccionesExpandidas: Set<SeccionDetalle> = emptySet(),
     val esMenuOpcionesVisible: Boolean = false,
     val esDialogoEliminarVisible: Boolean = false,
+    val esDialogoExportarVisible: Boolean = false,
     val hayRecorridoEnCursoEnEsteSendero: Boolean = false,
     val esRecorridoEnCursoSimulado: Boolean = false,
     val nombreSenderoEnCursoAReemplazar: String? = null,
@@ -44,6 +46,10 @@ data class DetalleSenderoEstadoVisual(
 }
 
 sealed interface DetalleSenderoEvento {
+    data object AlTocarExportar : DetalleSenderoEvento
+    data object AlCerrarExportar : DetalleSenderoEvento
+    data class AlElegirFormatoExportacion(val formato: FormatoExportacion) : DetalleSenderoEvento
+    data class AlExportarSendero(val formato: FormatoExportacion, val uri: String) : DetalleSenderoEvento
     data object AlVolver : DetalleSenderoEvento
     data object AlAlternarFavorito : DetalleSenderoEvento
     data object AlCompartir : DetalleSenderoEvento
@@ -90,4 +96,6 @@ sealed interface DetalleSenderoEfecto {
     data class NavegarAEdicion(val idSendero: String) : DetalleSenderoEfecto
     data object SolicitarPermisoUbicacion : DetalleSenderoEfecto
     data class NavegarARecorrido(val idSendero: String) : DetalleSenderoEfecto
+    // Abrir el selector del sistema para elegir dónde guardar el archivo exportado
+    data class ElegirDestinoExportacion(val formato: FormatoExportacion, val nombreArchivo: String) : DetalleSenderoEfecto
 }

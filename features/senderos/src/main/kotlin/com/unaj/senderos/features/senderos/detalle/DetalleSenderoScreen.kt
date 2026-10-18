@@ -132,6 +132,9 @@ fun DetalleSenderoPantalla(
         }
     }
 
+    val abrirSelectorExportacion = recordarSelectoresExportacion(viewModel::procesarEvento)
+    val abrirSelectorExportacionActual by rememberUpdatedState(abrirSelectorExportacion)
+
     LaunchedEffect(Unit) {
         viewModel.efectoVisual.collect { efecto ->
             when (efecto) {
@@ -146,6 +149,7 @@ fun DetalleSenderoPantalla(
                     }
                 }
                 is DetalleSenderoEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
+                is DetalleSenderoEfecto.ElegirDestinoExportacion -> abrirSelectorExportacionActual(efecto.formato, efecto.nombreArchivo)
                 is DetalleSenderoEfecto.CompartirSendero -> {
                     val intencionCompartir = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -306,6 +310,10 @@ fun DetalleSenderoContenido(
             textoDescartar = "Seguir publicado",
             alDescartar = { alProcesarEvento(DetalleSenderoEvento.AlCancelarHacerPrivado) }
         )
+    }
+
+    if (estadoVisual.esDialogoExportarVisible) {
+        DialogoFormatoExportacion(alProcesarEvento)
     }
 
     if (estadoVisual.esDialogoEliminarVisible && estadoVisual.sendero != null) {
