@@ -2,6 +2,8 @@ package com.unaj.senderos.core.network.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.unaj.senderos.core.network.FirestorePerfilFuenteRemota
+import com.unaj.senderos.core.network.PerfilFuenteRemota
 import com.unaj.senderos.core.network.FirestoreRecorridoFuenteRemota
 import com.unaj.senderos.core.network.FirestoreSenderoFuenteRemota
 import com.unaj.senderos.core.network.FirestoreSenderoPublicoFuenteRemota
@@ -35,6 +37,9 @@ abstract class NetworkModule {
 
     @Binds
     abstract fun bindSenderoPublicoFuenteRemota(impl: FirestoreSenderoPublicoFuenteRemota): SenderoPublicoFuenteRemota
+
+    @Binds
+    abstract fun bindPerfilFuenteRemota(impl: FirestorePerfilFuenteRemota): PerfilFuenteRemota
 
     @Binds
     abstract fun bindFuenteAutenticacion(impl: FirebaseFuenteAutenticacion): FuenteAutenticacion

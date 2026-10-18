@@ -9,7 +9,10 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
@@ -56,6 +59,46 @@ class FirebaseFuenteAutenticacion @Inject constructor(
             Result.failure(Exception(mensaje, excepcion))
         }
     }
+
+    // Cambiar el nombre que Firebase guarda en la cuenta, el mismo que ven los demás en los senderos públicos
+    override suspend fun actualizarNombre(nombre: String): Result<Unit> {
+        val usuario = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
+        return try {
+            usuario.updateProfile(userProfileChangeRequest { displayName = nombre }).await()
+            Result.success(Unit)
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "No se pudo actualizar el nombre de la cuenta", error)
+            Result.failure(error)
+        }
+    }
+
+    // Confirmar la identidad con la clave actual y recién entonces cambiarla; Firebase lo exige para una operación sensible
+    override suspend fun cambiarContrasena(claveActual: String, claveNueva: String): Result<Unit> {
+        val usuario = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
+        val correo = usuario.email ?: return Result.failure(IllegalStateException("La cuenta no tiene un correo"))
+        return try {
+            usuario.reauthenticate(EmailAuthProvider.getCredential(correo, claveActual)).await()
+            usuario.updatePassword(claveNueva).await()
+            Result.success(Unit)
+        } catch (excepcion: CancellationException) {
+            throw excepcion
+        } catch (error: Exception) {
+            Log.e(TAG, "No se pudo cambiar la contraseña", error)
+            val mensaje = when (error) {
+                is FirebaseAuthInvalidCredentialsException -> "La contraseña actual no es correcta"
+                is FirebaseAuthWeakPasswordException -> "La contraseña nueva es muy débil"
+                is FirebaseAuthRecentLoginRequiredException -> "Volvé a iniciar sesión para cambiar la contraseña"
+                is FirebaseNetworkException -> "Sin conexión a internet"
+                else -> "No se pudo cambiar la contraseña"
+            }
+            Result.failure(Exception(mensaje, error))
+        }
+    }
+
+    override fun tieneContrasena(): Boolean =
+        firebaseAuth.currentUser?.providerData?.any { proveedor -> proveedor.providerId == EmailAuthProvider.PROVIDER_ID } == true
 
     override fun obtenerUsuarioActual(): UsuarioRed? {
         return firebaseAuth.currentUser?.aUsuarioRed()

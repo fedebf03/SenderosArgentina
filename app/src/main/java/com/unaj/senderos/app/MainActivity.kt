@@ -43,6 +43,8 @@ import com.unaj.senderos.features.auth.login.LoginViewModel
 import com.unaj.senderos.features.mapa.MapaSenderosPantalla
 import com.unaj.senderos.features.mapa.MapaSenderosViewModel
 import com.unaj.senderos.features.perfil.PerfilPantalla
+import com.unaj.senderos.features.perfil.editar.EditarPerfilPantalla
+import com.unaj.senderos.features.perfil.editar.EditarPerfilViewModel
 import com.unaj.senderos.features.perfil.PerfilViewModel
 import com.unaj.senderos.features.recorrido.RecorridoPantalla
 import com.unaj.senderos.features.recorrido.RecorridoViewModel
@@ -209,8 +211,25 @@ class MainActivity : ComponentActivity() {
                             alNavegarASeccion = navegarASeccion,
                             alNavegarAHistorialDetalle = { idRecorrido ->
                                 pantallaActual = DestinoPantalla.HistorialDetalle(idRecorrido)
-                            }
+                            },
+                            alNavegarAEditarPerfil = { pantallaActual = DestinoPantalla.EditarPerfil }
                         )
+                        is DestinoPantalla.EditarPerfil -> {
+                            val clave = "editar-perfil-$idUsuario"
+                            // Al salir se liberan las pantallas que muestran el nombre o la foto, para que se vuelvan a armar con el perfil nuevo
+                            val salirAlPerfil = {
+                                pantallaActual = DestinoPantalla.Perfil
+                                almacenDestinos.liberarDestino(clave)
+                                listOf("explorar", "mis-senderos", "perfil").forEach { seccion ->
+                                    almacenDestinos.liberarDestino("$seccion-$idUsuario")
+                                }
+                            }
+                            EditarPerfilPantalla(
+                                viewModel = viewModelDeDestino<EditarPerfilViewModel>(clave),
+                                alVolver = salirAlPerfil,
+                                alGuardar = salirAlPerfil
+                            )
+                        }
                         is DestinoPantalla.HistorialDetalle -> {
                             val clave = "historial-$idUsuario-${destino.idRecorrido}"
                             HistorialDetallePantalla(

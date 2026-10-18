@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,11 +55,13 @@ fun PerfilPantalla(
     viewModel: PerfilViewModel,
     alNavegarALogin: () -> Unit = {},
     alNavegarASeccion: (SeccionPrincipal) -> Unit = {},
-    alNavegarAHistorialDetalle: (String) -> Unit = {}
+    alNavegarAHistorialDetalle: (String) -> Unit = {},
+    alNavegarAEditarPerfil: () -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val navegarALoginActual by rememberUpdatedState(alNavegarALogin)
     val navegarAHistorialActual by rememberUpdatedState(alNavegarAHistorialDetalle)
+    val navegarAEditarPerfilActual by rememberUpdatedState(alNavegarAEditarPerfil)
     val estadoAvisos = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -70,6 +73,7 @@ fun PerfilPantalla(
                     navegarALoginActual()
                 }
                 is PerfilEfecto.NavegarAHistorialDetalle -> navegarAHistorialActual(efecto.idRecorrido)
+                is PerfilEfecto.NavegarAEditarPerfil -> navegarAEditarPerfilActual()
                 is PerfilEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
             }
         }
@@ -149,6 +153,23 @@ private fun CuerpoPerfil(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = if (nombre.isNotBlank()) 4.dp else 16.dp)
+        )
+        val ubicacion = listOf(usuario?.localidad, usuario?.provincia, usuario?.pais)
+            .filter { texto -> !texto.isNullOrBlank() }
+            .joinToString(", ")
+        if (ubicacion.isNotEmpty()) {
+            Text(
+                text = ubicacion,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        BotonSecundario(
+            texto = "Editar perfil",
+            alTocar = { alProcesarEvento(PerfilEvento.AlTocarEditarPerfil) },
+            icono = { IconoDeBoton(Icons.Outlined.Edit) },
+            modifier = Modifier.padding(top = 16.dp)
         )
 
         Row(

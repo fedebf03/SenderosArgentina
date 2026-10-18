@@ -15,6 +15,8 @@ import com.unaj.senderos.core.data.repository.RecorridoRepositorioOfflineFirst
 import com.unaj.senderos.core.data.repository.SenderoPublicoRepositorioImpl
 import com.unaj.senderos.core.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
+import com.unaj.senderos.core.data.perfil.PerfilRepositorioImpl
+import com.unaj.senderos.core.domain.repository.PerfilRepositorio
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacionWorkManager
 import com.unaj.senderos.core.data.sincronizacion.SolicitudSincronizacionWorkManager
 import com.unaj.senderos.core.domain.port.SolicitudSincronizacion
@@ -59,6 +61,10 @@ abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindAutenticacionRepositorio(impl: AutenticacionRepositorioImpl): AutenticacionRepositorio
+
+    @Binds
+    @Singleton
+    abstract fun bindPerfilRepositorio(impl: PerfilRepositorioImpl): PerfilRepositorio
 
     @Binds
     @Singleton

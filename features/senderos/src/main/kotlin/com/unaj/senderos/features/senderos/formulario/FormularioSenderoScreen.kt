@@ -1,6 +1,7 @@
 package com.unaj.senderos.features.senderos.formulario
 
 import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.DialogoOrigenFoto
 import com.unaj.senderos.core.ui.componentes.BarraSuperior
 import com.unaj.senderos.core.ui.componentes.BotonPrincipal
 import com.unaj.senderos.core.ui.componentes.IconoDeBoton

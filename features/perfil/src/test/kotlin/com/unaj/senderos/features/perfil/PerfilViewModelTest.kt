@@ -3,6 +3,8 @@ package com.unaj.senderos.features.perfil
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
+import com.unaj.senderos.core.domain.usecase.SincronizarPerfilPendienteUseCase
+import com.unaj.senderos.core.testing.FalsoPerfilRepositorio
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
 import com.unaj.senderos.core.testing.FalsoControlSeguimiento
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
@@ -56,6 +58,8 @@ class PerfilViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private val perfiles = FalsoPerfilRepositorio()
+
     private fun crearViewModel(): PerfilViewModel {
         return PerfilViewModel(
             obtenerUsuarioActualUseCase = ObtenerUsuarioActualUseCase(autenticacion),
@@ -69,7 +73,8 @@ class PerfilViewModelTest {
             importarCopiaSeguridadUseCase = ImportarCopiaSeguridadUseCase(
                 FalsoSenderoRepositorio(), autenticacion, FalsoLectorArchivos(), FalsoFormatoCopiaSeguridad(),
                 GuardarSenderoUseCase(FalsoSenderoRepositorio(), autenticacion)
-            )
+            ),
+            sincronizarPerfilPendienteUseCase = SincronizarPerfilPendienteUseCase(perfiles, autenticacion)
         )
     }
 

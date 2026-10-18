@@ -12,6 +12,7 @@ import com.unaj.senderos.core.domain.usecase.ExportarCopiaSeguridadUseCase
 import com.unaj.senderos.core.domain.usecase.ImportarCopiaSeguridadUseCase
 import com.unaj.senderos.core.domain.usecase.ModoRestauracion
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
+import com.unaj.senderos.core.domain.usecase.SincronizarPerfilPendienteUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +36,8 @@ class PerfilViewModel @Inject constructor(
     private val observarRecorridosUseCase: ObservarRecorridosUseCase,
     private val controlSeguimiento: ControlSeguimiento,
     private val exportarCopiaSeguridadUseCase: ExportarCopiaSeguridadUseCase,
-    private val importarCopiaSeguridadUseCase: ImportarCopiaSeguridadUseCase
+    private val importarCopiaSeguridadUseCase: ImportarCopiaSeguridadUseCase,
+    private val sincronizarPerfilPendienteUseCase: SincronizarPerfilPendienteUseCase
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(
@@ -49,9 +51,23 @@ class PerfilViewModel @Inject constructor(
     val efectoVisual = canalEfectos.receiveAsFlow()
 
     init {
+        sincronizarPerfilPendiente()
         observarModoDemostracion()
         observarRecorridos()
         observarRecorridoEnCurso()
+    }
+
+    // Reintentar subir un perfil que se editó sin conexión; si falla queda pendiente y no molesta al usuario
+    private fun sincronizarPerfilPendiente() {
+        viewModelScope.launch {
+            try {
+                sincronizarPerfilPendienteUseCase()
+            } catch (excepcion: kotlinx.coroutines.CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Log.e(TAG, "No se pudo sincronizar el perfil pendiente", error)
+            }
+        }
     }
 
     fun procesarEvento(evento: PerfilEvento) {
@@ -64,6 +80,7 @@ class PerfilViewModel @Inject constructor(
                 Log.d(TAG, "Abriendo el recorrido ${evento.idRecorrido}")
                 viewModelScope.launch { canalEfectos.send(PerfilEfecto.NavegarAHistorialDetalle(evento.idRecorrido)) }
             }
+            is PerfilEvento.AlTocarEditarPerfil -> canalEfectos.trySend(PerfilEfecto.NavegarAEditarPerfil)
             is PerfilEvento.AlTocarCerrarSesion -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoCerrarSesionVisible = true) }
             }

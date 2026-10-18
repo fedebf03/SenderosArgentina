@@ -24,6 +24,7 @@ data class PerfilEstadoVisual(
 }
 
 sealed interface PerfilEvento {
+    data object AlTocarEditarPerfil : PerfilEvento
     data object AlTocarCerrarSesion : PerfilEvento
     data object AlConfirmarCerrarSesion : PerfilEvento
     data object AlCancelarCerrarSesion : PerfilEvento
@@ -37,6 +38,7 @@ sealed interface PerfilEvento {
 
 sealed interface PerfilEfecto {
     data object NavegarALogin : PerfilEfecto
+    data object NavegarAEditarPerfil : PerfilEfecto
     data class NavegarAHistorialDetalle(val idRecorrido: String) : PerfilEfecto
     data class MostrarAviso(val mensaje: String) : PerfilEfecto
 }
