@@ -161,6 +161,31 @@ class PuntosCapturadosRepositorioOfflineFirstTest {
         assertEquals("No se pudieron descartar los puntos", resultado.exceptionOrNull()?.message)
     }
 
+    // Los puntos de una caminata libre pasan al sendero nuevo con su foto: las filas se retiran pero los archivos se conservan
+    @Test
+    fun `retirar incorporados borra las filas y conserva los archivos de foto`() = runTest {
+        val repositorio = crearRepositorio()
+        repositorio.guardar(crearPuntoCapturadoDePrueba(id = "a", foto = "/fotos/a.jpg"))
+        repositorio.guardar(crearPuntoCapturadoDePrueba(id = "b", foto = "/fotos/b.jpg"))
+
+        val resultado = repositorio.retirarIncorporados("usuario-1", listOf("a"))
+
+        assertTrue(resultado.isSuccess)
+        assertEquals(listOf("b"), repositorio.observarPendientes("usuario-1", "sendero-1").first().map { punto -> punto.id })
+        assertTrue(almacenFotos.rutasBorradas.isEmpty())
+    }
+
+    @Test
+    fun `retirar incorporados informa un fallo de la base`() = runTest {
+        val repositorio = crearRepositorio()
+        repositorio.guardar(crearPuntoCapturadoDePrueba(id = "a"))
+        puntoDao.errorAlBorrar = IllegalStateException("SQLITE_BUSY")
+
+        val resultado = repositorio.retirarIncorporados("usuario-1", listOf("a"))
+
+        assertTrue(resultado.isFailure)
+    }
+
     @Test
     fun `los puntos se aislan por usuario y se conservan para el mismo usuario`() = runTest {
         val repositorio = crearRepositorio()

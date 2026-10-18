@@ -21,6 +21,8 @@ interface PuntosCapturadosRepositorio {
     // Borra también los archivos de las fotos
     suspend fun descartar(idUsuario: String, ids: Collection<String>): Result<Unit>
 
+    // Retirar los puntos que ya pasaron a un sendero nuevo (los de una caminata libre convertida), conservando los archivos de sus fotos
+    suspend fun retirarIncorporados(idUsuario: String, ids: Collection<String>): Result<Unit>
     // Incorporar los puntos elegidos al recorrido del sendero y borrarlos de los capturados en una sola transacción (todo o nada).
     // No se cancela con la pantalla. Las fotos de los puntos incorporados pasan al sendero y no se borran
     suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero>
