@@ -55,6 +55,15 @@ object CalculadoraSeguimiento {
         )
     }
 
+    // Iniciar el seguimiento de una caminata libre: sin trazado, solo con el identificador y el nombre de la caminata
+    fun iniciarCaminataLibre(idCaminata: String, nombre: String, ahora: Long): EstadoSeguimiento = EstadoSeguimiento(
+        idSendero = idCaminata,
+        nombreSendero = nombre,
+        trazado = emptyList(),
+        instanteInicioMilisegundos = ahora,
+        esCaminataLibre = true
+    )
+
     fun actualizar(
         estado: EstadoSeguimiento,
         lectura: LecturaUbicacion,
@@ -73,6 +82,7 @@ object CalculadoraSeguimiento {
             val conTrazado = extenderTrazadoCaminado(sinMover, lectura, esValida = false, precisionMaximaMetros = precisionMaximaMetros)
             return ResultadoSeguimiento(estado = reevaluarSenal(conTrazado, ahora), avisos = emptyList())
         }
+        if (estado.esCaminataLibre) return ResultadoSeguimiento(estado = actualizarCaminataLibre(estado, lectura, ahora, precisionMaximaMetros), avisos = emptyList())
         if (trazado.size < 2) {
             return ResultadoSeguimiento(
                 estado = estado.copy(
@@ -182,6 +192,34 @@ object CalculadoraSeguimiento {
         )
         val conTrazado = extenderTrazadoCaminado(nuevoEstado, lectura, esValida = true, precisionMaximaMetros = precisionMaximaMetros)
         return ResultadoSeguimiento(estado = conTrazado, avisos = avisos)
+    }
+
+    // Registrar una lectura válida de una caminata libre: suma la distancia desde la última posición aceptada (5 m o más), guarda velocidad,
+    // rumbo y trazado caminado; no calcula tramo, restante, desvío ni llegada porque no hay trazado
+    private fun actualizarCaminataLibre(
+        estado: EstadoSeguimiento,
+        lectura: LecturaUbicacion,
+        ahora: Long,
+        precisionMaximaMetros: Float
+    ): EstadoSeguimiento {
+        val nuevaPosicion = lectura.coordenada
+        val ultimaAceptada = estado.ultimaPosicionAceptada
+        val desplazamientoKilometros = ultimaAceptada?.let { anterior -> distanciaEnMetros(anterior, nuevaPosicion) / METROS_POR_KILOMETRO } ?: 0.0
+        val seAceptaMovimiento = ultimaAceptada == null || desplazamientoKilometros >= MOVIMIENTO_MINIMO_KILOMETROS
+        val distanciaSumada = if (ultimaAceptada != null && seAceptaMovimiento) desplazamientoKilometros else 0.0
+        val nuevoEstado = estado.copy(
+            rumboGrados = determinarRumbo(estado.rumboGrados, lectura, ultimaAceptada, desplazamientoKilometros * METROS_POR_KILOMETRO),
+            velocidadMetrosPorSegundo = lectura.velocidadMetrosPorSegundo,
+            velocidadMaximaMetrosPorSegundo = maxOf(estado.velocidadMaximaMetrosPorSegundo, lectura.velocidadMetrosPorSegundo ?: 0f),
+            posicionActual = nuevaPosicion,
+            ultimaPosicionAceptada = if (seAceptaMovimiento) nuevaPosicion else ultimaAceptada,
+            distanciaRecorridaKilometros = estado.distanciaRecorridaKilometros + distanciaSumada,
+            tiempoTranscurridoMilisegundos = ahora - estado.instanteInicioMilisegundos,
+            instanteUltimaLecturaMilisegundos = ahora,
+            instanteUltimaLecturaValidaMilisegundos = ahora,
+            calidadSenal = CalidadSenal.BUENA
+        )
+        return extenderTrazadoCaminado(nuevoEstado, lectura, esValida = true, precisionMaximaMetros = precisionMaximaMetros)
     }
 
     // Extender el trazado caminado con la lectura si su precisión no supera el límite del trazado: siempre la primera; después, una válida
