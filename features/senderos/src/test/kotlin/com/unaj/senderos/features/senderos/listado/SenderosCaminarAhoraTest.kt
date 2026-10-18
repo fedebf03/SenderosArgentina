@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.senderos.listado
 
+import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
+import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
+import com.unaj.senderos.core.testing.FalsoAlmacenBorradorRecorrido
+import com.unaj.senderos.core.domain.usecase.RecuperarRecorridoInterrumpidoUseCase
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
 import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
@@ -61,6 +65,7 @@ class SenderosCaminarAhoraTest {
             control,
             lanzador,
             ObtenerUsuarioActualUseCase(autenticacion),
+            RecuperarRecorridoInterrumpidoUseCase(FalsoAlmacenBorradorRecorrido(), FalsoRecorridoRepositorio(), FalsoPuntosCapturadosRepositorio(), autenticacion),
             { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) } }

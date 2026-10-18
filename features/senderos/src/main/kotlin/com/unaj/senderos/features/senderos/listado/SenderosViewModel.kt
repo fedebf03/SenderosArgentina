@@ -9,6 +9,7 @@ import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
 import com.unaj.senderos.core.domain.port.MonitorConectividad
 import com.unaj.senderos.core.domain.port.Reloj
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
+import com.unaj.senderos.core.domain.usecase.RecuperarRecorridoInterrumpidoUseCase
 import com.unaj.senderos.core.domain.port.ProveedorUbicacion
 import com.unaj.senderos.core.domain.usecase.ObservarSenderosDelUsuarioUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarSenderosPublicosUseCase
@@ -33,6 +34,7 @@ private const val NOMBRE_CAMINATA_LIBRE = "Caminata libre"
 private const val MENSAJE_SIN_PERMISO_PARA_CAMINAR = "Sin el permiso de ubicación precisa no podemos registrar tu caminata"
 private const val MENSAJE_RECORRIDO_EN_CURSO = "Ya tenés un recorrido en curso: terminalo antes de empezar una caminata"
 private const val MENSAJE_SIN_SESION = "Iniciá sesión para empezar una caminata"
+private const val MENSAJE_ERROR_AL_RECUPERAR = "No se pudo recuperar el recorrido. Probá de nuevo"
 
 @HiltViewModel(assistedFactory = SenderosViewModel.Fabrica::class)
 class SenderosViewModel @AssistedInject constructor(
@@ -44,6 +46,7 @@ class SenderosViewModel @AssistedInject constructor(
     private val controlSeguimiento: ControlSeguimiento,
     private val lanzadorSeguimiento: LanzadorSeguimiento,
     private val obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
+    private val recuperarRecorridoInterrumpidoUseCase: RecuperarRecorridoInterrumpidoUseCase,
     private val reloj: Reloj
 ) : ViewModel() {
 
@@ -62,6 +65,7 @@ class SenderosViewModel @AssistedInject constructor(
 
     init {
         observarConexion(monitorConectividad)
+        if (modo == ModoListado.EXPLORAR) buscarRecorridoInterrumpido()
         if (modo == ModoListado.EXPLORAR) observarPublicos(observarSenderosPublicosUseCase)
         observarSenderos(
             observarSenderosDelUsuarioUseCase,
@@ -125,6 +129,8 @@ class SenderosViewModel @AssistedInject constructor(
             is SenderosEvento.AlTocarCrearSendero -> emitir(SenderosEfecto.NavegarACreacion)
             is SenderosEvento.AlTocarCaminarAhora -> emitir(SenderosEfecto.SolicitarPermisoUbicacionParaCaminar)
             is SenderosEvento.AlCaminarAhora -> caminarAhora()
+            is SenderosEvento.AlRecuperarRecorrido -> recuperarRecorrido()
+            is SenderosEvento.AlDescartarRecorridoInterrumpido -> descartarRecorridoInterrumpido()
             is SenderosEvento.AlDenegarPermisoParaCaminar -> emitir(SenderosEfecto.MostrarAviso(MENSAJE_SIN_PERMISO_PARA_CAMINAR))
             is SenderosEvento.AlSeleccionarSendero -> {
                 val esPublicoDeOtro = _estadoVisual.value.esPublicoDeOtro(evento.idSendero)
@@ -136,6 +142,59 @@ class SenderosViewModel @AssistedInject constructor(
                     }
                 )
             }
+        }
+    }
+
+    // Al abrir Explorar, ofrecer el recorrido que quedó a medias; con un recorrido en marcha no se ofrece nada porque el borrador es el de ese mismo
+    private fun buscarRecorridoInterrumpido() {
+        if (controlSeguimiento.estado.value != null) return
+        viewModelScope.launch {
+            val interrumpido = try {
+                recuperarRecorridoInterrumpidoUseCase.buscar()
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Log.e(TAG, "No se pudo buscar un recorrido interrumpido", error)
+                null
+            }
+            _estadoVisual.update { estado -> estado.copy(recorridoInterrumpido = interrumpido) }
+        }
+    }
+
+    // Guardar el recorrido interrumpido en el historial y abrirlo; si falla, avisa y el borrador queda para reintentar
+    private fun recuperarRecorrido() {
+        viewModelScope.launch {
+            val resultado = try {
+                recuperarRecorridoInterrumpidoUseCase.recuperar()
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+            resultado.fold(
+                onSuccess = { recorrido ->
+                    _estadoVisual.update { estado -> estado.copy(recorridoInterrumpido = null) }
+                    emitir(SenderosEfecto.NavegarAHistorialDetalle(recorrido.id))
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo recuperar el recorrido interrumpido", error)
+                    emitir(SenderosEfecto.MostrarAviso(MENSAJE_ERROR_AL_RECUPERAR))
+                }
+            )
+        }
+    }
+
+    // Descartar el recorrido interrumpido y cerrar el aviso
+    private fun descartarRecorridoInterrumpido() {
+        viewModelScope.launch {
+            try {
+                recuperarRecorridoInterrumpidoUseCase.descartar().onFailure { error ->
+                    Log.e(TAG, "No se pudo descartar el recorrido interrumpido", error)
+                }
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            }
+            _estadoVisual.update { estado -> estado.copy(recorridoInterrumpido = null) }
         }
     }
 
