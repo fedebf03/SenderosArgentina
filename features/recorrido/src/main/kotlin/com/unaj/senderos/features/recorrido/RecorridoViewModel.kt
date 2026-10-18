@@ -31,6 +31,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
+import com.unaj.senderos.core.domain.port.FuentePresion
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,6 +63,7 @@ class RecorridoViewModel @AssistedInject constructor(
     incorporarPuntosCapturadosUseCase: IncorporarPuntosCapturadosUseCase,
     descartarPuntosCapturadosUseCase: DescartarPuntosCapturadosUseCase,
     private val obtenerPronosticoUseCase: ObtenerPronosticoUseCase,
+    private val fuentePresion: FuentePresion = FuentePresion { emptyFlow() },
     private val reloj: Reloj = Reloj(System::currentTimeMillis)
 ) : ViewModel() {
 
@@ -104,6 +110,7 @@ class RecorridoViewModel @AssistedInject constructor(
         if (!IdentificadorCaminataLibre.esDeCaminataLibre(idSendero)) observarSendero()
         observarSeguimiento()
         observarAvisos()
+        observarPresion()
         observarRevisionDePuntos()
         esperarInicioDelServicio()
     }
@@ -378,6 +385,20 @@ class RecorridoViewModel @AssistedInject constructor(
         if (!_estadoVisual.value.esSimulado || valor !in MULTIPLICADORES_SIMULACION) return
         Log.d(TAG, "Velocidad de la simulación: x$valor")
         controlSeguimiento.cambiarMultiplicadorSimulacion(valor)
+    }
+
+    // Mostrar la presión del barómetro en hectopascales enteros, que cambian poco; sin barómetro el flujo falla y simplemente no se muestra
+    private fun observarPresion() {
+        viewModelScope.launch {
+            fuentePresion.observarPresion()
+                .map { hectopascales -> hectopascales.roundToInt() }
+                .distinctUntilChanged()
+                .catch { error ->
+                    if (error is CancellationException) throw error
+                    Log.d(TAG, "Sin barómetro: ${error.message}")
+                }
+                .collect { hectopascales -> _estadoVisual.update { estadoActual -> estadoActual.copy(presionHectopascales = hectopascales) } }
+        }
     }
 
     private fun observarAvisos() {

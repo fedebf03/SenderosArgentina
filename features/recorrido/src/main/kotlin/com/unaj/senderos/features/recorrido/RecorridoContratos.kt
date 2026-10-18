@@ -69,7 +69,9 @@ data class RecorridoEstadoVisual(
     // Caminata sin sendero previo: no hay trazado planificado, restante ni perfil; al finalizar se ofrece convertirla en un sendero nuevo
     val esCaminataLibre: Boolean = false,
     // Clima del lugar donde está el usuario, con el último pronóstico obtenido o guardado; nulo hasta tenerlo
-    val clima: ResultadoPronostico? = null
+    val clima: ResultadoPronostico? = null,
+    // Presión atmosférica del barómetro del equipo en hectopascales; nula si no tiene barómetro o todavía no midió
+    val presionHectopascales: Int? = null
 ) {
     // Avisos del clima de ahora y del día de hoy (el primero del pronóstico), que cambian cómo conviene seguir caminando
     val alertasClima: Set<AlertaClima>

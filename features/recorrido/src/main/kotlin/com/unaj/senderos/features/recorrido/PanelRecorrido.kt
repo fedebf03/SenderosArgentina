@@ -40,6 +40,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.ui.componentes.BotonPrincipal
@@ -196,8 +198,10 @@ internal fun DatosFlotantesRecorrido(
 // Sin clima (sin conexión y sin copia guardada) no se dibuja nada
 @Composable
 private fun ClimaDelRecorrido(estadoVisual: RecorridoEstadoVisual, alTocar: () -> Unit) {
-    val resultado = estadoVisual.clima ?: return
-    val actual = resultado.pronostico.actual
+    val resultado = estadoVisual.clima
+    val presion = estadoVisual.presionHectopascales
+    if (resultado == null && presion == null) return
+    val actual = resultado?.pronostico?.actual
     val alertas = estadoVisual.alertasClima
     Row(
         modifier = Modifier
@@ -206,21 +210,23 @@ private fun ClimaDelRecorrido(estadoVisual: RecorridoEstadoVisual, alTocar: () -
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = elegirIconoClima(actual.condicion, actual.esDeDia),
-            contentDescription = actual.condicion.descripcion,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp)
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(text = formatearTemperaturaClima(actual.temperaturaCelsius), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = if (resultado.estaDesactualizado) "${actual.condicion.descripcion} · sin conexión" else actual.condicion.descripcion,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
-        )
+        if (resultado != null && actual != null) {
+            Icon(
+                imageVector = elegirIconoClima(actual.condicion, actual.esDeDia),
+                contentDescription = actual.condicion.descripcion,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(text = formatearTemperaturaClima(actual.temperaturaCelsius), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = if (resultado.estaDesactualizado) "${actual.condicion.descripcion} · sin conexión" else actual.condicion.descripcion,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.weight(1f))
         if (alertas.isNotEmpty()) {
             Icon(imageVector = Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
@@ -229,6 +235,15 @@ private fun ClimaDelRecorrido(estadoVisual: RecorridoEstadoVisual, alTocar: () -
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.error
+            )
+        }
+        if (presion != null) {
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "$presion hPa",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.semantics { contentDescription = "Presión atmosférica: $presion hectopascales" }
             )
         }
     }
