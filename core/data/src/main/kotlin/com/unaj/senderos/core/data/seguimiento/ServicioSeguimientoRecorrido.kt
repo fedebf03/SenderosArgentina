@@ -73,9 +73,10 @@ class ServicioSeguimientoRecorrido : Service() {
                 .putExtra(EXTRA_ES_SIMULADO, esSimulado)
         }
 
-        fun crearIntencionIniciarCaminataLibre(contexto: Context, idUsuario: String, nombre: String): Intent {
+        fun crearIntencionIniciarCaminataLibre(contexto: Context, idCaminata: String, idUsuario: String, nombre: String): Intent {
             return Intent(contexto, ServicioSeguimientoRecorrido::class.java)
                 .setAction(ACCION_INICIAR_CAMINATA_LIBRE)
+                .putExtra(EXTRA_ID_SENDERO, idCaminata)
                 .putExtra(EXTRA_ID_USUARIO, idUsuario)
                 .putExtra(EXTRA_NOMBRE, nombre)
         }
@@ -142,7 +143,11 @@ class ServicioSeguimientoRecorrido : Service() {
             return START_NOT_STICKY
         }
         if (intent?.action == ACCION_INICIAR_CAMINATA_LIBRE) {
-            iniciarCaminataLibre(intent.getStringExtra(EXTRA_ID_USUARIO).orEmpty(), intent.getStringExtra(EXTRA_NOMBRE).orEmpty())
+            iniciarCaminataLibre(
+                intent.getStringExtra(EXTRA_ID_SENDERO).orEmpty(),
+                intent.getStringExtra(EXTRA_ID_USUARIO).orEmpty(),
+                intent.getStringExtra(EXTRA_NOMBRE).orEmpty()
+            )
             return START_NOT_STICKY
         }
         val idSendero = intent?.getStringExtra(EXTRA_ID_SENDERO)
@@ -170,20 +175,21 @@ class ServicioSeguimientoRecorrido : Service() {
         return START_NOT_STICKY
     }
 
-    // Pasar a primer plano y comenzar una caminata libre con GPS real; el identificador de la caminata lo conoce el control y llega a la notificación con el primer estado
-    private fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+    // Pasar a primer plano y comenzar una caminata libre con GPS real, con el identificador que dio la pantalla
+    private fun iniciarCaminataLibre(idCaminata: String, idUsuario: String, nombre: String) {
         esSimuladoActual = false
-        if (!pasarAPrimerPlano("")) return
-        if (idUsuario.isBlank()) {
-            Log.e(TAG, "Se inició una caminata libre sin usuario")
+        if (!pasarAPrimerPlano(idCaminata)) return
+        if (idCaminata.isBlank() || idUsuario.isBlank()) {
+            Log.e(TAG, "Se inició una caminata libre sin identificador o sin usuario")
             detenerServicio()
             return
         }
+        idSenderoActual = idCaminata
         if (tieneAcelerometro) adquirirBloqueoParcial()
         trabajoInicio?.cancel()
         trabajoInicio = alcance.launch {
             try {
-                control.iniciarCaminataLibre(idUsuario, nombre)
+                control.iniciarCaminataLibre(idCaminata, idUsuario, nombre)
             } catch (excepcion: CancellationException) {
                 throw excepcion
             } catch (error: Exception) {

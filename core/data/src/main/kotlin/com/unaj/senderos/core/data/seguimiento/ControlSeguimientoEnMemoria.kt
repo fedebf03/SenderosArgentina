@@ -14,7 +14,6 @@ import com.unaj.senderos.core.domain.port.ProveedorDeclinacion
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
-import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.core.domain.model.PuntoCapturado
@@ -143,7 +142,7 @@ class ControlSeguimientoEnMemoria(
     }
 
     // Iniciar una caminata libre: no se busca ningún sendero; el recorrido anterior se guarda y el nuevo registra solo lo caminado, con GPS real
-    override suspend fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+    override suspend fun iniciarCaminataLibre(idCaminata: String, idUsuario: String, nombre: String) {
         val miGeneracion = ++generacion
         cerrojoInicio.withLock {
             cerrarSeguimientoAnterior()
@@ -154,7 +153,7 @@ class ControlSeguimientoEnMemoria(
             val estaMidiendoPasos = prepararSensores(esSimulado = false)
             val instanteInicio = reloj()
             val estadoInicial = CalculadoraSeguimiento
-                .iniciarCaminataLibre(IdentificadorCaminataLibre.crear(instanteInicio), nombre, instanteInicio)
+                .iniciarCaminataLibre(idCaminata, nombre, instanteInicio)
                 .copy(
                     calidadSenal = CalidadSenal.BUSCANDO,
                     pasos = if (estaMidiendoPasos) 0 else null,
