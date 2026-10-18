@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.testing.FalsoAlmacenPronosticos
+import com.unaj.senderos.core.testing.FalsaFuentePronostico
+import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
 import com.unaj.senderos.core.domain.model.ResultadoCaptura
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.core.domain.model.Coordenada
@@ -80,7 +83,8 @@ class RecorridoPuntosViewModelTest {
             ),
             observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorioSenderos, repositorioPuntos, autenticacion),
             incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),
-            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(repositorioPuntos, autenticacion)
+            descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(repositorioPuntos, autenticacion),
+            obtenerPronosticoUseCase = ObtenerPronosticoUseCase(FalsaFuentePronostico(), FalsoAlmacenPronosticos()) { 0L }
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }

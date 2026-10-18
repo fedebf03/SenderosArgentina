@@ -1,5 +1,8 @@
 package com.unaj.senderos.features.recorrido
 
+import com.unaj.senderos.core.testing.FalsoAlmacenPronosticos
+import com.unaj.senderos.core.testing.FalsaFuentePronostico
+import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
 import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
 import com.unaj.senderos.core.ui.componentes.interpolarAltitud
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
@@ -94,6 +97,7 @@ class RecorridoViewModelTest {
             observarPuntosCapturadosConDistanciaUseCase = ObservarPuntosCapturadosConDistanciaUseCase(repositorio, FalsoPuntosCapturadosRepositorio(), autenticacion),
             incorporarPuntosCapturadosUseCase = IncorporarPuntosCapturadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion),
             descartarPuntosCapturadosUseCase = DescartarPuntosCapturadosUseCase(FalsoPuntosCapturadosRepositorio(), autenticacion),
+            obtenerPronosticoUseCase = ObtenerPronosticoUseCase(FalsaFuentePronostico(), FalsoAlmacenPronosticos()) { 0L },
             reloj = { relojActual }
         )
         CoroutineScope(despachadorPrueba).launch {
