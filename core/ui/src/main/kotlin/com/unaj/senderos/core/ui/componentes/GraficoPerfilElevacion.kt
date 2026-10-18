@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.configuracion.ConfiguracionElevacion
 import com.unaj.senderos.core.domain.model.Bioma
@@ -117,7 +118,8 @@ private class PaletaDelGrafico(
 )
 
 // Dibujar el perfil de elevación: área con degradé del color del bioma, ejes en km y m, puntos de interés,
-// guía vertical al tocar o arrastrar y, si se indica, la marca "Estás acá"
+// guía vertical al tocar o arrastrar y, si se indica, la marca "Estás acá". Con alturaFija el gráfico ocupa esa altura (franja del recorrido)
+// y, si no se muestra la posición en el texto, debajo solo aparece la lectura del punto tocado
 @Composable
 fun GraficoPerfilElevacion(
     perfil: PerfilElevacion,
@@ -126,6 +128,8 @@ fun GraficoPerfilElevacion(
     marcasDeInteres: List<MarcaDelPerfil> = emptyList(),
     kilometroActual: Double? = null,
     esCompacto: Boolean = false,
+    alturaFija: Dp? = null,
+    mostrarPosicionEnTexto: Boolean = true,
     alSeleccionarKilometro: ((Double) -> Unit)? = null
 ) {
     val coloresBioma = obtenerColoresDelBioma(bioma)
@@ -194,7 +198,7 @@ fun GraficoPerfilElevacion(
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val altura = if (esCompacto) {
+            val altura = alturaFija ?: if (esCompacto) {
                 (maxWidth * PROPORCION_ALTURA_COMPACTA).coerceIn(ALTURA_MINIMA_COMPACTA, ALTURA_MAXIMA_COMPACTA)
             } else {
                 (maxWidth * PROPORCION_ALTURA_NORMAL).coerceIn(ALTURA_MINIMA_NORMAL, ALTURA_MAXIMA_NORMAL)
@@ -251,7 +255,7 @@ fun GraficoPerfilElevacion(
                 indiceVigente?.let { indice -> dibujarGuia(area, perfil, indice, paleta) }
             }
         }
-        val textoLectura = describirLectura(perfil, indiceVigente, kilometroActual, esCompacto)
+        val textoLectura = describirLectura(perfil, indiceVigente, kilometroActual.takeIf { mostrarPosicionEnTexto }, esCompacto)
         if (textoLectura != null) {
             Text(
                 text = textoLectura,

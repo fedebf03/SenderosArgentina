@@ -171,6 +171,7 @@ fun RecorridoContenido(
                             modifier = Modifier.fillMaxSize(),
                             colorLinea = obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary),
                             posicionUsuario = estadoVisual.posicionUsuario,
+                            trazadoCaminado = estadoVisual.trazadoCaminado,
                             indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
                             alSeleccionarPunto = { indice -> alProcesarEvento(RecorridoEvento.AlSeleccionarPuntoEnMapa(indice)) },
                             modoNavegacion = ModoNavegacion(

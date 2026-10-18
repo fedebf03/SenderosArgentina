@@ -357,13 +357,14 @@ class ControlSeguimientoEnMemoriaTest {
         val control = crearControl()
         control.iniciar("con-recorrido")
         ubicaciones.emit(alSur(0.0))
-        ubicaciones.emit(LecturaUbicacion(Coordenada(LATITUD_BASE - 0.0003, LONGITUD_BASE), null, null, precisionMetros = 150f))
+        // A unos 2 m: no entra al trazado mientras se camina, pero es donde terminó el usuario
+        ubicaciones.emit(LecturaUbicacion(Coordenada(LATITUD_BASE - 0.00002, LONGITUD_BASE), null, null, precisionMetros = 5f))
         ubicaciones.emit(LecturaUbicacion(Coordenada(LATITUD_BASE - 0.0006, LONGITUD_BASE), null, null, precisionMetros = 400f))
 
         control.detener()
 
         val trazado = repositorioRecorridos.guardados.single().trazadoCaminado
-        assertEquals(listOf(Coordenada(LATITUD_BASE, LONGITUD_BASE), Coordenada(LATITUD_BASE - 0.0003, LONGITUD_BASE)), trazado)
+        assertEquals(listOf(Coordenada(LATITUD_BASE, LONGITUD_BASE), Coordenada(LATITUD_BASE - 0.00002, LONGITUD_BASE)), trazado)
     }
 
     @Test

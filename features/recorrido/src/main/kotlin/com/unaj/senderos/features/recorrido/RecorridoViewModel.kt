@@ -264,6 +264,7 @@ class RecorridoViewModel @AssistedInject constructor(
                 estadoActual.copy(
                     fase = FaseRecorrido.EN_CURSO,
                     posicionUsuario = estadoDelSendero.posicionActual,
+                    trazadoCaminado = estadoDelSendero.trazadoCaminado,
                     rumboGrados = estadoDelSendero.rumboEfectivoGrados,
                     velocidadActualMetrosPorSegundo = estadoDelSendero.velocidadMetrosPorSegundo,
                     velocidadPromedioKilometrosPorHora = estadoDelSendero.velocidadPromedioKilometrosPorHora,
