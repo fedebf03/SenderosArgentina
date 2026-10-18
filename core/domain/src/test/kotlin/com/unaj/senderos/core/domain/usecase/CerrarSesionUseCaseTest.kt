@@ -23,6 +23,8 @@ class CerrarSesionUseCaseTest {
         val casoDeUso = CerrarSesionUseCase(autenticacion, senderos, object : com.unaj.senderos.core.domain.port.LanzadorSeguimiento {
             override fun iniciar(idSendero: String, esSimulado: Boolean) = Unit
 
+            override fun iniciarCaminataLibre(idCaminata: String, idUsuario: String, nombre: String) = Unit
+
             override fun detener() {
                 eventos.add("seguimiento")
                 lanzador.detener()
