@@ -3,6 +3,7 @@ package com.unaj.senderos.features.recorrido
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
@@ -39,6 +40,7 @@ private const val TAG = "RECORRIDO"
 private const val PLAZO_INICIO_MILISEGUNDOS = 5_000L
 private const val MENSAJE_PUNTO_GUARDADO = "Punto guardado"
 private const val MENSAJE_ERROR_PUNTO = "No se pudo guardar el punto"
+private const val MENSAJE_SIN_POSICION_PARA_PUNTO = "Todavía no hay una posición válida del GPS; esperá a tener señal"
 
 @HiltViewModel(assistedFactory = RecorridoViewModel.Fabrica::class)
 class RecorridoViewModel @AssistedInject constructor(
@@ -79,6 +81,8 @@ class RecorridoViewModel @AssistedInject constructor(
     )
 
     private var estaCapturandoPunto = false
+    // Posición del momento en que se tocó el botón "+": el usuario sigue caminando mientras elige el tipo o saca la foto
+    private var posicionReservadaParaPunto: Coordenada? = null
     private var ultimoEstadoSeguimiento: EstadoSeguimiento? = null
     private var haVistoEstadoActivo = false
     private var estaFinalizando = false
@@ -98,6 +102,7 @@ class RecorridoViewModel @AssistedInject constructor(
         Log.d(TAG, "ViewModel → onCleared")
     }
 
+    // Procesar cada evento de la pantalla y traducirlo en cambios de estado o acciones sobre el seguimiento
     fun procesarEvento(evento: RecorridoEvento) {
         when (evento) {
             is RecorridoEvento.AlVolver, is RecorridoEvento.AlCerrarResumen -> {
@@ -169,10 +174,19 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
+    // Reservar la posición actual y abrir la hoja limpia; sin posición válida avisa en lugar de abrirla
     private fun abrirHojaPunto() {
-        if (!_estadoVisual.value.puedeAgregarPunto) return
-        _estadoVisual.update { estadoActual ->
-            estadoActual.copy(
+        val estadoActual = _estadoVisual.value
+        if (!estadoActual.puedeAgregarPunto || estadoActual.esHojaPuntoVisible) return
+        val posicion = estadoActual.posicionUsuario
+        if (posicion == null) {
+            emitirEfecto(RecorridoEfecto.MostrarAviso(MENSAJE_SIN_POSICION_PARA_PUNTO))
+            return
+        }
+        Log.d(TAG, "Se reserva la posición para un punto y se abre la hoja")
+        posicionReservadaParaPunto = posicion
+        _estadoVisual.update { estadoNuevo ->
+            estadoNuevo.copy(
                 esHojaPuntoVisible = true,
                 tipoPuntoElegido = TIPO_PUNTO_INICIAL,
                 notaPunto = "",
@@ -182,10 +196,13 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
+    // Cerrar la hoja y soltar la posición reservada
     private fun cerrarHojaPunto() {
+        posicionReservadaParaPunto = null
         _estadoVisual.update { estadoActual -> estadoActual.copy(esHojaPuntoVisible = false, mensajeErrorPunto = null) }
     }
 
+    // Guardar el punto con el tipo, la nota y la foto de la hoja, en la posición reservada al tocar el botón; un doble toque guarda una sola vez
     private fun guardarPunto() {
         if (estaCapturandoPunto) return
         val estadoActual = _estadoVisual.value
@@ -195,12 +212,14 @@ class RecorridoViewModel @AssistedInject constructor(
             val resultado = controlSeguimiento.capturarPunto(
                 tipo = estadoActual.tipoPuntoElegido,
                 nota = estadoActual.notaPunto.trim(),
-                uriFoto = estadoActual.fotoPunto
+                uriFoto = estadoActual.fotoPunto,
+                posicion = posicionReservadaParaPunto
             )
             estaCapturandoPunto = false
             resultado.fold(
                 onSuccess = { resultadoCaptura ->
                     Log.d(TAG, "Punto capturado: ${resultadoCaptura.punto.tipo}")
+                    posicionReservadaParaPunto = null
                     _estadoVisual.update { estadoNuevo ->
                         estadoNuevo.copy(esHojaPuntoVisible = false, estaGuardandoPunto = false)
                     }

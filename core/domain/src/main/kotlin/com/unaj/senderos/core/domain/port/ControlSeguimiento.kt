@@ -1,5 +1,6 @@
 package com.unaj.senderos.core.domain.port
 
+import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
 import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
@@ -32,7 +33,8 @@ interface ControlSeguimiento {
     // Cancelar el seguimiento activo descartando lo recorrido: no se guarda nada en el historial
     fun cancelar()
 
-    // Capturar un punto de interés en la última posición válida del recorrido activo, en simulación también.
-    // Copia la foto (Uri) a la carpeta privada si viene y guarda el punto al instante en la base local; falla con un mensaje claro si no hay recorrido o posición; con la señal débil el resultado informa la antigüedad de la posición usada
-    suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?): Result<ResultadoCaptura>
+    // Capturar un punto de interés en la posición reservada al tocar el botón o, si no viene, en la última posición válida del recorrido activo,
+    // en simulación también. Copia la foto (Uri) a la carpeta privada si viene y guarda el punto al instante en la base local; falla con un mensaje
+    // claro si no hay recorrido o posición; con la señal débil el resultado informa la antigüedad de la posición usada
+    suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?, posicion: Coordenada? = null): Result<ResultadoCaptura>
 }

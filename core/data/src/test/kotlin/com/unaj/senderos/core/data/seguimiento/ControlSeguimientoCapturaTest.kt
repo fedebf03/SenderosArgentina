@@ -86,6 +86,32 @@ class ControlSeguimientoCapturaTest {
         assertTrue(puntosCapturados.llamadasGuardar.isEmpty())
     }
 
+    // El usuario toca el botón, saca la foto y elige el tipo mientras sigue caminando: el punto va donde tocó
+    @Test
+    fun `capturar con una posicion reservada guarda el punto en esa posicion`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+        ubicaciones.emit(lectura(0.002))
+        val reservada = Coordenada(LATITUD_BASE - 0.001, LONGITUD_BASE)
+
+        control.capturarPunto(TipoPunto.AGUA, "Arroyo", null, posicion = reservada)
+
+        val guardado = puntosCapturados.llamadasGuardar.single()
+        assertEquals(reservada.latitud, guardado.latitud, 0.0)
+        assertEquals(reservada.longitud, guardado.longitud, 0.0)
+    }
+
+    @Test
+    fun `capturar con una posicion reservada funciona aunque ya no haya posicion valida`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+
+        val resultado = control.capturarPunto(TipoPunto.AGUA, "", null, posicion = Coordenada(LATITUD_BASE, LONGITUD_BASE))
+
+        assertTrue(resultado.isSuccess)
+        assertEquals(1, puntosCapturados.llamadasGuardar.size)
+    }
+
     @Test
     fun `capturar guarda el punto con la ultima posicion`() = runTest {
         val control = crearControl()
@@ -207,6 +233,20 @@ class ControlSeguimientoCapturaTest {
         control.capturarPunto(TipoPunto.MIRADOR, "", null)
 
         assertTrue(almacenFotos.rutasBorradas.isEmpty())
+    }
+
+    // La posición reservada se tomó al tocar el botón: no es antigua aunque la señal se haya debilitado mientras se sacaba la foto
+    @Test
+    fun `capturar con posicion reservada y senal debil no informa antiguedad`() = runTest {
+        val control = crearControl()
+        control.iniciar("s1")
+        ubicaciones.emit(lectura(0.002))
+        instante = 30_000L
+        advanceTimeBy(5_001L)
+
+        val resultado = control.capturarPunto(TipoPunto.MIRADOR, "nota", null, posicion = Coordenada(LATITUD_BASE, LONGITUD_BASE)).getOrThrow()
+
+        assertNull(resultado.antiguedadPosicionMilisegundos)
     }
 
     @Test
