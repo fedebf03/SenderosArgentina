@@ -24,6 +24,8 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -72,12 +74,14 @@ private val TAMANO_ICONO_AGREGAR_PUNTO = 32.dp
 fun RecorridoPantalla(
     viewModel: RecorridoViewModel,
     alVolverAlDetalle: () -> Unit,
+    alNavegarAFormularioDesdeCaminata: (String) -> Unit = {},
     solicitarCancelacion: Boolean = false,
     alAtenderSolicitudCancelacion: () -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val estadoAvisos = remember { SnackbarHostState() }
     val volverAlDetalleActual by rememberUpdatedState(alVolverAlDetalle)
+    val navegarAFormularioActual by rememberUpdatedState(alNavegarAFormularioDesdeCaminata)
     val contexto = LocalContext.current
     val accionesDeFoto = recordarAccionesDeFoto(
         alSeleccionarFoto = { uri -> viewModel.procesarEvento(RecorridoEvento.AlSeleccionarFotoPunto(uri)) },
@@ -108,6 +112,7 @@ fun RecorridoPantalla(
             when (efecto) {
                 is RecorridoEfecto.VolverAlDetalle -> volverAlDetalleActual()
                 is RecorridoEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
+                is RecorridoEfecto.NavegarAFormularioDesdeCaminata -> navegarAFormularioActual(efecto.idCaminata)
             }
         }
     }
@@ -146,7 +151,7 @@ fun RecorridoContenido(
         snackbarHost = { SnackbarHost(hostState = estadoAvisos) },
         topBar = {
             BarraSuperior(
-                titulo = estadoVisual.sendero?.nombre?.ifBlank { null } ?: "Recorrido en curso",
+                titulo = if (estadoVisual.esCaminataLibre) "Caminata libre" else estadoVisual.sendero?.nombre?.ifBlank { null } ?: "Recorrido en curso",
                 alVolver = { alProcesarEvento(RecorridoEvento.AlVolver) },
                 descripcionVolver = if (sigueActivo) "Volver. El recorrido sigue activo" else "Volver"
             )
@@ -159,7 +164,7 @@ fun RecorridoContenido(
                 alVolver = { alProcesarEvento(RecorridoEvento.AlVolver) },
                 modifier = Modifier.fillMaxSize().padding(espaciadoInterno)
             )
-            !mostrarRecorrido || sendero == null -> Box(
+            !mostrarRecorrido || (sendero == null && !estadoVisual.esCaminataLibre) -> Box(
                 modifier = Modifier.fillMaxSize().padding(espaciadoInterno),
                 contentAlignment = Alignment.Center
             ) {
@@ -173,10 +178,10 @@ fun RecorridoContenido(
                 val mapa: @Composable (Modifier) -> Unit = { modificadorMapa ->
                     Box(modifier = modificadorMapa) {
                         MapaRecorrido(
-                            puntos = sendero.recorrido,
-                            tipoRecorrido = sendero.tipoRecorrido,
+                            puntos = sendero?.recorrido.orEmpty(),
+                            tipoRecorrido = sendero?.tipoRecorrido ?: TipoRecorrido.LINEAL,
                             modifier = Modifier.fillMaxSize(),
-                            colorLinea = obtenerColorLineaBioma(sendero.bioma, MaterialTheme.colorScheme.primary),
+                            colorLinea = obtenerColorLineaBioma(sendero?.bioma ?: Bioma.SIN_DEFINIR, MaterialTheme.colorScheme.primary),
                             posicionUsuario = estadoVisual.posicionUsuario,
                             trazadoCaminado = estadoVisual.trazadoCaminado,
                             indiceSeleccionado = estadoVisual.indicePuntoSeleccionado,
@@ -192,7 +197,7 @@ fun RecorridoContenido(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             DatosFlotantesRecorrido(estadoVisual, leerAhoraMilisegundos)
-                            obtenerPuntosDeInteres(sendero)
+                            sendero?.let { obtenerPuntosDeInteres(it) }.orEmpty()
                                 .firstOrNull { punto -> punto.indice == estadoVisual.indicePuntoSeleccionado }
                                 ?.let { punto ->
                                     TarjetaPuntoSeleccionado(
@@ -277,7 +282,9 @@ fun RecorridoContenido(
             alElegirDeGaleria = alElegirFotoPuntoDeGaleria
         )
     }
-    estadoVisual.resumen?.let { resumen -> DialogoResumen(resumen, estadoVisual.revision, alProcesarEvento) }
+    estadoVisual.resumen?.let { resumen ->
+        DialogoResumen(resumen, estadoVisual.revision, estadoVisual.esCaminataLibre, alProcesarEvento)
+    }
     fotoAmpliada?.let { foto -> DialogoFotoAmpliada(foto = foto, alCerrar = { fotoAmpliada = null }) }
 }
 

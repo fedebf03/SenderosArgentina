@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -60,11 +61,12 @@ internal fun DialogoConfirmarCancelar(alProcesarEvento: (RecorridoEvento) -> Uni
 internal fun DialogoResumen(
     resumen: ResumenRecorrido,
     revision: RevisionPuntosEstadoVisual,
+    esCaminataLibre: Boolean,
     alProcesarEvento: (RecorridoEvento) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = { alProcesarEvento(RecorridoEvento.AlCerrarResumen) },
-        title = { Text("Recorrido finalizado") },
+        title = { Text(if (esCaminataLibre) "Caminata finalizada" else "Recorrido finalizado") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -72,7 +74,13 @@ internal fun DialogoResumen(
             ) {
                 DatoDelPanel("Distancia recorrida", formatearDistanciaCorta(resumen.distanciaRecorridaKilometros))
                 DatoDelPanel("Tiempo", formatearTiempoTranscurrido(resumen.tiempoTranscurridoMilisegundos))
-                if (revision.hayPuntosPorRevisar) {
+                if (esCaminataLibre) {
+                    Text(
+                        text = "¿Querés convertir esta caminata en un sendero nuevo? Vas a poder completar sus datos antes de guardarlo." +
+                            if (revision.hayPuntosPorRevisar) " Los puntos que marcaste (${revision.puntosPendientes.size}) van incluidos." else "",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else if (revision.hayPuntosPorRevisar) {
                     TituloDeSeccion(describirCantidadPuntosCapturados(revision.puntosPendientes.size))
                     ContenidoRevisionPuntos(
                         estado = revision,
@@ -82,9 +90,20 @@ internal fun DialogoResumen(
             }
         },
         confirmButton = {
-            TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlCerrarResumen) }) {
-                Text("Cerrar")
+            if (esCaminataLibre) {
+                TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlConvertirEnSendero) }) {
+                    Text("Convertir en sendero nuevo")
+                }
+            } else {
+                TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlCerrarResumen) }) {
+                    Text("Cerrar")
+                }
             }
+        },
+        dismissButton = if (esCaminataLibre) {
+            { TextButton(onClick = { alProcesarEvento(RecorridoEvento.AlCerrarResumen) }) { Text("Solo guardar") } }
+        } else {
+            null
         }
     )
 }
