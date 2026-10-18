@@ -263,6 +263,7 @@ fun SenderosContenido(
                 }
                 else -> Column(modifier = modificadorCuerpo) {
                     FiltrosSenderos(estadoVisual, alProcesarEvento)
+                    if (!esExplorar && estadoVisual.usuario != null) ResumenSincronizacion(estadoVisual, alProcesarEvento)
                     if (estadoVisual.senderosFiltrados.isEmpty()) {
                         MensajeCentrado(
                             if (estadoVisual.textoBusqueda.isBlank()) "No hay senderos con esos filtros" else "No se encontraron senderos",

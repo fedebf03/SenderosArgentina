@@ -300,7 +300,11 @@ class MainActivity : ComponentActivity() {
                                     fabrica.crear(idEditado, idCaminata)
                                 },
                                 alVolver = { salir(idEditado) },
-                                alGuardar = { idGuardado -> salir(idGuardado) }
+                                alGuardar = { idGuardado -> salir(idGuardado) },
+                                alEditarSenderoExistente = { idExistente ->
+                                    pantallaActual = DestinoPantalla.Formulario(idExistente, null)
+                                    almacenDestinos.liberarDestino(clave)
+                                }
                             )
                         }
                     }

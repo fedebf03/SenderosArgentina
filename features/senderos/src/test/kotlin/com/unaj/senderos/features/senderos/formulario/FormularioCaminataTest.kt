@@ -19,6 +19,7 @@ import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
 import com.unaj.senderos.core.testing.crearPuntoCapturadoDePrueba
 import com.unaj.senderos.core.testing.crearRecorridoDePrueba
+import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +31,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -161,5 +163,58 @@ class FormularioCaminataTest {
         advanceUntilIdle()
 
         assertTrue(puntos.llamadasRetirar.isEmpty())
+    }
+
+    @Test
+    fun `el sendero que nace de una caminata tiene siempre el mismo identificador`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(ID_CAMINATA)
+        advanceUntilIdle()
+        completarCamposObligatorios(viewModel)
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        assertEquals("desde-$ID_CAMINATA", senderos.llamadasGuardarSendero.single().second.id)
+    }
+
+    @Test
+    fun `una caminata que todavia no se convirtio no pregunta nada`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(ID_CAMINATA)
+        advanceUntilIdle()
+
+        assertNull(viewModel.estadoVisual.value.nombreSenderoYaConvertido)
+    }
+
+    @Test
+    fun `una caminata ya convertida pregunta con el nombre del sendero existente`() = runTest(despachadorPrueba) {
+        senderos.senderos.value = listOf(crearSenderoDePrueba(id = "desde-$ID_CAMINATA", nombre = "Costanera"))
+        val viewModel = crearViewModel(ID_CAMINATA)
+        advanceUntilIdle()
+
+        assertEquals("Costanera", viewModel.estadoVisual.value.nombreSenderoYaConvertido)
+    }
+
+    @Test
+    fun `reemplazar cierra la pregunta y deja seguir con el formulario`() = runTest(despachadorPrueba) {
+        senderos.senderos.value = listOf(crearSenderoDePrueba(id = "desde-$ID_CAMINATA", nombre = "Costanera"))
+        val viewModel = crearViewModel(ID_CAMINATA)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlReemplazarSenderoDeCaminata)
+
+        assertNull(viewModel.estadoVisual.value.nombreSenderoYaConvertido)
+        assertTrue(viewModel.estadoVisual.value.recorrido.size >= 2)
+    }
+
+    @Test
+    fun `editar el existente pide abrir ese sendero`() = runTest(despachadorPrueba) {
+        senderos.senderos.value = listOf(crearSenderoDePrueba(id = "desde-$ID_CAMINATA", nombre = "Costanera"))
+        val viewModel = crearViewModel(ID_CAMINATA)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlEditarSenderoDeCaminata)
+        advanceUntilIdle()
+
+        assertTrue(efectosRecibidos.contains(FormularioSenderoEfecto.EditarSenderoExistente("desde-$ID_CAMINATA")))
     }
 }

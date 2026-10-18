@@ -8,6 +8,7 @@ import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
 import com.unaj.senderos.core.domain.port.MonitorConectividad
 import com.unaj.senderos.core.domain.port.Reloj
+import com.unaj.senderos.core.domain.port.SolicitudSincronizacion
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.core.domain.usecase.RecuperarRecorridoInterrumpidoUseCase
 import com.unaj.senderos.core.domain.port.ProveedorUbicacion
@@ -47,6 +48,7 @@ class SenderosViewModel @AssistedInject constructor(
     private val lanzadorSeguimiento: LanzadorSeguimiento,
     private val obtenerUsuarioActualUseCase: ObtenerUsuarioActualUseCase,
     private val recuperarRecorridoInterrumpidoUseCase: RecuperarRecorridoInterrumpidoUseCase,
+    private val solicitudSincronizacion: SolicitudSincronizacion,
     private val reloj: Reloj
 ) : ViewModel() {
 
@@ -62,6 +64,8 @@ class SenderosViewModel @AssistedInject constructor(
     val efectoVisual = canalEfectos.receiveAsFlow()
 
     private var trabajoUbicacion: Job? = null
+    private var trabajoSincronizacion: Job? = null
+    private var idUsuarioObservado: String? = null
 
     init {
         observarConexion(monitorConectividad)
@@ -70,6 +74,7 @@ class SenderosViewModel @AssistedInject constructor(
         observarSenderos(
             observarSenderosDelUsuarioUseCase,
             alRecibir = { datos ->
+                observarSincronizacion(datos.usuario?.id)
                 _estadoVisual.update { estado ->
                     estado.copy(
                         usuario = datos.usuario,
@@ -82,6 +87,30 @@ class SenderosViewModel @AssistedInject constructor(
                 _estadoVisual.update { estado -> estado.copy(estaCargando = false, mensajeError = mensaje) }
             }
         )
+    }
+
+    // Seguir el estado del trabajo de sincronización del usuario una sola vez, la primera vez que se conoce
+    private fun observarSincronizacion(idUsuario: String?) {
+        if (idUsuario == null || idUsuario == idUsuarioObservado) return
+        idUsuarioObservado = idUsuario
+        trabajoSincronizacion?.cancel()
+        trabajoSincronizacion = viewModelScope.launch {
+            solicitudSincronizacion.observarEstado(idUsuario)
+                .catch { error ->
+                    if (error is CancellationException) throw error
+                    Log.e(TAG, "No se pudo observar la sincronización", error)
+                }
+                .collect { estadoTrabajo ->
+                    _estadoVisual.update { estado -> estado.copy(estadoTrabajoSincronizacion = estadoTrabajo) }
+                }
+        }
+    }
+
+    // Pedir la sincronización ahora; sin sesión no hay nada que sincronizar
+    private fun sincronizarAhora() {
+        val idUsuario = _estadoVisual.value.usuario?.id ?: return
+        Log.d(TAG, "Sincronización manual pedida desde el listado")
+        solicitudSincronizacion.sincronizarAhora(idUsuario)
     }
 
     // Se avisa sin bloquear la lista
@@ -126,6 +155,7 @@ class SenderosViewModel @AssistedInject constructor(
             is SenderosEvento.AlSolicitarPermisoNotificaciones -> {
                 _estadoVisual.update { estado -> estado.copy(seSolicitoPermisoNotificaciones = true) }
             }
+            is SenderosEvento.AlTocarSincronizar -> sincronizarAhora()
             is SenderosEvento.AlTocarCrearSendero -> emitir(SenderosEfecto.NavegarACreacion)
             is SenderosEvento.AlTocarCaminarAhora -> emitir(SenderosEfecto.SolicitarPermisoUbicacionParaCaminar)
             is SenderosEvento.AlCaminarAhora -> caminarAhora()

@@ -7,6 +7,7 @@ import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import com.unaj.senderos.core.domain.usecase.RecuperarRecorridoInterrumpidoUseCase
 import com.unaj.senderos.core.testing.FalsoAlmacenBorradorRecorrido
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
+import com.unaj.senderos.core.testing.FalsaSolicitudSincronizacion
 import com.unaj.senderos.core.testing.FalsoControlSeguimiento
 import com.unaj.senderos.core.testing.FalsoLanzadorSeguimiento
 import com.unaj.senderos.core.testing.FalsoMonitorConectividad
@@ -66,7 +67,8 @@ class SenderosRecuperarRecorridoTest {
             control,
             FalsoLanzadorSeguimiento(),
             ObtenerUsuarioActualUseCase(autenticacion),
-            RecuperarRecorridoInterrumpidoUseCase(almacen, recorridos, FalsoPuntosCapturadosRepositorio(), autenticacion)
+            RecuperarRecorridoInterrumpidoUseCase(almacen, recorridos, FalsoPuntosCapturadosRepositorio(), autenticacion),
+            FalsaSolicitudSincronizacion()
         ) { 0L }
         CoroutineScope(despachadorPrueba).launch { viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) } }
         return viewModel
