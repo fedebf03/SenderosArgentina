@@ -219,6 +219,11 @@ class MainActivity : ComponentActivity() {
                                 alVolverAlPerfil = {
                                     pantallaActual = DestinoPantalla.Perfil
                                     almacenDestinos.liberarDestino(clave)
+                                },
+                                alNavegarAFormularioDesdeCaminata = { idCaminata ->
+                                    listadoDeOrigen = DestinoPantalla.Perfil
+                                    pantallaActual = DestinoPantalla.Formulario(null, idCaminata)
+                                    almacenDestinos.liberarDestino(clave)
                                 }
                             )
                         }

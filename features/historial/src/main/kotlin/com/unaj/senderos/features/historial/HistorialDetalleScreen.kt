@@ -3,6 +3,7 @@ package com.unaj.senderos.features.historial
 import com.unaj.senderos.core.ui.componentes.EtiquetaSimulado
 import com.unaj.senderos.core.ui.comun.formatearFechaHora
 import com.unaj.senderos.core.ui.componentes.BarraSuperior
+import com.unaj.senderos.core.ui.componentes.BotonPrincipal
 import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
 import com.unaj.senderos.core.ui.comun.formatearPasos
 import com.unaj.senderos.core.ui.comun.formatearRitmo
@@ -56,16 +57,19 @@ private const val TAG = "HISTORIAL"
 @Composable
 fun HistorialDetallePantalla(
     viewModel: HistorialDetalleViewModel,
-    alVolverAlPerfil: () -> Unit
+    alVolverAlPerfil: () -> Unit,
+    alNavegarAFormularioDesdeCaminata: (String) -> Unit = {}
 ) {
     val estadoVisual by viewModel.estadoVisual.collectAsStateWithLifecycle()
     val volverAlPerfilActual by rememberUpdatedState(alVolverAlPerfil)
+    val navegarAFormularioActual by rememberUpdatedState(alNavegarAFormularioDesdeCaminata)
 
     LaunchedEffect(Unit) {
         Log.d(TAG, "Pantalla inicializada / rotación completada")
         viewModel.efectoVisual.collect { efecto ->
             when (efecto) {
                 is HistorialDetalleEfecto.VolverAlPerfil -> volverAlPerfilActual()
+                is HistorialDetalleEfecto.NavegarAFormularioDesdeCaminata -> navegarAFormularioActual(efecto.idCaminata)
             }
         }
     }
@@ -148,11 +152,19 @@ private fun CuerpoHistorial(
                 trazadoCaminado = recorrido.trazadoCaminado
             )
         }
-        if (estadoVisual.sendero == null) {
+        if (estadoVisual.sendero == null && !estadoVisual.esCaminataLibre) {
             Text(
                 text = "El sendero ya no existe: solo se muestra el trazado caminado",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        if (estadoVisual.sePuedeConvertirEnSendero) {
+            BotonPrincipal(
+                texto = "Convertir en sendero nuevo",
+                alTocar = { alProcesarEvento(HistorialDetalleEvento.AlConvertirEnSendero) },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 

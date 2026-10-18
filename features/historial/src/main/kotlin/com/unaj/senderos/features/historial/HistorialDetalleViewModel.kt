@@ -3,6 +3,7 @@ package com.unaj.senderos.features.historial
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import com.unaj.senderos.core.domain.model.RecorridoRealizado
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
@@ -59,7 +60,16 @@ class HistorialDetalleViewModel @AssistedInject constructor(
             is HistorialDetalleEvento.AlVolver -> {
                 viewModelScope.launch { canalEfectos.send(HistorialDetalleEfecto.VolverAlPerfil) }
             }
+            is HistorialDetalleEvento.AlConvertirEnSendero -> convertirEnSendero()
         }
+    }
+
+    // Pedir abrir el formulario de un sendero nuevo con esta caminata; solo si es una caminata libre con la distancia mínima
+    private fun convertirEnSendero() {
+        val estado = _estadoVisual.value
+        val recorrido = estado.recorrido ?: return
+        if (!estado.sePuedeConvertirEnSendero) return
+        viewModelScope.launch { canalEfectos.send(HistorialDetalleEfecto.NavegarAFormularioDesdeCaminata(recorrido.idSendero)) }
     }
 
     private fun observarRecorrido() {
@@ -84,7 +94,7 @@ class HistorialDetalleViewModel @AssistedInject constructor(
         _estadoVisual.update { estadoActual ->
             estadoActual.copy(recorrido = recorrido, estaCargando = false, mensajeError = null)
         }
-        if (!estaObservandoSendero) {
+        if (!estaObservandoSendero && !IdentificadorCaminataLibre.esDeCaminataLibre(recorrido.idSendero)) {
             estaObservandoSendero = true
             observarSendero(recorrido.idSendero)
         }
