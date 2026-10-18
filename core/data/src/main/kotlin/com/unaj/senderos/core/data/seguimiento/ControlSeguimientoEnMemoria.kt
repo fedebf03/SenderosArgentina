@@ -14,6 +14,7 @@ import com.unaj.senderos.core.domain.port.ProveedorDeclinacion
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
+import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
 import com.unaj.senderos.core.domain.model.PuntoCapturado
@@ -109,11 +110,7 @@ class ControlSeguimientoEnMemoria(
     override suspend fun iniciar(idSendero: String, esSimulado: Boolean) {
         val miGeneracion = ++generacion
         cerrojoInicio.withLock {
-            trabajoUbicaciones?.cancelAndJoin()
-            trabajoUbicaciones = null
-            trabajosSensores.forEach { trabajo -> trabajo.cancelAndJoin() }
-            trabajosSensores = emptyList()
-            guardarRecorridoRealizado(estadoInterno.value, nombreSenderoActivo, idUsuarioActivo)
+            cerrarSeguimientoAnterior()
             val sendero = try {
                 obtenerSendero(idSendero).also { encontrado ->
                     check(encontrado.recorrido.size >= 2) { "El sendero no tiene recorrido para seguir" }
@@ -128,34 +125,76 @@ class ControlSeguimientoEnMemoria(
                 Log.d(TAG, "Inicio descartado: se pidió detener mientras se cargaba el sendero")
                 return
             }
-            pasosRealesActivos = midePasosReales && !esSimulado
-            rumboMagneticoGrados = null
-            declinacionCacheada = null
-            val estaMidiendoPasos = esSimulado || pasosRealesActivos
+            val estaMidiendoPasos = prepararSensores(esSimulado)
             val estadoInicial = CalculadoraSeguimiento.iniciar(sendero, reloj()).copy(
                 esSimulado = esSimulado,
                 calidadSenal = if (esSimulado) CalidadSenal.BUENA else CalidadSenal.BUSCANDO,
                 pasos = if (estaMidiendoPasos) 0 else null,
                 ritmoPasosPorMinuto = if (estaMidiendoPasos) 0.0 else null
             )
-            detectorPasos = DetectorPasos()
-            ventanaRitmo.reiniciar()
-            instanteUltimoPaso = null
             val proveedorActivo: ProveedorUbicacion = if (esSimulado) {
                 ProveedorUbicacionSimulada(estadoInicial.trazado).also { simulado -> proveedorSimulado = simulado }
             } else {
                 proveedorSimulado = null
                 proveedorUbicacion
             }
-            motivoFinInterno.value = null
-            nombreSenderoActivo = sendero.nombre
-            idUsuarioActivo = sendero.idUsuario
-            estadoInterno.value = estadoInicial
-            Log.d(TAG, "Seguimiento iniciado: $idSendero (simulado: $esSimulado)")
-            trabajosSensores = (if (esSimulado) emptyList() else lanzarRecoleccionDeSensores()) +
-                alcance.launch { reevaluarCalidadPeriodicamente() }
-            trabajoUbicaciones = alcance.launch { recolectarUbicaciones(proveedorActivo) }
+            activarSeguimiento(estadoInicial, proveedorActivo, sendero.nombre, sendero.idUsuario)
         }
+    }
+
+    // Iniciar una caminata libre: no se busca ningún sendero; el recorrido anterior se guarda y el nuevo registra solo lo caminado, con GPS real
+    override suspend fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+        val miGeneracion = ++generacion
+        cerrojoInicio.withLock {
+            cerrarSeguimientoAnterior()
+            if (miGeneracion != generacion) {
+                Log.d(TAG, "Inicio descartado: se pidió detener mientras se cerraba el recorrido anterior")
+                return
+            }
+            val estaMidiendoPasos = prepararSensores(esSimulado = false)
+            val instanteInicio = reloj()
+            val estadoInicial = CalculadoraSeguimiento
+                .iniciarCaminataLibre(IdentificadorCaminataLibre.crear(instanteInicio), nombre, instanteInicio)
+                .copy(
+                    calidadSenal = CalidadSenal.BUSCANDO,
+                    pasos = if (estaMidiendoPasos) 0 else null,
+                    ritmoPasosPorMinuto = if (estaMidiendoPasos) 0.0 else null
+                )
+            proveedorSimulado = null
+            activarSeguimiento(estadoInicial, proveedorUbicacion, nombre, idUsuario)
+        }
+    }
+
+    // Detener los trabajos del recorrido anterior y guardar lo que había recorrido
+    private suspend fun cerrarSeguimientoAnterior() {
+        trabajoUbicaciones?.cancelAndJoin()
+        trabajoUbicaciones = null
+        trabajosSensores.forEach { trabajo -> trabajo.cancelAndJoin() }
+        trabajosSensores = emptyList()
+        guardarRecorridoRealizado(estadoInterno.value, nombreSenderoActivo, idUsuarioActivo)
+    }
+
+    // Reiniciar los contadores de sensores para un recorrido nuevo; devuelve si se van a medir pasos (reales o estimados en simulación)
+    private fun prepararSensores(esSimulado: Boolean): Boolean {
+        pasosRealesActivos = midePasosReales && !esSimulado
+        rumboMagneticoGrados = null
+        declinacionCacheada = null
+        detectorPasos = DetectorPasos()
+        ventanaRitmo.reiniciar()
+        instanteUltimoPaso = null
+        return esSimulado || pasosRealesActivos
+    }
+
+    // Publicar el estado inicial y lanzar la recolección de ubicaciones, sensores y reevaluación de señal
+    private fun activarSeguimiento(estadoInicial: EstadoSeguimiento, proveedorActivo: ProveedorUbicacion, nombre: String, idUsuario: String) {
+        motivoFinInterno.value = null
+        nombreSenderoActivo = nombre
+        idUsuarioActivo = idUsuario
+        estadoInterno.value = estadoInicial
+        Log.d(TAG, "Seguimiento iniciado: ${estadoInicial.idSendero} (simulado: ${estadoInicial.esSimulado}, libre: ${estadoInicial.esCaminataLibre})")
+        trabajosSensores = (if (estadoInicial.esSimulado) emptyList() else lanzarRecoleccionDeSensores()) +
+            alcance.launch { reevaluarCalidadPeriodicamente() }
+        trabajoUbicaciones = alcance.launch { recolectarUbicaciones(proveedorActivo) }
     }
 
     // Cambiar la velocidad de la simulación en curso; se ignora si el recorrido es real

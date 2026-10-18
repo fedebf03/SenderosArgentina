@@ -27,6 +27,13 @@ class FalsoControlSeguimiento(private val registro: MutableList<String> = mutabl
         estadoEmitido.value = EstadoSeguimiento(idSendero = idSendero, trazado = emptyList(), esSimulado = esSimulado)
     }
 
+    val caminatasLibresIniciadas: MutableList<Pair<String, String>> = mutableListOf()
+
+    override suspend fun iniciarCaminataLibre(idUsuario: String, nombre: String) {
+        caminatasLibresIniciadas.add(idUsuario to nombre)
+        estadoEmitido.value = EstadoSeguimiento(idSendero = "libre-1", trazado = emptyList(), nombreSendero = nombre, esCaminataLibre = true)
+    }
+
     val multiplicadoresCambiados: MutableList<Int> = mutableListOf()
     var cantidadDesviosSimulados: Int = 0
         private set
