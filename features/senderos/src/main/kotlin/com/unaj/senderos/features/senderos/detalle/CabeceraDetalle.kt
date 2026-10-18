@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
@@ -173,6 +174,11 @@ internal fun MenuOpciones(
                     if (estaPublicado) DetalleSenderoEvento.AlTocarHacerPrivado else DetalleSenderoEvento.AlTocarPublicar
                 )
             }
+        )
+        DropdownMenuItem(
+            text = { Text("Exportar (GPX, CSV o JSON)") },
+            leadingIcon = { Icon(imageVector = Icons.Outlined.FileDownload, contentDescription = null) },
+            onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarExportar) }
         )
         DropdownMenuItem(
             text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },

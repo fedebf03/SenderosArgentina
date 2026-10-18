@@ -7,6 +7,10 @@ import com.unaj.senderos.core.domain.port.PreferenciasAplicacion
 import com.unaj.senderos.core.domain.port.ControlSeguimiento
 import com.unaj.senderos.core.domain.usecase.CerrarSesionUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarRecorridosUseCase
+import com.unaj.senderos.core.domain.usecase.AnalisisCopiaSeguridad
+import com.unaj.senderos.core.domain.usecase.ExportarCopiaSeguridadUseCase
+import com.unaj.senderos.core.domain.usecase.ImportarCopiaSeguridadUseCase
+import com.unaj.senderos.core.domain.usecase.ModoRestauracion
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +23,7 @@ import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+private const val MENSAJE_ERROR_COPIA = "No se pudo completar la copia de seguridad"
 private const val TAG = "PERFIL"
 private const val MENSAJE_ERROR_HISTORIAL = "No pudimos cargar tu historial de recorridos"
 
@@ -28,7 +33,9 @@ class PerfilViewModel @Inject constructor(
     private val cerrarSesionUseCase: CerrarSesionUseCase,
     private val preferenciasAplicacion: PreferenciasAplicacion,
     private val observarRecorridosUseCase: ObservarRecorridosUseCase,
-    private val controlSeguimiento: ControlSeguimiento
+    private val controlSeguimiento: ControlSeguimiento,
+    private val exportarCopiaSeguridadUseCase: ExportarCopiaSeguridadUseCase,
+    private val importarCopiaSeguridadUseCase: ImportarCopiaSeguridadUseCase
 ) : ViewModel() {
 
     private val _estadoVisual = MutableStateFlow(
@@ -64,6 +71,64 @@ class PerfilViewModel @Inject constructor(
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoCerrarSesionVisible = false) }
             }
             is PerfilEvento.AlConfirmarCerrarSesion -> cerrarSesion()
+            is PerfilEvento.AlExportarCopiaSeguridad -> exportarCopia(evento.uri)
+            is PerfilEvento.AlImportarCopiaSeguridad -> analizarCopia(evento.uri)
+            is PerfilEvento.AlElegirModoRestauracion -> {
+                _estadoVisual.value.copiaPendiente?.let { analisis -> restaurar(analisis, evento.modo) }
+            }
+            is PerfilEvento.AlCancelarRestauracion -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(copiaPendiente = null) }
+            }
+        }
+    }
+
+    // Guardar todos los senderos en el archivo elegido y avisar cuántos se guardaron
+    private fun exportarCopia(uri: String) {
+        if (_estadoVisual.value.estaProcesandoCopia) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = true) }
+        viewModelScope.launch {
+            val mensaje = exportarCopiaSeguridadUseCase(uri).fold(
+                onSuccess = { cantidad -> "Copia guardada: $cantidad senderos" },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo exportar la copia de seguridad", error)
+                    MENSAJE_ERROR_COPIA
+                }
+            )
+            _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = false) }
+            canalEfectos.send(PerfilEfecto.MostrarAviso(mensaje))
+        }
+    }
+
+    // Leer la copia elegida y preguntar siempre antes de escribir (restaurar puede traer de vuelta senderos borrados)
+    private fun analizarCopia(uri: String) {
+        if (_estadoVisual.value.estaProcesandoCopia) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = true) }
+        viewModelScope.launch {
+            importarCopiaSeguridadUseCase.analizar(uri).fold(
+                onSuccess = { analisis ->
+                    _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = false, copiaPendiente = analisis) }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo leer la copia de seguridad", error)
+                    _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = false) }
+                    val mensaje = if (error is IllegalArgumentException || error is IllegalStateException) error.message else null
+                    canalEfectos.send(PerfilEfecto.MostrarAviso(mensaje?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_ERROR_COPIA))
+                }
+            )
+        }
+    }
+
+    // Guardar los senderos de la copia según el modo elegido y avisar cuántos se restauraron de los que había para guardar
+    private fun restaurar(analisis: AnalisisCopiaSeguridad, modo: ModoRestauracion) {
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = true, copiaPendiente = null) }
+        viewModelScope.launch {
+            val total = analisis.nuevos.size + if (modo == ModoRestauracion.SOLO_NUEVOS) 0 else analisis.existentes.size
+            val guardados = importarCopiaSeguridadUseCase.aplicar(analisis, modo) { sendero, error ->
+                Log.e(TAG, "No se restauró el sendero ${sendero.id} de la copia", error)
+            }
+            Log.d(TAG, "Copia restaurada ($modo): $guardados de $total senderos")
+            _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = false) }
+            canalEfectos.send(PerfilEfecto.MostrarAviso("Se restauraron $guardados de $total senderos"))
         }
     }
 

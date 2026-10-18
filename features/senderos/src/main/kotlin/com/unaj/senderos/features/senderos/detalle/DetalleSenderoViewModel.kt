@@ -15,6 +15,8 @@ import com.unaj.senderos.core.domain.port.LanzadorSeguimiento
 import com.unaj.senderos.core.domain.port.MonitorConectividad
 import com.unaj.senderos.core.domain.port.PreferenciasAplicacion
 import com.unaj.senderos.core.domain.usecase.AlternarFavoritoUseCase
+import com.unaj.senderos.core.domain.usecase.ExportarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.FormatoExportacion
 import com.unaj.senderos.core.domain.usecase.DescargarMapaSinConexionUseCase
 import com.unaj.senderos.core.domain.usecase.DescartarPuntosCapturadosUseCase
 import com.unaj.senderos.core.domain.usecase.DespublicarSenderoUseCase
@@ -49,6 +51,10 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlin.math.abs
 
+private const val MENSAJE_EXPORTADO = "Sendero exportado"
+private const val MENSAJE_ERROR_EXPORTAR = "No se pudo exportar el sendero"
+private const val NOMBRE_ARCHIVO_POR_DEFECTO = "sendero"
+private val CARACTERES_NO_VALIDOS_EN_ARCHIVOS = Regex("[\\\\/:*?\"<>|]")
 private const val TAG = "DETALLE_SENDERO"
 private const val MENSAJE_ERROR_POR_DEFECTO = "Ocurrió un error inesperado"
 private const val MENSAJE_ERROR_PERFIL = "No se pudo calcular el perfil de elevación"
@@ -80,7 +86,8 @@ class DetalleSenderoViewModel @AssistedInject constructor(
     observarSenderoPublicadoUseCase: ObservarSenderoPublicadoUseCase,
     private val publicarSenderoUseCase: PublicarSenderoUseCase,
     private val despublicarSenderoUseCase: DespublicarSenderoUseCase,
-    private val calcularPerfilElevacionUseCase: CalcularPerfilElevacionUseCase
+    private val calcularPerfilElevacionUseCase: CalcularPerfilElevacionUseCase,
+    private val exportarSenderoUseCase: ExportarSenderoUseCase
 ) : ViewModel() {
 
     @AssistedFactory
@@ -134,6 +141,14 @@ class DetalleSenderoViewModel @AssistedInject constructor(
             }
             is DetalleSenderoEvento.AlSeleccionarKilometroDelPerfil -> enfocarKilometroDelPerfil(evento.kilometros)
             is DetalleSenderoEvento.AlCalcularPerfil -> calcularPerfil()
+            is DetalleSenderoEvento.AlTocarExportar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoExportarVisible = true, esMenuOpcionesVisible = false) }
+            }
+            is DetalleSenderoEvento.AlCerrarExportar -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoExportarVisible = false) }
+            }
+            is DetalleSenderoEvento.AlElegirFormatoExportacion -> pedirDestinoExportacion(evento.formato)
+            is DetalleSenderoEvento.AlExportarSendero -> exportar(evento.formato, evento.uri)
             is DetalleSenderoEvento.AlTocarIniciarRecorrido -> pedirPermisoParaIniciarRecorrido()
             is DetalleSenderoEvento.AlConcederPermisoUbicacion -> iniciarRecorrido()
             is DetalleSenderoEvento.AlDenegarPermisoUbicacion -> {
@@ -412,6 +427,33 @@ class DetalleSenderoViewModel @AssistedInject constructor(
                 contadorEnfoque = estadoActual.contadorEnfoque + 1,
                 debeDesplazarAlMapa = false
             )
+        }
+    }
+
+    // Cerrar el diálogo de formatos y pedir a la pantalla que abra el selector para guardar, con el nombre del sendero como archivo
+    private fun pedirDestinoExportacion(formato: FormatoExportacion) {
+        // Un doble toque abriría dos selectores: solo vale el primero, mientras el diálogo sigue abierto
+        if (!_estadoVisual.value.esDialogoExportarVisible) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoExportarVisible = false) }
+        val nombre = _estadoVisual.value.sendero?.nombre?.takeIf { texto -> texto.isNotBlank() } ?: NOMBRE_ARCHIVO_POR_DEFECTO
+        val nombreSeguro = nombre.replace(CARACTERES_NO_VALIDOS_EN_ARCHIVOS, " ").trim()
+        emitirEfecto(DetalleSenderoEfecto.ElegirDestinoExportacion(formato, "$nombreSeguro.${formato.extension}"))
+    }
+
+    // Escribir el sendero en el archivo elegido y avisar el resultado
+    private fun exportar(formato: FormatoExportacion, uri: String) {
+        viewModelScope.launch {
+            val mensaje = exportarSenderoUseCase(idSendero, formato, uri).fold(
+                onSuccess = {
+                    Log.d(TAG, "Sendero $idSendero exportado en $formato")
+                    MENSAJE_EXPORTADO
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo exportar el sendero", error)
+                    MENSAJE_ERROR_EXPORTAR
+                }
+            )
+            canalEfectos.send(DetalleSenderoEfecto.MostrarAviso(mensaje))
         }
     }
 

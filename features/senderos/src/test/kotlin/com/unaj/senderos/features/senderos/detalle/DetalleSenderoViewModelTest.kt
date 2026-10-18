@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.senderos.detalle
 
+import com.unaj.senderos.core.testing.FalsoEscritorArchivos
+import com.unaj.senderos.core.testing.FalsoFormatoCopiaSeguridad
+import com.unaj.senderos.core.domain.usecase.ExportarSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.FormatoExportacion
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo
 import com.unaj.senderos.core.domain.model.EstadoMapaSinConexion
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
@@ -68,6 +72,7 @@ class DetalleSenderoViewModelTest {
     private val repositorioPuntos = FalsoPuntosCapturadosRepositorio()
     private val repositorioPublicos = FalsoSenderoPublicoRepositorio()
     private val fuenteElevacion = FalsoFuenteElevacion()
+    private val escritorArchivos = FalsoEscritorArchivos()
 
     private val recorridoValido = listOf(
         PuntoRecorrido(latitud = -41.10, longitud = -71.30),
@@ -181,7 +186,8 @@ class DetalleSenderoViewModelTest {
             observarSenderoPublicadoUseCase = ObservarSenderoPublicadoUseCase(repositorioPublicos, autenticacion),
             publicarSenderoUseCase = PublicarSenderoUseCase(repositorioPublicos, autenticacion),
             despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion),
-            calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion)
+            calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion),
+            exportarSenderoUseCase = ExportarSenderoUseCase(repositorio, autenticacion, escritorArchivos, FalsoFormatoCopiaSeguridad(), despachadorCalculo = despachadorPrueba)
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }
@@ -382,7 +388,8 @@ class DetalleSenderoViewModelTest {
             observarSenderoPublicadoUseCase = ObservarSenderoPublicadoUseCase(repositorioPublicos, autenticacion),
             publicarSenderoUseCase = PublicarSenderoUseCase(repositorioPublicos, autenticacion),
             despublicarSenderoUseCase = DespublicarSenderoUseCase(repositorioPublicos, autenticacion),
-            calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion)
+            calcularPerfilElevacionUseCase = CalcularPerfilElevacionUseCase(repositorio, fuenteElevacion, autenticacion),
+            exportarSenderoUseCase = ExportarSenderoUseCase(repositorio, autenticacion, escritorArchivos, FalsoFormatoCopiaSeguridad(), despachadorCalculo = despachadorPrueba)
         )
         advanceUntilIdle()
         control.estadoEmitido.value = EstadoSeguimiento(idSendero = "sendero-2", trazado = recorridoValido)
@@ -1012,5 +1019,43 @@ class DetalleSenderoViewModelTest {
         viewModel.procesarEvento(DetalleSenderoEvento.AlSeleccionarPuntoDeInteres(1))
 
         assertTrue(viewModel.estadoVisual.value.debeDesplazarAlMapa)
+    }
+
+    @Test
+    fun `tocar exportar muestra los formatos`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarExportar)
+
+        assertTrue(viewModel.estadoVisual.value.esDialogoExportarVisible)
+    }
+
+    @Test
+    fun `elegir un formato pide el destino con un nombre de archivo sugerido`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarExportar)
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlElegirFormatoExportacion(FormatoExportacion.GPX))
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esDialogoExportarVisible)
+        assertEquals(
+            listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.ElegirDestinoExportacion(FormatoExportacion.GPX, "Cerro Catedral.gpx")),
+            efectosRecibidos
+        )
+    }
+
+    @Test
+    fun `exportar escribe el archivo y avisa`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlExportarSendero(FormatoExportacion.CSV, "content://destino"))
+        advanceUntilIdle()
+
+        assertTrue(escritorArchivos.escritos.getValue("content://destino").startsWith("Latitude,Longitude,Elevation"))
+        assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.MostrarAviso("Sendero exportado")), efectosRecibidos)
     }
 }
