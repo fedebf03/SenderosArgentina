@@ -34,6 +34,17 @@ class FalsoAutenticacionRepositorio(
         return resultadoRecuperacion
     }
 
+    val cambiosDeContrasena: MutableList<Pair<String, String>> = mutableListOf()
+    var resultadoCambioContrasena: Result<Unit> = Result.success(Unit)
+    var tieneContrasenaConfigurada: Boolean = true
+
+    override suspend fun cambiarContrasena(claveActual: String, claveNueva: String): Result<Unit> {
+        cambiosDeContrasena.add(claveActual to claveNueva)
+        return resultadoCambioContrasena
+    }
+
+    override fun tieneContrasena(): Boolean = tieneContrasenaConfigurada
+
     override fun obtenerUsuarioActual(): Usuario? {
         return usuarioActual
     }

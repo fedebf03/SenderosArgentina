@@ -1,6 +1,5 @@
-package com.unaj.senderos.features.senderos.formulario
+package com.unaj.senderos.core.ui.componentes
 
-import com.unaj.senderos.core.ui.componentes.accionable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun DialogoOrigenFoto(
+fun DialogoOrigenFoto(
     alSacarFoto: () -> Unit,
     alElegirDeGaleria: () -> Unit,
     alCerrar: () -> Unit

@@ -9,6 +9,8 @@ import com.unaj.senderos.core.domain.usecase.ImportarCopiaSeguridadUseCase
 import com.unaj.senderos.core.domain.usecase.ModoRestauracion
 import com.unaj.senderos.core.domain.usecase.ObservarRecorridosUseCase
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
+import com.unaj.senderos.core.domain.usecase.SincronizarPerfilPendienteUseCase
+import com.unaj.senderos.core.testing.FalsoPerfilRepositorio
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
 import com.unaj.senderos.core.testing.FalsoControlSeguimiento
 import com.unaj.senderos.core.testing.FalsoEscritorArchivos
@@ -72,7 +74,8 @@ class PerfilCopiaSeguridadTest {
                 senderos, autenticacion, lector, formato,
                 GuardarSenderoUseCase(senderos, autenticacion, generarIdentificador = { "nuevo-id" }),
                 despachadorPrueba
-            )
+            ),
+            sincronizarPerfilPendienteUseCase = SincronizarPerfilPendienteUseCase(FalsoPerfilRepositorio(), autenticacion)
         )
         CoroutineScope(despachadorPrueba).launch {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }

@@ -9,6 +9,7 @@ sealed interface DestinoPantalla {
     data object Mapa : DestinoPantalla
     data object MisSenderos : DestinoPantalla
     data object Perfil : DestinoPantalla
+    data object EditarPerfil : DestinoPantalla
     data class Detalle(val idSendero: String) : DestinoPantalla
     data class DetallePublico(val idSendero: String) : DestinoPantalla
     // idCaminata no nulo: sendero nuevo armado desde una caminata libre ya terminada
@@ -24,6 +25,7 @@ internal fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String
         is DestinoPantalla.Mapa -> "mapa-$idUsuario"
         is DestinoPantalla.MisSenderos -> "mis-senderos-$idUsuario"
         is DestinoPantalla.Perfil -> "perfil-$idUsuario"
+        is DestinoPantalla.EditarPerfil -> "editar-perfil-$idUsuario"
         is DestinoPantalla.Detalle -> "detalle-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.DetallePublico -> "detallepublico-$idUsuario-${destino.idSendero}"
         is DestinoPantalla.Formulario -> "formulario-$idUsuario-${destino.idSendero ?: destino.idCaminata ?: "nuevo"}"
@@ -42,6 +44,7 @@ internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
             is DestinoPantalla.Mapa -> "mapa"
             is DestinoPantalla.MisSenderos -> "mis-senderos"
             is DestinoPantalla.Perfil -> "perfil"
+            is DestinoPantalla.EditarPerfil -> "editar-perfil"
             is DestinoPantalla.Detalle -> "detalle:${destino.idSendero}"
             is DestinoPantalla.DetallePublico -> "detallepublico:${destino.idSendero}"
             is DestinoPantalla.Formulario -> if (destino.idCaminata != null) {
@@ -61,6 +64,7 @@ internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
             texto == "mapa" -> DestinoPantalla.Mapa
             texto == "mis-senderos" -> DestinoPantalla.MisSenderos
             texto == "perfil" -> DestinoPantalla.Perfil
+            texto == "editar-perfil" -> DestinoPantalla.EditarPerfil
             texto.startsWith("detalle:") -> DestinoPantalla.Detalle(texto.removePrefix("detalle:"))
             texto.startsWith("detallepublico:") -> DestinoPantalla.DetallePublico(texto.removePrefix("detallepublico:"))
             texto.startsWith("formulariocaminata:") -> DestinoPantalla.Formulario(null, texto.removePrefix("formulariocaminata:"))
