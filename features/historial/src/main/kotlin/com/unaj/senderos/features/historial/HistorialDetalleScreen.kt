@@ -1,5 +1,9 @@
 package com.unaj.senderos.features.historial
 
+import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
+import com.unaj.senderos.core.ui.componentes.BotonSecundario
+import com.unaj.senderos.core.ui.componentes.IconoDeBoton
+import androidx.compose.material.icons.outlined.Delete
 import com.unaj.senderos.core.ui.componentes.EtiquetaSimulado
 import com.unaj.senderos.core.ui.comun.formatearFechaHora
 import com.unaj.senderos.core.ui.componentes.BarraSuperior
@@ -201,6 +205,34 @@ private fun CuerpoHistorial(
                 }
             }
         }
+
+        estadoVisual.errorAlEliminar?.let { mensaje ->
+            Text(text = mensaje, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+        }
+        BotonSecundario(
+            texto = "Eliminar recorrido",
+            alTocar = { alProcesarEvento(HistorialDetalleEvento.AlTocarEliminar) },
+            icono = { IconoDeBoton(Icons.Outlined.Delete) },
+            esDestructivo = true,
+            estaHabilitado = !estadoVisual.estaEliminando,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+
+    if (estadoVisual.esDialogoEliminarVisible) {
+        DialogoConfirmacion(
+            titulo = "Eliminar recorrido",
+            texto = if (estadoVisual.esCaminataLibre) {
+                "¿Querés eliminar esta caminata? Se borra también de tu cuenta en la nube y se descartan los puntos que marcaste si todavía no los pasaste a un sendero. No se puede deshacer."
+            } else {
+                "¿Querés eliminar este recorrido? Se borra también de tu cuenta en la nube. No se puede deshacer."
+            },
+            textoConfirmar = "Eliminar",
+            alConfirmar = { alProcesarEvento(HistorialDetalleEvento.AlConfirmarEliminar) },
+            textoDescartar = "Cancelar",
+            alDescartar = { alProcesarEvento(HistorialDetalleEvento.AlCancelarEliminar) },
+            esDestructivo = true
+        )
     }
 }
 
