@@ -14,6 +14,8 @@ import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.port.ErrorElevacionException
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
+import com.unaj.senderos.core.domain.usecase.ImportarTrazadoUseCase
+import com.unaj.senderos.core.domain.recorrido.TrazadoImportado
 import kotlinx.coroutines.Job
 import kotlin.math.roundToInt
 import com.unaj.senderos.core.domain.model.Sendero
@@ -47,6 +49,7 @@ private const val MENSAJE_FALTA_DISTANCIA_PARA_DURACION = "Cargá la distancia o
 private const val MENSAJE_DESNIVEL_INVALIDO_PARA_DURACION = "Revisá el desnivel: tiene que ser un número de metros"
 private const val MENSAJE_PERFIL_SIN_CONEXION = "Sin conexión: el perfil se calculará al sincronizar"
 private const val MENSAJE_PERFIL_ERROR = "No se pudo calcular el perfil de elevación"
+private const val MENSAJE_IMPORTACION_ERROR = "No se pudo importar el archivo"
 
 @HiltViewModel(assistedFactory = FormularioSenderoViewModel.Fabrica::class)
 class FormularioSenderoViewModel @AssistedInject constructor(
@@ -54,7 +57,8 @@ class FormularioSenderoViewModel @AssistedInject constructor(
     private val observarDetalleSenderoUseCase: ObservarDetalleSenderoUseCase,
     private val guardarSenderoUseCase: GuardarSenderoUseCase,
     private val almacenFotos: AlmacenFotos,
-    private val calcularPerfilDeTrazadoUseCase: CalcularPerfilDeTrazadoUseCase
+    private val calcularPerfilDeTrazadoUseCase: CalcularPerfilDeTrazadoUseCase,
+    private val importarTrazadoUseCase: ImportarTrazadoUseCase
 ) : ViewModel() {
 
     @AssistedFactory
@@ -127,6 +131,13 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 }
             }
             is FormularioSenderoEvento.AlCalcularPerfil -> calcularPerfil(forzar = true)
+            is FormularioSenderoEvento.AlImportarTrazado -> importarTrazado(evento.uri)
+            is FormularioSenderoEvento.AlConfirmarReemplazoTrazado -> {
+                _estadoVisual.value.trazadoImportadoPendiente?.let { trazado -> aplicarTrazadoImportado(trazado) }
+            }
+            is FormularioSenderoEvento.AlCancelarReemplazoTrazado -> {
+                _estadoVisual.update { estadoActual -> estadoActual.copy(trazadoImportadoPendiente = null) }
+            }
             is FormularioSenderoEvento.AlQuitarRecomendacion -> {
                 _estadoVisual.update { estadoActual ->
                     estadoActual.copy(
@@ -426,6 +437,62 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 }
             }
         }
+    }
+
+    // Leer el archivo elegido e importar su trazado; si ya hay un recorrido marcado, pide confirmar antes de reemplazarlo
+    private fun importarTrazado(uri: String) {
+        if (_estadoVisual.value.estaImportandoTrazado) return
+        _estadoVisual.update { estadoActual -> estadoActual.copy(estaImportandoTrazado = true) }
+        viewModelScope.launch {
+            val resultado = try {
+                importarTrazadoUseCase(uri)
+            } catch (excepcion: CancellationException) {
+                throw excepcion
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+            _estadoVisual.update { estadoActual -> estadoActual.copy(estaImportandoTrazado = false) }
+            resultado.fold(
+                onSuccess = { trazado ->
+                    Log.d(TAG, "Trazado importado: ${trazado.recorrido.size} puntos, ${trazado.tipoRecorrido}")
+                    if (_estadoVisual.value.recorrido.isEmpty()) {
+                        aplicarTrazadoImportado(trazado)
+                    } else {
+                        _estadoVisual.update { estadoActual -> estadoActual.copy(trazadoImportadoPendiente = trazado) }
+                    }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "No se pudo importar el trazado", error)
+                    // Solo los fallos propios traen un mensaje pensado para el usuario; los técnicos muestran el genérico
+                    val mensaje = if (error is IllegalArgumentException || error is IllegalStateException) error.message else null
+                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensaje?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_IMPORTACION_ERROR))
+                }
+            )
+        }
+    }
+
+    // Cargar el trazado importado: recorrido, tipo, nombre si estaba vacío y distancia del mapa; con alturas en el archivo usa ese
+    // perfil y, si no, lo pide a la red como al cerrar el editor
+    private fun aplicarTrazadoImportado(trazado: TrazadoImportado) {
+        _estadoVisual.update { estadoActual ->
+            val conTrazado = seguirDistanciaDelMapa(
+                estadoActual.copy(
+                    recorrido = trazado.recorrido,
+                    tipoRecorrido = trazado.tipoRecorrido,
+                    nombre = estadoActual.nombre.ifBlank { trazado.nombre },
+                    indicePuntoSeleccionado = null,
+                    distanciaEsManual = false,
+                    trazadoImportadoPendiente = null,
+                    camposConError = estadoActual.camposConError - CampoSendero.RECORRIDO - CampoSendero.NOMBRE,
+                    hayCambiosSinGuardar = true
+                )
+            )
+            trazado.perfil?.let { perfil -> aplicarPerfil(conTrazado, perfil) } ?: conTrazado
+        }
+        // Un cálculo anterior ya no corresponde a este trazado
+        if (trazado.perfil != null) trabajoPerfil?.cancel()
+        if (trazado.perfil == null) calcularPerfil(forzar = false)
+        emitirEfecto(FormularioSenderoEfecto.MostrarAviso("Recorrido importado: ${trazado.recorrido.size} puntos"))
     }
 
     // Guardar el perfil en el estado y completar desnivel y alturas con la misma regla que la sincronización

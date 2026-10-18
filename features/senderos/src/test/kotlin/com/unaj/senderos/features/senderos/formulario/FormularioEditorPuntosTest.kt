@@ -6,6 +6,8 @@ import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
+import com.unaj.senderos.core.domain.usecase.ImportarTrazadoUseCase
+import com.unaj.senderos.core.testing.FalsoLectorArchivos
 import com.unaj.senderos.core.testing.FalsoAlmacenFotos
 import com.unaj.senderos.core.testing.FalsoFuenteElevacion
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
@@ -50,7 +52,8 @@ class FormularioEditorPuntosTest {
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             GuardarSenderoUseCase(repositorio, autenticacion),
             almacenFotos,
-            CalcularPerfilDeTrazadoUseCase(FalsoFuenteElevacion())
+            CalcularPerfilDeTrazadoUseCase(FalsoFuenteElevacion()),
+            ImportarTrazadoUseCase(FalsoLectorArchivos())
         )
     }
 
