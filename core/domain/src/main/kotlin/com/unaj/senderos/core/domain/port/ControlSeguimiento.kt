@@ -22,6 +22,8 @@ interface ControlSeguimiento {
     // Iniciar el seguimiento de un sendero, real o simulado; finaliza el recorrido anterior si había uno
     suspend fun iniciar(idSendero: String, esSimulado: Boolean = false)
 
+    // Iniciar una caminata libre del usuario, sin sendero que seguir: registra el trazado caminado y deja marcar puntos; finaliza el recorrido anterior si había uno
+    suspend fun iniciarCaminataLibre(idUsuario: String, nombre: String)
     // Cambiar la velocidad de avance de la simulación (1, 5 o 20); no hace nada si el recorrido no es simulado
     fun cambiarMultiplicadorSimulacion(valor: Int)
 
