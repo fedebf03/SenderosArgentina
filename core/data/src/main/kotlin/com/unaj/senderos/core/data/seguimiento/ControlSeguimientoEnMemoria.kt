@@ -178,17 +178,18 @@ class ControlSeguimientoEnMemoria(
         finalizarSeguimiento(guardar = false)
     }
 
-    // Capturar un punto de interés en la última posición válida: copiar la foto si viene y guardar el punto al instante en la base local.
+    // Capturar un punto de interés en la posición reservada o, si no viene, en la última posición válida: copiar la foto si viene y guardar el punto al instante en la base local.
     // Con la señal débil informa la antigüedad de la posición usada para que la UI la muestre, sin bloquear la captura.
     // Los fallos devueltos llevan mensajes propios en español; el detalle técnico queda solo en el registro
-    override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?): Result<ResultadoCaptura> {
+    override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?, posicion: Coordenada?): Result<ResultadoCaptura> {
         val estadoActual = estadoInterno.value
             ?: return Result.failure(IllegalStateException("No hay un recorrido en curso para agregar un punto"))
-        val posicion = estadoActual.posicionActual
+        val posicionDelPunto = posicion ?: estadoActual.posicionActual
             ?: return Result.failure(IllegalStateException("Todavía no hay una posición válida del GPS; esperá a tener señal"))
         val idUsuario = idUsuarioActivo
         val instante = reloj()
-        val antiguedad = calcularAntiguedadSiLaSenalEsDebil(estadoActual, instante)
+        // Una posición reservada se tomó al tocar el botón, así que no se informa como antigua aunque la señal se haya debilitado después
+        val antiguedad = if (posicion != null) null else calcularAntiguedadSiLaSenalEsDebil(estadoActual, instante)
         var rutaFoto = ""
         return try {
             if (!uriFoto.isNullOrBlank()) {
@@ -201,8 +202,8 @@ class ControlSeguimientoEnMemoria(
                 id = generarIdentificador(),
                 idUsuario = idUsuario,
                 idSendero = estadoActual.idSendero,
-                latitud = posicion.latitud,
-                longitud = posicion.longitud,
+                latitud = posicionDelPunto.latitud,
+                longitud = posicionDelPunto.longitud,
                 tipo = tipo,
                 nota = nota,
                 foto = rutaFoto,

@@ -1,5 +1,6 @@
 package com.unaj.senderos.core.testing
 
+import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.EstadoSeguimiento
 import com.unaj.senderos.core.domain.model.MotivoFinSeguimiento
@@ -55,8 +56,11 @@ class FalsoControlSeguimiento(private val registro: MutableList<String> = mutabl
     var resultadoCapturarPunto: Result<ResultadoCaptura> = Result.failure(IllegalStateException("Sin configurar"))
     val capturasPedidas: MutableList<Triple<TipoPunto, String, String?>> = mutableListOf()
 
-    override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?): Result<ResultadoCaptura> {
+    val posicionesPedidas: MutableList<Coordenada?> = mutableListOf()
+
+    override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?, posicion: Coordenada?): Result<ResultadoCaptura> {
         capturasPedidas.add(Triple(tipo, nota, uriFoto))
+        posicionesPedidas.add(posicion)
         return resultadoCapturarPunto
     }
 }

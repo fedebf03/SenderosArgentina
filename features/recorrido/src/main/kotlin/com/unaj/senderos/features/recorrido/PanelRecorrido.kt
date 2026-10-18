@@ -3,7 +3,6 @@ package com.unaj.senderos.features.recorrido
 import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,7 +19,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.GpsOff
 import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material.icons.outlined.AddLocationAlt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -35,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -59,8 +56,6 @@ import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
 import com.unaj.senderos.core.ui.componentes.TEXTO_SUBIDA_RESTANTE
 import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 
-private val ANCHO_MINIMO_BOTONES_LADO_A_LADO = 340.dp
-private const val ESCALA_FUENTE_MAXIMA_LADO_A_LADO = 1.3f
 
 // Los datos y avisos se desplazan y las acciones quedan fijas abajo; el panel tiene altura máxima y, si los datos no entran, se resuelve con el desplazamiento
 @Composable
@@ -104,21 +99,11 @@ internal fun PanelRecorrido(
     }
 }
 
+// Mostrar las acciones fijas del panel: finalizar y cancelar el recorrido
 @Composable
 private fun AccionesDelPanel(estadoVisual: RecorridoEstadoVisual, alProcesarEvento: (RecorridoEvento) -> Unit) {
-    val escalaFuente = LocalDensity.current.fontScale
-    val botonAgregarPunto: @Composable (Modifier) -> Unit = { modificadorBoton ->
-        if (estadoVisual.puedeAgregarPunto) {
-            BotonSecundario(
-                texto = "Agregar punto",
-                alTocar = { alProcesarEvento(RecorridoEvento.AlTocarAgregarPunto) },
-                icono = { IconoDeBoton(Icons.Outlined.AddLocationAlt) },
-                modifier = modificadorBoton
-            )
-        }
-    }
-    // Al llegar al final el botón es el mismo, pero suma una bandera para marcar que es el paso siguiente
-    val botonFinalizar: @Composable (Modifier) -> Unit = { modificadorBoton ->
+    // Marcar puntos se hace con el botón flotante del mapa; al llegar al final, Finalizar suma una bandera para marcar que es el paso siguiente
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         BotonPrincipal(
             texto = "Finalizar",
             alTocar = { alProcesarEvento(RecorridoEvento.AlTocarFinalizar) },
@@ -127,25 +112,8 @@ private fun AccionesDelPanel(estadoVisual: RecorridoEstadoVisual, alProcesarEven
             } else {
                 null
             },
-            modifier = modificadorBoton
+            modifier = Modifier.fillMaxWidth()
         )
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val debenApilarse = estadoVisual.puedeAgregarPunto &&
-                (maxWidth < ANCHO_MINIMO_BOTONES_LADO_A_LADO || escalaFuente > ESCALA_FUENTE_MAXIMA_LADO_A_LADO)
-            if (debenApilarse) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    botonAgregarPunto(Modifier.fillMaxWidth())
-                    botonFinalizar(Modifier.fillMaxWidth())
-                }
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    botonAgregarPunto(Modifier.weight(1f))
-                    botonFinalizar(Modifier.weight(1f))
-                }
-            }
-        }
         BotonSecundario(
             texto = "Cancelar recorrido",
             alTocar = { alProcesarEvento(RecorridoEvento.AlTocarCancelarRecorrido) },

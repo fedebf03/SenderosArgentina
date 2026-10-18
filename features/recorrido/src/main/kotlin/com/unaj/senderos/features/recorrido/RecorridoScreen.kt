@@ -14,11 +14,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
@@ -61,7 +64,10 @@ private const val FRACCION_ALTURA_PANEL = 0.45f
 private const val FRACCION_ANCHO_PANEL = 0.4f
 private val ANCHO_MINIMO_PANEL = 300.dp
 private val ANCHO_MAXIMO_PANEL = 420.dp
+private val TAMANO_BOTON_AGREGAR_PUNTO = 72.dp
+private val TAMANO_ICONO_AGREGAR_PUNTO = 32.dp
 
+// Conectar la pantalla del recorrido con su ViewModel: efectos, fotos de los puntos, reloj y pedido de cancelación desde la notificación
 @Composable
 fun RecorridoPantalla(
     viewModel: RecorridoViewModel,
@@ -119,6 +125,7 @@ fun RecorridoPantalla(
     )
 }
 
+// Dibujar el recorrido en curso: mapa con el botón "+" para marcar puntos, panel de datos, diálogos y hoja del punto
 @Composable
 fun RecorridoContenido(
     estadoVisual: RecorridoEstadoVisual,
@@ -192,13 +199,33 @@ fun RecorridoContenido(
                                     )
                                 }
                             }
-                        if (!estadoVisual.estaSiguiendo) {
-                            ExtendedFloatingActionButton(
-                                onClick = { alProcesarEvento(RecorridoEvento.AlTocarCentrar) },
-                                icon = { Icon(imageVector = Icons.Filled.MyLocation, contentDescription = null) },
-                                text = { Text("Centrar") },
-                                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-                            )
+                        Column(
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (!estadoVisual.estaSiguiendo) {
+                                ExtendedFloatingActionButton(
+                                    onClick = { alProcesarEvento(RecorridoEvento.AlTocarCentrar) },
+                                    icon = { Icon(imageVector = Icons.Filled.MyLocation, contentDescription = null) },
+                                    text = { Text("Centrar") }
+                                )
+                            }
+                            if (estadoVisual.puedeAgregarPunto) {
+                                // Grande y siempre a mano para marcar lo que se ve sin frenar, como en Waze: abre la grilla de tipos; la foto es opcional
+                                FloatingActionButton(
+                                    onClick = { alProcesarEvento(RecorridoEvento.AlTocarAgregarPunto) },
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(TAMANO_BOTON_AGREGAR_PUNTO)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "Marcar un punto de interés",
+                                        modifier = Modifier.size(TAMANO_ICONO_AGREGAR_PUNTO)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

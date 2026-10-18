@@ -100,32 +100,36 @@ class RecorridoPuntosViewModelTest {
         )
     }
 
+    // Abrir la hoja como lo hace la pantalla: el botón "+" del mapa
+    private fun abrirHoja(viewModel: RecorridoViewModel) {
+        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+    }
+
+    private fun avisos(): List<RecorridoEfecto> = efectosRecibidos.filterIsInstance<RecorridoEfecto.MostrarAviso>()
+
     @Test
-    fun `agregar punto esta disponible detenido o simulado y no en movimiento`() = runTest(despachadorPrueba) {
+    fun `agregar punto esta disponible durante todo el recorrido aunque se camine`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
         advanceUntilIdle()
         assertFalse(viewModel.estadoVisual.value.puedeAgregarPunto)
 
         control.estadoEmitido.value = crearEstado(estaDetenido = false)
         advanceUntilIdle()
-        assertFalse(viewModel.estadoVisual.value.puedeAgregarPunto)
-
-        control.estadoEmitido.value = crearEstado(estaDetenido = true)
-        advanceUntilIdle()
         assertTrue(viewModel.estadoVisual.value.puedeAgregarPunto)
 
-        control.estadoEmitido.value = crearEstado(estaDetenido = false, esSimulado = true)
+        control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
         assertTrue(viewModel.estadoVisual.value.puedeAgregarPunto)
     }
 
     @Test
-    fun `tocar agregar punto abre la hoja con el formulario limpio`() = runTest(despachadorPrueba) {
+    fun `tocar el boton caminando abre la hoja limpia sin pedir la camara`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
-        control.estadoEmitido.value = crearEstado(estaDetenido = true)
+        control.estadoEmitido.value = crearEstado(estaDetenido = false)
         advanceUntilIdle()
 
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
+        advanceUntilIdle()
 
         val estado = viewModel.estadoVisual.value
         assertTrue(estado.esHojaPuntoVisible)
@@ -133,17 +137,51 @@ class RecorridoPuntosViewModelTest {
         assertEquals("", estado.notaPunto)
         assertNull(estado.fotoPunto)
         assertNull(estado.mensajeErrorPunto)
+        assertTrue(efectosRecibidos.isEmpty())
     }
 
     @Test
-    fun `en movimiento tocar agregar punto no abre la hoja`() = runTest(despachadorPrueba) {
+    fun `sin posicion tocar el boton avisa y no abre la hoja`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
-        control.estadoEmitido.value = crearEstado(estaDetenido = false)
+        control.estadoEmitido.value = crearEstado().copy(posicionActual = null)
         advanceUntilIdle()
 
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
+        advanceUntilIdle()
 
         assertFalse(viewModel.estadoVisual.value.esHojaPuntoVisible)
+        assertEquals(
+            listOf<RecorridoEfecto>(RecorridoEfecto.MostrarAviso("Todavía no hay una posición válida del GPS; esperá a tener señal")),
+            efectosRecibidos
+        )
+    }
+
+    @Test
+    fun `el punto se guarda en la posicion del momento en que se toco el boton`() = runTest(despachadorPrueba) {
+        control.resultadoCapturarPunto = Result.success(ResultadoCaptura(crearPuntoCapturadoDePrueba(), null))
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+        abrirHoja(viewModel)
+        control.estadoEmitido.value = crearEstado().copy(posicionActual = Coordenada(latitud = -41.15, longitud = -71.30))
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
+        advanceUntilIdle()
+
+        assertEquals(listOf<Coordenada?>(Coordenada(latitud = -41.12, longitud = -71.30)), control.posicionesPedidas)
+    }
+
+    @Test
+    fun `un fallo de la camara se muestra en la hoja`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        control.estadoEmitido.value = crearEstado()
+        advanceUntilIdle()
+        abrirHoja(viewModel)
+
+        viewModel.procesarEvento(RecorridoEvento.AlFallarFotoPunto("No hay una aplicación de cámara disponible"))
+
+        assertEquals("No hay una aplicación de cámara disponible", viewModel.estadoVisual.value.mensajeErrorPunto)
     }
 
     @Test
@@ -151,7 +189,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlElegirTipoPunto(TipoPunto.AGUA))
         viewModel.procesarEvento(RecorridoEvento.AlCambiarNotaPunto("Arroyo helado"))
@@ -172,7 +210,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
         viewModel.procesarEvento(RecorridoEvento.AlElegirTipoPunto(TipoPunto.AGUA))
         viewModel.procesarEvento(RecorridoEvento.AlCambiarNotaPunto("  Arroyo helado  "))
         viewModel.procesarEvento(RecorridoEvento.AlSeleccionarFotoPunto("content://foto/1"))
@@ -183,7 +221,7 @@ class RecorridoPuntosViewModelTest {
         assertEquals(listOf(Triple(TipoPunto.AGUA, "Arroyo helado", "content://foto/1" as String?)), control.capturasPedidas)
         assertFalse(viewModel.estadoVisual.value.esHojaPuntoVisible)
         assertFalse(viewModel.estadoVisual.value.estaGuardandoPunto)
-        assertEquals(listOf<RecorridoEfecto>(RecorridoEfecto.MostrarAviso("Punto guardado")), efectosRecibidos)
+        assertEquals(listOf<RecorridoEfecto>(RecorridoEfecto.MostrarAviso("Punto guardado")), avisos())
     }
 
     @Test
@@ -192,7 +230,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
         advanceUntilIdle()
@@ -206,7 +244,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
         viewModel.procesarEvento(RecorridoEvento.AlCambiarNotaPunto("Mirador"))
 
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
@@ -217,19 +255,7 @@ class RecorridoPuntosViewModelTest {
         assertEquals("Todavía no hay una posición GPS", estado.mensajeErrorPunto)
         assertEquals("Mirador", estado.notaPunto)
         assertFalse(estado.estaGuardandoPunto)
-        assertTrue(efectosRecibidos.isEmpty())
-    }
-
-    @Test
-    fun `un fallo de la camara se muestra en la hoja`() = runTest(despachadorPrueba) {
-        val viewModel = crearViewModel()
-        control.estadoEmitido.value = crearEstado(estaDetenido = true)
-        advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
-
-        viewModel.procesarEvento(RecorridoEvento.AlFallarFotoPunto("No hay una aplicación de cámara disponible"))
-
-        assertEquals("No hay una aplicación de cámara disponible", viewModel.estadoVisual.value.mensajeErrorPunto)
+        assertTrue(avisos().isEmpty())
     }
 
     @Test
@@ -238,7 +264,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
@@ -253,7 +279,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
         advanceUntilIdle()
 
@@ -322,14 +348,14 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
         advanceUntilIdle()
 
         assertEquals(
             listOf<RecorridoEfecto>(RecorridoEfecto.MostrarAviso("Punto guardado con la posición de hace 12 s (señal débil)")),
-            efectosRecibidos
+            avisos()
         )
     }
 
@@ -339,7 +365,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlGuardarPunto)
         advanceUntilIdle()
@@ -352,7 +378,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlConfirmarFinalizar)
         advanceUntilIdle()
@@ -365,7 +391,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         viewModel.procesarEvento(RecorridoEvento.AlConfirmarCancelarRecorrido)
         advanceUntilIdle()
@@ -378,7 +404,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         control.motivoFinEmitido.value = MotivoFinSeguimiento.CANCELADO_POR_EL_USUARIO
         control.estadoEmitido.value = null
@@ -392,7 +418,7 @@ class RecorridoPuntosViewModelTest {
         val viewModel = crearViewModel()
         control.estadoEmitido.value = crearEstado(estaDetenido = true)
         advanceUntilIdle()
-        viewModel.procesarEvento(RecorridoEvento.AlTocarAgregarPunto)
+        abrirHoja(viewModel)
 
         control.estadoEmitido.value = null
         advanceUntilIdle()

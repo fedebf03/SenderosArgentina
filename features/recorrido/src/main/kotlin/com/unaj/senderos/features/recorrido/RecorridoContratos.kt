@@ -64,7 +64,7 @@ data class RecorridoEstadoVisual(
     val perfilEstaDesactualizado: Boolean = false
 ) {
     val puedeAgregarPunto: Boolean
-        get() = fase == FaseRecorrido.EN_CURSO && (estaDetenido || esSimulado)
+        get() = fase == FaseRecorrido.EN_CURSO
 
     val cantidadPuntosCapturados: Int
         get() = revision.puntosPendientes.size
