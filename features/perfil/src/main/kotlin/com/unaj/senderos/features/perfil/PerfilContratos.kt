@@ -1,6 +1,8 @@
 package com.unaj.senderos.features.perfil
 
 import com.unaj.senderos.core.domain.model.RecorridoRealizado
+import com.unaj.senderos.core.domain.recorrido.CalculadoraEstadisticas
+import com.unaj.senderos.core.domain.recorrido.EstadisticasUsuario
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.AnalisisCopiaSeguridad
 import com.unaj.senderos.core.domain.usecase.ModoRestauracion
@@ -15,7 +17,11 @@ data class PerfilEstadoVisual(
     val estaProcesandoCopia: Boolean = false,
     // Copia leída que tiene senderos repetidos y espera que el usuario elija qué hacer con ellos
     val copiaPendiente: AnalisisCopiaSeguridad? = null
-)
+) {
+    // Totales del historial: solo recorridos reales de al menos 50 m, sin los simulados
+    val estadisticas: EstadisticasUsuario
+        get() = CalculadoraEstadisticas.calcular(recorridos)
+}
 
 sealed interface PerfilEvento {
     data object AlTocarCerrarSesion : PerfilEvento
