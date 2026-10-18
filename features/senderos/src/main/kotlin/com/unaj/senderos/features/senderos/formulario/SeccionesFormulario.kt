@@ -313,6 +313,7 @@ internal fun SeccionRecorrido(
         icono = { IconoDeBoton(Icons.Filled.Map) },
         modifier = Modifier.fillMaxWidth()
     )
+    ImportarTrazado(estadoVisual, alProcesarEvento)
 }
 
 @Composable

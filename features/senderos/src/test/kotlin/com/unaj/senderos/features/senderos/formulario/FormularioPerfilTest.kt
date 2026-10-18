@@ -5,6 +5,8 @@ import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
+import com.unaj.senderos.core.domain.usecase.ImportarTrazadoUseCase
+import com.unaj.senderos.core.testing.FalsoLectorArchivos
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
@@ -56,7 +58,8 @@ class FormularioPerfilTest {
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             GuardarSenderoUseCase(repositorio, autenticacion),
             FalsoAlmacenFotos(),
-            CalcularPerfilDeTrazadoUseCase(fuente)
+            CalcularPerfilDeTrazadoUseCase(fuente),
+            ImportarTrazadoUseCase(FalsoLectorArchivos())
         )
     }
 

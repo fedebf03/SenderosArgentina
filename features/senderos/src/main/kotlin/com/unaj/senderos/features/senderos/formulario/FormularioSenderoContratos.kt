@@ -10,6 +10,7 @@ import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
 import com.unaj.senderos.core.domain.model.PerfilElevacion
+import com.unaj.senderos.core.domain.recorrido.TrazadoImportado
 
 enum class CampoFormulario {
     NOMBRE,
@@ -87,6 +88,9 @@ data class FormularioSenderoEstadoVisual(
     val estaCalculandoPerfil: Boolean = false,
     // Motivo por el que no se pudo calcular el perfil, para mostrarlo con la opción de reintentar
     val avisoPerfil: String? = null,
+    val estaImportandoTrazado: Boolean = false,
+    // Trazado importado que espera confirmación porque reemplazaría el recorrido ya marcado
+    val trazadoImportadoPendiente: TrazadoImportado? = null,
     val foto: String = "",
     val estaProcesandoFoto: Boolean = false
 ) {
@@ -109,6 +113,9 @@ sealed interface FormularioSenderoEvento {
     data object AlCalcularDuracion : FormularioSenderoEvento
     data object AlUsarDistanciaDelMapa : FormularioSenderoEvento
     data object AlCalcularPerfil : FormularioSenderoEvento
+    data class AlImportarTrazado(val uri: String) : FormularioSenderoEvento
+    data object AlConfirmarReemplazoTrazado : FormularioSenderoEvento
+    data object AlCancelarReemplazoTrazado : FormularioSenderoEvento
     data class AlQuitarRecomendacion(val indice: Int) : FormularioSenderoEvento
     data object AlAgregarServicio : FormularioSenderoEvento
     data class AlQuitarServicio(val indice: Int) : FormularioSenderoEvento
