@@ -4,7 +4,9 @@ import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
+import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
 import com.unaj.senderos.core.testing.FalsoAlmacenFotos
+import com.unaj.senderos.core.testing.FalsoFuenteElevacion
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
 import com.unaj.senderos.core.testing.crearSenderoDePrueba
@@ -43,7 +45,8 @@ class FormularioSenderoViewModelTest {
             idSendero,
             ObservarDetalleSenderoUseCase(repositorio, autenticacion),
             GuardarSenderoUseCase(repositorio, autenticacion),
-            FalsoAlmacenFotos()
+            FalsoAlmacenFotos(),
+            CalcularPerfilDeTrazadoUseCase(FalsoFuenteElevacion())
         )
     }
 
