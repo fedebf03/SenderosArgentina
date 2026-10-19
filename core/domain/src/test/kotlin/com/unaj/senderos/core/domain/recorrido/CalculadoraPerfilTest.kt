@@ -195,31 +195,30 @@ class CalculadoraPerfilTest {
     )
 
     @Test
-    fun `el autocompletado solo completa los valores que son exactamente cero`() {
-        val sendero = crearSenderoDePrueba(desnivelMetros = 0, alturaMaximaMetros = 0, alturaMinimaMetros = -50)
+    fun `el desnivel y las alturas del sendero son siempre los del perfil`() {
+        val sendero = crearSenderoDePrueba(desnivelMetros = 650, alturaMaximaMetros = 2100, alturaMinimaMetros = -50)
 
         val resultado = CalculadoraPerfil.aplicarAlSendero(sendero, perfilCon(120, 1500, 1000))
 
         assertEquals(120, resultado.desnivelMetros)
         assertEquals(1500, resultado.alturaMaximaMetros)
-        assertEquals(-50, resultado.alturaMinimaMetros)
+        assertEquals(1000, resultado.alturaMinimaMetros)
     }
 
     @Test
-    fun `un recalculo actualiza los campos que la app habia autocompletado y respeta los editados`() {
-        val anterior = perfilCon(100, 1500, 1000)
+    fun `un recalculo reemplaza los valores del perfil anterior`() {
         val sendero = crearSenderoDePrueba(
             desnivelMetros = 100,
             alturaMaximaMetros = 1500,
             alturaMinimaMetros = 900,
-            perfilElevacion = anterior
+            perfilElevacion = perfilCon(100, 1500, 900)
         )
 
         val resultado = CalculadoraPerfil.aplicarAlSendero(sendero, perfilCon(200, 1700, 1000))
 
         assertEquals(200, resultado.desnivelMetros)
         assertEquals(1700, resultado.alturaMaximaMetros)
-        assertEquals(900, resultado.alturaMinimaMetros)
+        assertEquals(1000, resultado.alturaMinimaMetros)
     }
 
     private val perfilRampa = perfilCon(

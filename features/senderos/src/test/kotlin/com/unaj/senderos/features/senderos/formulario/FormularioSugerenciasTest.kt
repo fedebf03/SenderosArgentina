@@ -6,6 +6,7 @@ import com.unaj.senderos.core.domain.usecase.RetirarPuntosIncorporadosUseCase
 import com.unaj.senderos.core.domain.usecase.ConvertirCaminataEnBorradorUseCase
 import com.unaj.senderos.core.domain.configuracion.ProvinciasArgentinas
 import com.unaj.senderos.core.domain.model.Usuario
+import com.unaj.senderos.core.domain.recorrido.CalculadoraDuracion
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
@@ -112,19 +113,39 @@ class FormularioSugerenciasTest {
     }
 
     @Test
-    fun `calcular la duracion usa la distancia y el desnivel cargados`() {
+    fun `calcular la duracion sin perfil usa solo la distancia del recorrido`() {
         val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "10,0"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "600"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(-40.0, -70.0))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(-40.05, -70.0))
+        val distancia = viewModel.estadoVisual.value.distanciaCalculadaKilometros
 
         viewModel.procesarEvento(FormularioSenderoEvento.AlCalcularDuracion)
 
-        assertEquals("3 h 30 min", viewModel.estadoVisual.value.duracionEstimada)
+        val minutos = CalculadoraDuracion.estimarMinutos(distancia, 0)!!
+        assertEquals(formatearDuracionEstimada(minutos), viewModel.estadoVisual.value.duracionEstimada)
         assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
     }
 
     @Test
-    fun `sin distancia cargada la duracion usa la del recorrido marcado`() {
+    fun `calcular la duracion con el perfil suma el desnivel de subida`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(-40.0, -70.0))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(-40.05, -70.0))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
+        advanceUntilIdle()
+        val distancia = viewModel.estadoVisual.value.distanciaCalculadaKilometros
+        val desnivel = viewModel.estadoVisual.value.perfilElevacion!!.desnivelPositivoMetros
+
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCalcularDuracion)
+
+        val minutos = CalculadoraDuracion.estimarMinutos(distancia, desnivel)!!
+        assertTrue(desnivel > 0)
+        assertEquals(formatearDuracionEstimada(minutos), viewModel.estadoVisual.value.duracionEstimada)
+        assertTrue(minutos > CalculadoraDuracion.estimarMinutos(distancia, 0)!!)
+    }
+
+    @Test
+    fun `la duracion usa la distancia del recorrido marcado`() {
         val viewModel = crearViewModel()
         viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
         viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0359))
@@ -135,34 +156,7 @@ class FormularioSugerenciasTest {
     }
 
     @Test
-    fun `un desnivel con decimales se redondea`() {
-        val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "10"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "599,6"))
-
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCalcularDuracion)
-
-        assertEquals("3 h 30 min", viewModel.estadoVisual.value.duracionEstimada)
-    }
-
-    @Test
-    fun `un desnivel que no es un numero avisa en lugar de tomarlo como cero`() = runTest(despachadorPrueba) {
-        val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "10"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "mucho"))
-
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCalcularDuracion)
-        advanceUntilIdle()
-
-        assertEquals("", viewModel.estadoVisual.value.duracionEstimada)
-        assertEquals(
-            listOf<FormularioSenderoEfecto>(FormularioSenderoEfecto.MostrarAviso("Revisá el desnivel: tiene que ser un número de metros")),
-            efectosRecibidos
-        )
-    }
-
-    @Test
-    fun `sin distancia ni recorrido calcular la duracion avisa`() = runTest(despachadorPrueba) {
+    fun `sin recorrido calcular la duracion avisa`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
 
         viewModel.procesarEvento(FormularioSenderoEvento.AlCalcularDuracion)
@@ -171,7 +165,7 @@ class FormularioSugerenciasTest {
         assertEquals("", viewModel.estadoVisual.value.duracionEstimada)
         assertEquals(
             listOf<FormularioSenderoEfecto>(
-                FormularioSenderoEfecto.MostrarAviso("Cargá la distancia o marcá el recorrido para calcular la duración")
+                FormularioSenderoEfecto.MostrarAviso("Marcá el recorrido para calcular la duración")
             ),
             efectosRecibidos
         )

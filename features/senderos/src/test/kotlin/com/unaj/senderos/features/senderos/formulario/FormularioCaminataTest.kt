@@ -87,9 +87,6 @@ class FormularioCaminataTest {
     private fun completarCamposObligatorios(viewModel: FormularioSenderoViewModel) {
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, "Rio Negro"))
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESCRIPCION, "Caminata por la costa"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "20"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MAXIMA, "800"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MINIMA, "780"))
     }
 
     @Test
@@ -101,7 +98,7 @@ class FormularioCaminataTest {
         assertTrue(estado.recorrido.size >= 2)
         assertEquals(TipoRecorrido.LINEAL, estado.tipoRecorrido)
         assertTrue(estado.nombre.startsWith("Caminata del "))
-        assertTrue(estado.distancia.isNotBlank())
+        assertTrue(estado.distanciaCalculadaKilometros > 0.0)
         assertTrue(estado.hayCambiosSinGuardar)
     }
 
@@ -157,7 +154,8 @@ class FormularioCaminataTest {
         advanceUntilIdle()
         completarCamposObligatorios(viewModel)
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "Cerro Nuevo"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "5"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.05))
 
         viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
         advanceUntilIdle()

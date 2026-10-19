@@ -5,6 +5,7 @@ import com.unaj.senderos.core.testing.FalsoRecorridoRepositorio
 import com.unaj.senderos.core.domain.usecase.RetirarPuntosIncorporadosUseCase
 import com.unaj.senderos.core.domain.usecase.ConvertirCaminataEnBorradorUseCase
 import com.unaj.senderos.core.domain.model.Bioma
+import com.unaj.senderos.core.domain.model.CampoSendero
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
@@ -61,60 +62,54 @@ class FormularioSenderoViewModelTest {
     }
 
     @Test
-    fun `al cerrar el editor con la distancia vacia se completa con la del mapa y con coma`() = runTest(despachadorPrueba) {
-        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
-        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.1))
+    fun `al guardar la distancia sale del recorrido con un decimal`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio()
+        val viewModel = crearViewModel(null, repositorio)
+        completarCamposObligatorios(viewModel)
 
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
         advanceUntilIdle()
 
-        assertEquals("11,1", viewModel.estadoVisual.value.distancia)
+        assertEquals(11.1, repositorio.llamadasGuardarSendero.single().second.distanciaKilometros, 0.0001)
     }
 
     @Test
-    fun `al cerrar el editor no pisa una distancia ya cargada`() = runTest(despachadorPrueba) {
-        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "570"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.1))
+    fun `sin recorrido no se guarda y se marca el recorrido`() = runTest(despachadorPrueba) {
+        val repositorio = FalsoSenderoRepositorio()
+        val viewModel = crearViewModel(null, repositorio)
+        completarTextosObligatorios(viewModel)
 
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
         advanceUntilIdle()
 
-        assertEquals("570", viewModel.estadoVisual.value.distancia)
+        assertTrue(repositorio.llamadasGuardarSendero.isEmpty())
+        assertTrue(CampoSendero.RECORRIDO in viewModel.estadoVisual.value.camposConError)
     }
 
     @Test
-    fun `al cerrar el editor con menos de dos puntos no completa la distancia`() = runTest(despachadorPrueba) {
-        val viewModel = crearViewModel(null, FalsoSenderoRepositorio())
-        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
-
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
-        advanceUntilIdle()
-
-        assertEquals("", viewModel.estadoVisual.value.distancia)
-    }
-
-    @Test
-    fun `la distancia de un sendero en edicion se muestra con coma`() = runTest(despachadorPrueba) {
+    fun `un sendero viejo sin trazado conserva su distancia al guardarse`() = runTest(despachadorPrueba) {
         val repositorio = FalsoSenderoRepositorio(listOf(crearSenderoDePrueba(distanciaKilometros = 12.5)))
         val viewModel = crearViewModel("sendero-1", repositorio)
-
         advanceUntilIdle()
 
-        assertEquals("12,5", viewModel.estadoVisual.value.distancia)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        assertEquals(12.5, repositorio.llamadasGuardarSendero.single().second.distanciaKilometros, 0.0001)
     }
 
-    // Completar los campos obligatorios del formulario con valores válidos
-    private fun completarCamposObligatorios(viewModel: FormularioSenderoViewModel) {
+    // Completar los textos obligatorios del formulario con valores válidos
+    private fun completarTextosObligatorios(viewModel: FormularioSenderoViewModel) {
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "Cerro Nuevo"))
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, "Jujuy"))
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESCRIPCION, "Camino de altura"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "8"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "300"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MAXIMA, "4000"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MINIMA, "3500"))
+    }
+
+    // Completar los textos y marcar un recorrido de 11,1 km, que es lo que hace falta para guardar
+    private fun completarCamposObligatorios(viewModel: FormularioSenderoViewModel) {
+        completarTextosObligatorios(viewModel)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.0))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(0.0, 0.1))
     }
 
     @Test

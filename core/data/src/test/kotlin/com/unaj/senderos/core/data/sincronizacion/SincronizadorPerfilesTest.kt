@@ -231,13 +231,13 @@ class SincronizadorPerfilesTest {
     }
 
     @Test
-    fun `el autocompletado conserva el desnivel cargado por el usuario`() = runTest {
+    fun `el perfil reemplaza el desnivel que tenia el sendero`() = runTest {
         val dao = FalsoSenderoDao(listOf(entidadSinPerfil(desnivel = 777)))
 
         crearSincronizador(dao).sincronizar(idUsuario).getOrThrow()
 
         val local = dao.entidades.value.single()
-        assertEquals(777, local.desnivelMetros)
+        assertEquals(local.perfilElevacion?.desnivelPositivoMetros, local.desnivelMetros)
         assertNotNull(local.perfilElevacion)
         assertEquals(1100, local.alturaMaximaMetros)
     }

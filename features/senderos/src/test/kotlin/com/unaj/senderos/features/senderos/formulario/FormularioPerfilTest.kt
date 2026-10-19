@@ -81,49 +81,14 @@ class FormularioPerfilTest {
         val viewModel = crearViewModel()
 
         trazar(viewModel)
-        assertEquals("1,1", viewModel.estadoVisual.value.distancia)
+        assertEquals(1.1, viewModel.estadoVisual.value.distanciaCalculadaKilometros, 0.05)
 
         viewModel.procesarEvento(FormularioSenderoEvento.AlAgregarPunto(-40.02, -70.0))
-        assertEquals("2,2", viewModel.estadoVisual.value.distancia)
-        assertFalse(viewModel.estadoVisual.value.distanciaEsManual)
+        assertEquals(2.2, viewModel.estadoVisual.value.distanciaCalculadaKilometros, 0.05)
     }
 
     @Test
-    fun `una distancia escrita a mano no se pisa con la del mapa`() {
-        val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "5"))
-
-        trazar(viewModel)
-
-        assertEquals("5", viewModel.estadoVisual.value.distancia)
-        assertTrue(viewModel.estadoVisual.value.distanciaEsManual)
-    }
-
-    @Test
-    fun `usar la distancia del mapa vuelve a seguirlo`() {
-        val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "5"))
-        trazar(viewModel)
-
-        viewModel.procesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa)
-
-        assertEquals("1,1", viewModel.estadoVisual.value.distancia)
-        assertFalse(viewModel.estadoVisual.value.distanciaEsManual)
-    }
-
-    @Test
-    fun `vaciar la distancia vuelve a seguir al mapa`() {
-        val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "5"))
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, ""))
-
-        trazar(viewModel)
-
-        assertEquals("1,1", viewModel.estadoVisual.value.distancia)
-    }
-
-    @Test
-    fun `al cerrar el editor se calcula el perfil y completa desnivel y alturas vacios`() = runTest(despachadorPrueba) {
+    fun `al cerrar el editor se calcula el perfil`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
         trazar(viewModel)
 
@@ -133,24 +98,30 @@ class FormularioPerfilTest {
         val estado = viewModel.estadoVisual.value
         val perfil = estado.perfilElevacion
         assertTrue(perfil != null)
-        assertEquals(perfil?.desnivelPositivoMetros.toString(), estado.desnivel)
-        assertEquals("1100", estado.alturaMaxima)
-        assertEquals("1000", estado.alturaMinima)
+        assertEquals(1100, perfil?.alturaMaximaMetros)
+        assertEquals(1000, perfil?.alturaMinimaMetros)
         assertFalse(estado.estaCalculandoPerfil)
         assertFalse(estado.perfilEstaDesactualizado)
     }
 
     @Test
-    fun `el perfil no pisa un desnivel escrito a mano`() = runTest(despachadorPrueba) {
+    fun `al guardar el desnivel y las alturas del sendero son los del perfil`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, "350"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "Costanera"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, "Santa Cruz"))
+        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESCRIPCION, "Junto al lago"))
         trazar(viewModel)
-
         viewModel.procesarEvento(FormularioSenderoEvento.AlCerrarEditorMapa)
         advanceUntilIdle()
+        val perfil = viewModel.estadoVisual.value.perfilElevacion
 
-        assertEquals("350", viewModel.estadoVisual.value.desnivel)
-        assertEquals("1100", viewModel.estadoVisual.value.alturaMaxima)
+        viewModel.procesarEvento(FormularioSenderoEvento.AlGuardar)
+        advanceUntilIdle()
+
+        val guardado = repositorio.llamadasGuardarSendero.single().second
+        assertEquals(perfil?.desnivelPositivoMetros, guardado.desnivelMetros)
+        assertEquals(1100, guardado.alturaMaximaMetros)
+        assertEquals(1000, guardado.alturaMinimaMetros)
     }
 
     @Test
@@ -245,9 +216,8 @@ class FormularioPerfilTest {
         assertEquals(CalculadoraPerfil.firmaTrazado(guardado.recorrido, guardado.tipoRecorrido), guardado.perfilElevacion?.firmaTrazado)
     }
 
-    // Así la sincronización sabe que el desnivel y las alturas los completó la app y puede actualizarlos con el perfil nuevo
     @Test
-    fun `al guardar con el perfil desactualizado viaja el perfil que completo los campos`() = runTest(despachadorPrueba) {
+    fun `al guardar con el perfil desactualizado viaja el perfil anterior`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.NOMBRE, "Costanera"))
         viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.REGION, "Santa Cruz"))
@@ -265,29 +235,6 @@ class FormularioPerfilTest {
     }
 
     @Test
-    fun `usar la distancia del mapa cuenta como cambio sin guardar`() {
-        val viewModel = crearViewModel()
-        trazar(viewModel)
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "5"))
-
-        viewModel.procesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa)
-
-        assertTrue(viewModel.estadoVisual.value.hayCambiosSinGuardar)
-    }
-
-    @Test
-    fun `vaciar la distancia no la rellena mientras se escribe`() {
-        val viewModel = crearViewModel()
-        trazar(viewModel)
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, "5"))
-
-        viewModel.procesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, ""))
-
-        assertEquals("", viewModel.estadoVisual.value.distancia)
-        assertFalse(viewModel.estadoVisual.value.distanciaEsManual)
-    }
-
-    @Test
     fun `cambiar el tipo de recorrido con el mapa cerrado recalcula el perfil`() = runTest(despachadorPrueba) {
         val viewModel = crearViewModel()
         trazar(viewModel)
@@ -299,29 +246,5 @@ class FormularioPerfilTest {
 
         assertFalse(viewModel.estadoVisual.value.perfilEstaDesactualizado)
         assertEquals(2, fuente.llamadas.size)
-    }
-
-    @Test
-    fun `al editar un sendero cuya distancia es la del mapa la distancia sigue al mapa`() = runTest(despachadorPrueba) {
-        val trazado = listOf(PuntoRecorrido(-40.0, -70.0), PuntoRecorrido(-40.01, -70.0))
-        repositorio.senderos.value = listOf(
-            crearSenderoDePrueba(id = "sendero-1", recorrido = trazado).copy(distanciaKilometros = 1.1, tipoRecorrido = TipoRecorrido.LINEAL)
-        )
-        val viewModel = crearViewModel("sendero-1")
-        advanceUntilIdle()
-
-        assertFalse(viewModel.estadoVisual.value.distanciaEsManual)
-    }
-
-    @Test
-    fun `al editar un sendero con otra distancia se respeta como escrita a mano`() = runTest(despachadorPrueba) {
-        val trazado = listOf(PuntoRecorrido(-40.0, -70.0), PuntoRecorrido(-40.01, -70.0))
-        repositorio.senderos.value = listOf(
-            crearSenderoDePrueba(id = "sendero-1", recorrido = trazado).copy(distanciaKilometros = 12.0, tipoRecorrido = TipoRecorrido.LINEAL)
-        )
-        val viewModel = crearViewModel("sendero-1")
-        advanceUntilIdle()
-
-        assertTrue(viewModel.estadoVisual.value.distanciaEsManual)
     }
 }

@@ -108,7 +108,7 @@ class CalcularPerfilElevacionUseCaseTest {
     }
 
     @Test
-    fun `completa desnivel y alturas que estan en cero`() = runTest {
+    fun `completa desnivel y alturas del sendero con los del perfil`() = runTest {
         val repositorio = FalsoSenderoRepositorio(listOf(senderoConTrazado()))
 
         crearCasoDeUso(repositorio)("sendero-1")
@@ -120,7 +120,7 @@ class CalcularPerfilElevacionUseCaseTest {
     }
 
     @Test
-    fun `no pisa los valores que el usuario ya cargo`() = runTest {
+    fun `reemplaza los valores cargados antes por los del perfil`() = runTest {
         val repositorio = FalsoSenderoRepositorio(
             listOf(senderoConTrazado(desnivelMetros = 650, alturaMaximaMetros = 2100, alturaMinimaMetros = 0))
         )
@@ -128,8 +128,8 @@ class CalcularPerfilElevacionUseCaseTest {
         crearCasoDeUso(repositorio)("sendero-1")
 
         val sendero = repositorio.senderos.value.single()
-        assertEquals(650, sendero.desnivelMetros)
-        assertEquals(2100, sendero.alturaMaximaMetros)
+        assertEquals(100.0, sendero.desnivelMetros.toDouble(), 1.0)
+        assertEquals(1100, sendero.alturaMaximaMetros)
         assertEquals(1000, sendero.alturaMinimaMetros)
     }
 

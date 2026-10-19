@@ -63,15 +63,6 @@ class GuardarSenderoUseCaseTest {
     }
 
     @Test
-    fun `altura maxima menor que la minima marca el campo ALTURA_MAXIMA`() = runTest {
-        val resultado = crearCasoDeUso()(
-            crearSenderoDePrueba(alturaMinimaMetros = 1500, alturaMaximaMetros = 1000)
-        )
-
-        assertEquals(setOf(CampoSendero.ALTURA_MAXIMA), camposInvalidosDe(resultado))
-    }
-
-    @Test
     fun `genera el identificador con el generador inyectado si esta en blanco`() = runTest {
         val guardado = crearCasoDeUso()(crearSenderoDePrueba(id = "")).getOrThrow()
 
