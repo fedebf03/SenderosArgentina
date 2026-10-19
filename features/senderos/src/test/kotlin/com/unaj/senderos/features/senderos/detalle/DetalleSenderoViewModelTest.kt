@@ -156,7 +156,8 @@ class DetalleSenderoViewModelTest {
     private fun crearViewModel(
         recorrido: List<PuntoRecorrido>,
         perfilElevacion: PerfilElevacion? = null,
-        tipoRecorrido: TipoRecorrido = TipoRecorrido.CIRCULAR
+        tipoRecorrido: TipoRecorrido = TipoRecorrido.CIRCULAR,
+        idOrigen: String = ""
     ): DetalleSenderoViewModel {
         val repositorio = FalsoSenderoRepositorio(
             listOf(
@@ -165,7 +166,7 @@ class DetalleSenderoViewModelTest {
                     recorrido = recorrido,
                     tipoRecorrido = tipoRecorrido,
                     perfilElevacion = perfilElevacion
-                ),
+                ).copy(idOrigen = idOrigen),
                 crearSenderoDePrueba(id = "sendero-2", nombre = "Laguna Azul", recorrido = recorridoValido)
             )
         )
@@ -197,6 +198,30 @@ class DetalleSenderoViewModelTest {
             viewModel.efectoVisual.collect { efecto -> efectosRecibidos.add(efecto) }
         }
         return viewModel
+    }
+
+    @Test
+    fun `un sendero propio se puede editar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido)
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarEditar)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.estadoVisual.value.puedeEditar)
+        assertEquals(listOf<DetalleSenderoEfecto>(DetalleSenderoEfecto.NavegarAEdicion("sendero-1")), efectosRecibidos)
+    }
+
+    @Test
+    fun `una copia de un sendero publico no se puede editar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, idOrigen = "publico-1")
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarEditar)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.puedeEditar)
+        assertTrue(efectosRecibidos.isEmpty())
     }
 
     @Test

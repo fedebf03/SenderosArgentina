@@ -93,10 +93,9 @@ class FormularioImportacionTest {
         assertEquals(TipoRecorrido.IDA_Y_VUELTA, estado.tipoRecorrido)
         assertEquals("Costanera de El Calafate", estado.nombre)
         assertTrue(estado.recorrido.size >= 2)
-        assertFalse(estado.distanciaEsManual)
-        assertEquals(formatearDistanciaEsperada(estado), estado.distancia)
-        assertEquals("190", estado.alturaMaxima)
-        assertEquals("180", estado.alturaMinima)
+        assertTrue(estado.distanciaCalculadaKilometros > 0.0)
+        assertEquals(190, estado.perfilElevacion?.alturaMaximaMetros)
+        assertEquals(180, estado.perfilElevacion?.alturaMinimaMetros)
         assertTrue("el perfil sale del archivo, sin pedirlo a la red", fuente.llamadas.isEmpty())
         assertTrue(estado.hayCambiosSinGuardar)
         assertFalse(estado.estaImportandoTrazado)
@@ -169,8 +168,4 @@ class FormularioImportacionTest {
             efectosRecibidos
         )
     }
-
-    // Escribir la distancia del mapa como la escribe el formulario
-    private fun formatearDistanciaEsperada(estado: FormularioSenderoEstadoVisual): String =
-        com.unaj.senderos.core.ui.comun.formatearDecimalEditable(Math.round(estado.distanciaCalculadaKilometros * 10) / 10.0)
 }
