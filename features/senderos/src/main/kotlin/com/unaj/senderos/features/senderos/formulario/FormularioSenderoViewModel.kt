@@ -48,7 +48,8 @@ private const val MENSAJE_REVISAR_CAMPOS = "Revisá los campos marcados"
 private const val MENSAJE_ETAPA_INVALIDA = "Completá el nombre y los km de la etapa"
 private const val MENSAJE_FOTO_INVALIDA = "No se pudo usar esa foto"
 private const val MENSAJE_FOTO_PUNTO_INVALIDA = "No se pudo guardar la foto del punto"
-private const val MENSAJE_FALTA_DISTANCIA_PARA_DURACION = "Cargá la distancia o marcá el recorrido para calcular la duración"
+private const val MENSAJE_FALTA_DISTANCIA_PARA_DURACION = "Marcá el recorrido para calcular la duración"
+private const val MENSAJE_FALTA_RECORRIDO = "Marcá el recorrido en el mapa para guardar el sendero"
 private const val MENSAJE_PERFIL_SIN_CONEXION = "Sin conexión: el perfil se calculará al sincronizar"
 private const val MENSAJE_PERFIL_ERROR = "No se pudo calcular el perfil de elevación"
 private const val MENSAJE_IMPORTACION_ERROR = "No se pudo importar el archivo"
@@ -119,7 +120,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             }
             is FormularioSenderoEvento.AlSeleccionarTipoRecorrido -> {
                 _estadoVisual.update { estadoActual ->
-                    seguirDistanciaDelMapa(estadoActual.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true))
+                    estadoActual.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true)
                 }
                 // El tipo cambia el trazado del perfil (cierre o vuelta); con el mapa abierto se recalcula al cerrarlo
                 if (!_estadoVisual.value.esEditorMapaVisible) calcularPerfil(forzar = false)
@@ -138,11 +139,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 }
             }
             is FormularioSenderoEvento.AlCalcularDuracion -> calcularDuracion()
-            is FormularioSenderoEvento.AlUsarDistanciaDelMapa -> {
-                _estadoVisual.update { estadoActual ->
-                    seguirDistanciaDelMapa(estadoActual.copy(distanciaEsManual = false, hayCambiosSinGuardar = true))
-                }
-            }
             is FormularioSenderoEvento.AlCalcularPerfil -> calcularPerfil(forzar = true)
             is FormularioSenderoEvento.AlImportarTrazado -> importarTrazado(evento.uri)
             is FormularioSenderoEvento.AlConfirmarReemplazoTrazado -> {
@@ -256,10 +252,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 return@launch
             }
             senderoOriginal = senderoEncontrado
-            val distanciaDelMapa = CalculadoraRecorrido.distanciaKilometros(senderoEncontrado.recorrido, senderoEncontrado.tipoRecorrido)
-            // La distancia sigue al mapa solo si es la que el mapa daría; otra la escribió el usuario a mano
-            val distanciaEsManual = senderoEncontrado.recorrido.size < 2 ||
-                Math.round(distanciaDelMapa * 10) != Math.round(senderoEncontrado.distanciaKilometros * 10)
             _estadoVisual.update { estadoActual ->
                 estadoActual.copy(
                     estaCargando = false,
@@ -267,7 +259,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                     nombre = senderoEncontrado.nombre,
                     region = senderoEncontrado.region,
                     descripcion = senderoEncontrado.descripcion,
-                    distancia = formatearDecimalEditable(senderoEncontrado.distanciaKilometros),
                     duracionEstimada = senderoEncontrado.duracionEstimada,
                     puntoInicio = senderoEncontrado.puntoInicio,
                     mejorEpoca = senderoEncontrado.mejorEpoca,
@@ -280,7 +271,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                     recorrido = senderoEncontrado.recorrido,
                     perfilElevacion = senderoEncontrado.perfilElevacion,
                     foto = senderoEncontrado.foto,
-                    distanciaEsManual = distanciaEsManual,
                     hayCambiosSinGuardar = false
                 )
             }
@@ -300,8 +290,11 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             if (editado == actual) {
                 estado
             } else {
-                seguirDistanciaDelMapa(
-                    estado.copy(recorrido = editado.puntos, indicePuntoSeleccionado = editado.seleccion, hayCambiosSinGuardar = true)
+                estado.copy(
+                    recorrido = editado.puntos,
+                    indicePuntoSeleccionado = editado.seleccion,
+                    camposConError = estado.camposConError - CampoSendero.RECORRIDO,
+                    hayCambiosSinGuardar = true
                 )
             }
         }
@@ -416,23 +409,8 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         _estadoVisual.update { estado -> estado.copy(indicePuntoSeleccionado = indice) }
     }
 
-    // Copiar la distancia del mapa, redondeada a un decimal, mientras el usuario no la haya escrito a mano: una distancia escrita
-    // puede ser la del sendero completo cuando el trazado es apenas un tramo. Con menos de dos puntos no hay distancia del mapa
-    private fun seguirDistanciaDelMapa(estado: FormularioSenderoEstadoVisual): FormularioSenderoEstadoVisual {
-        if (estado.distanciaEsManual || estado.recorrido.size < 2) return estado
-        val distanciaDelMapa = formatearDistanciaDelMapa(estado)
-        if (distanciaDelMapa == estado.distancia) return estado
-        return estado.copy(distancia = distanciaDelMapa, camposConError = estado.camposConError - CampoSendero.DISTANCIA)
-    }
-
-    // Escribir la distancia del mapa como en el campo, redondeada a un decimal
-    private fun formatearDistanciaDelMapa(estado: FormularioSenderoEstadoVisual): String {
-        return formatearDecimalEditable(Math.round(estado.distanciaCalculadaKilometros * 10) / 10.0)
-    }
-
     // Pedir las alturas del trazado y armar el perfil; sin forzar, no hace nada si el perfil ya corresponde al trazado.
-    // Si el trazado cambia mientras se consulta, el resultado se descarta. Completa desnivel y alturas que estén vacíos,
-    // en 0 o con el valor del perfil anterior (los que escribió el usuario no se tocan)
+    // Si el trazado cambia mientras se consulta, el resultado se descarta
     private fun calcularPerfil(forzar: Boolean) {
         val estadoActual = _estadoVisual.value
         if (estadoActual.recorrido.size < 2) return
@@ -529,21 +507,18 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Cargar el trazado importado: recorrido, tipo, nombre si estaba vacío y distancia del mapa; con alturas en el archivo usa ese
+    // Cargar el trazado importado: recorrido, tipo y nombre si estaba vacío; con alturas en el archivo usa ese
     // perfil y, si no, lo pide a la red como al cerrar el editor
     private fun aplicarTrazadoImportado(trazado: TrazadoImportado, origen: String = "Recorrido importado") {
         _estadoVisual.update { estadoActual ->
-            val conTrazado = seguirDistanciaDelMapa(
-                estadoActual.copy(
-                    recorrido = trazado.recorrido,
-                    tipoRecorrido = trazado.tipoRecorrido,
-                    nombre = estadoActual.nombre.ifBlank { trazado.nombre },
-                    indicePuntoSeleccionado = null,
-                    distanciaEsManual = false,
-                    trazadoImportadoPendiente = null,
-                    camposConError = estadoActual.camposConError - CampoSendero.RECORRIDO - CampoSendero.NOMBRE,
-                    hayCambiosSinGuardar = true
-                )
+            val conTrazado = estadoActual.copy(
+                recorrido = trazado.recorrido,
+                tipoRecorrido = trazado.tipoRecorrido,
+                nombre = estadoActual.nombre.ifBlank { trazado.nombre },
+                indicePuntoSeleccionado = null,
+                trazadoImportadoPendiente = null,
+                camposConError = estadoActual.camposConError - CampoSendero.RECORRIDO - CampoSendero.NOMBRE,
+                hayCambiosSinGuardar = true
             )
             trazado.perfil?.let { perfil -> aplicarPerfil(conTrazado, perfil) } ?: conTrazado
         }
@@ -580,8 +555,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 CampoFormulario.NOMBRE -> estadoActual.copy(nombre = texto)
                 CampoFormulario.REGION -> estadoActual.copy(region = texto)
                 CampoFormulario.DESCRIPCION -> estadoActual.copy(descripcion = texto)
-                // Vaciar el campo vuelve a seguir la distancia del mapa desde el próximo cambio del trazado, sin rellenarlo mientras se escribe
-                CampoFormulario.DISTANCIA -> estadoActual.copy(distancia = texto, distanciaEsManual = texto.isNotBlank())
                 CampoFormulario.DURACION -> estadoActual.copy(duracionEstimada = texto)
                 CampoFormulario.PUNTO_INICIO -> estadoActual.copy(puntoInicio = texto)
                 CampoFormulario.MEJOR_EPOCA -> estadoActual.copy(mejorEpoca = texto)
@@ -612,7 +585,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             CampoFormulario.NOMBRE -> CampoSendero.NOMBRE
             CampoFormulario.REGION -> CampoSendero.REGION
             CampoFormulario.DESCRIPCION -> CampoSendero.DESCRIPCION
-            CampoFormulario.DISTANCIA -> CampoSendero.DISTANCIA
             else -> null
         }
     }
@@ -624,11 +596,10 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         return lista + limpio
     }
 
-    // Estimar la duración con la distancia cargada (o la del recorrido marcado, si está vacía) y el desnivel, y escribirla en el campo
+    // Estimar la duración con la distancia del recorrido marcado y el desnivel, y escribirla en el campo
     private fun calcularDuracion() {
         val estadoActual = _estadoVisual.value
-        val distancia = interpretarDecimal(estadoActual.distancia)?.takeIf { valor -> valor > 0.0 }
-            ?: estadoActual.distanciaCalculadaKilometros
+        val distancia = estadoActual.distanciaCalculadaKilometros
         val desnivel = estadoActual.perfilElevacion?.desnivelPositivoMetros ?: 0
         val minutos = CalculadoraDuracion.estimarMinutos(distancia, desnivel)
         if (minutos == null) {
@@ -707,10 +678,15 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         if (estadoActual.estaGuardando || estadoActual.estaCargando || estadoActual.mensajeError != null) return
         if (estadoActual.estaProcesandoFoto) return
 
-        val distancia = interpretarDecimal(estadoActual.distancia)
+        // La distancia sale siempre del recorrido; un sendero viejo sin trazado conserva la que ya tenía
+        val distancia = if (estadoActual.recorrido.size >= 2) {
+            Math.round(estadoActual.distanciaCalculadaKilometros * 10) / 10.0
+        } else {
+            senderoOriginal?.distanciaKilometros?.takeIf { valor -> valor > 0.0 }
+        }
         if (distancia == null) {
-            _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(camposConError = setOf(CampoSendero.DISTANCIA)) }
-            emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_REVISAR_CAMPOS))
+            _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(camposConError = setOf(CampoSendero.RECORRIDO)) }
+            emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_FALTA_RECORRIDO))
             return
         }
 

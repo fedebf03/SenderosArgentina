@@ -96,11 +96,6 @@ internal fun SeccionFoto(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp)
                 )
-                Text(
-                    text = "Opcional. Sin foto se muestra la ilustración.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         } else {
             FotoSendero(foto = estadoVisual.foto, bioma = estadoVisual.bioma, modifier = Modifier.fillMaxSize())
@@ -173,17 +168,6 @@ internal fun SeccionDatosTecnicos(
     alProcesarEvento: (FormularioSenderoEvento) -> Unit
 ) {
     TituloDeSeccion("Datos técnicos")
-    CampoTexto(
-        valor = estadoVisual.distancia,
-        etiqueta = "Distancia (km) *",
-        alCambiar = { texto ->
-            alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, texto))
-        },
-        tieneError = CampoSendero.DISTANCIA in estadoVisual.camposConError,
-        mensajeError = "Ingresá una distancia mayor a 0",
-        tipoTeclado = KeyboardType.Decimal
-    )
-    AyudaDistanciaDelMapa(estadoVisual, alProcesarEvento)
 
     Text(text = "Dificultad", style = MaterialTheme.typography.bodyMedium)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -256,14 +240,18 @@ internal fun SeccionRecorrido(
         }
         Text(
             text = "${estadoVisual.recorrido.size} puntos · ${formatearKilometros(estadoVisual.distanciaCalculadaKilometros)} km " +
-                "según el mapa",
+                "de distancia",
             style = MaterialTheme.typography.bodyMedium
         )
         PerfilEnFormulario(estadoVisual, alProcesarEvento)
     }
     if (CampoSendero.RECORRIDO in estadoVisual.camposConError) {
         Text(
-            text = "El recorrido tiene puntos con coordenadas inválidas",
+            text = if (estadoVisual.recorrido.size < 2) {
+                "Marcá el recorrido en el mapa para guardar el sendero"
+            } else {
+                "El recorrido tiene puntos con coordenadas inválidas"
+            },
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.fillMaxWidth()
