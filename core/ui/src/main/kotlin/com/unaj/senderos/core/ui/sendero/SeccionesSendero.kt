@@ -2,7 +2,6 @@ package com.unaj.senderos.core.ui.sendero
 
 import androidx.compose.ui.semantics.contentDescription
 import com.unaj.senderos.core.ui.componentes.accionable
-import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 import com.unaj.senderos.core.ui.comun.formatearDistanciaSendero
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,9 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.Cabin
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Flag
@@ -68,18 +64,11 @@ data class DatoRecorrido(
     val etiqueta: String
 )
 
-private const val SIN_DATO = "—"
-
-// Desnivel y alturas salen siempre del perfil de elevación; sin perfil calculado se muestra el guion
 @Composable
 fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) {
-    val perfil = sendero.perfilElevacion
     val datos = listOf(
         DatoRecorrido(Icons.Outlined.Straighten, formatearDistanciaSendero(sendero.distanciaKilometros), "Distancia"),
-        DatoRecorrido(Icons.AutoMirrored.Filled.TrendingUp, perfil?.let { formatearAlturaMetros(it.desnivelPositivoMetros) } ?: SIN_DATO, "Desnivel"),
         DatoRecorrido(Icons.Outlined.Schedule, sendero.duracionEstimada, "Duración"),
-        DatoRecorrido(Icons.Filled.ArrowUpward, perfil?.let { formatearAlturaMetros(it.alturaMaximaMetros) } ?: SIN_DATO, "Altura máxima"),
-        DatoRecorrido(Icons.Filled.ArrowDownward, perfil?.let { formatearAlturaMetros(it.alturaMinimaMetros) } ?: SIN_DATO, "Altura mínima"),
         DatoRecorrido(Icons.Outlined.Loop, obtenerTextoTipoRecorrido(sendero.tipoRecorrido), "Tipo")
     )
 
