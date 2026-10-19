@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.GpsOff
@@ -30,15 +28,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -63,7 +57,7 @@ import com.unaj.senderos.core.ui.componentes.TEXTO_SUBIDA_RESTANTE
 import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 
 
-// Los datos y avisos se desplazan y las acciones quedan fijas abajo; el panel tiene altura máxima y, si los datos no entran, se resuelve con el desplazamiento
+// Los avisos van primero porque son lo urgente; las acciones quedan fijas abajo
 @Composable
 internal fun PanelRecorrido(
     estadoVisual: RecorridoEstadoVisual,
@@ -75,7 +69,6 @@ internal fun PanelRecorrido(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FranjaPerfilRecorrido(estadoVisual)
             Column(
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -85,10 +78,11 @@ internal fun PanelRecorrido(
                     ControlesSimulacion(estadoVisual.multiplicadorSimulacion, alProcesarEvento)
                 }
                 AnimatedVisibility(visible = estadoVisual.estaDetenido) { IndicadorDetenido() }
+                AnimatedVisibility(visible = estadoVisual.estaDesviado) { AvisoDeDesvio() }
+                FranjaPerfilRecorrido(estadoVisual)
                 estadoVisual.proximoPunto?.let { punto ->
                     DatoDelPanel("Próximo punto", obtenerEtiquetaPunto(punto), Modifier.fillMaxWidth())
                 }
-                AnimatedVisibility(visible = estadoVisual.estaDesviado) { AvisoDeDesvio() }
                 if (estadoVisual.cantidadPuntosCapturados > 0) {
                     Text(
                         text = describirCantidadPuntosCapturados(estadoVisual.cantidadPuntosCapturados),
@@ -96,7 +90,7 @@ internal fun PanelRecorrido(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                SeccionMasDatos(estadoVisual)
+                SeccionMiRitmo(estadoVisual)
             }
             AccionesDelPanel(estadoVisual, alProcesarEvento)
         }
@@ -267,57 +261,36 @@ private fun CeldaTiempo(instanteInicioMilisegundos: Long, leerAhoraMilisegundos:
 }
 
 @Composable
-private fun SeccionMasDatos(estadoVisual: RecorridoEstadoVisual) {
-    var estaExpandida by rememberSaveable { mutableStateOf(false) }
+private fun SeccionMiRitmo(estadoVisual: RecorridoEstadoVisual) {
     val sinAcelerometro = estadoVisual.faltaAcelerometro
     val confiable = estadoVisual.sonConfiablesLosDatosDeDistancia
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .accionable(if (estaExpandida) "Contraer más datos" else "Expandir más datos") {
-                    estaExpandida = !estaExpandida
-                }
-                .semantics { stateDescription = if (estaExpandida) "Expandido" else "Contraído" }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Más datos",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f)
+        Text(
+            text = "Mi ritmo",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.semantics { heading() }
+        )
+        FilaDeDatos(
+            DatoDeGrilla(
+                "Velocidad promedio",
+                if (confiable) formatearVelocidad(estadoVisual.velocidadPromedioKilometrosPorHora) else TEXTO_SIN_DATO
+            ),
+            DatoDeGrilla(
+                titulo = "Pasos",
+                valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE else formatearPasos(estadoVisual.pasos),
+                esNoDisponible = sinAcelerometro
             )
-            Icon(
-                imageVector = if (estaExpandida) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-        AnimatedVisibility(visible = estaExpandida) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilaDeDatos(
-                    DatoDeGrilla(
-                        "Velocidad promedio",
-                        if (confiable) formatearVelocidad(estadoVisual.velocidadPromedioKilometrosPorHora) else TEXTO_SIN_DATO
-                    ),
-                    DatoDeGrilla(
-                        titulo = "Pasos",
-                        valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE else formatearPasos(estadoVisual.pasos),
-                        esNoDisponible = sinAcelerometro
-                    )
-                )
-                FilaDeDatos(
-                    DatoDeGrilla(
-                        titulo = "Ritmo",
-                        valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE else formatearRitmo(estadoVisual.ritmoPasosPorMinuto),
-                        esNoDisponible = sinAcelerometro
-                    ),
-                    armarDatoRumbo(estadoVisual)
-                )
-            }
-        }
+        )
+        FilaDeDatos(
+            DatoDeGrilla(
+                titulo = "Ritmo",
+                valor = if (sinAcelerometro) TEXTO_NO_DISPONIBLE else formatearRitmo(estadoVisual.ritmoPasosPorMinuto),
+                esNoDisponible = sinAcelerometro
+            ),
+            armarDatoRumbo(estadoVisual)
+        )
     }
 }
 
