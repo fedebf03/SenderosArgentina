@@ -32,10 +32,20 @@ internal fun describirSincronizacion(estadoVisual: SenderosEstadoVisual): String
     else -> "Todo sincronizado con tu cuenta"
 }
 
-// Mostrar sobre la lista de Mis senderos si todo está subido, cuántos faltan y el botón para sincronizar a mano
+internal fun hayAlgoPorSincronizar(estadoVisual: SenderosEstadoVisual): Boolean =
+    estadoVisual.estadoTrabajoSincronizacion != EstadoTrabajoSincronizacion.INACTIVO ||
+        estadoVisual.cantidadConErrorDeSubida > 0 ||
+        estadoVisual.cantidadSinSubir > 0
+
+// Con la sincronización en marcha o en cola se encarga sola; el botón es para cuando quedó parada con algo sin subir
+internal fun sePuedeReintentarSincronizacion(estadoVisual: SenderosEstadoVisual): Boolean =
+    estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.INACTIVO &&
+        (estadoVisual.cantidadConErrorDeSubida > 0 || estadoVisual.cantidadSinSubir > 0)
+
+// Mostrar sobre la lista de Mis senderos cuántos faltan subir y, si quedó parada, el botón para reintentar
 @Composable
 internal fun ResumenSincronizacion(estadoVisual: SenderosEstadoVisual, alProcesarEvento: (SenderosEvento) -> Unit) {
-    val estaOcupada = estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_CURSO
+    if (!hayAlgoPorSincronizar(estadoVisual)) return
     val hayProblema = estadoVisual.cantidadConErrorDeSubida > 0
     val icono: ImageVector = when {
         hayProblema -> Icons.Outlined.CloudOff
@@ -59,12 +69,11 @@ internal fun ResumenSincronizacion(estadoVisual: SenderosEstadoVisual, alProcesa
             color = if (hayProblema) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
         )
-        TextButton(
-            onClick = { alProcesarEvento(SenderosEvento.AlTocarSincronizar) },
-            enabled = !estaOcupada
-        ) {
-            Icon(imageVector = Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(text = "Sincronizar ahora", modifier = Modifier.padding(start = 6.dp))
+        if (sePuedeReintentarSincronizacion(estadoVisual)) {
+            TextButton(onClick = { alProcesarEvento(SenderosEvento.AlTocarSincronizar) }) {
+                Icon(imageVector = Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(text = "Reintentar", modifier = Modifier.padding(start = 6.dp))
+            }
         }
     }
 }
