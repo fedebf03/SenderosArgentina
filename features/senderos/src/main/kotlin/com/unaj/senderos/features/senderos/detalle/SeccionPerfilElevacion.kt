@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -44,8 +47,9 @@ import com.unaj.senderos.core.ui.comun.formatearPorcentaje
 import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TEXTO_CALCULANDO_PERFIL = "Calculando el perfil…"
+private const val COLUMNAS_DATOS_PERFIL = 3
 
-// Mostrar la sección del perfil de elevación del sendero: el gráfico con sus datos, o la invitación a calcularlo
+// Mostrar la sección del perfil de elevación del sendero: el gráfico con sus cinco datos, o la invitación a calcularlo
 @Composable
 internal fun SeccionPerfilElevacion(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -120,19 +124,17 @@ private fun InvitacionACalcularPerfil(
     }
 }
 
-// Mostrar los datos del perfil que no están en Datos del recorrido: el desnivel negativo y la pendiente máxima
 @Composable
 private fun DatosDelPerfil(perfil: PerfilElevacion) {
     val datos = listOf(
-        DatoRecorrido(
-            Icons.AutoMirrored.Filled.TrendingDown,
-            formatearAlturaMetros(perfil.desnivelNegativoMetros),
-            "Desnivel negativo"
-        ),
-        DatoRecorrido(Icons.Outlined.Speed, formatearPorcentaje(perfil.pendienteMaximaPorcentaje), "Pendiente máxima")
+        DatoRecorrido(Icons.AutoMirrored.Filled.TrendingUp, formatearAlturaMetros(perfil.desnivelPositivoMetros), "Desnivel positivo"),
+        DatoRecorrido(Icons.AutoMirrored.Filled.TrendingDown, formatearAlturaMetros(perfil.desnivelNegativoMetros), "Desnivel negativo"),
+        DatoRecorrido(Icons.Outlined.Speed, formatearPorcentaje(perfil.pendienteMaximaPorcentaje), "Pendiente máxima"),
+        DatoRecorrido(Icons.Filled.ArrowUpward, formatearAlturaMetros(perfil.alturaMaximaMetros), "Altura máxima"),
+        DatoRecorrido(Icons.Filled.ArrowDownward, formatearAlturaMetros(perfil.alturaMinimaMetros), "Altura mínima")
     )
     OutlinedCard(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-        datos.chunked(2).forEachIndexed { indiceFila, filaDeDatos ->
+        datos.chunked(COLUMNAS_DATOS_PERFIL).forEachIndexed { indiceFila, filaDeDatos ->
             if (indiceFila > 0) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
