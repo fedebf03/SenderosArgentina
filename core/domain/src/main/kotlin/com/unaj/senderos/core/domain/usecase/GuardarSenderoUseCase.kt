@@ -55,11 +55,6 @@ class GuardarSenderoUseCase @Inject constructor(
         if (sendero.region.isBlank()) camposInvalidos.add(CampoSendero.REGION)
         if (sendero.descripcion.isBlank()) camposInvalidos.add(CampoSendero.DESCRIPCION)
         if (sendero.distanciaKilometros <= 0.0) camposInvalidos.add(CampoSendero.DISTANCIA)
-        if (sendero.desnivelMetros < 0) camposInvalidos.add(CampoSendero.DESNIVEL)
-        if (sendero.alturaMinimaMetros < 0) camposInvalidos.add(CampoSendero.ALTURA_MINIMA)
-        if (sendero.alturaMaximaMetros < 0 || sendero.alturaMaximaMetros < sendero.alturaMinimaMetros) {
-            camposInvalidos.add(CampoSendero.ALTURA_MAXIMA)
-        }
         val hayPuntoFueraDeRango = sendero.recorrido.any { punto ->
             !Coordenada(punto.latitud, punto.longitud).tieneCoordenadasValidas()
         }

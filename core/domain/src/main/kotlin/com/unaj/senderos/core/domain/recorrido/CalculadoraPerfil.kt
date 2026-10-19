@@ -100,16 +100,12 @@ object CalculadoraPerfil {
         )
     }
 
-    // Guardar el perfil en el sendero y autocompletar desnivel y alturas. Un valor se completa si es exactamente 0 (las
-    // alturas negativas son válidas) o si coincide con el del perfil anterior, es decir que lo había autocompletado la
-    // app y no el usuario; cualquier otro valor lo cargó el usuario y no se pisa
     fun aplicarAlSendero(sendero: Sendero, perfil: PerfilElevacion): Sendero {
-        val anterior = sendero.perfilElevacion
         return sendero.copy(
             perfilElevacion = perfil,
-            desnivelMetros = autocompletar(sendero.desnivelMetros, anterior?.desnivelPositivoMetros, perfil.desnivelPositivoMetros),
-            alturaMaximaMetros = autocompletar(sendero.alturaMaximaMetros, anterior?.alturaMaximaMetros, perfil.alturaMaximaMetros),
-            alturaMinimaMetros = autocompletar(sendero.alturaMinimaMetros, anterior?.alturaMinimaMetros, perfil.alturaMinimaMetros)
+            desnivelMetros = perfil.desnivelPositivoMetros,
+            alturaMaximaMetros = perfil.alturaMaximaMetros,
+            alturaMinimaMetros = perfil.alturaMinimaMetros
         )
     }
 
@@ -131,11 +127,6 @@ object CalculadoraPerfil {
             subida += max(0.0, suavizadas[indice] - suavizadas[indice - 1])
         }
         return subida.roundToInt()
-    }
-
-    // Decidir el valor de un campo autocompletable: el del perfil nuevo si el actual es 0 o igual al del perfil anterior
-    private fun autocompletar(actual: Int, delPerfilAnterior: Int?, delPerfilNuevo: Int): Int {
-        return if (actual == 0 || actual == delPerfilAnterior) delPerfilNuevo else actual
     }
 
     // Indicar si las coordenadas del punto son finitas y están dentro del rango geográfico

@@ -75,7 +75,6 @@ private const val PROPORCION_ALTURA_NORMAL = 0.38f
 private const val PROPORCION_ALTURA_COMPACTA = 0.28f
 private const val PASOS_DE_LA_GUIA_ACCESIBLE = 20
 private const val TEXTO_ESTAS_ACA = "Estás acá"
-private const val TEXTO_AYUDA_TOQUE = "Tocá o arrastrá el gráfico para ver la altura de cada punto"
 
 // Marca de un punto de interés ubicada en su kilómetro del perfil
 data class MarcaDelPerfil(
@@ -255,7 +254,7 @@ fun GraficoPerfilElevacion(
                 indiceVigente?.let { indice -> dibujarGuia(area, perfil, indice, paleta) }
             }
         }
-        val textoLectura = describirLectura(perfil, indiceVigente, kilometroActual.takeIf { mostrarPosicionEnTexto }, esCompacto)
+        val textoLectura = describirLectura(perfil, indiceVigente, kilometroActual.takeIf { mostrarPosicionEnTexto })
         if (textoLectura != null) {
             Text(
                 text = textoLectura,
@@ -280,8 +279,7 @@ fun GraficoPerfilElevacion(
 private fun describirLectura(
     perfil: PerfilElevacion,
     indiceSeleccionado: Int?,
-    kilometroActual: Double?,
-    esCompacto: Boolean
+    kilometroActual: Double?
 ): String? {
     if (indiceSeleccionado != null) {
         val punto = perfil.puntos[indiceSeleccionado]
@@ -291,7 +289,7 @@ private fun describirLectura(
         val altitud = interpolarAltitud(perfil.puntos, kilometroActual) ?: return null
         return describirPosicionActual(kilometroActual, altitud)
     }
-    return if (esCompacto) null else TEXTO_AYUDA_TOQUE
+    return null
 }
 
 // Dibujar la cuadrícula con las etiquetas de altura a la izquierda y de kilómetros abajo

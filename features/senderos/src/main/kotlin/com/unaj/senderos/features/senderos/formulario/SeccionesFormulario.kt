@@ -173,55 +173,17 @@ internal fun SeccionDatosTecnicos(
     alProcesarEvento: (FormularioSenderoEvento) -> Unit
 ) {
     TituloDeSeccion("Datos técnicos")
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-        CampoTexto(
-            valor = estadoVisual.distancia,
-            etiqueta = "Distancia (km) *",
-            alCambiar = { texto ->
-                alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, texto))
-            },
-            modifier = Modifier.weight(1f),
-            tieneError = CampoSendero.DISTANCIA in estadoVisual.camposConError,
-            mensajeError = "Ingresá una distancia mayor a 0",
-            tipoTeclado = KeyboardType.Decimal
-        )
-        CampoTexto(
-            valor = estadoVisual.desnivel,
-            etiqueta = "Desnivel (m) *",
-            alCambiar = { texto ->
-                alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DESNIVEL, texto))
-            },
-            modifier = Modifier.weight(1f),
-            tieneError = CampoSendero.DESNIVEL in estadoVisual.camposConError,
-            mensajeError = "Ingresá un número entero mayor o igual a 0",
-            tipoTeclado = KeyboardType.Number
-        )
-    }
+    CampoTexto(
+        valor = estadoVisual.distancia,
+        etiqueta = "Distancia (km) *",
+        alCambiar = { texto ->
+            alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DISTANCIA, texto))
+        },
+        tieneError = CampoSendero.DISTANCIA in estadoVisual.camposConError,
+        mensajeError = "Ingresá una distancia mayor a 0",
+        tipoTeclado = KeyboardType.Decimal
+    )
     AyudaDistanciaDelMapa(estadoVisual, alProcesarEvento)
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-        CampoTexto(
-            valor = estadoVisual.alturaMaxima,
-            etiqueta = "Altura máxima (m) *",
-            alCambiar = { texto ->
-                alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MAXIMA, texto))
-            },
-            modifier = Modifier.weight(1f),
-            tieneError = CampoSendero.ALTURA_MAXIMA in estadoVisual.camposConError,
-            mensajeError = "Debe ser mayor o igual a la altura mínima",
-            tipoTeclado = KeyboardType.Number
-        )
-        CampoTexto(
-            valor = estadoVisual.alturaMinima,
-            etiqueta = "Altura mínima (m) *",
-            alCambiar = { texto ->
-                alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.ALTURA_MINIMA, texto))
-            },
-            modifier = Modifier.weight(1f),
-            tieneError = CampoSendero.ALTURA_MINIMA in estadoVisual.camposConError,
-            mensajeError = "Ingresá un número entero mayor o igual a 0",
-            tipoTeclado = KeyboardType.Number
-        )
-    }
 
     Text(text = "Dificultad", style = MaterialTheme.typography.bodyMedium)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -329,7 +291,7 @@ internal fun SeccionPlanificacion(
             alCambiar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DURACION, texto)) },
             modifier = Modifier.weight(1f)
         )
-        // Estimar con la distancia y el desnivel (regla de Naismith); el resultado se puede corregir a mano
+        // Estimar con la distancia y el desnivel del perfil de elevación (regla de Naismith); el resultado se puede corregir a mano
         TextButton(
             onClick = { alProcesarEvento(FormularioSenderoEvento.AlCalcularDuracion) },
             modifier = Modifier.semantics { contentDescription = "Calcular la duración estimada" }
