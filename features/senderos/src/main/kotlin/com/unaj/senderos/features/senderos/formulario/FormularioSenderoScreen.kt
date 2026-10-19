@@ -285,7 +285,6 @@ private fun FormularioSenderoContenidoPreview() {
             estadoVisual = FormularioSenderoEstadoVisual(
                 nombre = "Cerro Catedral",
                 region = "Bariloche",
-                distancia = "12",
                 camposConError = setOf(CampoSendero.DESCRIPCION),
                 recomendaciones = listOf("Llevar agua"),
                 etapas = listOf(Etapa(numero = 1, nombre = "Base al refugio", distanciaKilometros = 3.5))

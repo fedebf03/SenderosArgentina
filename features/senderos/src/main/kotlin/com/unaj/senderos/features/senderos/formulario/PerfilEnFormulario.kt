@@ -18,23 +18,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
 import com.unaj.senderos.core.ui.comun.formatearKilometros
 
-// Indicar debajo de la distancia si sale del mapa o, si se escribió a mano, ofrecer volver a usar la del mapa
-@Composable
-internal fun AyudaDistanciaDelMapa(estadoVisual: FormularioSenderoEstadoVisual, alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
-    if (estadoVisual.recorrido.size < 2) return
-    if (estadoVisual.distanciaEsManual) {
-        TextButton(onClick = { alProcesarEvento(FormularioSenderoEvento.AlUsarDistanciaDelMapa) }) {
-            Text("Usar la del mapa (${formatearKilometros(estadoVisual.distanciaCalculadaKilometros)} km)")
-        }
-    } else {
-        Text(
-            text = "Distancia calculada con el mapa",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
 // Mostrar el perfil de elevación del trazado que se está dibujando: el gráfico si está al día, el indicador mientras se calcula,
 // o el motivo por el que falta con el botón para calcularlo. Con menos de dos puntos no muestra nada
 @Composable

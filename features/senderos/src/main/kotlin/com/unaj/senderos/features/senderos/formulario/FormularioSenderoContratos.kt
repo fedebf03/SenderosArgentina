@@ -16,7 +16,6 @@ enum class CampoFormulario {
     NOMBRE,
     REGION,
     DESCRIPCION,
-    DISTANCIA,
     DURACION,
     PUNTO_INICIO,
     MEJOR_EPOCA,
@@ -50,7 +49,6 @@ data class FormularioSenderoEstadoVisual(
     val nombre: String = "",
     val region: String = "",
     val descripcion: String = "",
-    val distancia: String = "",
     val duracionEstimada: String = "",
     val puntoInicio: String = "",
     val mejorEpoca: String = "",
@@ -76,8 +74,6 @@ data class FormularioSenderoEstadoVisual(
     val puntoDeInteresNuevo: PuntoDeInteresNuevo? = null,
     // Índice del punto ya trazado cuya foto se está copiando; null si no hay ninguna copia en curso
     val indicePuntoCopiandoFoto: Int? = null,
-    // Falso mientras la distancia sigue a la del mapa; verdadero cuando el usuario la escribió a mano
-    val distanciaEsManual: Boolean = false,
     val perfilElevacion: PerfilElevacion? = null,
     val estaCalculandoPerfil: Boolean = false,
     // Motivo por el que no se pudo calcular el perfil, para mostrarlo con la opción de reintentar
@@ -107,7 +103,6 @@ sealed interface FormularioSenderoEvento {
     data class AlAgregarRecomendacionSugerida(val texto: String) : FormularioSenderoEvento
     data class AlAgregarServicioSugerido(val texto: String) : FormularioSenderoEvento
     data object AlCalcularDuracion : FormularioSenderoEvento
-    data object AlUsarDistanciaDelMapa : FormularioSenderoEvento
     data object AlCalcularPerfil : FormularioSenderoEvento
     data class AlImportarTrazado(val uri: String) : FormularioSenderoEvento
     data object AlConfirmarReemplazoTrazado : FormularioSenderoEvento
