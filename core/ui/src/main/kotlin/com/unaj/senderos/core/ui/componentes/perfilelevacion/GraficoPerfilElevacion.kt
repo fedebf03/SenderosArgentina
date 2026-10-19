@@ -48,7 +48,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.core.domain.configuracion.ConfiguracionElevacion
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
@@ -267,11 +266,6 @@ fun GraficoPerfilElevacion(
                 }
             )
         }
-        Text(
-            text = ConfiguracionElevacion.TEXTO_ATRIBUCION,
-            style = MaterialTheme.typography.bodySmall,
-            color = esquema.onSurfaceVariant
-        )
     }
 }
 

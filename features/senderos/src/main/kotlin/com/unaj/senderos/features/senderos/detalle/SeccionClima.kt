@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.clima.AlertaClima
 import com.unaj.senderos.core.domain.clima.CondicionClima
 import com.unaj.senderos.core.domain.clima.PronosticoDia
-import com.unaj.senderos.core.ui.clima.describirAntiguedadClima
 import com.unaj.senderos.core.ui.clima.describirAvisoPronosticoViejo
 import com.unaj.senderos.core.ui.clima.describirDiaClima
 import com.unaj.senderos.core.ui.clima.describirProbabilidadLluvia
@@ -40,11 +39,10 @@ import java.time.LocalDate
 
 private const val TITULO_SECCION_CLIMA = "Clima en el punto de inicio"
 private const val TEXTO_CONSULTANDO_CLIMA = "Consultando el clima…"
-private const val CREDITO_CLIMA = "Pronóstico: Open-Meteo"
 private val TAMANO_ICONO_ACTUAL = 44.dp
 private val TAMANO_ICONO_DIA = 28.dp
 
-// Mostrar el clima del punto de inicio del sendero: avisos, clima de ahora, próximos días y qué tan viejo es el dato
+// Mostrar el clima del punto de inicio del sendero: avisos, clima de ahora, próximos días y, solo si el dato quedó viejo, el aviso
 @Composable
 internal fun SeccionClima(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -77,25 +75,12 @@ internal fun SeccionClima(
                 AvisosDelClima(estadoVisual.alertasClimaAhora, estadoVisual.alertasClimaPorDia, hoy)
                 ClimaDeAhora(resultado.pronostico.actual)
                 DiasDelPronostico(resultado.pronostico.dias, hoy)
-                val textoEstado = if (resultado.estaDesactualizado) {
-                    describirAvisoPronosticoViejo(resultado.antiguedadMilisegundos)
-                } else {
-                    "Actualizado ${describirAntiguedadClima(resultado.antiguedadMilisegundos)}"
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = textoEstado,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (resultado.estaDesactualizado) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(text = CREDITO_CLIMA, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (estadoVisual.estaCargandoClima) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        BotonSecundario(texto = "Actualizar", alTocar = { alProcesarEvento(DetalleSenderoEvento.AlActualizarClima) })
-                    }
+                if (resultado.estaDesactualizado) {
+                    Text(
+                        text = describirAvisoPronosticoViejo(resultado.antiguedadMilisegundos),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
