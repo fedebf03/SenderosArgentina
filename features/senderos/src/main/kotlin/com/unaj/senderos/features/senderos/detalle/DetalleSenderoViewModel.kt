@@ -206,7 +206,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
             }
             is DetalleSenderoEvento.AlTocarEditar -> {
                 _estadoVisual.update { estadoActual -> estadoActual.copy(esMenuOpcionesVisible = false) }
-                emitirEfecto(DetalleSenderoEfecto.NavegarAEdicion(idSendero))
+                if (_estadoVisual.value.puedeEditar) emitirEfecto(DetalleSenderoEfecto.NavegarAEdicion(idSendero))
             }
             is DetalleSenderoEvento.AlTocarEliminar -> {
                 _estadoVisual.update { estadoActual ->

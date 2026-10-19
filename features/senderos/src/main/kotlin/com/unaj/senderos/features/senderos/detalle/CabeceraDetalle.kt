@@ -101,7 +101,7 @@ internal fun CabeceraDetalle(
                         descripcion = "Más opciones",
                         alTocar = { alProcesarEvento(DetalleSenderoEvento.AlAbrirMenuOpciones) }
                     )
-                    MenuOpciones(estadoVisual.esMenuOpcionesVisible, estadoVisual.estaPublicado, alProcesarEvento)
+                    MenuOpciones(estadoVisual.esMenuOpcionesVisible, estadoVisual.puedeEditar, estadoVisual.estaPublicado, alProcesarEvento)
                 }
             }
         }
@@ -148,6 +148,7 @@ internal fun CabeceraDetalle(
 @Composable
 internal fun MenuOpciones(
     esVisible: Boolean,
+    puedeEditar: Boolean,
     estaPublicado: Boolean,
     alProcesarEvento: (DetalleSenderoEvento) -> Unit
 ) {
@@ -156,11 +157,13 @@ internal fun MenuOpciones(
         onDismissRequest = { alProcesarEvento(DetalleSenderoEvento.AlCerrarMenuOpciones) },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        DropdownMenuItem(
-            text = { Text("Editar") },
-            leadingIcon = { Icon(imageVector = Icons.Outlined.Edit, contentDescription = null) },
-            onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarEditar) }
-        )
+        if (puedeEditar) {
+            DropdownMenuItem(
+                text = { Text("Editar") },
+                leadingIcon = { Icon(imageVector = Icons.Outlined.Edit, contentDescription = null) },
+                onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarEditar) }
+            )
+        }
         DropdownMenuItem(
             text = { Text(if (estaPublicado) "Hacer privado" else "Publicar") },
             leadingIcon = {

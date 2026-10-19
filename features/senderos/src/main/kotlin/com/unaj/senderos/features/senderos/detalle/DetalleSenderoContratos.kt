@@ -54,6 +54,10 @@ data class DetalleSenderoEstadoVisual(
     val alertasClimaPorDia: Map<String, Set<AlertaClima>>
         get() = clima?.let { resultado -> EvaluadorAlertasClima.evaluarDias(resultado.pronostico) }.orEmpty()
 
+    // Un sendero guardado desde Explorar es una copia del de otra persona y no se edita
+    val puedeEditar: Boolean
+        get() = sendero?.idOrigen.isNullOrEmpty()
+
     // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
     val hayPuntosPorRevisar: Boolean
         get() = revision.hayPuntosPorRevisar && !hayRecorridoEnCursoEnEsteSendero
