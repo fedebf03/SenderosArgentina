@@ -49,7 +49,6 @@ private const val MENSAJE_ETAPA_INVALIDA = "Completá el nombre y los km de la e
 private const val MENSAJE_FOTO_INVALIDA = "No se pudo usar esa foto"
 private const val MENSAJE_FOTO_PUNTO_INVALIDA = "No se pudo guardar la foto del punto"
 private const val MENSAJE_FALTA_DISTANCIA_PARA_DURACION = "Cargá la distancia o marcá el recorrido para calcular la duración"
-private const val MENSAJE_DESNIVEL_INVALIDO_PARA_DURACION = "Revisá el desnivel: tiene que ser un número de metros"
 private const val MENSAJE_PERFIL_SIN_CONEXION = "Sin conexión: el perfil se calculará al sincronizar"
 private const val MENSAJE_PERFIL_ERROR = "No se pudo calcular el perfil de elevación"
 private const val MENSAJE_IMPORTACION_ERROR = "No se pudo importar el archivo"
@@ -269,9 +268,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                     region = senderoEncontrado.region,
                     descripcion = senderoEncontrado.descripcion,
                     distancia = formatearDecimalEditable(senderoEncontrado.distanciaKilometros),
-                    desnivel = senderoEncontrado.desnivelMetros.toString(),
-                    alturaMaxima = senderoEncontrado.alturaMaximaMetros.toString(),
-                    alturaMinima = senderoEncontrado.alturaMinimaMetros.toString(),
                     duracionEstimada = senderoEncontrado.duracionEstimada,
                     puntoInicio = senderoEncontrado.puntoInicio,
                     mejorEpoca = senderoEncontrado.mejorEpoca,
@@ -557,27 +553,14 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         emitirEfecto(FormularioSenderoEfecto.MostrarAviso("$origen: ${trazado.recorrido.size} puntos"))
     }
 
-    // Guardar el perfil en el estado y completar desnivel y alturas con la misma regla que la sincronización
     private fun aplicarPerfil(estado: FormularioSenderoEstadoVisual, perfil: PerfilElevacion): FormularioSenderoEstadoVisual {
-        val anterior = estado.perfilElevacion
         Log.d(TAG, "Perfil de elevación calculado: ${perfil.desnivelPositivoMetros} m de subida")
         return estado.copy(
             perfilElevacion = perfil,
             estaCalculandoPerfil = false,
             avisoPerfil = null,
-            desnivel = autocompletarTexto(estado.desnivel, anterior?.desnivelPositivoMetros, perfil.desnivelPositivoMetros),
-            alturaMaxima = autocompletarTexto(estado.alturaMaxima, anterior?.alturaMaximaMetros, perfil.alturaMaximaMetros),
-            alturaMinima = autocompletarTexto(estado.alturaMinima, anterior?.alturaMinimaMetros, perfil.alturaMinimaMetros),
-            camposConError = estado.camposConError - setOf(CampoSendero.DESNIVEL, CampoSendero.ALTURA_MAXIMA, CampoSendero.ALTURA_MINIMA),
             hayCambiosSinGuardar = true
         )
-    }
-
-    // Reemplazar el texto por el valor del perfil si está vacío, en 0 o coincide con el del perfil anterior
-    private fun autocompletarTexto(actual: String, delPerfilAnterior: Int?, delPerfilNuevo: Int): String {
-        val valor = actual.trim().toIntOrNull()
-        val loCompletoLaApp = actual.isBlank() || valor == 0 || (delPerfilAnterior != null && valor == delPerfilAnterior)
-        return if (loCompletoLaApp) delPerfilNuevo.toString() else actual
     }
 
     // Traducir el fallo del perfil en un aviso para el usuario
@@ -599,9 +582,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 CampoFormulario.DESCRIPCION -> estadoActual.copy(descripcion = texto)
                 // Vaciar el campo vuelve a seguir la distancia del mapa desde el próximo cambio del trazado, sin rellenarlo mientras se escribe
                 CampoFormulario.DISTANCIA -> estadoActual.copy(distancia = texto, distanciaEsManual = texto.isNotBlank())
-                CampoFormulario.DESNIVEL -> estadoActual.copy(desnivel = texto)
-                CampoFormulario.ALTURA_MAXIMA -> estadoActual.copy(alturaMaxima = texto)
-                CampoFormulario.ALTURA_MINIMA -> estadoActual.copy(alturaMinima = texto)
                 CampoFormulario.DURACION -> estadoActual.copy(duracionEstimada = texto)
                 CampoFormulario.PUNTO_INICIO -> estadoActual.copy(puntoInicio = texto)
                 CampoFormulario.MEJOR_EPOCA -> estadoActual.copy(mejorEpoca = texto)
@@ -633,9 +613,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             CampoFormulario.REGION -> CampoSendero.REGION
             CampoFormulario.DESCRIPCION -> CampoSendero.DESCRIPCION
             CampoFormulario.DISTANCIA -> CampoSendero.DISTANCIA
-            CampoFormulario.DESNIVEL -> CampoSendero.DESNIVEL
-            CampoFormulario.ALTURA_MAXIMA -> CampoSendero.ALTURA_MAXIMA
-            CampoFormulario.ALTURA_MINIMA -> CampoSendero.ALTURA_MINIMA
             else -> null
         }
     }
@@ -652,12 +629,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         val estadoActual = _estadoVisual.value
         val distancia = interpretarDecimal(estadoActual.distancia)?.takeIf { valor -> valor > 0.0 }
             ?: estadoActual.distanciaCalculadaKilometros
-        val textoDesnivel = estadoActual.desnivel.trim()
-        val desnivel = if (textoDesnivel.isEmpty()) 0 else interpretarDecimal(textoDesnivel)?.roundToInt()
-        if (desnivel == null) {
-            emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_DESNIVEL_INVALIDO_PARA_DURACION))
-            return
-        }
+        val desnivel = estadoActual.perfilElevacion?.desnivelPositivoMetros ?: 0
         val minutos = CalculadoraDuracion.estimarMinutos(distancia, desnivel)
         if (minutos == null) {
             emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_FALTA_DISTANCIA_PARA_DURACION))
@@ -736,18 +708,8 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         if (estadoActual.estaProcesandoFoto) return
 
         val distancia = interpretarDecimal(estadoActual.distancia)
-        val desnivel = estadoActual.desnivel.trim().toIntOrNull()
-        val alturaMaxima = estadoActual.alturaMaxima.trim().toIntOrNull()
-        val alturaMinima = estadoActual.alturaMinima.trim().toIntOrNull()
-
-        if (distancia == null || desnivel == null || alturaMaxima == null || alturaMinima == null) {
-            val camposNumericosInvalidos = buildSet {
-                if (distancia == null) add(CampoSendero.DISTANCIA)
-                if (desnivel == null) add(CampoSendero.DESNIVEL)
-                if (alturaMaxima == null) add(CampoSendero.ALTURA_MAXIMA)
-                if (alturaMinima == null) add(CampoSendero.ALTURA_MINIMA)
-            }
-            _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(camposConError = camposNumericosInvalidos) }
+        if (distancia == null) {
+            _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(camposConError = setOf(CampoSendero.DISTANCIA)) }
             emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_REVISAR_CAMPOS))
             return
         }
@@ -760,14 +722,11 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             distanciaKilometros = 0.0,
             dificultad = estadoActual.dificultad
         )
-        val senderoArmado = senderoBase.copy(
+        val senderoSinPerfil = senderoBase.copy(
             nombre = estadoActual.nombre,
             region = estadoActual.region,
             descripcion = estadoActual.descripcion,
             distanciaKilometros = distancia,
-            desnivelMetros = desnivel,
-            alturaMaximaMetros = alturaMaxima,
-            alturaMinimaMetros = alturaMinima,
             duracionEstimada = estadoActual.duracionEstimada,
             puntoInicio = estadoActual.puntoInicio,
             mejorEpoca = estadoActual.mejorEpoca,
@@ -778,11 +737,12 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             servicios = estadoActual.servicios,
             etapas = estadoActual.etapas,
             recorrido = estadoActual.recorrido,
-            foto = estadoActual.foto,
-            // Viaja aunque sea de otro trazado: su firma distinta hace que la sincronización lo recalcule, y al ser el perfil que
-            // completó el desnivel y las alturas, la sincronización sabe que esos valores los puso la app y puede actualizarlos
-            perfilElevacion = estadoActual.perfilElevacion ?: senderoBase.perfilElevacion
+            foto = estadoActual.foto
         )
+        // Viaja aunque sea de otro trazado: su firma distinta hace que la sincronización lo recalcule
+        val senderoArmado = estadoActual.perfilElevacion
+            ?.let { perfil -> CalculadoraPerfil.aplicarAlSendero(senderoSinPerfil, perfil) }
+            ?: senderoSinPerfil
 
         trabajoPerfil?.cancel()
         _estadoVisual.update { estadoPrevio ->

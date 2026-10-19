@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.Terrain
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +45,7 @@ import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TEXTO_CALCULANDO_PERFIL = "Calculando el perfil…"
 
-// Mostrar la sección del perfil de elevación del sendero: el gráfico con sus cuatro datos, o la invitación a calcularlo
+// Mostrar la sección del perfil de elevación del sendero: el gráfico con sus datos, o la invitación a calcularlo
 @Composable
 internal fun SeccionPerfilElevacion(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -122,24 +120,14 @@ private fun InvitacionACalcularPerfil(
     }
 }
 
-// Mostrar los cuatro datos del perfil en dos filas de dos celdas
+// Mostrar los datos del perfil que no están en Datos del recorrido: el desnivel negativo y la pendiente máxima
 @Composable
 private fun DatosDelPerfil(perfil: PerfilElevacion) {
     val datos = listOf(
         DatoRecorrido(
-            Icons.AutoMirrored.Filled.TrendingUp,
-            formatearAlturaMetros(perfil.desnivelPositivoMetros),
-            "Desnivel positivo"
-        ),
-        DatoRecorrido(
             Icons.AutoMirrored.Filled.TrendingDown,
             formatearAlturaMetros(perfil.desnivelNegativoMetros),
             "Desnivel negativo"
-        ),
-        DatoRecorrido(
-            Icons.Outlined.Terrain,
-            "${formatearAlturaMetros(perfil.alturaMaximaMetros).removeSuffix(" m")} / ${formatearAlturaMetros(perfil.alturaMinimaMetros)}",
-            "Altura máxima / mínima"
         ),
         DatoRecorrido(Icons.Outlined.Speed, formatearPorcentaje(perfil.pendienteMaximaPorcentaje), "Pendiente máxima")
     )

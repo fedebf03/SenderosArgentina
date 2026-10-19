@@ -2,6 +2,7 @@ package com.unaj.senderos.core.ui.sendero
 
 import androidx.compose.ui.semantics.contentDescription
 import com.unaj.senderos.core.ui.componentes.accionable
+import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 import com.unaj.senderos.core.ui.comun.formatearDistanciaSendero
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -67,14 +68,18 @@ data class DatoRecorrido(
     val etiqueta: String
 )
 
+private const val SIN_DATO = "—"
+
+// Desnivel y alturas salen siempre del perfil de elevación; sin perfil calculado se muestra el guion
 @Composable
 fun DatosDelRecorrido(sendero: Sendero, modifier: Modifier = Modifier) {
+    val perfil = sendero.perfilElevacion
     val datos = listOf(
         DatoRecorrido(Icons.Outlined.Straighten, formatearDistanciaSendero(sendero.distanciaKilometros), "Distancia"),
-        DatoRecorrido(Icons.AutoMirrored.Filled.TrendingUp, "${sendero.desnivelMetros} m", "Desnivel"),
+        DatoRecorrido(Icons.AutoMirrored.Filled.TrendingUp, perfil?.let { formatearAlturaMetros(it.desnivelPositivoMetros) } ?: SIN_DATO, "Desnivel"),
         DatoRecorrido(Icons.Outlined.Schedule, sendero.duracionEstimada, "Duración"),
-        DatoRecorrido(Icons.Filled.ArrowUpward, "${sendero.alturaMaximaMetros} m", "Altura máxima"),
-        DatoRecorrido(Icons.Filled.ArrowDownward, "${sendero.alturaMinimaMetros} m", "Altura mínima"),
+        DatoRecorrido(Icons.Filled.ArrowUpward, perfil?.let { formatearAlturaMetros(it.alturaMaximaMetros) } ?: SIN_DATO, "Altura máxima"),
+        DatoRecorrido(Icons.Filled.ArrowDownward, perfil?.let { formatearAlturaMetros(it.alturaMinimaMetros) } ?: SIN_DATO, "Altura mínima"),
         DatoRecorrido(Icons.Outlined.Loop, obtenerTextoTipoRecorrido(sendero.tipoRecorrido), "Tipo")
     )
 

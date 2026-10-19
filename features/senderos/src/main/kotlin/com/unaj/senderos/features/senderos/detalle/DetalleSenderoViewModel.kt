@@ -433,9 +433,10 @@ class DetalleSenderoViewModel @AssistedInject constructor(
 
     private fun compartir() {
         val sendero = _estadoVisual.value.sendero ?: return
+        val desnivel = sendero.perfilElevacion?.let { perfil -> "Desnivel: ${perfil.desnivelPositivoMetros} m · " }.orEmpty()
         val texto = "${sendero.nombre} (${sendero.region})\n" +
             "Distancia: ${formatearDistanciaSendero(sendero.distanciaKilometros)} · " +
-            "Desnivel: ${sendero.desnivelMetros} m · Dificultad: ${obtenerTextoDificultad(sendero.dificultad)}\n" +
+            "${desnivel}Dificultad: ${obtenerTextoDificultad(sendero.dificultad)}\n" +
             "Compartido desde SenderosArgentina"
         emitirEfecto(DetalleSenderoEfecto.CompartirSendero(texto))
     }
