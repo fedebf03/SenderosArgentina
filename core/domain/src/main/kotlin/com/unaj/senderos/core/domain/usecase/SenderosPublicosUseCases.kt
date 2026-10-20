@@ -54,7 +54,7 @@ class PublicarSenderoUseCase @Inject constructor(
     suspend operator fun invoke(sendero: Sendero): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
-        if (sendero.idUsuario != usuario.id) {
+        if (sendero.idUsuario != usuario.id || sendero.idOrigen.isNotEmpty()) {
             return Result.failure(IllegalStateException("Solo podés publicar tus propios senderos"))
         }
         if (!estaListoParaPublicar(sendero)) {

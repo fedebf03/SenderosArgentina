@@ -58,6 +58,10 @@ data class DetalleSenderoEstadoVisual(
     val puedeEditar: Boolean
         get() = sendero?.idOrigen.isNullOrEmpty()
 
+    // Una copia no se publica; si ya había quedado publicada, se deja la opción de hacerla privada
+    val puedePublicar: Boolean
+        get() = puedeEditar || estaPublicado
+
     // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
     val hayPuntosPorRevisar: Boolean
         get() = revision.hayPuntosPorRevisar && !hayRecorridoEnCursoEnEsteSendero

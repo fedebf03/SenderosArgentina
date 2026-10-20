@@ -101,7 +101,13 @@ internal fun CabeceraDetalle(
                         descripcion = "Más opciones",
                         alTocar = { alProcesarEvento(DetalleSenderoEvento.AlAbrirMenuOpciones) }
                     )
-                    MenuOpciones(estadoVisual.esMenuOpcionesVisible, estadoVisual.puedeEditar, estadoVisual.estaPublicado, alProcesarEvento)
+                    MenuOpciones(
+                        estadoVisual.esMenuOpcionesVisible,
+                        estadoVisual.puedeEditar,
+                        estadoVisual.puedePublicar,
+                        estadoVisual.estaPublicado,
+                        alProcesarEvento
+                    )
                 }
             }
         }
@@ -149,6 +155,7 @@ internal fun CabeceraDetalle(
 internal fun MenuOpciones(
     esVisible: Boolean,
     puedeEditar: Boolean,
+    puedePublicar: Boolean,
     estaPublicado: Boolean,
     alProcesarEvento: (DetalleSenderoEvento) -> Unit
 ) {
@@ -164,20 +171,22 @@ internal fun MenuOpciones(
                 onClick = { alProcesarEvento(DetalleSenderoEvento.AlTocarEditar) }
             )
         }
-        DropdownMenuItem(
-            text = { Text(if (estaPublicado) "Hacer privado" else "Publicar") },
-            leadingIcon = {
-                Icon(
-                    imageVector = if (estaPublicado) Icons.Outlined.Lock else Icons.Outlined.Public,
-                    contentDescription = null
-                )
-            },
-            onClick = {
-                alProcesarEvento(
-                    if (estaPublicado) DetalleSenderoEvento.AlTocarHacerPrivado else DetalleSenderoEvento.AlTocarPublicar
-                )
-            }
-        )
+        if (puedePublicar) {
+            DropdownMenuItem(
+                text = { Text(if (estaPublicado) "Hacer privado" else "Publicar") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (estaPublicado) Icons.Outlined.Lock else Icons.Outlined.Public,
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    alProcesarEvento(
+                        if (estaPublicado) DetalleSenderoEvento.AlTocarHacerPrivado else DetalleSenderoEvento.AlTocarPublicar
+                    )
+                }
+            )
+        }
         DropdownMenuItem(
             text = { Text("Exportar (GPX, CSV o JSON)") },
             leadingIcon = { Icon(imageVector = Icons.Outlined.FileDownload, contentDescription = null) },
