@@ -1,8 +1,8 @@
 package com.unaj.senderos.core.data.mapeo
 
 import com.unaj.senderos.core.database.ConvertidoresSendero
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
-import com.unaj.senderos.core.network.PuntoRecorridoRed
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
+import com.unaj.senderos.core.network.sendero.PuntoRecorridoRed
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.TipoPunto

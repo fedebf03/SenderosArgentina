@@ -30,7 +30,7 @@ object CalculadoraCorredor {
         }
     }
 
-    // Dividir un tramo largo en subtramos de a lo sumo 2 km para que sus rectángulos no cubran áreas enormes
+    // Los tramos largos se parten cada 2 km como máximo para que sus rectángulos no cubran áreas enormes
     private fun subdividir(origen: PuntoRecorrido, destino: PuntoRecorrido): List<Pair<PuntoRecorrido, PuntoRecorrido>> {
         val largoMetros = CalculadoraRecorrido.distanciaEntre(Coordenada(origen.latitud, origen.longitud), destino) * METROS_POR_KILOMETRO
         val cantidad = kotlin.math.ceil(largoMetros / LARGO_MAXIMO_SUBTRAMO_METROS).toInt().coerceAtLeast(1)
@@ -44,7 +44,7 @@ object CalculadoraCorredor {
         return extremos.zipWithNext()
     }
 
-    // Calcular una firma de texto estable del trazado, sensible al orden y a las coordenadas hasta seis decimales
+    // La firma es estable y cambia con el orden de los puntos o con las coordenadas hasta el sexto decimal
     fun firmaTrazado(puntos: List<PuntoRecorrido>): String {
         val texto = puntos
             .filter { punto -> Coordenada(punto.latitud, punto.longitud).tieneCoordenadasValidas() }

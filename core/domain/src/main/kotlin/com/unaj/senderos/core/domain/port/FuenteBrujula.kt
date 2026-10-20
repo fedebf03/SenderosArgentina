@@ -4,6 +4,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface FuenteBrujula {
 
-    // Observar el rumbo magnético en grados [0, 360) mientras haya un recolector, emitiendo solo cambios apreciables
+    // Rumbo en grados [0, 360). Solo se emiten los cambios apreciables
     fun observarRumbo(): Flow<Float>
 }

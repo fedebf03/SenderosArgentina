@@ -2,13 +2,13 @@ package com.unaj.senderos.core.data.sincronizacion
 
 import android.util.Log
 import com.unaj.senderos.core.database.EjecutorTransacciones
-import com.unaj.senderos.core.database.SenderoDao
-import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.database.sendero.SenderoDao
+import com.unaj.senderos.core.database.sendero.SenderoEntidad
 import com.unaj.senderos.core.data.mapeo.aEntidad
 import com.unaj.senderos.core.data.mapeo.aRed
-import com.unaj.senderos.core.network.SenderoFuenteRemota
-import com.unaj.senderos.core.network.SenderoRed
-import com.unaj.senderos.core.network.SubidorFotos
+import com.unaj.senderos.core.network.sendero.SenderoFuenteRemota
+import com.unaj.senderos.core.network.sendero.SenderoRed
+import com.unaj.senderos.core.network.fotos.SubidorFotos
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.ResumenSincronizacion
 import com.unaj.senderos.core.domain.model.UMBRAL_DEMORA_MILISEGUNDOS
@@ -27,7 +27,7 @@ private const val TAG = "SINCRONIZACION"
 private const val MAXIMO_PASADAS_SUBIDA = 3
 private const val MAXIMO_PERFILES_POR_PASADA = 5
 
-// La base local es la fuente de verdad frente a Firestore
+// RF7 - Sincronización: Room es la fuente de verdad. Fusionamos lo remoto más nuevo y después subimos los pendientes
 class SincronizadorSenderos(
     private val senderoDao: SenderoDao,
     private val fuenteRemota: SenderoFuenteRemota,
@@ -37,10 +37,9 @@ class SincronizadorSenderos(
     private val calculadorPerfiles: CalcularPerfilElevacionUseCase? = null,
     private val reloj: () -> Long = System::currentTimeMillis
 ) {
-    // Pedidos de perfil que el servicio rechazó para un trazado concreto; se recuerdan mientras viva el proceso
+    // Pedidos de perfil que el servicio rechazó para un trazado concreto. Se recuerdan mientras viva el proceso
     private val perfilesRechazados: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
-    // Sincronizar al usuario con Firestore y devolver el resumen de lo subido, o failure si falla la lectura remota
     suspend fun sincronizar(idUsuario: String): Result<ResumenSincronizacion> {
         Log.d(TAG, "Comienza la sincronización del usuario $idUsuario")
         return try {
@@ -59,7 +58,6 @@ class SincronizadorSenderos(
         }
     }
 
-    // Ejecutar la fusión y la subida sin capturar excepciones, que captura el llamador
     private suspend fun sincronizarSinCapturar(idUsuario: String): Result<ResumenSincronizacion> {
         fusionarRemotos(idUsuario, fuenteRemota.obtenerSenderos(idUsuario))
         val idsSubidos = mutableSetOf<String>()
@@ -82,9 +80,8 @@ class SincronizadorSenderos(
         }
     }
 
-    // Completar los perfiles de elevación después de subir los cambios del usuario y volver a subir solo los senderos con
-    // perfil nuevo. Esa segunda subida suma a los senderos subidos que no se contaron antes, pero no toca el conteo de
-    // guardados sin conexión; un fallo de este paso nunca invalida lo ya subido
+    // La segunda subida solo suma los senderos que no se contaron antes y no toca el conteo de guardados sin conexión.
+    // Por otro lado un fallo en este paso nunca invalida lo que ya se subió
     private suspend fun completarPerfiles(
         idUsuario: String,
         resumen: ResumenSincronizacion,
@@ -109,8 +106,8 @@ class SincronizadorSenderos(
         return resumen.copy(senderosSubidos = senderosSubidos, senderosConError = senderosConError, primerError = primerError)
     }
 
-    // Calcular el perfil de hasta cinco senderos que lo necesitan y devolver los ids de los que lo obtuvieron. Se corta
-    // ante falta de conexión o límite del servicio; un rechazo definitivo se recuerda para no repetirlo mientras viva el proceso
+    // Se calculan hasta cinco perfiles por pasada y se corta ante falta de conexión o límite del servicio.
+    // Un rechazo definitivo se recuerda para no repetir el pedido mientras viva el proceso
     private suspend fun calcularPerfilesFaltantes(idUsuario: String, calculador: CalcularPerfilElevacionUseCase): List<String> {
         val idsConPerfilNuevo = mutableListOf<String>()
         try {
@@ -137,7 +134,7 @@ class SincronizadorSenderos(
         return idsConPerfilNuevo
     }
 
-    // Identificar un sendero con su trazado actual, para recordar los pedidos de perfil que el servicio rechazó
+    // La clave incluye la firma del trazado, así un trazado editado vuelve a pedir su perfil
     private fun claveDePerfil(idUsuario: String, sendero: Sendero): String {
         return "$idUsuario/${sendero.id}/${CalculadoraPerfil.firmaTrazado(sendero.recorrido, sendero.tipoRecorrido)}"
     }
@@ -175,11 +172,10 @@ class SincronizadorSenderos(
         return ResumenSincronizacion(senderosSubidos, senderosGuardadosSinConexion, idsFallidos.size, primerError)
     }
 
-    // Resultado de subir un sendero: el error si falló y si quedaron fotos locales sin subir, que se reintentan en la próxima sincronización
     private class ResultadoSubida(val error: Throwable?, val hayFotosSinSubir: Boolean = false)
 
-    // Subir el documento del sendero aunque una foto no se pueda subir: el trazado no debe esperar a las fotos. En ese caso el documento
-    // viaja sin esa foto, la fila local conserva la ruta de la foto y queda PENDIENTE para volver a probar la próxima vez
+    // El trazado no espera a las fotos. Si una foto no se puede subir, el documento viaja sin ella y la fila local
+    // conserva la ruta y queda PENDIENTE para volver a probar la próxima vez
     private suspend fun subirEntidad(idUsuario: String, entidad: SenderoEntidad): ResultadoSubida {
         return try {
             val subida = subirFotosSiSonLocales(idUsuario, entidad)
@@ -187,7 +183,7 @@ class SincronizadorSenderos(
             if (entidad.estaEliminado) {
                 senderoDao.borrarEliminadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion)
             } else {
-                // Con fotos sin subir queda PENDIENTE (y no CON_ERROR): el trazado ya llegó y falta solo reintentar las fotos
+                // Con fotos sin subir queda PENDIENTE y no CON_ERROR, porque el trazado ya llegó y solo falta reintentar las fotos
                 val estadoFinal = if (subida.hayFotosSinSubir) EstadoSincronizacion.PENDIENTE else EstadoSincronizacion.SINCRONIZADO
                 senderoDao.actualizarEstadoSiNoCambio(idUsuario, entidad.id, entidad.fechaModificacion, estadoFinal.name)
             }
@@ -206,11 +202,9 @@ class SincronizadorSenderos(
         }
     }
 
-    // Entidad que se manda a la nube (sin las fotos que no se pudieron subir) y si alguna quedó sin subir
     private class SubidaDeFotos(val entidadRemota: SenderoEntidad, val hayFotosSinSubir: Boolean)
 
-    // Subir la foto local antes que el documento, porque Firestore solo debe guardar URLs que otros dispositivos puedan abrir.
-    // Si la subida falla, el documento viaja sin foto y se avisa para reintentar después
+    // La foto se sube antes que el documento porque Firestore solo debe guardar URLs que otros dispositivos puedan abrir
     private suspend fun subirFotoSiEsLocal(idUsuario: String, entidad: SenderoEntidad): SubidaDeFotos {
         if (entidad.estaEliminado || !esFotoLocal(entidad.foto)) return SubidaDeFotos(entidad, false)
         return try {
@@ -232,8 +226,8 @@ class SincronizadorSenderos(
         return SubidaDeFotos(puntos.entidadRemota, principal.hayFotosSinSubir || puntos.hayFotosSinSubir)
     }
 
-    // Subir en orden las fotos locales de los puntos del recorrido y guardar cada URL con la transición condicional, para no repetir la
-    // subida si una posterior falla. La foto de un punto que no se pudo subir se omite del documento remoto y la local se conserva
+    // Cada URL se guarda apenas se sube, con la transición condicional, para no repetir la subida si una posterior falla.
+    // La foto que no se pudo subir se omite del documento remoto y se conserva la local
     private suspend fun subirFotosDePuntosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SubidaDeFotos {
         if (entidad.estaEliminado || entidad.recorrido.none { punto -> esFotoLocal(punto.foto) }) return SubidaDeFotos(entidad, false)
         val recorridoLocal = entidad.recorrido.toMutableList()
@@ -242,7 +236,7 @@ class SincronizadorSenderos(
         for (indice in entidad.recorrido.indices) {
             val punto = entidad.recorrido[indice]
             if (!esFotoLocal(punto.foto)) continue
-            // Si el archivo ya no existe (borrado o limpiado), la foto se limpia para no dejar el sendero pendiente para siempre
+            // Si el archivo ya no existe, la foto se limpia para no dejar el sendero pendiente para siempre
             val fotoNueva: String? = if (existeArchivo(punto.foto)) {
                 try {
                     subidorFotos.subir(punto.foto).also { urlRemota -> Log.d(TAG, "Foto del punto $indice del sendero ${entidad.id} subida a $urlRemota") }

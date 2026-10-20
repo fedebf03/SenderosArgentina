@@ -3,7 +3,7 @@ package com.unaj.senderos.core.data.repository
 import android.util.Log
 import com.unaj.senderos.core.data.mapeo.aDominio
 import com.unaj.senderos.core.data.mapeo.aRed
-import com.unaj.senderos.core.network.SenderoPublicoFuenteRemota
+import com.unaj.senderos.core.network.senderopublico.SenderoPublicoFuenteRemota
 import com.unaj.senderos.core.domain.model.SenderoPublico
 import com.unaj.senderos.core.domain.repository.SenderoPublicoRepositorio
 import kotlinx.coroutines.CancellationException

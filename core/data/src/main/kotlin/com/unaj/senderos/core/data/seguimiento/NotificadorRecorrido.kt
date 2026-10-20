@@ -102,6 +102,7 @@ class NotificadorRecorrido(private val contexto: Context) {
 
     fun identificadorNotificacionEnCurso(): Int = ID_NOTIFICACION_EN_CURSO
 
+    // RF7 - Notificaciones: durante el recorrido avisamos la cercanía a un punto, el desvío y la llegada al final
     fun notificarAviso(idSendero: String, aviso: AvisoRecorrido, estado: EstadoSeguimiento?) {
         if (!tienePermisoDeNotificaciones()) {
             Log.d(TAG, "Aviso omitido: falta el permiso POST_NOTIFICATIONS")
@@ -136,7 +137,7 @@ class NotificadorRecorrido(private val contexto: Context) {
         }
     }
 
-    // Mostrar un aviso del clima o de la presión; cada tipo de aviso tiene su identificador, así uno nuevo reemplaza al anterior del mismo tipo
+    // Cada tipo de aviso del ambiente tiene su identificador, así uno nuevo reemplaza al anterior del mismo tipo
     fun notificarAvisoAmbiente(idSendero: String, aviso: AvisoAmbiente) {
         if (!tienePermisoDeNotificaciones()) {
             Log.d(TAG, "Aviso del ambiente omitido: falta el permiso POST_NOTIFICATIONS")
@@ -231,7 +232,7 @@ class NotificadorRecorrido(private val contexto: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Android ignora los cambios de un canal existente, por eso se borra el canal anterior de avisos; repetirlo es inofensivo
+    // Android ignora los cambios de un canal que ya existe, por eso se borra el canal anterior de avisos
     private fun crearCanales() {
         if (seCrearonCanales) return
         seCrearonCanales = true

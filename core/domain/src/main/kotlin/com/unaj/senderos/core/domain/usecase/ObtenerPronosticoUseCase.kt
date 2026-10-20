@@ -11,7 +11,6 @@ import kotlin.math.roundToInt
 private const val VIGENCIA_MILISEGUNDOS = 30 * 60_000L
 private const val CENTESIMAS_POR_GRADO = 100
 
-// Pronóstico para mostrar: de qué instante es, si quedó viejo porque no se pudo renovar y por qué
 data class ResultadoPronostico(
     val pronostico: PronosticoClima,
     val antiguedadMilisegundos: Long,
@@ -24,8 +23,8 @@ class ObtenerPronosticoUseCase @Inject constructor(
     private val almacenPronosticos: AlmacenPronosticos,
     private val reloj: Reloj
 ) {
-    // Obtener el pronóstico del lugar: usa el guardado si tiene menos de 30 minutos; si no lo pide a la red y lo guarda; y sin red cae al último
-    // guardado, marcado como viejo y con el motivo, para que el usuario vea algo útil en el campo
+    // Se usa el guardado si tiene menos de 30 minutos. Sin red se cae al último guardado, marcado como viejo, para que
+    // el usuario vea algo útil en el campo
     suspend operator fun invoke(lugar: Coordenada, forzar: Boolean = false): Result<ResultadoPronostico> {
         val clave = claveDe(lugar)
         val guardado = almacenPronosticos.leer(clave)
@@ -49,7 +48,7 @@ class ObtenerPronosticoUseCase @Inject constructor(
     }
 
     companion object {
-        // Calcular la clave del lugar redondeando a la centésima de grado (cerca de un kilómetro), apta para nombre de archivo
+        // Se redondea a la centésima de grado (cerca de un kilómetro) y la clave sirve como nombre de archivo
         fun claveDe(lugar: Coordenada): String {
             val latitud = (lugar.latitud * CENTESIMAS_POR_GRADO).roundToInt()
             val longitud = (lugar.longitud * CENTESIMAS_POR_GRADO).roundToInt()

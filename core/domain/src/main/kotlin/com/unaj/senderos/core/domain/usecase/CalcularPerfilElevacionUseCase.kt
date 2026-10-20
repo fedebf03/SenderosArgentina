@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 
-// Calcula el perfil de elevación del trazado planificado cuando falta o quedó desactualizado, y lo guarda en el sendero
+// RF3 - Detalle: calculamos el perfil de elevación cuando falta o quedó desactualizado y lo guardamos en el sendero
 class CalcularPerfilElevacionUseCase @Inject constructor(
     private val senderoRepositorio: SenderoRepositorio,
     private val fuenteElevacion: FuenteElevacion,
@@ -17,7 +17,6 @@ class CalcularPerfilElevacionUseCase @Inject constructor(
 ) {
     private val calcularPerfilDeTrazado = CalcularPerfilDeTrazadoUseCase(fuenteElevacion)
 
-    // Calcular el perfil del sendero indicado del usuario con sesión activa, si falta o quedó desactualizado
     suspend operator fun invoke(idSendero: String): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
@@ -31,7 +30,7 @@ class CalcularPerfilElevacionUseCase @Inject constructor(
         return calcularPara(usuario.id, sendero)
     }
 
-    // Calcular el perfil de un sendero ya leído; no hace nada si el perfil guardado corresponde al trazado actual
+    // No hace nada si el perfil guardado corresponde al trazado actual
     suspend fun calcularPara(idUsuario: String, sendero: Sendero): Result<Unit> {
         val firma = CalculadoraPerfil.firmaTrazado(sendero.recorrido, sendero.tipoRecorrido)
         if (sendero.perfilElevacion?.firmaTrazado == firma) return Result.success(Unit)

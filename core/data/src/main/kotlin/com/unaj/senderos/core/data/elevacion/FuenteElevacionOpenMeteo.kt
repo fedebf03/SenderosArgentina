@@ -10,7 +10,7 @@ import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
-import com.unaj.senderos.core.network.ApiElevacionOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.ApiElevacionOpenMeteo
 import javax.inject.Inject
 
 private const val TAG = "ELEVACION"
@@ -19,12 +19,11 @@ private const val CODIGO_DEMASIADOS_PEDIDOS = 429
 private const val CODIGO_ERROR_CLIENTE_MINIMO = 400
 private const val CODIGO_ERROR_SERVIDOR_MINIMO = 500
 
-// Fuente de alturas que consulta Open-Meteo y traduce sus fallos a mensajes en español
 class FuenteElevacionOpenMeteo @Inject constructor(
     private val api: ApiElevacionOpenMeteo
 ) : FuenteElevacion {
 
-    // Obtener las altitudes troceando las coordenadas en pedidos de a lo sumo 100, conservando el orden
+    // La API acepta hasta 100 coordenadas por pedido, por eso se trocean en lotes que conservan el orden
     override suspend fun obtenerAltitudes(coordenadas: List<Coordenada>): Result<List<Double>> {
         return try {
             val altitudes = coordenadas.chunked(MAXIMO_COORDENADAS_POR_PEDIDO).flatMap { lote -> pedirLote(lote) }
@@ -40,7 +39,6 @@ class FuenteElevacionOpenMeteo @Inject constructor(
         }
     }
 
-    // Pedir un lote a la API y validar que devuelva una altura por coordenada
     private suspend fun pedirLote(lote: List<Coordenada>): List<Double> {
         val respuesta = try {
             Log.d(TAG, "Pidiendo ${lote.size} alturas a Open-Meteo")
@@ -68,12 +66,11 @@ class FuenteElevacionOpenMeteo @Inject constructor(
         return respuesta.elevacion
     }
 
-    // Formatear grados con cinco decimales (cerca de un metro) y punto decimal, como pide la API
+    // Cinco decimales equivalen a cerca de un metro. La API pide punto decimal, por eso se usa Locale.US
     private fun formatearGrados(grados: Double): String {
         return String.format(Locale.US, "%.5f", grados)
     }
 
-    // Describir en español un código de estado HTTP de error
     private fun describirCodigoHttp(codigo: Int): String {
         return when {
             codigo == CODIGO_DEMASIADOS_PEDIDOS -> "El servicio de elevación recibió demasiados pedidos, probá más tarde"

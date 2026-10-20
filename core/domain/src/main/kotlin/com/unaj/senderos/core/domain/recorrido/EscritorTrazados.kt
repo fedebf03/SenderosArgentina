@@ -12,9 +12,8 @@ private const val ENCABEZADO_CSV = "Latitude,Longitude,Elevation"
 
 object EscritorTrazados {
 
-    // Escribir el sendero en GPX 1.1: metadatos con nombre y descripción, un waypoint por punto de interés y la traza completa
-    // (con la vuelta si es de ida y vuelta, o el cierre si es circular) con la altura del perfil si está al día. Así otra
-    // aplicación lo dibuja entero y, al volver a importarlo, se detecta el mismo tipo de recorrido
+    // Escribimos la traza completa (con la vuelta o el cierre) y la altura solo si el perfil está al día. Así otra
+    // aplicación la dibuja entera y, al volver a importarla, se detecta el mismo tipo de recorrido
     fun escribirGpx(sendero: Sendero): String {
         val puntosConAltura = trazadoConAlturas(sendero)
         val texto = StringBuilder()
@@ -38,8 +37,7 @@ object EscritorTrazados {
         return texto.toString()
     }
 
-    // Escribir la traza completa como CSV de latitud, longitud y altura (vacía si no hay perfil), con el mismo encabezado que usan
-    // las aplicaciones de senderismo
+    // Usamos el mismo encabezado que las aplicaciones de senderismo
     fun escribirCsv(sendero: Sendero): String {
         val filas = trazadoConAlturas(sendero).map { (punto, altura) ->
             "${punto.latitud},${punto.longitud},${altura?.let(::formatearAltura).orEmpty()}"
@@ -47,7 +45,7 @@ object EscritorTrazados {
         return (listOf(ENCABEZADO_CSV) + filas).joinToString(separator = "\n", postfix = "\n")
     }
 
-    // Armar la traza completa con la altura de cada punto según el perfil; sin perfil, o con un perfil de otro trazado, sin altura
+    // Un perfil calculado con otro trazado no se usa, porque sus alturas ya no corresponden a estos puntos
     private fun trazadoConAlturas(sendero: Sendero): List<Pair<PuntoRecorrido, Double?>> {
         val validos = sendero.recorrido.filter(::esValido)
         val trazado = CalculadoraSeguimiento.construirTrazado(validos, sendero.tipoRecorrido)
@@ -59,7 +57,6 @@ object EscritorTrazados {
         return trazado.mapIndexed { indice, punto -> punto to alturaEnElPerfil(perfil, acumuladas[indice]) }
     }
 
-    // Interpolar la altura del perfil a una distancia del inicio del trazado
     private fun alturaEnElPerfil(perfil: PerfilElevacion, kilometros: Double): Double? {
         val puntos = perfil.puntos
         if (puntos.isEmpty()) return null
@@ -72,13 +69,11 @@ object EscritorTrazados {
         return anterior.altitudMetros + (puntos[siguiente].altitudMetros - anterior.altitudMetros) * fraccion
     }
 
-    // Escribir la altura con un decimal y punto decimal, como esperan los archivos de intercambio
+    // Con Locale.ROOT la altura lleva punto decimal, como esperan los archivos de intercambio
     private fun formatearAltura(metros: Double): String = String.format(Locale.ROOT, "%.1f", metros)
 
-    // Indicar si el punto tiene coordenadas válidas
     private fun esValido(punto: PuntoRecorrido): Boolean = Coordenada(punto.latitud, punto.longitud).tieneCoordenadasValidas()
 
-    // Nombrar el tipo de punto de interés en castellano
     private fun nombrarTipo(tipo: TipoPunto): String = when (tipo) {
         TipoPunto.PASO -> "Paso"
         TipoPunto.MIRADOR -> "Mirador"
@@ -89,7 +84,6 @@ object EscritorTrazados {
         TipoPunto.OTRO -> "Otro"
     }
 
-    // Reemplazar los caracteres reservados de XML
     private fun escapar(texto: String): String = texto
         .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;")
 }

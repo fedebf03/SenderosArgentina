@@ -10,7 +10,6 @@ class ObservarRecorridoUseCase @Inject constructor(
     private val recorridoRepositorio: RecorridoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // El flujo emite null si no existe
     operator fun invoke(idRecorrido: String): Result<Flow<RecorridoRealizado?>> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))

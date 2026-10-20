@@ -10,7 +10,7 @@ private const val CAIDA_FUERTE_HECTOPASCALES = -6.0
 
 data class MuestraPresion(val instanteMilisegundos: Long, val hectopascales: Double)
 
-// Avisos que da la caída de la presión atmosférica: es la señal de que el tiempo está por empeorar y no necesita conexión
+// La caída de la presión anticipa que el tiempo va a empeorar y se puede medir sin conexión
 enum class AvisoPresion(val titulo: String, val detalle: String) {
     CAIDA_RAPIDA(
         "La presión baja rápido",
@@ -24,7 +24,7 @@ enum class AvisoPresion(val titulo: String, val detalle: String) {
 
 object EvaluadorTendenciaPresion {
 
-    // Calcular cuánto varió la presión, llevada a un período de 3 horas; nulo si las muestras no cubren al menos una hora
+    // La variación se lleva a un período de 3 horas. Si las muestras no cubren al menos una hora devuelve nulo
     fun variacionPorTresHoras(muestras: List<MuestraPresion>): Double? {
         val primera = muestras.firstOrNull() ?: return null
         val ultima = muestras.last()
@@ -33,7 +33,6 @@ object EvaluadorTendenciaPresion {
         return (ultima.hectopascales - primera.hectopascales) * VENTANA_MILISEGUNDOS / duracion
     }
 
-    // Decidir el aviso según la caída de las últimas 3 horas; sin caída apreciable no hay aviso
     fun evaluar(muestras: List<MuestraPresion>): AvisoPresion? {
         val variacion = variacionPorTresHoras(muestras) ?: return null
         return when {
@@ -44,13 +43,12 @@ object EvaluadorTendenciaPresion {
     }
 }
 
-// Guardar las muestras de presión de las últimas 3 horas. Subir o bajar una cuesta cambia la presión mucho más rápido que el
-// clima, así que un salto brusco entre dos muestras seguidas se toma como cambio de altura y se empieza de nuevo
+// Subir o bajar una cuesta cambia la presión mucho más rápido que el clima. Por lo tanto un salto brusco entre
+// dos muestras seguidas se toma como cambio de altura y se empieza de nuevo
 class RegistroPresion {
 
     private val muestras = ArrayDeque<MuestraPresion>()
 
-    // Agregar una muestra si pasaron al menos 5 minutos desde la anterior; devuelve verdadero si quedó guardada
     fun agregar(muestra: MuestraPresion): Boolean {
         val anterior = muestras.lastOrNull()
         if (anterior != null) {
@@ -66,6 +64,5 @@ class RegistroPresion {
         return true
     }
 
-    // Entregar una copia de las muestras guardadas, de la más vieja a la más nueva
     fun muestras(): List<MuestraPresion> = muestras.toList()
 }

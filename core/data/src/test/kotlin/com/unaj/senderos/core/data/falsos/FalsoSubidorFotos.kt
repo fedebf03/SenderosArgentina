@@ -1,7 +1,6 @@
 package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.core.network.SubidorFotos
-
+import com.unaj.senderos.core.network.fotos.SubidorFotos
 class FalsoSubidorFotos : SubidorFotos {
 
     val rutasSubidas: MutableList<String> = mutableListOf()

@@ -1,14 +1,13 @@
 package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.core.database.CoordenadaEntidad
-import com.unaj.senderos.core.database.RecorridoEntidad
-import com.unaj.senderos.core.network.CoordenadaRed
-import com.unaj.senderos.core.network.RecorridoRed
+import com.unaj.senderos.core.database.recorrido.CoordenadaEntidad
+import com.unaj.senderos.core.database.recorrido.RecorridoEntidad
+import com.unaj.senderos.core.network.recorrido.CoordenadaRed
+import com.unaj.senderos.core.network.recorrido.RecorridoRed
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.RecorridoRealizado
 
-// Un valor desconocido se toma como sincronizado
 private fun resolverEstadoDelRecorrido(nombre: String): EstadoSincronizacion {
     return EstadoSincronizacion.entries.firstOrNull { valor -> valor.name == nombre }
         ?: EstadoSincronizacion.SINCRONIZADO
@@ -58,7 +57,6 @@ fun RecorridoRealizado.aEntidad(
     )
 }
 
-// Convertir la fila local en el documento remoto, que no lleva idUsuario ni estado de sincronización
 fun RecorridoEntidad.aRed(): RecorridoRed {
     return RecorridoRed(
         id = id,

@@ -63,9 +63,8 @@ private const val METROS_POR_PASO_SIMULADO = 0.75
 private const val SEGUNDOS_POR_MINUTO = 60.0
 private const val MILISEGUNDOS_POR_MINUTO = 60_000.0
 
-// Controlar en memoria el único recorrido activo del proceso; solo usa android.util.Log, sin servicios de Android, para poder probarse en JVM.
-// Los sensores (acelerómetro y brújula) se recolectan mientras el seguimiento está activo y solo si las capacidades del equipo lo permiten;
-// sin fuente o sin capacidad, los pasos, el ritmo y el rumbo de brújula quedan en null
+// Solo usa android.util.Log y ningún servicio de Android, así se puede probar en la JVM. Los sensores se recolectan
+// mientras hay seguimiento y si el equipo los tiene. Sin ellos, los pasos, el ritmo y el rumbo de brújula quedan en null
 class ControlSeguimientoEnMemoria(
     private val proveedorUbicacion: ProveedorUbicacion,
     private val observarDetalleSendero: ObservarDetalleSenderoUseCase,
@@ -108,7 +107,7 @@ class ControlSeguimientoEnMemoria(
     override val motivoFin: StateFlow<MotivoFinSeguimiento?> = motivoFinInterno
     override val avisos: SharedFlow<AvisoRecorrido> = avisosInternos
 
-    // Iniciar el seguimiento del sendero indicado, finalizando el anterior y fallando si no tiene recorrido
+    // RF5 - Seguimiento: cerramos el recorrido anterior, cargamos el trazado y empezamos a recolectar el GPS y los sensores
     override suspend fun iniciar(idSendero: String, esSimulado: Boolean) {
         val miGeneracion = ++generacion
         cerrojoInicio.withLock {
@@ -144,7 +143,7 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Iniciar una caminata libre: no se busca ningún sendero; el recorrido anterior se guarda y el nuevo registra solo lo caminado, con GPS real
+    // En una caminata libre no hay sendero que seguir. Se registra solo lo caminado y siempre con el GPS real
     override suspend fun iniciarCaminataLibre(idCaminata: String, idUsuario: String, nombre: String) {
         val miGeneracion = ++generacion
         cerrojoInicio.withLock {
@@ -167,7 +166,6 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Detener los trabajos del recorrido anterior y guardar lo que había recorrido
     private suspend fun cerrarSeguimientoAnterior() {
         trabajoUbicaciones?.cancelAndJoin()
         trabajoUbicaciones = null
@@ -176,7 +174,7 @@ class ControlSeguimientoEnMemoria(
         guardarRecorridoRealizado(estadoInterno.value, nombreSenderoActivo, idUsuarioActivo)
     }
 
-    // Reiniciar los contadores de sensores para un recorrido nuevo; devuelve si se van a medir pasos (reales o estimados en simulación)
+    // Devuelve si se van a medir pasos (reales, o estimados en la simulación)
     private fun prepararSensores(esSimulado: Boolean): Boolean {
         pasosRealesActivos = midePasosReales && !esSimulado
         rumboMagneticoGrados = null
@@ -187,7 +185,6 @@ class ControlSeguimientoEnMemoria(
         return esSimulado || pasosRealesActivos
     }
 
-    // Publicar el estado inicial y lanzar la recolección de ubicaciones, sensores y reevaluación de señal
     private fun activarSeguimiento(estadoInicial: EstadoSeguimiento, proveedorActivo: ProveedorUbicacion, nombre: String, idUsuario: String) {
         motivoFinInterno.value = null
         nombreSenderoActivo = nombre
@@ -200,14 +197,12 @@ class ControlSeguimientoEnMemoria(
         trabajoUbicaciones = alcance.launch { recolectarUbicaciones(proveedorActivo) }
     }
 
-    // Cambiar la velocidad de la simulación en curso; se ignora si el recorrido es real
     override fun cambiarMultiplicadorSimulacion(valor: Int) {
         val proveedorActivo = proveedorSimulado ?: return
         proveedorActivo.cambiarMultiplicador(valor)
         estadoInterno.update { estadoActual -> estadoActual?.copy(multiplicadorSimulacion = valor) }
     }
 
-    // Pedir a la simulación en curso que se desvíe del trazado; se ignora si el recorrido es real
     override fun simularDesvio() {
         proveedorSimulado?.simularDesvio()
     }
@@ -220,17 +215,17 @@ class ControlSeguimientoEnMemoria(
         finalizarSeguimiento(guardar = false)
     }
 
-    // Capturar un punto de interés en la posición reservada o, si no viene, en la última posición válida: copiar la foto si viene y guardar el punto al instante en la base local.
-    // Con la señal débil informa la antigüedad de la posición usada para que la UI la muestre, sin bloquear la captura.
-    // Los fallos devueltos llevan mensajes propios en español; el detalle técnico queda solo en el registro
+    // Con la señal débil se informa la antigüedad de la posición usada, pero no se bloquea la captura.
+    // Los fallos devuelven mensajes propios en español y el detalle técnico queda solo en el registro
     override suspend fun capturarPunto(tipo: TipoPunto, nota: String, uriFoto: String?, posicion: Coordenada?): Result<ResultadoCaptura> {
         val estadoActual = estadoInterno.value
             ?: return Result.failure(IllegalStateException("No hay un recorrido en curso para agregar un punto"))
         val posicionDelPunto = posicion ?: estadoActual.posicionActual
-            ?: return Result.failure(IllegalStateException("Todavía no hay una posición válida del GPS; esperá a tener señal"))
+            ?: return Result.failure(IllegalStateException("Todavía no hay señal de GPS. Esperá unos segundos"))
         val idUsuario = idUsuarioActivo
         val instante = reloj()
-        // Una posición reservada se tomó al tocar el botón, así que no se informa como antigua aunque la señal se haya debilitado después
+        // La posición reservada se tomó al tocar el botón. Por lo tanto no se informa como antigua
+        // aunque la señal se haya debilitado después
         val antiguedad = if (posicion != null) null else calcularAntiguedadSiLaSenalEsDebil(estadoActual, instante)
         var rutaFoto = ""
         return try {
@@ -267,18 +262,17 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Calcular la antigüedad de la última lectura válida solo si la señal está débil; null si la señal es buena o no hay lectura
     private fun calcularAntiguedadSiLaSenalEsDebil(estadoActual: EstadoSeguimiento, instante: Long): Long? {
         if (estadoActual.calidadSenal != CalidadSenal.DEBIL) return null
         return estadoActual.instanteUltimaLecturaValidaMilisegundos?.let { instanteLectura -> (instante - instanteLectura).coerceAtLeast(0L) }
     }
 
-    // Evita dejar huérfana la copia de una foto cuyo punto no se guardó
+    // Así no queda huérfana la copia de una foto cuyo punto no se guardó
     private suspend fun borrarCopiaDeFoto(rutaFoto: String) {
         if (rutaFoto.isNotEmpty()) almacenFotos.borrar(rutaFoto)
     }
 
-    // Terminar el seguimiento: invalida inicios en curso, guarda o descarta lo recorrido y libera ubicación y sensores
+    // Al aumentar la generación se descarta un inicio que todavía esté cargando el sendero
     private fun finalizarSeguimiento(guardar: Boolean) {
         generacion++
         if (guardar) {
@@ -297,8 +291,8 @@ class ControlSeguimientoEnMemoria(
         Log.d(TAG, if (guardar) "Seguimiento detenido" else "Seguimiento cancelado sin guardar")
     }
 
-    // Al cancelar una caminata libre, los puntos que se marcaron no tienen ningún sendero al que pertenecer: se descartan con sus fotos, en segundo plano.
-    // Los de un recorrido sobre un sendero se conservan porque se pueden revisar e incorporar al sendero
+    // Los puntos de una caminata libre cancelada no tienen sendero al que pertenecer, por eso se descartan con sus fotos.
+    // En cambio los de un recorrido sobre un sendero se conservan para revisarlos e incorporarlos
     private fun descartarPuntosDeCaminataLibre(estadoCancelado: EstadoSeguimiento?, idUsuario: String) {
         if (estadoCancelado == null || !estadoCancelado.esCaminataLibre || idUsuario.isBlank()) return
         alcance.launch {
@@ -313,8 +307,8 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Guardar cada 30 s una copia local del recorrido en curso, para recuperarlo si Android cierra la app; un fallo solo se registra y el seguimiento sigue.
-    // No guarda hasta tener una posición aceptada, y la simulación no se autoguarda
+    // Cada 30 s se guarda una copia local del recorrido para recuperarlo si Android cierra la app.
+    // No se guarda hasta tener una posición aceptada, y la simulación no se autoguarda
     private suspend fun autoguardarPeriodicamente() {
         val almacen = almacenBorrador ?: return
         while (true) {
@@ -326,13 +320,14 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Borrar el borrador solo si es el del recorrido indicado: un recorrido nuevo puede haber empezado a autoguardarse mientras el anterior terminaba de escribirse
+    // Un recorrido nuevo puede haber empezado a autoguardarse mientras el anterior terminaba. Por eso solo se borra
+    // el borrador si es el del recorrido indicado
     private suspend fun borrarBorradorDe(idRecorrido: String) {
         val almacen = almacenBorrador ?: return
         if (almacen.leer()?.id == idRecorrido) almacen.borrar()
     }
 
-    // Reevaluar cada 5 s con el reloj la calidad de la señal (y lo derivado del tiempo, como detenido), porque el tiempo avanza aunque no lleguen lecturas
+    // El tiempo avanza aunque no lleguen lecturas, por eso cada 5 s se reevalúa la señal (y si el usuario está detenido)
     private suspend fun reevaluarCalidadPeriodicamente() {
         while (true) {
             delay(INTERVALO_REEVALUACION_MILISEGUNDOS)
@@ -371,7 +366,7 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Dejar de medir pasos: los pasos y el ritmo pasan a null para no mostrar datos congelados
+    // Los pasos y el ritmo pasan a null para no mostrar datos congelados
     private fun marcarPasosNoDisponibles() {
         pasosRealesActivos = false
         actualizarConSensores(reloj()) { estadoActual -> estadoActual }
@@ -384,7 +379,7 @@ class ControlSeguimientoEnMemoria(
         actualizarConSensores(reloj()) { estadoActual -> estadoActual.copy(pasos = (estadoActual.pasos ?: 0) + 1) }
     }
 
-    // Solo mientras el usuario está detenido: en movimiento manda el GPS
+    // La brújula se usa solo con el usuario detenido, porque en movimiento el rumbo sale del GPS
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun recolectarBrujula(fuente: FuenteBrujula) {
         try {
@@ -504,8 +499,8 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Guardar en segundo plano, con el usuario que lo inició aunque la sesión ya se haya cerrado, el recorrido que terminó, sin bloquear ni romper la detención;
-    // no guarda si no hubo ninguna posición válida (un recorrido con solo lecturas imprecisas no tiene distancia confiable)
+    // Se guarda con el usuario que inició el recorrido aunque la sesión ya se haya cerrado. Sin ninguna posición válida
+    // no se guarda, porque un recorrido con solo lecturas imprecisas no tiene una distancia confiable
     private fun guardarRecorridoRealizado(estadoFinal: EstadoSeguimiento?, nombreSendero: String, idUsuario: String) {
         if (estadoFinal == null || estadoFinal.ultimaPosicionAceptada == null) return
         if (idUsuario.isBlank()) {
@@ -526,7 +521,7 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // Construir el recorrido realizado: el id sale del instante de inicio para que guardarlo dos veces sea idempotente
+    // El id sale del instante de inicio, así guardar dos veces el mismo recorrido no lo duplica
     private fun construirRecorridoRealizado(
         estadoFinal: EstadoSeguimiento,
         idUsuario: String,
@@ -551,8 +546,8 @@ class ControlSeguimientoEnMemoria(
             velocidadPromedioKilometrosPorHora = velocidadPromedio,
             velocidadMaximaKilometrosPorHora = estadoFinal.velocidadMaximaMetrosPorSegundo * KILOMETROS_POR_HORA_POR_METRO_POR_SEGUNDO,
             pasos = estadoFinal.pasos,
-            // Ritmo medio de todo el recorrido (pasos totales sobre la duración), no el de la ventana de 10 s
-            // En simulación se guarda null: el ritmo estaría multiplicado por la velocidad simulada
+            // Es el ritmo medio de todo el recorrido y no el de la ventana de 10 s. En la simulación se guarda null
+            // porque el ritmo quedaría multiplicado por la velocidad simulada
             ritmoPasosPorMinuto = estadoFinal.pasos?.takeUnless { estadoFinal.esSimulado }?.let { pasos ->
                 if (duracion == 0L) 0.0 else pasos / (duracion / MILISEGUNDOS_POR_MINUTO)
             },

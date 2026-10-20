@@ -1,8 +1,7 @@
 package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.core.network.SenderoFuenteRemota
-import com.unaj.senderos.core.network.SenderoRed
-
+import com.unaj.senderos.core.network.sendero.SenderoFuenteRemota
+import com.unaj.senderos.core.network.sendero.SenderoRed
 class FalsoSenderoFuenteRemota : SenderoFuenteRemota {
 
     // Documentos remotos en memoria: usuario -> (id de sendero -> documento)

@@ -4,13 +4,8 @@ import com.unaj.senderos.core.domain.model.PuntoCapturado
 import com.unaj.senderos.core.domain.model.Sendero
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Repositorio de los puntos de interés capturados durante un recorrido.
- *
- * Los puntos son locales: no se sincronizan solos, pasan a la nube cuando se incorporan al sendero.
- * Al cerrar sesión se conservan para el mismo usuario: están aislados por `idUsuario` y vuelven a verse
- * cuando ese usuario inicia sesión de nuevo; otro usuario nunca los ve.
- */
+// Los puntos no se sincronizan solos y pasan a la nube cuando se incorporan al sendero. Al cerrar sesión
+// se conservan aislados por idUsuario, así vuelven a verse con el mismo usuario y otro nunca los ve
 interface PuntosCapturadosRepositorio {
 
     suspend fun guardar(punto: PuntoCapturado): Result<Unit>
@@ -21,9 +16,8 @@ interface PuntosCapturadosRepositorio {
     // Borra también los archivos de las fotos
     suspend fun descartar(idUsuario: String, ids: Collection<String>): Result<Unit>
 
-    // Retirar los puntos que ya pasaron a un sendero nuevo (los de una caminata libre convertida), conservando los archivos de sus fotos
+    // Se conservan los archivos de las fotos porque ahora los usa el sendero que nació de la caminata
     suspend fun retirarIncorporados(idUsuario: String, ids: Collection<String>): Result<Unit>
-    // Incorporar los puntos elegidos al recorrido del sendero y borrarlos de los capturados en una sola transacción (todo o nada).
-    // No se cancela con la pantalla. Las fotos de los puntos incorporados pasan al sendero y no se borran
+    // Ocurre en una sola transacción y no se cancela con la pantalla. Las fotos pasan al sendero y no se borran
     suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero>
 }

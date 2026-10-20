@@ -26,15 +26,14 @@ private const val ESPERA_SIN_POSICION_MILISEGUNDOS = 15_000L
 private const val INTERVALO_PRESION_MILISEGUNDOS = 5L * 60_000L
 private const val RECUPERACION_HECTOPASCALES = -1.5
 
-// Aviso del ambiente que se le da al usuario aunque tenga la pantalla apagada
+// Avisos del ambiente que le llegan al usuario aunque tenga la pantalla apagada
 sealed interface AvisoAmbiente {
     data class Clima(val alerta: AlertaClima) : AvisoAmbiente
     data class Presion(val aviso: AvisoPresion) : AvisoAmbiente
 }
 
-// Vigilar el clima y la presión atmosférica durante un recorrido y avisar una sola vez cada novedad. El clima se pide al lugar donde está
-// el usuario cada 10 minutos (usa la copia guardada si no hay conexión). La presión se anota cada 5 minutos solo con el usuario detenido,
-// porque caminando en subida o bajada la presión cambia por la altura y no por el clima; funciona sin señal
+// El clima se consulta cada 10 minutos y la presión se anota cada 5 solo con el usuario detenido. Caminando en subida
+// o bajada la presión cambia por la altura y no por el clima
 class VigilanteAmbienteRecorrido(
     private val alcance: CoroutineScope,
     private val estado: StateFlow<EstadoSeguimiento?>,
@@ -49,14 +48,12 @@ class VigilanteAmbienteRecorrido(
     private var avisoPresionDado: AvisoPresion? = null
     private var ultimaPresion: Double? = null
 
-    // Empezar a vigilar el clima y la presión
     fun iniciar() {
         trabajos += alcance.launch { vigilarClima() }
         trabajos += alcance.launch { recolectarPresion() }
         trabajos += alcance.launch { anotarPresionPeriodicamente() }
     }
 
-    // Dejar de vigilar
     fun detener() {
         trabajos.forEach { trabajo -> trabajo.cancel() }
         trabajos.clear()
@@ -84,7 +81,6 @@ class VigilanteAmbienteRecorrido(
         }
     }
 
-    // Avisar los avisos de clima de ahora y de hoy que todavía no se dieron
     private fun avisarAlertasNuevas(datos: ResultadoPronostico) {
         val pronostico = datos.pronostico
         val alertas = EvaluadorAlertasClima.evaluarActual(pronostico.actual) +
@@ -110,8 +106,8 @@ class VigilanteAmbienteRecorrido(
         }
     }
 
-    // Avisar cuando la caída de presión sube de nivel; el aviso se vuelve a habilitar solo cuando la presión se recupera de verdad,
-    // para no repetirlo cuando la caída oscila justo en el umbral
+    // El aviso se vuelve a habilitar recién cuando la presión se recupera de verdad. Así no se repite cuando la caída
+    // oscila justo en el umbral
     private fun evaluarPresion() {
         val muestras = registroPresion.muestras()
         val aviso = EvaluadorTendenciaPresion.evaluar(muestras)

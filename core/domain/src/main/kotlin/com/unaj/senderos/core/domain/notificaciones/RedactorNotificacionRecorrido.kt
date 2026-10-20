@@ -17,8 +17,7 @@ private val LOCALIZACION_ARGENTINA: Locale = Locale.forLanguageTag("es-AR")
 
 object RedactorNotificacionRecorrido {
 
-    // Calcular el porcentaje avanzado como 1 menos lo que resta sobre el largo del trazado, acotado a [0, 100];
-    // nulo (indeterminado) mientras se busca la señal. Usar lo restante evita que un desvío haga crecer el progreso
+    // Se calcula con lo que resta y no con lo recorrido, para que un desvío no haga crecer el progreso
     fun calcularProgresoPorcentaje(estado: EstadoSeguimiento?): Int? {
         if (estado == null || estado.calidadSenal == CalidadSenal.BUSCANDO) return null
         val largoTrazado = CalculadoraRecorrido.distanciasAcumuladasKilometros(estado.trazado).lastOrNull() ?: 0.0
@@ -138,7 +137,7 @@ object RedactorNotificacionRecorrido {
         }
     }
 
-    // Formatear una distancia redondeando a 10 m bajo 1 km, para que el texto no cambie con cada lectura del GPS
+    // Bajo 1 km se redondea a 10 m para que el texto no cambie con cada lectura del GPS
     fun formatearDistanciaAproximada(metros: Double): String {
         return if (metros < METROS_POR_KILOMETRO) {
             "${(metros / METROS_DE_REDONDEO).roundToInt() * METROS_DE_REDONDEO.toInt()} m"

@@ -18,7 +18,7 @@ class EscritorArchivosAndroid @Inject constructor(@ApplicationContext contexto: 
 
     private val contexto = contexto.applicationContext
 
-    // Escribir el texto en UTF-8 en el archivo elegido con el selector del sistema, reemplazando su contenido si ya existía
+    // El modo "wt" reemplaza el contenido si el archivo elegido ya existía
     override suspend fun escribirTexto(uri: String, texto: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val flujo = contexto.contentResolver.openOutputStream(Uri.parse(uri), "wt")

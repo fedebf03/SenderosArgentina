@@ -1,12 +1,12 @@
 package com.unaj.senderos.core.data.sincronizacion
 
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
 import com.unaj.senderos.core.data.repository.SenderoRepositorioOfflineFirst
 import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
-import com.unaj.senderos.core.network.PuntoRecorridoRed
-import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.network.sendero.PuntoRecorridoRed
+import com.unaj.senderos.core.network.sendero.SenderoRed
 import com.unaj.senderos.core.domain.port.ErrorElevacionException
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilElevacionUseCase

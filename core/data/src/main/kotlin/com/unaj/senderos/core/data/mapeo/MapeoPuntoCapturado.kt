@@ -1,10 +1,9 @@
 package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.core.database.PuntoCapturadoEntidad
+import com.unaj.senderos.core.database.puntocapturado.PuntoCapturadoEntidad
 import com.unaj.senderos.core.domain.model.PuntoCapturado
 import com.unaj.senderos.core.domain.model.TipoPunto
 
-// Un tipo desconocido se resuelve como PASO
 fun PuntoCapturadoEntidad.aDominio(): PuntoCapturado {
     return PuntoCapturado(
         id = id,

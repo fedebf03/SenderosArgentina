@@ -5,10 +5,8 @@ private const val ESPERA_SIN_PASOS_MILISEGUNDOS = 10_000L
 
 object DetectorMovimiento {
 
-    // Decidir si el usuario está detenido: velocidad GPS menor a 0,5 m/s (o desconocida) y, si el equipo mide pasos, 10 s sin pasos.
-    // Sin sensor de pasos decide solo una velocidad conocida y baja: con velocidad desconocida se asume movimiento.
-    // Con la señal débil (más de 15 s sin lectura válida, mayor que los 10 s de espera) y sin velocidad ni pasos se asume detenido.
-    // El instante de referencia (inicio del recorrido) reemplaza al último paso mientras todavía no hubo ninguno
+    // Sin sensor de pasos solo decide una velocidad conocida y baja. Con la señal débil (más de 15 s sin lectura
+    // válida) y sin velocidad ni pasos se asume que el usuario está detenido
     fun estaDetenido(
         velocidadMetrosPorSegundo: Float?,
         instanteUltimoPaso: Long?,

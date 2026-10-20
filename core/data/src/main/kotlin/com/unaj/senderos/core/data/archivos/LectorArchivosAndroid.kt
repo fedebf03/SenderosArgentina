@@ -14,7 +14,7 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "LECTOR_ARCHIVOS"
-// Un GPX de varios días con un punto por segundo ronda los 10 MB; más que eso no es un trazado de sendero
+// Un GPX de varios días con un punto por segundo ronda los 10 MB. Un archivo más grande no es un trazado de sendero
 private const val TAMANO_MAXIMO_BYTES = 10L * 1024 * 1024
 private const val MENSAJE_ARCHIVO_GRANDE = "El archivo es demasiado grande para un trazado (más de 10 MB)"
 private const val MENSAJE_NO_SE_PUDO_LEER = "No se pudo leer el archivo"
@@ -23,7 +23,7 @@ class LectorArchivosAndroid @Inject constructor(@ApplicationContext contexto: Co
 
     private val contexto = contexto.applicationContext
 
-    // Leer el archivo elegido con el selector del sistema, en un hilo de entrada y salida, controlando el tamaño antes de cargarlo
+    // RF4 - Importar GPX: leemos el archivo elegido y controlamos el tamaño antes de cargarlo en memoria
     override suspend fun leerTexto(uri: String): Result<ArchivoLeido> = withContext(Dispatchers.IO) {
         try {
             val direccion = Uri.parse(uri)
@@ -48,7 +48,6 @@ class LectorArchivosAndroid @Inject constructor(@ApplicationContext contexto: Co
         }
     }
 
-    // Consultar el nombre visible y el tamaño del archivo; el tamaño puede ser desconocido
     private fun leerNombreYTamano(direccion: Uri): Pair<String, Long?> {
         contexto.contentResolver.query(direccion, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
             ?.use { cursor ->
@@ -64,7 +63,7 @@ class LectorArchivosAndroid @Inject constructor(@ApplicationContext contexto: Co
     }
 }
 
-// Leer a lo sumo la cantidad de bytes indicada, para no cargar en memoria un archivo enorme cuyo tamaño no se informó
+// Se lee como máximo esa cantidad de bytes para no cargar en memoria un archivo enorme que no informó su tamaño
 private fun java.io.InputStream.readNBytesHasta(maximo: Long): ByteArray {
     val salida = java.io.ByteArrayOutputStream()
     val bloque = ByteArray(DEFAULT_BUFFER_SIZE)

@@ -10,7 +10,6 @@ private const val MENSAJE_SIN_SESION = "No hay una sesión activa"
 const val LONGITUD_MAXIMA_DATO_PERFIL = 60
 const val LONGITUD_MINIMA_CONTRASENA = 6
 
-// Datos del perfil que no pasaron la validación
 enum class CampoPerfil { NOMBRE, PAIS, PROVINCIA, LOCALIDAD }
 
 class PerfilInvalidoException(val camposInvalidos: Set<CampoPerfil>) : Exception("Revisá los datos del perfil")
@@ -19,7 +18,7 @@ class ObtenerPerfilUseCase @Inject constructor(
     private val perfilRepositorio: PerfilRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Obtener el perfil guardado; si no hay, el que sale de la cuenta (nombre y foto del inicio de sesión)
+    // Si no hay perfil guardado, se arma con el nombre y la foto de la cuenta
     suspend operator fun invoke(): Result<PerfilUsuario> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
@@ -40,7 +39,7 @@ class GuardarPerfilUseCase @Inject constructor(
     private val perfilRepositorio: PerfilRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Validar y guardar el perfil: el nombre es obligatorio y ningún dato supera los 60 caracteres
+    // RF2 - Perfil: el nombre es obligatorio y ningún dato del perfil puede superar los 60 caracteres
     suspend operator fun invoke(perfil: PerfilUsuario): Result<ResultadoGuardadoPerfil> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
@@ -65,7 +64,6 @@ class SincronizarPerfilPendienteUseCase @Inject constructor(
     private val perfilRepositorio: PerfilRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Reintentar subir un perfil que se guardó sin conexión; sin sesión no hace nada
     suspend operator fun invoke() {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual() ?: return
         perfilRepositorio.sincronizarPendiente(usuario.id)
@@ -75,10 +73,8 @@ class SincronizarPerfilPendienteUseCase @Inject constructor(
 class CambiarContrasenaUseCase @Inject constructor(
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Indicar si la cuenta tiene una contraseña propia que se pueda cambiar (las cuentas de Google no)
     fun estaDisponible(): Boolean = autenticacionRepositorio.tieneContrasena()
 
-    // Validar y cambiar la contraseña: la nueva tiene al menos 6 caracteres y es distinta de la actual
     suspend operator fun invoke(claveActual: String, claveNueva: String): Result<Unit> {
         if (claveActual.isBlank()) return Result.failure(IllegalArgumentException("Ingresá tu contraseña actual"))
         if (claveNueva.length < LONGITUD_MINIMA_CONTRASENA) {

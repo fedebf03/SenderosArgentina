@@ -8,7 +8,7 @@ private const val MITAD_DE_SECTOR = 22.5f
 
 object CalculadoraRumbo {
 
-    // 0 = norte, sentido horario; cada punto cardinal cubre un sector de 45 grados
+    // El 0 es el norte y se cuenta en sentido horario. Cada punto cardinal cubre un sector de 45 grados
     fun aPuntoCardinal(grados: Float): PuntoCardinal {
         val normalizados = CalculadoraRecorrido.normalizarRumbo(grados)
         val indice = ((normalizados + MITAD_DE_SECTOR) / GRADOS_POR_SECTOR).toInt() % PuntoCardinal.entries.size

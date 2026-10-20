@@ -7,9 +7,6 @@ import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.domain.model.tieneCoordenadasValidas
-import com.unaj.senderos.core.domain.recorrido.CalculadoraCorredor
-import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
-import com.unaj.senderos.core.domain.recorrido.CalculadoraSeguimiento
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
@@ -20,7 +17,6 @@ private const val METROS_POR_KILOMETRO = 1000.0
 private const val RADIO_SUAVIZADO = 2
 private const val DISTANCIA_MINIMA_PENDIENTE_METROS = 1.0
 
-// Coordenada del trazado con la distancia acumulada desde su inicio
 data class MuestraTrazado(
     val coordenada: Coordenada,
     val distanciaKilometros: Double
@@ -30,12 +26,11 @@ object CalculadoraPerfil {
     const val PASO_METROS = 50.0
     const val MAXIMO_PUNTOS = 500
 
-    // Calcular la firma del trazado planificado completo (con la vuelta si es circular o de ida y vuelta)
+    // Incluye la vuelta si es circular o de ida y vuelta
     fun firmaTrazado(recorrido: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): String {
         return CalculadoraCorredor.firmaTrazado(construirTrazadoValido(recorrido, tipoRecorrido))
     }
 
-    // Indicar si el sendero tiene un trazado medible y su perfil falta o fue calculado con otro trazado
     fun necesitaPerfil(sendero: Sendero): Boolean {
         val puntosValidos = sendero.recorrido.filter(::esPuntoValido)
         if (CalculadoraRecorrido.distanciaKilometros(puntosValidos, TipoRecorrido.LINEAL) <= 0.0) return false
@@ -43,8 +38,7 @@ object CalculadoraPerfil {
         return perfil.firmaTrazado != firmaTrazado(sendero.recorrido, sendero.tipoRecorrido)
     }
 
-    // Muestrear el trazado planificado en tramos iguales de a lo sumo pasoMetros, incluyendo el inicio y el fin;
-    // si hiciera falta superar maximoPuntos, el paso crece. Devuelve vacío si el trazado no tiene largo
+    // Si hiciera falta superar maximoPuntos, el paso crece
     fun muestrearTrazado(
         recorrido: List<PuntoRecorrido>,
         tipoRecorrido: TipoRecorrido,
@@ -69,11 +63,8 @@ object CalculadoraPerfil {
         }
     }
 
-    // Armar el perfil con las altitudes del modelo digital (una por muestra). El desnivel y la pendiente se miden sobre
-    // una curva suavizada con promedio móvil de 5 muestras (unos 250 m mientras el paso sea de 50 m; el paso crece
-    // recién en trazados de más de ~25 km), porque el modelo de 90 m de resolución oscila de a metros entre muestras
-    // vecinas y sumarlas directo inflaría el desnivel. Las alturas máxima y mínima salen de los valores sin suavizar
-    // y los puntos del perfil conservan las altitudes originales
+    // El modelo de 90 m oscila de a metros entre muestras vecinas y sumarlas directo inflaría el desnivel. Por lo tanto
+    // el desnivel y la pendiente salen de un promedio móvil de 5 muestras, y las alturas máxima y mínima sin suavizar
     fun calcular(muestras: List<MuestraTrazado>, altitudes: List<Double>, firmaTrazado: String): PerfilElevacion {
         require(muestras.isNotEmpty()) { "Hacen falta muestras para calcular el perfil" }
         require(muestras.size == altitudes.size) { "Debe haber una altitud por cada muestra" }
@@ -109,8 +100,7 @@ object CalculadoraPerfil {
         )
     }
 
-    // Calcular los metros de subida que faltan desde un kilómetro del trazado hasta el final, con el mismo suavizado
-    // que el desnivel del perfil. Un kilómetro fuera del trazado se limita a sus extremos; un perfil sin tramos da 0
+    // Se usa el mismo suavizado que en el desnivel del perfil
     fun calcularSubidaRestanteMetros(perfil: PerfilElevacion, kilometroActual: Double): Int {
         val puntos = perfil.puntos
         if (puntos.size < 2) return 0
@@ -129,17 +119,15 @@ object CalculadoraPerfil {
         return subida.roundToInt()
     }
 
-    // Indicar si las coordenadas del punto son finitas y están dentro del rango geográfico
     private fun esPuntoValido(punto: PuntoRecorrido): Boolean {
         return Coordenada(punto.latitud, punto.longitud).tieneCoordenadasValidas()
     }
 
-    // Construir el trazado completo con la misma regla que el seguimiento, descartando puntos con coordenadas inválidas
+    // El trazado se arma con la misma regla que el seguimiento
     private fun construirTrazadoValido(recorrido: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): List<PuntoRecorrido> {
         return CalculadoraSeguimiento.construirTrazado(recorrido.filter(::esPuntoValido), tipoRecorrido)
     }
 
-    // Ubicar por interpolación lineal la coordenada a una distancia dada dentro del tramo indicado
     private fun interpolar(
         trazado: List<PuntoRecorrido>,
         acumuladas: List<Double>,
@@ -156,7 +144,7 @@ object CalculadoraPerfil {
         )
     }
 
-    // Suavizar con promedio móvil centrado de 5 muestras cuya ventana se achica en los extremos para no mover el inicio ni el fin
+    // La ventana se achica en los extremos para no mover la altura del inicio ni la del fin
     fun suavizarAltitudes(altitudes: List<Double>): List<Double> {
         return altitudes.indices.map { indice ->
             val radio = min(RADIO_SUAVIZADO, min(indice, altitudes.lastIndex - indice))

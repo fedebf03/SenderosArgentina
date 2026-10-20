@@ -1,7 +1,7 @@
 package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.core.database.RecorridoDao
-import com.unaj.senderos.core.database.RecorridoEntidad
+import com.unaj.senderos.core.database.recorrido.RecorridoDao
+import com.unaj.senderos.core.database.recorrido.RecorridoEntidad
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map

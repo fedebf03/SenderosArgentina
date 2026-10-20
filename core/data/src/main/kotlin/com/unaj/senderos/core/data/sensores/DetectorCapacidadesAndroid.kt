@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 private const val TAG = "CAPACIDADES"
 
-// La brújula se considera disponible si existe TYPE_ROTATION_VECTOR o, como respaldo, TYPE_GEOMAGNETIC_ROTATION_VECTOR (los sensores que realmente usa la app), no solo el magnetómetro
+// La brújula cuenta como disponible si existe TYPE_ROTATION_VECTOR o, como respaldo, TYPE_GEOMAGNETIC_ROTATION_VECTOR.
+// Son los sensores que usa la app, por lo tanto no alcanza con que haya magnetómetro
 class DetectorCapacidadesAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : DetectorCapacidades {
 
     override fun detectar(): CapacidadesDispositivo {

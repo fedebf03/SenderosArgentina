@@ -15,11 +15,11 @@ import javax.inject.Inject
 
 private const val MENSAJE_SIN_SESION = "No hay una sesión activa"
 private const val MENSAJE_CAMINATA_NO_ENCONTRADA = "No se encontró la caminata"
-// Al finalizar, el recorrido se escribe en segundo plano: se espera un momento por si el formulario se abre antes de que termine
+// Al finalizar, el recorrido se escribe en segundo plano. Por eso se espera un momento por si el formulario se abre antes
 private const val PLAZO_ESPERA_RECORRIDO_MILISEGUNDOS = 5_000L
 private val FORMATO_FECHA_NOMBRE: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-// Borrador de sendero armado desde una caminata libre, con los ids de los puntos capturados que ya van dentro del trazado
+// idsPuntosCapturados son los puntos capturados que ya van dentro del trazado
 data class BorradorDeCaminata(val trazado: TrazadoImportado, val idsPuntosCapturados: Set<String>)
 
 class ConvertirCaminataEnBorradorUseCase @Inject constructor(
@@ -27,7 +27,6 @@ class ConvertirCaminataEnBorradorUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Buscar el recorrido guardado de la caminata y sus puntos capturados pendientes, y convertirlos en el borrador del sendero nuevo
     suspend operator fun invoke(idCaminata: String): Result<BorradorDeCaminata> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
@@ -49,7 +48,6 @@ class RetirarPuntosIncorporadosUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Retirar de los pendientes los puntos que ya quedaron dentro del sendero nuevo, sin borrar sus fotos
     suspend operator fun invoke(ids: Set<String>): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))

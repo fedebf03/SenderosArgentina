@@ -17,8 +17,8 @@ import javax.inject.Inject
 
 private const val TAG = "SENSOR_PRESION"
 
-// Entregar la presión del barómetro del equipo (TYPE_PRESSURE). Frecuencia SENSOR_DELAY_NORMAL, que sobra para seguir una tendencia de horas;
-// los eventos llegan en un hilo propio liberado al cancelar
+// SENSOR_DELAY_NORMAL alcanza para seguir una tendencia de presión de varias horas.
+// Los eventos llegan en un hilo propio que se libera al cancelar
 class FuentePresionAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : FuentePresion {
 
     override fun observarPresion(): Flow<Double> = callbackFlow {

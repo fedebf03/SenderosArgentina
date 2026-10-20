@@ -1,7 +1,7 @@
 package com.unaj.senderos.core.data.sincronizacion
 
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
-import com.unaj.senderos.core.network.SubidorFotos
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
+import com.unaj.senderos.core.network.fotos.SubidorFotos
 import com.unaj.senderos.core.data.falsos.FalsoEjecutorTransacciones
 import com.unaj.senderos.core.data.falsos.FalsoSenderoDao
 import com.unaj.senderos.core.data.falsos.FalsoSenderoFuenteRemota

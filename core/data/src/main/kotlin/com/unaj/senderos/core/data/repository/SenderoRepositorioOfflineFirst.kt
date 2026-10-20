@@ -2,8 +2,8 @@ package com.unaj.senderos.core.data.repository
 
 import android.util.Log
 import com.unaj.senderos.core.database.EjecutorTransacciones
-import com.unaj.senderos.core.database.SenderoDao
-import com.unaj.senderos.core.database.SenderoEntidad
+import com.unaj.senderos.core.database.sendero.SenderoDao
+import com.unaj.senderos.core.database.sendero.SenderoEntidad
 import com.unaj.senderos.core.data.mapeo.aDominio
 import com.unaj.senderos.core.data.mapeo.aEntidad
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
@@ -19,7 +19,6 @@ import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "REPOSITORIO_SENDEROS"
 
-// Repositorio offline-first: lee solo de Room y delega la red en la sincronización diferida
 class SenderoRepositorioOfflineFirst(
     private val senderoDao: SenderoDao,
     private val planificadorSincronizacion: PlanificadorSincronizacion,
@@ -38,6 +37,7 @@ class SenderoRepositorioOfflineFirst(
             .map { entidad -> entidad?.aDominio() }
     }
 
+    // RF4 - Offline-first: guardamos primero en Room y la subida a Firestore queda pendiente para el worker
     override suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit> {
         return ejecutarEscritura(idUsuario) {
             senderoDao.guardar(
@@ -62,14 +62,8 @@ class SenderoRepositorioOfflineFirst(
         }
     }
 
-    /**
-     * Guardar el perfil de elevación calculado y autocompletar desnivel y alturas vacías.
-     *
-     * El perfil es un dato derivado del trazado, no una edición del usuario, por eso NO renueva `fechaModificacion`:
-     * conserva la que ya tenía. Así no rompe el conteo de "guardados sin conexión" (RF7) ni gana la regla de la última
-     * escritura contra una edición más nueva hecha en otro dispositivo. Solo pasa de SINCRONIZADO a PENDIENTE para que
-     * el perfil se suba; un sendero PENDIENTE o CON_ERROR conserva su estado. Falla si el trazado cambió desde el cálculo.
-     */
+    // El perfil se deriva del trazado y no es una edición del usuario, por eso conserva la fechaModificacion anterior.
+    // Así no gana la regla de la última escritura contra una edición más nueva hecha en otro dispositivo
     override suspend fun guardarPerfilElevacion(idUsuario: String, idSendero: String, perfil: PerfilElevacion): Result<Unit> {
         return ejecutarEscritura(idUsuario) {
             ejecutorTransacciones.ejecutar {

@@ -4,7 +4,7 @@ private const val VENTANA_MILISEGUNDOS = 10_000L
 private const val SEPARACION_MAXIMA_MILISEGUNDOS = 2_000L
 private const val MILISEGUNDOS_POR_MINUTO = 60_000.0
 
-// Calcular el ritmo en pasos por minuto sobre una ventana deslizante de 10 s; si el último paso fue hace más de 2 s ya no se camina y el ritmo es 0
+// Si el último paso fue hace más de 2 s se considera que ya no camina y el ritmo es 0
 class VentanaRitmoPasos {
 
     private val instantesDePasos = ArrayDeque<Long>()

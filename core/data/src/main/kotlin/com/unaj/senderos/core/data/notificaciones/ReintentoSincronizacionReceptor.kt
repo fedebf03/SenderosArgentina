@@ -22,7 +22,7 @@ interface DependenciasReintento {
     fun planificadorSincronizacion(): PlanificadorSincronizacion
 }
 
-// Receptor interno (no exportado) de la acción "Reintentar" de la notificación de error
+// Atiende el botón "Reintentar" del aviso de error. Es un receptor interno (no exportado en el manifiesto)
 class ReintentoSincronizacionReceptor : BroadcastReceiver() {
 
     override fun onReceive(contexto: Context, intencion: Intent) {

@@ -28,6 +28,7 @@ private const val CODIGO_PEDIDO_REINTENTAR = 1
 
 class NotificadorAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : Notificador {
 
+    // RF7 - Notificaciones: avisamos el resultado de la sincronización y, si falló, ofrecemos el botón para reintentar
     override fun notificar(mensaje: MensajeNotificacion) {
         if (!tienePermisoDeNotificaciones()) {
             Log.d(TAG, "Notificación omitida: falta el permiso POST_NOTIFICATIONS")
@@ -62,7 +63,7 @@ class NotificadorAndroid @Inject constructor(@param:ApplicationContext private v
         NotificationManagerCompat.from(contexto).cancel(ID_NOTIFICACION_ERROR)
     }
 
-    // Requiere permiso en API 33 o superior
+    // Desde Android 13 (API 33) hace falta el permiso POST_NOTIFICATIONS
     private fun tienePermisoDeNotificaciones(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(
@@ -71,7 +72,7 @@ class NotificadorAndroid @Inject constructor(@param:ApplicationContext private v
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Repetirlo es inofensivo: Android actualiza el nombre y la descripción de un canal existente e ignora el cambio de importancia
+    // Se puede llamar siempre. Android actualiza el nombre de un canal que ya existe e ignora el cambio de importancia
     private fun crearCanalSiHaceFalta() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val canal = NotificationChannel(

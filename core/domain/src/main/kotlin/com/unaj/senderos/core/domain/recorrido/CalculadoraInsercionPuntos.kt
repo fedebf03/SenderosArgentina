@@ -13,11 +13,8 @@ private data class Asignacion(val hueco: Int, val zona: Zona, val valorOrden: Do
 
 object CalculadoraInsercionPuntos {
 
-    // Insertar cada punto nuevo en el tramo más cercano del recorrido; en el mismo tramo se ordenan a lo largo del tramo.
-    // El tramo i va del punto i al siguiente; en un circular el último tramo es el de cierre (último a primero).
-    // En un recorrido LINEAL o IDA_Y_VUELTA nunca cambia el inicio ni el final: un punto antes del inicio se inserta como segundo vértice
-    // y uno después del final como anteúltimo; varios en un extremo se ordenan por distancia al extremo, acercándose al final.
-    // Con menos de dos puntos no hay tramos y los nuevos se agregan al final en orden de captura.
+    // En un recorrido LINEAL o IDA_Y_VUELTA nunca cambia el inicio ni el final. Un punto antes del inicio entra como
+    // segundo vértice y uno después del final como anteúltimo
     fun insertar(
         puntos: List<PuntoRecorrido>,
         tipoRecorrido: TipoRecorrido,
@@ -38,8 +35,7 @@ object CalculadoraInsercionPuntos {
         return resultado
     }
 
-    // Calcular para cada punto nuevo su distancia en metros al trazado (tramo más cercano, con cierre si es circular);
-    // null si el recorrido está vacío y con un solo vértice se mide a ese vértice
+    // En un circular se incluye el tramo de cierre. Con un solo vértice la distancia se mide a ese vértice
     fun distanciasAlTrazadoMetros(
         puntos: List<PuntoRecorrido>,
         tipoRecorrido: TipoRecorrido,

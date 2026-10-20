@@ -4,7 +4,7 @@ import com.unaj.senderos.core.data.mapeo.aDominio
 import com.unaj.senderos.core.data.perfil.AlmacenPerfilLocal
 import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.domain.repository.AutenticacionRepositorio
-import com.unaj.senderos.core.network.FuenteAutenticacion
+import com.unaj.senderos.core.network.auth.FuenteAutenticacion
 import javax.inject.Inject
 
 class AutenticacionRepositorioImpl @Inject constructor(
@@ -33,7 +33,7 @@ class AutenticacionRepositorioImpl @Inject constructor(
 
     override fun cerrarSesion() = fuenteAutenticacion.cerrarSesion()
 
-    // Completar al usuario con el perfil que editó en la app: su nombre, foto y lugar mandan sobre los de la cuenta
+    // El nombre, la foto y el lugar que el usuario editó en la app mandan sobre los de su cuenta
     private fun Usuario.conPerfilLocal(): Usuario {
         val guardado = almacenPerfil.leer(id) ?: return this
         return copy(

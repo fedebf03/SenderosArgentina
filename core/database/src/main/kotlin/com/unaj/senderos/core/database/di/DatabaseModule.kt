@@ -5,9 +5,9 @@ import androidx.room.Room
 import com.unaj.senderos.core.database.BaseDatosSenderos
 import com.unaj.senderos.core.database.EjecutorTransacciones
 import com.unaj.senderos.core.database.EjecutorTransaccionesRoom
-import com.unaj.senderos.core.database.PuntoCapturadoDao
-import com.unaj.senderos.core.database.RecorridoDao
-import com.unaj.senderos.core.database.SenderoDao
+import com.unaj.senderos.core.database.puntocapturado.PuntoCapturadoDao
+import com.unaj.senderos.core.database.recorrido.RecorridoDao
+import com.unaj.senderos.core.database.sendero.SenderoDao
 import dagger.Binds
 import dagger.Module
 import dagger.Provides

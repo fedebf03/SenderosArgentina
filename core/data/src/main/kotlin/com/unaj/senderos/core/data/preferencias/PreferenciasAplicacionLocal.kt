@@ -17,7 +17,7 @@ class PreferenciasAplicacionLocal @Inject constructor(@ApplicationContext contex
     private val preferencias by lazy { contexto.applicationContext.getSharedPreferences(NOMBRE_ARCHIVO, Context.MODE_PRIVATE) }
     private val modoDemostracion by lazy { MutableStateFlow(preferencias.getBoolean(CLAVE_MODO_DEMOSTRACION, false)) }
 
-    // Leer las preferencias recién al primer acceso, fuera de la construcción del grafo de dependencias
+    // Las preferencias se leen recién en el primer acceso y no mientras se construye el grafo de dependencias
     override val esModoDemostracion: StateFlow<Boolean> get() = modoDemostracion
 
     override fun cambiarModoDemostracion(activo: Boolean) {

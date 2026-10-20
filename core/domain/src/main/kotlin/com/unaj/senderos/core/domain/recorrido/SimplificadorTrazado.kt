@@ -9,8 +9,8 @@ private const val METROS_POR_GRADO_LONGITUD_EN_EL_ECUADOR = 111_320.0
 
 object SimplificadorTrazado {
 
-    // Elegir los puntos que dan forma al trazado con el algoritmo de Douglas-Peucker: se conserva un punto si se aparta más de la
-    // tolerancia de la recta entre los conservados vecinos. Devuelve los índices conservados en orden, siempre con el primero y el último
+    // Usamos el algoritmo de Douglas-Peucker. Se conserva un punto si se aparta más de la tolerancia de la recta entre
+    // los conservados vecinos
     fun simplificar(puntos: List<Coordenada>, toleranciaMetros: Double): List<Int> {
         if (puntos.size <= 2) return puntos.indices.toList()
         val latitudReferencia = Math.toRadians(puntos.first().latitud)
@@ -41,12 +41,11 @@ object SimplificadorTrazado {
         return conservados.indices.filter { indice -> conservados[indice] }
     }
 
-    // Llevar la coordenada a metros en un plano local, suficiente para distancias de un sendero
+    // Un plano local alcanza para las distancias de un sendero
     internal fun proyectar(punto: Coordenada, latitudReferenciaRadianes: Double): Pair<Double, Double> =
         punto.longitud * METROS_POR_GRADO_LONGITUD_EN_EL_ECUADOR * cos(latitudReferenciaRadianes) to
             punto.latitud * METROS_POR_GRADO_LATITUD
 
-    // Calcular la distancia en metros de un punto al segmento entre dos puntos del plano local
     internal fun distanciaASegmento(punto: Pair<Double, Double>, inicio: Pair<Double, Double>, fin: Pair<Double, Double>): Double {
         val (x, y) = punto
         val (x1, y1) = inicio

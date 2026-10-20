@@ -57,20 +57,8 @@ private class RegionCargada(
     val progreso: ProgresoRegion
 )
 
-/**
- * Gestiona los mapas sin conexión con el OfflineManager de MapLibre.
- *
- * Todas las llamadas a MapLibre y todos sus callbacks ocurren en el hilo principal. El límite de teselas
- * (setOfflineMapboxTileCountLimit y mapboxTileCountLimitExceeded) solo aplica al servidor de Mapbox; con
- * OpenFreeMap no hay tope de teselas en el cliente y el tamaño se acota con el corredor de 1 km y el zoom 10 a 16.
- *
- * Reintentos: el AAR de MapLibre 13.6.1 no trae documentación (no hay KDoc ni jar de fuentes en la caché de Gradle),
- * así que el reintento automático de MapLibre ante REASON_CONNECTION o REASON_SERVER no está verificado aquí. Por eso
- * esos errores mantienen la región activa y se cuentan: tras 5 seguidos sin avance se detiene la descarga.
- *
- * Las operaciones de descarga y borrado se serializan con un Mutex general y corren sin cancelación (NonCancellable)
- * para que cancelar el ámbito de quien las pide no deje regiones huérfanas ni registros obsoletos.
- */
+// RF4 - Mapas sin conexión: descargamos con el OfflineManager de MapLibre el corredor de 1 km del sendero (zoom 10 a 16).
+// Todas las llamadas a MapLibre y sus callbacks ocurren en el hilo principal
 class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext contexto: Context) : GestorMapasSinConexion {
     private val contextoAplicacion = contexto.applicationContext
     private val densidadPantalla = contextoAplicacion.resources.displayMetrics.density
@@ -154,7 +142,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         Log.d(TAG, "Descarga reactivada: $clave")
     }
 
-    // La región vieja se conserva hasta que la nueva termine o se descarta según la acción
+    // Según la acción, la región vieja se conserva hasta que termine la nueva o se descarta en el momento
     private suspend fun crearRegionNueva(
         clave: String,
         idUsuario: String,
@@ -190,6 +178,8 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         regionADescartar?.let { region -> borrarMejorEsfuerzo(region) }
     }
 
+    // Las descargas y los borrados se serializan con un Mutex y corren como NonCancellable. Así cancelar a quien
+    // los pide no deja regiones huérfanas ni registros viejos
     private suspend fun ejecutarProtegido(descripcion: String, bloque: suspend () -> Unit): Result<Unit> {
         return exclusionOperaciones.withLock {
             withContext(Dispatchers.Main + NonCancellable) {
@@ -221,7 +211,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         flujo.value = transformar(flujo.value)
     }
 
-    // Cargar una sola vez las regiones guardadas; publicar el resultado únicamente si toda la carga terminó bien
+    // Las regiones guardadas se cargan una sola vez. El resultado se publica solo si toda la carga terminó bien
     private suspend fun asegurarRegionesCargadas() {
         exclusionCarga.withLock {
             if (regionesCargadas) return
@@ -278,6 +268,8 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
                 }
             }
 
+            // No pudimos verificar si MapLibre 13.6.1 reintenta solo ante REASON_CONNECTION o REASON_SERVER (el AAR no trae
+            // documentación). Por eso esos errores mantienen la región activa y tras 5 seguidos sin avance se detiene la descarga
             override fun onError(error: OfflineRegionError) {
                 if (regiones[clave] !== region) return
                 Log.e(TAG, "Error de descarga en $clave: ${error.reason} ${error.message}")
@@ -300,6 +292,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
                 }
             }
 
+            // El límite de teselas solo aplica al servidor de Mapbox. Con OpenFreeMap el tamaño se acota con el corredor y el zoom
             override fun mapboxTileCountLimitExceeded(limit: Long) {
                 Log.d(TAG, "Límite de teselas de Mapbox excedido ($limit); no aplica a OpenFreeMap")
             }
@@ -421,7 +414,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         }
     }
 
-    // Borrar una región sobrante sin propagar el fallo; la próxima carga volverá a detectarla
+    // Si falla no se propaga el error, porque la próxima carga vuelve a detectar la región sobrante
     private suspend fun borrarMejorEsfuerzo(region: OfflineRegion) {
         try {
             borrarRegionNativa(region)

@@ -1,6 +1,6 @@
 package com.unaj.senderos.core.domain.model
 
-// Lectura del acelerómetro en m/s2 con su instante en milisegundos (mismo origen de tiempo para todas las muestras de un recorrido)
+// Valores en m/s2. Todas las muestras de un recorrido usan el mismo origen de tiempo
 data class MuestraAcelerometro(
     val x: Float,
     val y: Float,

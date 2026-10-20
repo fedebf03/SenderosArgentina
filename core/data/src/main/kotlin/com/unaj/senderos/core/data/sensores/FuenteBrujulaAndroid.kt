@@ -27,17 +27,12 @@ private const val INCLINACION_VERTICAL_GRADOS = 45f
 private const val TAMANO_MATRIZ = 9
 private const val TAMANO_ORIENTACION = 3
 
-// Entregar el azimut magnético desde TYPE_ROTATION_VECTOR (fusión de acelerómetro y magnetómetro del sistema), o desde
-// TYPE_GEOMAGNETIC_ROTATION_VECTOR (sin giroscopio, menos preciso) si el equipo no tiene el primero.
-// Frecuencia SENSOR_DELAY_UI (unos 16 Hz): alcanza para girar una flecha de forma fluida y gasta menos batería que GAME;
-// además solo se emite cuando el rumbo cambió al menos 2 grados, para no recomponer la pantalla por ruido.
-// Los eventos llegan en un hilo propio (HandlerThread) liberado al cancelar. El azimut es respecto del norte magnético
-// (la corrección a norte verdadero la hace el control con la declinación de la última posición). Se remapean los ejes según
-// la rotación de la pantalla y, si el equipo está de pie (inclinado más de 45 grados), para que el azimut sea el de la cámara trasera
+// RF6 - Brújula: el rumbo sale respecto del norte magnético y el control lo corrige con la declinación de la posición
 class FuenteBrujulaAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : FuenteBrujula {
 
     override fun observarRumbo(): Flow<Float> = callbackFlow {
         val gestor = contexto.getSystemService(SensorManager::class.java)
+        // TYPE_GEOMAGNETIC_ROTATION_VECTOR es el respaldo para equipos sin giroscopio (es menos preciso)
         val sensor = gestor?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
             ?: gestor?.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR)
         if (gestor == null || sensor == null) {
@@ -67,6 +62,8 @@ class FuenteBrujulaAndroid @Inject constructor(@param:ApplicationContext private
 
             override fun onAccuracyChanged(sensor: Sensor?, precision: Int) = Unit
         }
+        // SENSOR_DELAY_UI (unos 16 Hz) alcanza para girar la flecha y gasta menos batería que GAME. Además solo se emite
+        // si el rumbo cambió 2 grados o más, para no recomponer la pantalla por ruido
         val estaRegistrado = gestor.registerListener(escucha, sensor, SensorManager.SENSOR_DELAY_UI, Handler(hilo.looper))
         Log.d(TAG, "Brújula registrada: $estaRegistrado (sensor ${sensor.stringType})")
         if (!estaRegistrado) close(IllegalStateException("No se pudo registrar el sensor de rotación"))
@@ -93,6 +90,7 @@ class FuenteBrujulaAndroid @Inject constructor(@param:ApplicationContext private
         SensorManager.remapCoordinateSystem(matrizRotacion, ejeX, ejeY, matrizPantalla)
         SensorManager.getOrientation(matrizPantalla, orientacion)
         val inclinacionGrados = Math.toDegrees(orientacion[1].toDouble()).toFloat()
+        // Con el equipo de pie (más de 45 grados) se remapean los ejes para que el rumbo sea el de la cámara trasera
         if (abs(inclinacionGrados) > INCLINACION_VERTICAL_GRADOS) {
             SensorManager.remapCoordinateSystem(matrizPantalla, SensorManager.AXIS_X, SensorManager.AXIS_Z, matrizRemapeada)
             SensorManager.getOrientation(matrizRemapeada, orientacion)

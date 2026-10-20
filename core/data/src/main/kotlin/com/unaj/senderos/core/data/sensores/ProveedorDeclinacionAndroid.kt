@@ -5,7 +5,7 @@ import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.port.ProveedorDeclinacion
 import javax.inject.Inject
 
-// La coordenada no trae altitud, por eso se usa 0 m (la altitud tiene un efecto despreciable sobre la declinación)
+// La coordenada no trae altitud, por eso usamos 0 m (su efecto sobre la declinación es despreciable)
 class ProveedorDeclinacionAndroid @Inject constructor() : ProveedorDeclinacion {
 
     override fun obtenerDeclinacionGrados(coordenada: Coordenada, instanteMilisegundos: Long): Float {

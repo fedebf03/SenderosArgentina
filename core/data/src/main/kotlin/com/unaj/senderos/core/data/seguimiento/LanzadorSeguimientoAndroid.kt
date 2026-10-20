@@ -27,13 +27,13 @@ class LanzadorSeguimientoAndroid @Inject constructor(@param:ApplicationContext p
         )
     }
 
-    // El servicio detiene el control al destruirse
+    // Alcanza con detener el servicio, porque al destruirse también detiene el control del seguimiento
     override fun detener() {
         Log.d(TAG, "Solicitud de fin del recorrido")
         contexto.stopService(ServicioSeguimientoRecorrido.crearIntencionDetener(contexto))
     }
 
-    // Si el sistema no permite iniciar el servicio no hay recorrido que cancelar
+    // Si el sistema no deja iniciar el servicio es porque no está corriendo. Por lo tanto no hay recorrido que cancelar
     override fun cancelar() {
         Log.d(TAG, "Solicitud de cancelación del recorrido")
         try {

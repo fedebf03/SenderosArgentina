@@ -20,7 +20,8 @@ private const val METROS_POR_GRADO = 111_195.0
 private const val METROS_POR_KILOMETRO = 1000.0
 private val MULTIPLICADORES_VALIDOS = setOf(1, 5, 20)
 
-// Es Kotlin puro para probarse en JVM con tiempo virtual
+// RF5 - Simulación: en el modo demostración la posición avanza sola por el trazado a ritmo de caminata.
+// Es Kotlin puro para poder probarlo en la JVM con tiempo virtual
 class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : ProveedorUbicacion {
 
     @Volatile
@@ -34,7 +35,7 @@ class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : Pr
         multiplicador = valor
     }
 
-    // Desplazar unas lecturas la posición 150 m fuera del trazado y luego volver
+    // Durante unas lecturas la posición se corre 150 m fuera del trazado y después vuelve, para probar el aviso de desvío
     fun simularDesvio() {
         lecturasDeDesvioPendientes = LECTURAS_DE_DESVIO
     }
@@ -61,7 +62,7 @@ class ProveedorUbicacionSimulada(private val trazado: List<PuntoRecorrido>) : Pr
         }
     }
 
-    // El desvío pendiente no se aplica en la última lectura
+    // En la última lectura no se aplica el desvío pendiente, así la caminata termina sobre el final del trazado
     private fun construirLectura(recorridoMetros: Double, largosMetros: List<Double>, esFinal: Boolean): LecturaUbicacion {
         var inicioTramo = 0.0
         var indiceTramo = largosMetros.indexOfLast { largo -> largo > 0.0 }.coerceAtLeast(0)

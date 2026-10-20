@@ -4,6 +4,12 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.unaj.senderos.core.database.puntocapturado.PuntoCapturadoDao
+import com.unaj.senderos.core.database.puntocapturado.PuntoCapturadoEntidad
+import com.unaj.senderos.core.database.recorrido.RecorridoDao
+import com.unaj.senderos.core.database.recorrido.RecorridoEntidad
+import com.unaj.senderos.core.database.sendero.SenderoDao
+import com.unaj.senderos.core.database.sendero.SenderoEntidad
 
 @Database(
     entities = [SenderoEntidad::class, RecorridoEntidad::class, PuntoCapturadoEntidad::class],
