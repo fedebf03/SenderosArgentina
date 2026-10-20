@@ -770,6 +770,18 @@ class DetalleSenderoViewModelTest {
     }
 
     @Test
+    fun `una copia de un sendero de otra persona no se puede publicar`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel(recorridoValido, idOrigen = "publico-1")
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(DetalleSenderoEvento.AlTocarPublicar)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.puedePublicar)
+        assertFalse(viewModel.estadoVisual.value.esDialogoPublicarVisible)
+    }
+
+    @Test
     fun `sin conexion no se pide confirmar y se avisa`() = runTest(despachadorPrueba) {
         monitorConectividad.hayConexionActual = false
         val viewModel = crearViewModel(recorridoValido)
