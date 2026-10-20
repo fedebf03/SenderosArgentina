@@ -32,12 +32,12 @@ import com.unaj.senderos.core.data.seguimiento.EXTRA_SOLICITAR_CANCELACION
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
 import com.unaj.senderos.features.senderos.detalle.DetalleSenderoPantalla
 import com.unaj.senderos.features.senderos.detalle.DetalleSenderoViewModel
-import com.unaj.senderos.features.explorar.DetallePublicoPantalla
-import com.unaj.senderos.features.explorar.DetallePublicoViewModel
+import com.unaj.senderos.features.senderos.detallepublico.DetallePublicoPantalla
+import com.unaj.senderos.features.senderos.detallepublico.DetallePublicoViewModel
 import com.unaj.senderos.features.senderos.formulario.FormularioSenderoPantalla
 import com.unaj.senderos.features.senderos.formulario.FormularioSenderoViewModel
-import com.unaj.senderos.features.historial.HistorialDetallePantalla
-import com.unaj.senderos.features.historial.HistorialDetalleViewModel
+import com.unaj.senderos.features.perfil.historial.HistorialDetallePantalla
+import com.unaj.senderos.features.perfil.historial.HistorialDetalleViewModel
 import com.unaj.senderos.features.auth.login.LoginPantalla
 import com.unaj.senderos.features.auth.login.LoginViewModel
 import com.unaj.senderos.features.mapa.MapaSenderosPantalla
@@ -54,17 +54,16 @@ import com.unaj.senderos.features.senderos.listado.ModoListado
 import com.unaj.senderos.features.senderos.listado.SenderosPantalla
 import com.unaj.senderos.features.senderos.listado.SenderosViewModel
 import com.unaj.senderos.core.ui.tema.TemaSenderos
-import com.unaj.senderos.navegacion.AlmacenDestinosViewModel
+import com.unaj.senderos.app.navegacion.AlmacenDestinosViewModel
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.unaj.senderos.R
 import com.unaj.senderos.core.domain.usecase.ObtenerUsuarioActualUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.unaj.senderos.core.domain.model.IdentificadorCaminataLibre
-import com.unaj.senderos.navegacion.DestinoPantalla
-import com.unaj.senderos.navegacion.claveDeAlmacen
-import com.unaj.senderos.navegacion.guardadorDeDestino
-
+import com.unaj.senderos.app.navegacion.DestinoPantalla
+import com.unaj.senderos.app.navegacion.claveDeAlmacen
+import com.unaj.senderos.app.navegacion.guardadorDeDestino
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
@@ -74,22 +73,23 @@ class MainActivity : ComponentActivity() {
     // Cada destino guarda sus ViewModels aparte para poder descartarlos al salir de él
     private val almacenDestinos: AlmacenDestinosViewModel by viewModels()
 
-    // Login y Registro viven mientras viva la Activity: así se conserva lo escrito al ir y volver entre ambas
+    // Login y Registro viven mientras viva la Activity. Así se conserva lo escrito al ir y volver entre ambas
     private val loginViewModel: LoginViewModel by viewModels()
     private val registroViewModel: RegistroViewModel by viewModels()
 
-    // Sendero cuyo recorrido en curso pidió abrir la notificación; la composición lo consume y lo limpia
+    // Lo deja la notificación del recorrido en curso y la composición lo consume y lo limpia
     private var idSenderoRecorridoPendiente by mutableStateOf<String?>(null)
 
     private var solicitudCancelacionPendiente by mutableStateOf(false)
 
+    // RF7 - Notificaciones: al tocar la notificación del recorrido llega el sendero para volver a su seguimiento
     private fun leerPedidoDeRecorrido(intencionRecibida: Intent?) {
         val idSendero = intencionRecibida?.getStringExtra(EXTRA_ID_SENDERO_RECORRIDO)
         if (idSendero.isNullOrBlank()) return
         val solicitaCancelacion = intencionRecibida.getBooleanExtra(EXTRA_SOLICITAR_CANCELACION, false)
         intencionRecibida.removeExtra(EXTRA_ID_SENDERO_RECORRIDO)
         intencionRecibida.removeExtra(EXTRA_SOLICITAR_CANCELACION)
-        // Al reabrir la app desde el historial el extra es viejo: no debe volver a navegar
+        // Al reabrir la app desde el historial el extra es viejo y no debe volver a navegar
         val vieneDelHistorial = intencionRecibida.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
         if (!vieneDelHistorial) {
             solicitudCancelacionPendiente = solicitaCancelacion
@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // launchMode singleTop: con la Activity ya abierta la notificación llega por aquí
+    // Con launchMode singleTop y la Activity ya abierta, la notificación llega por aquí
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -140,7 +140,7 @@ class MainActivity : ComponentActivity() {
             val estadoAvisosGlobal = remember { SnackbarHostState() }
             val alcance = rememberCoroutineScope()
 
-            // Abrir el recorrido en curso al tocar la notificación; sin sesión activa se descarta el pedido
+            // Si no hay sesión activa, el pedido de la notificación se descarta
             val idRecorridoPedido = idSenderoRecorridoPendiente
             LaunchedEffect(idRecorridoPedido) {
                 if (idRecorridoPedido != null) {
@@ -216,7 +216,7 @@ class MainActivity : ComponentActivity() {
                         )
                         is DestinoPantalla.EditarPerfil -> {
                             val clave = "editar-perfil-$idUsuario"
-                            // Al salir se liberan las pantallas que muestran el nombre o la foto, para que se vuelvan a armar con el perfil nuevo
+                            // Se liberan las pantallas con el nombre o la foto, para que se armen de nuevo con el perfil nuevo
                             val salirAlPerfil = {
                                 pantallaActual = DestinoPantalla.Perfil
                                 almacenDestinos.liberarDestino(clave)
@@ -286,9 +286,9 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModelAsistidoDeDestino<RecorridoViewModel, RecorridoViewModel.Fabrica>(clave) { fabrica ->
                                     fabrica.crear(destino.idSendero)
                                 },
-                                // Volver no detiene el seguimiento: sigue en segundo plano con su notificación
+                                // Volver no detiene el seguimiento, que sigue en segundo plano con su notificación
                                 alVolverAlDetalle = {
-                                    // Una caminata libre no tiene detalle: se vuelve al listado desde el que se la inició
+                                    // Una caminata libre no tiene detalle, por eso se vuelve al listado de origen
                                     pantallaActual = if (IdentificadorCaminataLibre.esDeCaminataLibre(destino.idSendero)) {
                                         listadoDeOrigen
                                     } else {
@@ -338,7 +338,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Con un formulario abierto se conserva y se avisa, porque podría tener cambios sin guardar y descartarlos en silencio perdería datos
+    // Con un formulario abierto no se navega y se avisa, porque descartar cambios sin guardar perdería datos
     private fun abrirRecorridoPedido(
         idSendero: String,
         idUsuario: String,

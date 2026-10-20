@@ -52,11 +52,11 @@ import com.unaj.senderos.core.domain.model.Usuario
 import com.unaj.senderos.core.ui.componentes.BotoneraInferior
 import com.unaj.senderos.core.ui.componentes.BuscadorSenderos
 import com.unaj.senderos.core.ui.componentes.CabeceraPrincipal
-import com.unaj.senderos.core.ui.componentes.CargandoCentrado
-import com.unaj.senderos.core.ui.componentes.ChipsDificultad
-import com.unaj.senderos.core.ui.componentes.ListaSenderos
-import com.unaj.senderos.core.ui.componentes.MensajeCentrado
-import com.unaj.senderos.core.ui.componentes.MensajeVacio
+import com.unaj.senderos.core.ui.sendero.CargandoCentrado
+import com.unaj.senderos.core.ui.sendero.ChipsDificultad
+import com.unaj.senderos.core.ui.sendero.ListaSenderos
+import com.unaj.senderos.core.ui.sendero.MensajeCentrado
+import com.unaj.senderos.core.ui.sendero.MensajeVacio
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
 import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
@@ -99,7 +99,7 @@ fun SenderosPantalla(
             alcance.launch { estadoAvisos.showSnackbar("Sin permiso de ubicación no podemos ordenar por cercanía") }
         }
     }
-    // Una caminata libre exige la ubicación precisa; la aproximada no alcanza para registrar el trazado
+    // Una caminata libre necesita la ubicación precisa, porque con la aproximada no se puede registrar el trazado
     val pedirPermisoParaCaminar = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
         if (respuesta[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
             viewModel.procesarEvento(SenderosEvento.AlCaminarAhora)
@@ -112,12 +112,12 @@ fun SenderosPantalla(
         Log.d(TAG, "Permiso de notificaciones otorgado: $otorgado")
     }
 
-    // Si ya hay permiso al entrar y todavía no hay ubicación, se obtiene; si no hay permiso, se pide recién al activar "Más cercanos"
+    // Con permiso se obtiene la ubicación al entrar. Sin permiso se pide recién al activar «Más cercanos»
     LaunchedEffect(Unit) {
         if (tienePermisoUbicacion && estadoVisual.ubicacionActual == null) viewModel.procesarEvento(SenderosEvento.AlObtenerUbicacion)
     }
 
-    // Se pide el permiso de notificaciones una sola vez por sesión (la marca vive en el ViewModel) y solo desde Android 13
+    // El permiso de notificaciones se pide una sola vez por sesión (la marca vive en el ViewModel) y desde Android 13
     LaunchedEffect(Unit) {
         val hayQuePedirNotificaciones = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(contexto, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -163,7 +163,7 @@ fun SenderosPantalla(
         alNavegarASeccion = alNavegarASeccion
     )
 
-    // Un recorrido que quedó a medias se recupera o se descarta; tocar afuera no cierra el aviso para no perderlo sin querer
+    // Tocar afuera no cierra el aviso, para que el recorrido interrumpido no se pierda sin querer
     estadoVisual.recorridoInterrumpido?.let { interrumpido ->
         DialogoConfirmacion(
             titulo = "Recorrido interrumpido",

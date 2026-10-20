@@ -52,9 +52,7 @@ import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.model.Etapa
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
-import com.unaj.senderos.core.ui.componentes.IndicadorDificultad
 import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
-import com.unaj.senderos.core.ui.componentes.obtenerTextoTipoRecorrido
 import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
 import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
 
@@ -263,7 +261,7 @@ fun ListaDeEtapas(etapas: List<Etapa>) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         etapas.forEach { etapa ->
             Text(
-                text = "Etapa ${etapa.numero}: ${etapa.nombre} — ${formatearDistanciaSendero(etapa.distanciaKilometros)}",
+                text = "Etapa ${etapa.numero}: ${etapa.nombre} · ${formatearDistanciaSendero(etapa.distanciaKilometros)}",
                 style = MaterialTheme.typography.bodyMedium
             )
         }

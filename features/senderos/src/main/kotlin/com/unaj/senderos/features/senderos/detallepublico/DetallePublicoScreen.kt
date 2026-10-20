@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.explorar
+package com.unaj.senderos.features.senderos.detallepublico
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,7 +47,7 @@ import com.unaj.senderos.core.domain.model.Dificultad
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.SenderoPublico
 import com.unaj.senderos.core.ui.componentes.BotonPrincipal
-import com.unaj.senderos.core.ui.componentes.FotoSendero
+import com.unaj.senderos.core.ui.sendero.FotoSendero
 import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
 import com.unaj.senderos.core.ui.componentes.BotonCircular
 import com.unaj.senderos.core.ui.sendero.DatosDelRecorrido

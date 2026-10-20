@@ -15,10 +15,10 @@ data class PerfilEstadoVisual(
     val hayRecorridoEnCurso: Boolean = false,
     val esDialogoCerrarSesionVisible: Boolean = false,
     val estaProcesandoCopia: Boolean = false,
-    // Copia leída que tiene senderos repetidos y espera que el usuario elija qué hacer con ellos
+    // Es una copia ya leída con senderos repetidos, que espera a que el usuario elija qué hacer con ellos
     val copiaPendiente: AnalisisCopiaSeguridad? = null
 ) {
-    // Totales del historial: solo recorridos reales de al menos 50 m, sin los simulados
+    // Los totales solo cuentan los recorridos reales de al menos 50 m (sin los simulados)
     val estadisticas: EstadisticasUsuario
         get() = CalculadoraEstadisticas.calcular(recorridos)
 }

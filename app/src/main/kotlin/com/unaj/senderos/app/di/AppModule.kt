@@ -1,4 +1,4 @@
-package com.unaj.senderos.di
+package com.unaj.senderos.app.di
 
 import com.unaj.senderos.BuildConfig
 import com.unaj.senderos.core.network.di.NombreNubeCloudinary

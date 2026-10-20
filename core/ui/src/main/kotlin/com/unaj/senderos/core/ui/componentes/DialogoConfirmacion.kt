@@ -8,8 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.unaj.senderos.core.ui.tema.TemaSenderos
 
-// Si confirmar interrumpe o destruye algo, el descarte debe ser un verbo de continuidad ("Seguir…");
-// "Cancelar" queda para cuando confirmar es una acción neutra
+// Si confirmar interrumpe o destruye algo, el botón de descarte lleva un verbo de continuidad ("Seguir…").
+// En cambio "Cancelar" queda para cuando confirmar es una acción neutra
 @Composable
 fun DialogoConfirmacion(
     titulo: String,

@@ -4,7 +4,7 @@ import com.unaj.senderos.core.testing.FalsoAlmacenPronosticos
 import com.unaj.senderos.core.testing.FalsaFuentePronostico
 import com.unaj.senderos.core.domain.usecase.ObtenerPronosticoUseCase
 import com.unaj.senderos.core.ui.comun.formatearTiempoTranscurrido
-import com.unaj.senderos.core.ui.componentes.interpolarAltitud
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.interpolarAltitud
 import com.unaj.senderos.core.domain.model.AvisoRecorrido
 import com.unaj.senderos.core.domain.model.CalidadSenal
 import com.unaj.senderos.core.domain.model.CapacidadesDispositivo

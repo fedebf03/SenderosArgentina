@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.sendero
 
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.Dificultad
@@ -20,7 +20,6 @@ fun obtenerTextoTipoRecorrido(tipoRecorrido: TipoRecorrido): String {
     }
 }
 
-/** Obtener el nombre visible de un bioma. */
 fun obtenerTextoBioma(bioma: Bioma): String {
     return when (bioma) {
         Bioma.ALTA_MONTANIA -> "Alta montaña"
@@ -36,7 +35,6 @@ fun obtenerTextoBioma(bioma: Bioma): String {
     }
 }
 
-/** Obtener la descripción del bioma para lectores de pantalla. */
 fun obtenerDescripcionBioma(bioma: Bioma): String {
     return "Bioma: ${obtenerTextoBioma(bioma).lowercase()}"
 }

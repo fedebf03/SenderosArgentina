@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.componentes.perfilelevacion
 
 import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.model.PuntoPerfil

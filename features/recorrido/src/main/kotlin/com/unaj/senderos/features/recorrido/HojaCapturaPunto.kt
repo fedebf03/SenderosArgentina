@@ -44,8 +44,8 @@ import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
 
 private const val LONGITUD_MAXIMA_NOTA = 200
 
-// Mostrar la hoja para describir el punto marcado: grilla de tipos, nota opcional, foto, Cancelar y Guardar.
-// Tocar afuera o deslizar hacia abajo la cierra solo si no se escribió una nota ni se eligió una foto, para no perderlas por un toque sin querer
+// Tocar afuera o deslizar hacia abajo solo cierra la hoja si no hay nota ni foto.
+// Así no se pierden por un toque sin querer
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HojaCapturaPunto(

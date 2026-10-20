@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 private const val TAG = "EDITAR_PERFIL"
 private const val MENSAJE_PERFIL_GUARDADO = "Perfil guardado"
-private const val MENSAJE_PERFIL_PENDIENTE = "Perfil guardado en el dispositivo; se sube a tu cuenta cuando haya conexión"
+private const val MENSAJE_PERFIL_PENDIENTE = "Perfil guardado. Se va a subir cuando haya conexión"
 private const val MENSAJE_ERROR_AL_GUARDAR = "No se pudo guardar el perfil. Probá de nuevo"
 private const val MENSAJE_REVISAR_CAMPOS = "Revisá los datos marcados"
 private const val MENSAJE_ERROR_FOTO = "No se pudo usar esa foto"
@@ -55,7 +55,6 @@ class EditarPerfilViewModel @Inject constructor(
         cargarPerfil()
     }
 
-    // Procesar cada evento de la pantalla
     fun procesarEvento(evento: EditarPerfilEvento) {
         when (evento) {
             is EditarPerfilEvento.AlCambiarTexto -> cambiarTexto(evento.campo, evento.texto)
@@ -77,7 +76,6 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Cargar el perfil guardado en los campos del formulario
     private fun cargarPerfil() {
         viewModelScope.launch {
             val resultado = try {
@@ -109,7 +107,6 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Actualizar el campo de texto y marcar que hay cambios; al escribir en un campo con error, el error se limpia
     private fun cambiarTexto(campo: CampoEdicionPerfil, texto: String) {
         _estadoVisual.update { estado ->
             val actualizado = when (campo) {
@@ -122,7 +119,7 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Copiar la foto elegida a la carpeta privada de la app, achicada, y usarla como foto del perfil
+    // El perfil usa una copia achicada de la foto, guardada en la carpeta privada de la app
     private fun seleccionarFoto(uri: String) {
         if (_estadoVisual.value.estaProcesandoFoto) return
         _estadoVisual.update { estado -> estado.copy(estaProcesandoFoto = true) }
@@ -147,7 +144,7 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Validar y guardar el perfil; el aviso final dice si ya llegó a la cuenta o espera conexión
+    // RF2 - Perfil: guardamos los datos del perfil. Sin conexión quedan en el dispositivo y se suben después
     private fun guardar() {
         val estadoActual = _estadoVisual.value
         if (!estadoActual.puedeGuardar) return
@@ -182,7 +179,6 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Volver al perfil; con cambios sin guardar pide confirmar antes de descartarlos
     private fun volver() {
         if (_estadoVisual.value.hayCambiosSinGuardar) {
             _estadoVisual.update { estado -> estado.copy(esDialogoDescartarVisible = true) }
@@ -191,7 +187,6 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Guardar lo escrito en uno de los campos de contraseña y limpiar el mensaje de error anterior
     private fun cambiarClave(campo: CampoContrasena, texto: String) {
         _estadoVisual.update { estado ->
             val actualizado = when (campo) {
@@ -203,7 +198,6 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Cambiar la contraseña con la actual como confirmación; al terminar bien se vacían los campos
     private fun cambiarContrasena() {
         val estadoActual = _estadoVisual.value
         if (estadoActual.estaCambiandoContrasena) return
@@ -238,7 +232,6 @@ class EditarPerfilViewModel @Inject constructor(
         }
     }
 
-    // Enviar el efecto a la pantalla sin bloquear
     private fun emitirEfecto(efecto: EditarPerfilEfecto) {
         canalEfectos.trySend(efecto)
     }

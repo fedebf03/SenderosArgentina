@@ -3,7 +3,7 @@ package com.unaj.senderos.core.ui.componentes.mapa
 import com.unaj.senderos.core.domain.configuracion.ConfiguracionEstiloMapa
 
 object ConfiguracionMapa {
-    // El estilo vive en dominio para compartirlo con la descarga de mapas sin conexión
+    // El estilo está en dominio porque también lo usa la descarga de mapas sin conexión
     const val URL_ESTILO = ConfiguracionEstiloMapa.URL_ESTILO
 
     const val FUENTE_TEXTO = "Noto Sans Bold"
@@ -16,9 +16,9 @@ object ConfiguracionMapa {
 
     const val ZOOM_PUNTO_DE_INTERES = 16.0
 
-    // Fracción superior libre para ver más camino adelante
     const val ZOOM_NAVEGACION = 17.5
     const val INCLINACION_NAVEGACION_GRADOS = 45.0
+    // Se deja libre la parte superior de la pantalla para ver más camino por delante
     const val FRACCION_MARGEN_SUPERIOR_NAVEGACION = 0.4
     const val DURACION_ANIMACION_NAVEGACION_MILISEGUNDOS = 1000
 

@@ -17,7 +17,7 @@ val RECOMENDACIONES_SUGERIDAS: List<String> = listOf(
     "Respetar la flora y la fauna"
 )
 
-// Las tres básicas con las que arranca un sendero nuevo; se pueden quitar
+// Un sendero nuevo arranca con las tres primeras, que se pueden quitar
 val RECOMENDACIONES_POR_DEFECTO: List<String> = RECOMENDACIONES_SUGERIDAS.take(3)
 
 val SERVICIOS_SUGERIDOS: List<String> = listOf(
@@ -45,7 +45,6 @@ val EPOCAS_SUGERIDAS: List<String> = listOf(
 private const val MINUTOS_POR_HORA = 60
 private val MARCAS_DE_TILDE = Regex("\\p{Mn}+")
 
-// Mostrar una duración en minutos como "45 min", "2 h" o "3 h 30 min"
 fun formatearDuracionEstimada(minutos: Int): String {
     val horas = minutos / MINUTOS_POR_HORA
     val resto = minutos % MINUTOS_POR_HORA
@@ -56,14 +55,13 @@ fun formatearDuracionEstimada(minutos: Int): String {
     }
 }
 
-// Filtrar las opciones que contienen lo escrito, sin distinguir mayúsculas ni tildes; sin texto devuelve todas
 fun filtrarSugerencias(opciones: List<String>, texto: String): List<String> {
     val buscado = normalizarParaBuscar(texto.trim())
     if (buscado.isEmpty()) return opciones
     return opciones.filter { opcion -> normalizarParaBuscar(opcion).contains(buscado) }
 }
 
-// Pasar a minúsculas y quitar las tildes para comparar "rio" con "Río"
+// Se quitan las tildes para que «rio» coincida con «Río»
 private fun normalizarParaBuscar(texto: String): String {
     val descompuesto = Normalizer.normalize(texto.lowercase(), Normalizer.Form.NFD)
     return descompuesto.replace(MARCAS_DE_TILDE, "")

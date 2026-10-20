@@ -5,7 +5,7 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 import kotlin.math.roundToInt
 
-// Localidad única con la que se dan formato a los números visibles (coma decimal, punto de miles)
+// Todos los números visibles usan esta localidad (coma decimal y punto de miles)
 internal val LOCALIDAD_ARGENTINA: Locale = Locale.forLanguageTag("es-AR")
 
 const val TEXTO_SIN_DATO = "—"
@@ -78,12 +78,10 @@ fun formatearTamanoMapa(bytes: Long): String {
     }
 }
 
-// Formatear una altura en metros con separador de miles argentino
 fun formatearAlturaMetros(metros: Int): String {
     return "${String.format(LOCALIDAD_ARGENTINA, "%,d", metros)} m"
 }
 
-// Formatear un porcentaje con un decimal y coma argentina
 fun formatearPorcentaje(porcentaje: Double): String {
     return "${formatearUnDecimal(porcentaje)} %"
 }

@@ -29,7 +29,6 @@ import java.util.Locale
 
 private const val TIPO_ARCHIVO_COPIA = "application/json"
 
-// Mostrar la sección "Mis datos" del Perfil: guardar todos los senderos en un archivo y restaurarlos desde una copia
 @Composable
 internal fun SeccionCopiaSeguridad(estadoVisual: PerfilEstadoVisual, alProcesarEvento: (PerfilEvento) -> Unit) {
     val selectorGuardar = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(TIPO_ARCHIVO_COPIA)) { uri ->
@@ -68,7 +67,6 @@ internal fun SeccionCopiaSeguridad(estadoVisual: PerfilEstadoVisual, alProcesarE
     estadoVisual.copiaPendiente?.let { analisis -> DialogoRestauracion(analisis, alProcesarEvento) }
 }
 
-// Preguntar qué hacer con los senderos de la copia que ya están en la cuenta
 @Composable
 private fun DialogoRestauracion(analisis: AnalisisCopiaSeguridad, alProcesarEvento: (PerfilEvento) -> Unit) {
     val nuevos = analisis.nuevos.size
@@ -78,7 +76,7 @@ private fun DialogoRestauracion(analisis: AnalisisCopiaSeguridad, alProcesarEven
         return
     }
     val avisoCambios = if (analisis.existentesConCambiosSinSubir > 0) {
-        " Ojo: ${analisis.existentesConCambiosSinSubir} de los que ya tenés tienen cambios que todavía no se subieron; reemplazarlos los pierde."
+        " Ojo: ${analisis.existentesConCambiosSinSubir} de los que ya tenés tienen cambios sin subir. Si los reemplazás, se pierden."
     } else {
         ""
     }
@@ -112,7 +110,6 @@ private fun DialogoRestauracion(analisis: AnalisisCopiaSeguridad, alProcesarEven
     )
 }
 
-// Confirmar la restauración de una copia sin senderos repetidos; si alguno se había borrado, vuelve
 @Composable
 private fun DialogoRestaurarSoloNuevos(cantidad: Int, alProcesarEvento: (PerfilEvento) -> Unit) {
     AlertDialog(
@@ -132,6 +129,6 @@ private fun DialogoRestaurarSoloNuevos(cantidad: Int, alProcesarEvento: (PerfilE
     )
 }
 
-// Sugerir un nombre de archivo con la fecha, para distinguir copias de distintos días
+// El nombre lleva la fecha para distinguir las copias de distintos días
 private fun nombreArchivoCopia(): String =
     "senderos-${SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())}.json"

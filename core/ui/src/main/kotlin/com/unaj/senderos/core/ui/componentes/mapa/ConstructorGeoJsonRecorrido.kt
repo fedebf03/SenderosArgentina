@@ -70,7 +70,7 @@ object ConstructorGeoJsonRecorrido {
         return FeatureCollection.fromFeatures(elementos)
     }
 
-    // Armar los puntos que el usuario marcó caminando: solo guardan el tipo (para el icono) y si tienen foto
+    // Los puntos marcados caminando solo llevan el tipo (para el icono) y si tienen foto
     fun crearPuntosMarcados(puntos: List<PuntoRecorrido>): FeatureCollection {
         val elementos = puntos.mapNotNull { punto ->
             if (!punto.tieneCoordenadasValidas()) return@mapNotNull null

@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.sendero
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
 
-/** Dibujar un punto con el color principal del bioma; es decorativo y siempre va junto al nombre. */
+// Es decorativo y siempre va junto al nombre, por eso no tiene descripción para el lector de pantalla
 @Composable
 fun PuntoBioma(bioma: Bioma, modifier: Modifier = Modifier, tamano: Dp = 10.dp) {
     val colores = obtenerColoresDelBioma(bioma)
@@ -33,7 +33,6 @@ fun PuntoBioma(bioma: Bioma, modifier: Modifier = Modifier, tamano: Dp = 10.dp) 
     )
 }
 
-/** Mostrar una etiqueta con un punto de color y el nombre del bioma. */
 @Composable
 fun EtiquetaBioma(bioma: Bioma, modifier: Modifier = Modifier, conFondo: Boolean = true) {
     val colores = obtenerColoresDelBioma(bioma)

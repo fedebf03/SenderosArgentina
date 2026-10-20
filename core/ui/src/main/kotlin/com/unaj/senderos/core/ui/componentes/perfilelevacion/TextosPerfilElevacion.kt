@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.componentes.perfilelevacion
 
 import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
@@ -10,19 +10,16 @@ const val TEXTO_PERFIL_SIN_CALCULAR = "Todavía no se calculó el perfil"
 const val TEXTO_PERFIL_DESACTUALIZADO = "El recorrido cambió desde que se calculó el perfil"
 const val TEXTO_SUBIDA_RESTANTE = "Subida restante"
 
-// Describir el perfil completo para el lector de pantalla
 fun describirResumenPerfil(perfil: PerfilElevacion): String {
     return "$TITULO_SECCION_PERFIL: sube ${formatearAlturaMetros(perfil.desnivelPositivoMetros)} " +
         "y baja ${formatearAlturaMetros(perfil.desnivelNegativoMetros)}, " +
         "altura máxima ${formatearAlturaMetros(perfil.alturaMaximaMetros)}"
 }
 
-// Describir el punto del perfil que el usuario tocó
 fun describirPuntoDelPerfil(kilometros: Double, altitudMetros: Double): String {
     return "Kilómetro ${formatearKilometros(kilometros)} · altura ${formatearAlturaMetros(altitudMetros.roundToInt())}"
 }
 
-// Describir la posición actual del usuario sobre el perfil
 fun describirPosicionActual(kilometros: Double, altitudMetros: Double): String {
     return "Estás acá: ${describirPuntoDelPerfil(kilometros, altitudMetros).replaceFirstChar { letra -> letra.lowercase() }}"
 }

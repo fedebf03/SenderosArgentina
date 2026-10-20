@@ -38,6 +38,7 @@ class RegistroViewModel @Inject constructor(
         }
     }
 
+    // RF1 - Registro: creamos la cuenta con correo y contraseña y, si sale bien, se entra directo al inicio
     private fun ejecutarRegistro() {
         val estadoActual = _estadoVisual.value
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }

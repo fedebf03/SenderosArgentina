@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.historial
+package com.unaj.senderos.features.perfil.historial
 
 import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
 import com.unaj.senderos.core.ui.componentes.BotonSecundario
@@ -27,11 +27,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
 import androidx.compose.material3.OutlinedCard

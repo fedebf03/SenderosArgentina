@@ -25,10 +25,9 @@ enum class CampoFormulario {
     DISTANCIA_NUEVA_ETAPA
 }
 
-// Qué hace un toque en el mapa del editor: agregar un punto al final del camino o marcar un punto de interés
 enum class ModoEditorRecorrido { TRAZAR_CAMINO, MARCAR_PUNTO_DE_INTERES }
 
-// Punto de interés que se está describiendo en el menú, antes de insertarlo en el trazado; foto es la ruta de la copia local
+// Punto de interés que se describe en el menú antes de insertarlo en el trazado. La foto es la ruta de la copia local
 data class PuntoDeInteresNuevo(
     val latitud: Double,
     val longitud: Double,
@@ -70,26 +69,25 @@ data class FormularioSenderoEstadoVisual(
     val esEditorMapaVisible: Boolean = false,
     val indicePuntoSeleccionado: Int? = null,
     val modoEditor: ModoEditorRecorrido = ModoEditorRecorrido.TRAZAR_CAMINO,
-    // No nulo mientras el menú del punto de interés está abierto
+    // Tiene valor solo mientras el menú del punto de interés está abierto
     val puntoDeInteresNuevo: PuntoDeInteresNuevo? = null,
-    // Índice del punto ya trazado cuya foto se está copiando; null si no hay ninguna copia en curso
+    // Mientras tiene valor no se acepta otra foto para un punto ya trazado
     val indicePuntoCopiandoFoto: Int? = null,
     val perfilElevacion: PerfilElevacion? = null,
     val estaCalculandoPerfil: Boolean = false,
-    // Motivo por el que no se pudo calcular el perfil, para mostrarlo con la opción de reintentar
     val avisoPerfil: String? = null,
     val estaImportandoTrazado: Boolean = false,
-    // Trazado importado que espera confirmación porque reemplazaría el recorrido ya marcado
+    // Trazado importado que espera confirmación, porque reemplazaría el recorrido ya marcado
     val trazadoImportadoPendiente: TrazadoImportado? = null,
     val foto: String = "",
     val estaProcesandoFoto: Boolean = false,
-    // Nombre del sendero que ya se creó desde esta misma caminata; mientras tenga valor se pregunta si se edita o se reemplaza
+    // Nombre del sendero ya creado desde esta caminata. Mientras tenga valor se pregunta si se edita o se reemplaza
     val nombreSenderoYaConvertido: String? = null
 ) {
     val distanciaCalculadaKilometros: Double
         get() = CalculadoraRecorrido.distanciaKilometros(recorrido, tipoRecorrido)
 
-    // Indicar si el perfil se calculó con otro trazado (se movió, agregó o borró un punto, o cambió el tipo de recorrido)
+    // El perfil queda desactualizado si se movió, agregó o borró un punto, o si cambió el tipo de recorrido
     val perfilEstaDesactualizado: Boolean
         get() = perfilElevacion != null && perfilElevacion.firmaTrazado != CalculadoraPerfil.firmaTrazado(recorrido, tipoRecorrido)
 }
@@ -107,9 +105,8 @@ sealed interface FormularioSenderoEvento {
     data class AlImportarTrazado(val uri: String) : FormularioSenderoEvento
     data object AlConfirmarReemplazoTrazado : FormularioSenderoEvento
     data object AlCancelarReemplazoTrazado : FormularioSenderoEvento
-    // Caminata ya convertida: seguir creando el sendero de nuevo, que reemplaza al anterior
+    // Con la caminata ya convertida, el sendero se crea de nuevo y reemplaza al anterior
     data object AlReemplazarSenderoDeCaminata : FormularioSenderoEvento
-    // Caminata ya convertida: abrir el sendero que ya existe para editarlo
     data object AlEditarSenderoDeCaminata : FormularioSenderoEvento
     data class AlQuitarRecomendacion(val indice: Int) : FormularioSenderoEvento
     data object AlAgregarServicio : FormularioSenderoEvento

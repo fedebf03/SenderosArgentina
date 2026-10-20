@@ -3,7 +3,6 @@ package com.unaj.senderos.features.perfil.editar
 import com.unaj.senderos.core.domain.model.PerfilUsuario
 import com.unaj.senderos.core.domain.usecase.CampoPerfil
 
-// Campos de texto del formulario de perfil
 enum class CampoEdicionPerfil { NOMBRE, PAIS, PROVINCIA, LOCALIDAD }
 
 enum class CampoContrasena { ACTUAL, NUEVA, REPETIDA }
@@ -16,7 +15,7 @@ data class EditarPerfilEstadoVisual(
     val pais: String = "",
     val provincia: String = "",
     val localidad: String = "",
-    // Ruta local o URL de la foto actual; vacía si no tiene
+    // Puede ser una ruta local o una URL. Queda vacía si no hay foto
     val foto: String = "",
     val estaProcesandoFoto: Boolean = false,
     val camposConError: Set<CampoPerfil> = emptySet(),
@@ -30,7 +29,6 @@ data class EditarPerfilEstadoVisual(
     val estaCambiandoContrasena: Boolean = false,
     val mensajeErrorContrasena: String? = null
 ) {
-    // Armar el perfil con lo que hay escrito en el formulario
     fun aPerfil() = PerfilUsuario(nombre, pais, provincia, localidad, foto)
 
     val puedeGuardar: Boolean

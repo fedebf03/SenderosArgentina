@@ -7,7 +7,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.unaj.senderos.core.ui.comun.TEXTO_SIN_DATO
 
-// Texto que lee el lector de pantalla en lugar del guion que se muestra cuando falta un dato
+// El lector de pantalla lee este texto en lugar del guion que se muestra cuando falta un dato
 private const val DESCRIPCION_SIN_DATO = "sin dato"
 
 fun Modifier.accionable(etiquetaAccion: String?, rol: Role = Role.Button, alTocar: () -> Unit): Modifier {

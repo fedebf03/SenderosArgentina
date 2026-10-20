@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.historial
+package com.unaj.senderos.features.perfil.historial
 
 import com.unaj.senderos.core.testing.FalsoPuntosCapturadosRepositorio
 import com.unaj.senderos.core.domain.usecase.EliminarRecorridoUseCase

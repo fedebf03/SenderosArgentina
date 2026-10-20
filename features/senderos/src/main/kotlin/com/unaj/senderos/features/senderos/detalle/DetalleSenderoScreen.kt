@@ -28,16 +28,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -76,10 +72,9 @@ import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "DETALLE_SENDERO"
 
-// Posición del recuadro del mapa dentro de la lista del detalle
+// Si se agrega un elemento antes del mapa en la lista del detalle, este índice tiene que cambiar
 private const val INDICE_ELEMENTO_MAPA = 2
 
-// Cantidad mínima de puntos del recorrido para poder calcular y mostrar el perfil de elevación
 private const val CANTIDAD_MINIMA_PUNTOS_PERFIL = 2
 
 @Composable
@@ -96,7 +91,7 @@ fun DetalleSenderoPantalla(
     val navegarAEdicionActual by rememberUpdatedState(alNavegarAEdicion)
     val navegarARecorridoActual by rememberUpdatedState(alNavegarARecorrido)
     val contextoActual by rememberUpdatedState(LocalContext.current)
-    // Continuar con el recorrido una vez resuelto el permiso de notificaciones (con o sin él)
+    // El recorrido sigue aunque se niegue el permiso de notificaciones. Solo se avisa lo que se pierde
     val pedirPermisoNotificaciones = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { concedido ->
@@ -363,7 +358,7 @@ private fun CuerpoDetalle(
     modifier: Modifier = Modifier
 ) {
     val estadoLista = rememberLazyListState()
-    // Recordar la última clave desplazada para no repetir el desplazamiento al recrear la pantalla
+    // La última clave se guarda para no repetir el desplazamiento al recrear la pantalla (por ejemplo al girarla)
     var ultimaClaveDesplazada by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(estadoVisual.contadorEnfoque) {
         if (estadoVisual.contadorEnfoque > ultimaClaveDesplazada) {

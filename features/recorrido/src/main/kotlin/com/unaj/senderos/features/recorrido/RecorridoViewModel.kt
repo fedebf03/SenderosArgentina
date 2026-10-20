@@ -50,7 +50,7 @@ private const val PLAZO_INICIO_MILISEGUNDOS = 5_000L
 private const val INTERVALO_CONSULTA_CLIMA_MILISEGUNDOS = 10 * 60_000L
 private const val MENSAJE_PUNTO_GUARDADO = "Punto guardado"
 private const val MENSAJE_ERROR_PUNTO = "No se pudo guardar el punto"
-private const val MENSAJE_SIN_POSICION_PARA_PUNTO = "Todavía no hay una posición válida del GPS; esperá a tener señal"
+private const val MENSAJE_SIN_POSICION_PARA_PUNTO = "Todavía no hay señal de GPS. Esperá unos segundos"
 
 @HiltViewModel(assistedFactory = RecorridoViewModel.Fabrica::class)
 class RecorridoViewModel @AssistedInject constructor(
@@ -94,19 +94,21 @@ class RecorridoViewModel @AssistedInject constructor(
     )
 
     private var estaCapturandoPunto = false
-    // Posición del momento en que se tocó el botón "+": el usuario sigue caminando mientras elige el tipo o saca la foto
+    // Guardamos la posición del momento en que se tocó "+", porque el usuario sigue caminando
+    // mientras elige el tipo o saca la foto
     private var posicionReservadaParaPunto: Coordenada? = null
     private var ultimoEstadoSeguimiento: EstadoSeguimiento? = null
     private var haVistoEstadoActivo = false
     private var estaFinalizando = false
     private var estaConsultandoClima = false
-    // Instante de la última consulta del clima y avisos ya mostrados en pantalla, para no repetir ni gastar datos en cada lectura de ubicación
+    // Se recuerdan la última consulta del clima y los avisos ya mostrados, para no repetirlos
+    // ni gastar datos en cada lectura del GPS
     private var ultimaConsultaClimaMilisegundos: Long? = null
     private val alertasClimaAvisadas = mutableSetOf<AlertaClima>()
 
     init {
         Log.d(TAG, "ViewModel → creado (${hashCode()})")
-        // Una caminata libre no tiene sendero que observar
+        // Una caminata libre no tiene un sendero guardado que observar
         if (!IdentificadorCaminataLibre.esDeCaminataLibre(idSendero)) observarSendero()
         observarSeguimiento()
         observarAvisos()
@@ -115,13 +117,12 @@ class RecorridoViewModel @AssistedInject constructor(
         esperarInicioDelServicio()
     }
 
-    // El seguimiento sigue en el servicio
+    // Al destruirse el ViewModel no se detiene nada, porque el seguimiento vive en el servicio
     override fun onCleared() {
         super.onCleared()
         Log.d(TAG, "ViewModel → onCleared")
     }
 
-    // Procesar cada evento de la pantalla y traducirlo en cambios de estado o acciones sobre el seguimiento
     fun procesarEvento(evento: RecorridoEvento) {
         when (evento) {
             is RecorridoEvento.AlVolver, is RecorridoEvento.AlCerrarResumen -> {
@@ -194,7 +195,7 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // Reservar la posición actual y abrir la hoja limpia; sin posición válida avisa en lugar de abrirla
+    // RF5 - Captura de puntos: el usuario marca un punto de interés mientras camina, sin detener el seguimiento
     private fun abrirHojaPunto() {
         val estadoActual = _estadoVisual.value
         if (!estadoActual.puedeAgregarPunto || estadoActual.esHojaPuntoVisible) return
@@ -216,13 +217,11 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // Cerrar la hoja y soltar la posición reservada
     private fun cerrarHojaPunto() {
         posicionReservadaParaPunto = null
         _estadoVisual.update { estadoActual -> estadoActual.copy(esHojaPuntoVisible = false, mensajeErrorPunto = null) }
     }
 
-    // Guardar el punto con el tipo, la nota y la foto de la hoja, en la posición reservada al tocar el botón; un doble toque guarda una sola vez
     private fun guardarPunto() {
         if (estaCapturandoPunto) return
         val estadoActual = _estadoVisual.value
@@ -293,6 +292,7 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
+    // RF5 - Seguimiento: cada estado que publica el servicio se refleja en pantalla (posición, distancia y restante)
     private fun reflejarSeguimiento(estado: EstadoSeguimiento?) {
         val estadoDelSendero = estado?.takeIf { estadoEmitido -> estadoEmitido.idSendero == idSendero }
         if (estadoDelSendero != null) {
@@ -345,8 +345,8 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // Pedir el clima del lugar donde está el usuario la primera vez y después a lo sumo cada 10 minutos; el caso de uso usa la copia guardada si es reciente
-    // y, sin conexión, la última que haya. Un fallo solo se registra: el clima es un extra y no debe molestar mientras se camina
+    // Pedimos el clima la primera vez y después cada 10 minutos (sin conexión se usa la última copia).
+    // Un fallo solo se registra, porque el clima es un extra y no debe molestar mientras se camina
     private fun pedirClimaSiHaceFalta(posicion: Coordenada?) {
         if (posicion == null || estaConsultandoClima) return
         val ahora = reloj()
@@ -373,21 +373,20 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // Mostrar en pantalla una sola vez cada aviso de clima durante el recorrido
     private fun avisarAlertasNuevas(alertas: Set<AlertaClima>) {
         alertas.filter { alerta -> alertasClimaAvisadas.add(alerta) }.forEach { alerta ->
             emitirEfecto(RecorridoEfecto.MostrarAviso("Aviso de clima: ${alerta.titulo}"))
         }
     }
 
-    // La pantalla muestra la velocidad que el control publica en su estado
+    // RF5 - Simulación: cambiamos la velocidad de la caminata simulada. La pantalla la toma del control
     private fun seleccionarMultiplicador(valor: Int) {
         if (!_estadoVisual.value.esSimulado || valor !in MULTIPLICADORES_SIMULACION) return
         Log.d(TAG, "Velocidad de la simulación: x$valor")
         controlSeguimiento.cambiarMultiplicadorSimulacion(valor)
     }
 
-    // Mostrar la presión del barómetro en hectopascales enteros, que cambian poco; sin barómetro el flujo falla y simplemente no se muestra
+    // Se redondea a hectopascales enteros porque cambia poco. Sin barómetro el flujo falla y no se muestra
     private fun observarPresion() {
         viewModelScope.launch {
             fuentePresion.observarPresion()
@@ -406,7 +405,6 @@ class RecorridoViewModel @AssistedInject constructor(
             controlSeguimiento.avisos.collect { aviso ->
                 Log.d(TAG, "Aviso del recorrido: $aviso")
                 if (aviso is AvisoRecorrido.LlegadaAlFinal) {
-                    // La llegada se avisa con un diálogo, no con el Snackbar
                     mostrarDialogoDeLlegada()
                 } else {
                     emitirEfecto(RecorridoEfecto.MostrarAviso(describirAviso(aviso)))
@@ -422,7 +420,7 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // Dar un plazo al servicio para publicar el primer estado antes de declarar el recorrido inactivo
+    // El servicio tarda en publicar el primer estado. Por lo tanto esperamos 5 segundos antes de darlo por inactivo
     private fun esperarInicioDelServicio() {
         viewModelScope.launch {
             delay(PLAZO_INICIO_MILISEGUNDOS)
@@ -445,6 +443,7 @@ class RecorridoViewModel @AssistedInject constructor(
         mostrarResumen(estadoFinal)
     }
 
+    // RF5 - Seguimiento: al cancelar se descarta la caminata sin guardarla en el historial
     private fun cancelarRecorrido() {
         _estadoVisual.update { estadoActual ->
             estadoActual.copy(
@@ -457,7 +456,8 @@ class RecorridoViewModel @AssistedInject constructor(
         if (estaFinalizando) return
         estaFinalizando = true
         Log.d(TAG, "Recorrido cancelado por el usuario; se descarta sin guardar")
-        // Primero se descarta en el control (síncrono) y después se detiene el servicio: al destruirse no queda nada por guardar
+        // Primero se descarta en el control (de forma síncrona) y después se detiene el servicio.
+        // Así, al destruirse, el servicio no tiene nada por guardar
         controlSeguimiento.cancelar()
         lanzadorSeguimiento.detener()
         emitirEfecto(RecorridoEfecto.VolverAlDetalle)

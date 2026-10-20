@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.explorar
+package com.unaj.senderos.features.senderos.detallepublico
 
 import com.unaj.senderos.core.domain.model.SenderoPublico
 

@@ -118,7 +118,6 @@ internal fun DialogoResumen(
     )
 }
 
-// Mostrar el clima de donde está el usuario con el detalle de cada aviso, para decidir si sigue, se refugia o vuelve
 @Composable
 internal fun DialogoClimaRecorrido(estadoVisual: RecorridoEstadoVisual, alCerrar: () -> Unit) {
     val resultado = estadoVisual.clima ?: return

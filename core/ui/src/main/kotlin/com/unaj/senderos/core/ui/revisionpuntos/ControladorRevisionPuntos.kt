@@ -19,7 +19,8 @@ private const val MENSAJE_ERROR_POR_DEFECTO = "No se pudieron actualizar los pun
 private const val MENSAJE_PUNTOS_AGREGADOS = "Puntos agregados al sendero"
 private const val MENSAJE_PUNTOS_DESCARTADOS = "Puntos descartados"
 
-// Cada punto parte marcado salvo que supere la distancia recomendada; idsAlternados guarda los que el usuario cambió respecto de ese valor inicial
+// Cada punto arranca marcado salvo que supere la distancia recomendada. En idsAlternados quedan
+// los que el usuario cambió respecto de ese valor inicial
 data class RevisionPuntosEstadoVisual(
     val puntosPendientes: List<PuntoCapturadoConDistancia> = emptyList(),
     val idsAlternados: Set<String> = emptySet(),
@@ -50,7 +51,7 @@ sealed interface RevisionPuntosEvento {
     data object AlCancelarDescartarTodos : RevisionPuntosEvento
 }
 
-// La comparten el resumen del recorrido y el detalle
+// RF3 - Puntos de interés: revisión de los puntos capturados, compartida por el resumen y el detalle
 class ControladorRevisionPuntos(
     private val idSendero: String,
     observarPuntosCapturadosConDistanciaUseCase: ObservarPuntosCapturadosConDistanciaUseCase,
@@ -141,7 +142,6 @@ class ControladorRevisionPuntos(
         }
     }
 
-    // Se invoca tras la confirmación del usuario
     private fun descartarTodos() {
         val estadoActual = _estado.value
         if (estadoActual.estaProcesando) return

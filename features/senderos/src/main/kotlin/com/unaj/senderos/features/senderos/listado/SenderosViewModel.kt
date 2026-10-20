@@ -67,6 +67,7 @@ class SenderosViewModel @AssistedInject constructor(
     private var trabajoSincronizacion: Job? = null
     private var idUsuarioObservado: String? = null
 
+    // RF2 - Explorar: en Explorar se combinan los senderos públicos con los propios. En Mis senderos se ven solo los propios
     init {
         observarConexion(monitorConectividad)
         if (modo == ModoListado.EXPLORAR) buscarRecorridoInterrumpido()
@@ -89,7 +90,7 @@ class SenderosViewModel @AssistedInject constructor(
         )
     }
 
-    // Seguir el estado del trabajo de sincronización del usuario una sola vez, la primera vez que se conoce
+    // Se observa una sola vez por usuario, porque cada lectura de los senderos vuelve a llamar a esta función
     private fun observarSincronizacion(idUsuario: String?) {
         if (idUsuario == null || idUsuario == idUsuarioObservado) return
         idUsuarioObservado = idUsuario
@@ -106,14 +107,12 @@ class SenderosViewModel @AssistedInject constructor(
         }
     }
 
-    // Pedir la sincronización ahora; sin sesión no hay nada que sincronizar
     private fun sincronizarAhora() {
         val idUsuario = _estadoVisual.value.usuario?.id ?: return
         Log.d(TAG, "Sincronización manual pedida desde el listado")
         solicitudSincronizacion.sincronizarAhora(idUsuario)
     }
 
-    // Se avisa sin bloquear la lista
     private fun observarConexion(monitorConectividad: MonitorConectividad) {
         viewModelScope.launch {
             monitorConectividad.observarConexion()
@@ -145,6 +144,7 @@ class SenderosViewModel @AssistedInject constructor(
                     )
                 }
             }
+            // RF2 - Favoritos: el filtro de favoritos y el de guardados se aplican en el estado visual
             is SenderosEvento.AlAlternarFavoritos -> {
                 _estadoVisual.update { estado -> estado.copy(soloFavoritos = !estado.soloFavoritos) }
             }
@@ -175,7 +175,7 @@ class SenderosViewModel @AssistedInject constructor(
         }
     }
 
-    // Al abrir Explorar, ofrecer el recorrido que quedó a medias; con un recorrido en marcha no se ofrece nada porque el borrador es el de ese mismo
+    // Con un recorrido en marcha no se ofrece nada, porque el borrador guardado es el de ese mismo recorrido
     private fun buscarRecorridoInterrumpido() {
         if (controlSeguimiento.estado.value != null) return
         viewModelScope.launch {
@@ -191,7 +191,7 @@ class SenderosViewModel @AssistedInject constructor(
         }
     }
 
-    // Guardar el recorrido interrumpido en el historial y abrirlo; si falla, avisa y el borrador queda para reintentar
+    // Si falla, el borrador no se borra y se puede volver a intentar
     private fun recuperarRecorrido() {
         viewModelScope.launch {
             val resultado = try {
@@ -214,7 +214,6 @@ class SenderosViewModel @AssistedInject constructor(
         }
     }
 
-    // Descartar el recorrido interrumpido y cerrar el aviso
     private fun descartarRecorridoInterrumpido() {
         viewModelScope.launch {
             try {
@@ -228,8 +227,8 @@ class SenderosViewModel @AssistedInject constructor(
         }
     }
 
-    // Iniciar una caminata libre con un identificador nuevo y abrir su pantalla; si ya hay una caminata libre en curso vuelve a ella, y con un
-    // recorrido de sendero en curso avisa en lugar de reemplazarlo en silencio
+    // Si ya hay una caminata libre en curso se vuelve a ella. En cambio, un recorrido de sendero en curso no se
+    // reemplaza en silencio y se avisa
     private fun caminarAhora() {
         val enCurso = controlSeguimiento.estado.value
         if (enCurso != null) {
@@ -273,7 +272,7 @@ class SenderosViewModel @AssistedInject constructor(
         _estadoVisual.update { estado -> estado.copy(hayErrorEnPublicos = true, estaCargando = false) }
     }
 
-    // Ignora el pedido si hay otro en curso y no pisa una ubicación válida con null
+    // RF5 - Cercanía: se ignora un pedido mientras hay otro en curso y no se pisa una ubicación válida con null
     private fun obtenerUbicacion() {
         if (trabajoUbicacion?.isActive == true) return
         trabajoUbicacion = viewModelScope.launch {

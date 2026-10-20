@@ -24,16 +24,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -42,7 +38,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -77,6 +72,7 @@ private val ANCHO_PANEL_PUNTO_HORIZONTAL = 340.dp
 private val ALTURA_MAXIMA_PANEL_PUNTO = 440.dp
 private val ALTURA_FOTO_PANEL_PUNTO = 120.dp
 
+// RF4 - Editor de recorrido: se abre a pantalla completa sobre el formulario, con el mapa editable y el punto tocado
 @Composable
 fun EditorRecorridoMapa(
     estadoVisual: FormularioSenderoEstadoVisual,
@@ -164,7 +160,6 @@ fun EditorRecorridoMapa(
     }
 }
 
-// Elegir qué hace un toque en el mapa: agregar un punto al final del camino o marcar un punto de interés en ese lugar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectorModoEditor(modo: ModoEditorRecorrido, alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
@@ -185,7 +180,6 @@ private fun SelectorModoEditor(modo: ModoEditorRecorrido, alProcesarEvento: (For
     }
 }
 
-// Mostrar la ayuda del modo elegido con el botón para ocultarla
 @Composable
 private fun AyudaDelEditor(modo: ModoEditorRecorrido, alOcultar: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
@@ -236,8 +230,7 @@ private fun BarraInferiorEditor(
     }
 }
 
-// Editar el punto tocado: nombre, tipo, foto e insertar un punto antes arriba, que se desplaza si no entra, y Eliminar y Guardar fijos al pie.
-// La foto se aplica al instante; el nombre y el tipo, al tocar Guardar
+// La foto se aplica al instante. En cambio, el nombre y el tipo se aplican recién al tocar Guardar
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PanelPuntoSeleccionado(
@@ -333,7 +326,6 @@ private fun PanelPuntoSeleccionado(
     }
 }
 
-// Mostrar la foto del punto con el botón para quitarla, o el indicador mientras se copia, y los botones de cámara y galería
 @Composable
 private fun FotoDelPuntoSeleccionado(
     indice: Int,

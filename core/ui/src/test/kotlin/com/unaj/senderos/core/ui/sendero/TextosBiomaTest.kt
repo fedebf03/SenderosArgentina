@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.sendero
 
 import com.unaj.senderos.core.domain.model.Bioma
 import org.junit.Assert.assertEquals

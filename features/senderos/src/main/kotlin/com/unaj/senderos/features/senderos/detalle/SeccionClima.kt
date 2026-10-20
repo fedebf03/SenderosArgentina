@@ -25,7 +25,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.clima.AlertaClima
-import com.unaj.senderos.core.domain.clima.CondicionClima
 import com.unaj.senderos.core.domain.clima.PronosticoDia
 import com.unaj.senderos.core.ui.clima.describirAvisoPronosticoViejo
 import com.unaj.senderos.core.ui.clima.describirDiaClima
@@ -42,7 +41,6 @@ private const val TEXTO_CONSULTANDO_CLIMA = "Consultando el clima…"
 private val TAMANO_ICONO_ACTUAL = 44.dp
 private val TAMANO_ICONO_DIA = 28.dp
 
-// Mostrar el clima del punto de inicio del sendero: avisos, clima de ahora, próximos días y, solo si el dato quedó viejo, el aviso
 @Composable
 internal fun SeccionClima(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -87,7 +85,6 @@ internal fun SeccionClima(
     }
 }
 
-// Listar los avisos de ahora y los de cada día; sin avisos no se dibuja nada
 @Composable
 private fun AvisosDelClima(ahora: Set<AlertaClima>, porDia: Map<String, Set<AlertaClima>>, hoy: String) {
     if (ahora.isEmpty() && porDia.isEmpty()) return
@@ -149,7 +146,6 @@ private fun ClimaDeAhora(actual: com.unaj.senderos.core.domain.clima.ClimaActual
     }
 }
 
-// Mostrar los próximos días en una fila de columnas del mismo ancho, con su icono, máxima, mínima y probabilidad de lluvia
 @Composable
 private fun DiasDelPronostico(dias: List<PronosticoDia>, hoy: String) {
     if (dias.isEmpty()) return

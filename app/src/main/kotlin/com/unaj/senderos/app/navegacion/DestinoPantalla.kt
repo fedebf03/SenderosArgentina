@@ -1,4 +1,4 @@
-package com.unaj.senderos.navegacion
+package com.unaj.senderos.app.navegacion
 
 import androidx.compose.runtime.saveable.Saver
 
@@ -12,7 +12,7 @@ sealed interface DestinoPantalla {
     data object EditarPerfil : DestinoPantalla
     data class Detalle(val idSendero: String) : DestinoPantalla
     data class DetallePublico(val idSendero: String) : DestinoPantalla
-    // idCaminata no nulo: sendero nuevo armado desde una caminata libre ya terminada
+    // Con idCaminata, el sendero nuevo se arma desde una caminata libre ya terminada
     data class Formulario(val idSendero: String?, val idCaminata: String? = null) : DestinoPantalla
     data class Recorrido(val idSendero: String) : DestinoPantalla
     data class HistorialDetalle(val idRecorrido: String) : DestinoPantalla
@@ -34,7 +34,8 @@ internal fun claveDeAlmacen(destino: DestinoPantalla, idUsuario: String): String
     }
 }
 
-// rememberSaveable solo sabe guardar tipos simples, así que el destino viaja como texto al girar la pantalla
+// DestinoPantalla no entra en un Bundle, por eso rememberSaveable lo guarda como texto. Así se conserva
+// al girar la pantalla y también si Android cierra la app en segundo plano
 internal val guardadorDeDestino = Saver<DestinoPantalla, String>(
     save = { destino ->
         when (destino) {

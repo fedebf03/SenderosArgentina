@@ -24,7 +24,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.ui.tema.TemaSenderos
 
-// El lector de pantalla lo anuncia al aparecer
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BannerAviso(

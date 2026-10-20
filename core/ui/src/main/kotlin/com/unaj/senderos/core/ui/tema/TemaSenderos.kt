@@ -40,7 +40,7 @@ private val esquemaClaro = lightColorScheme(
     onError = Color.White
 )
 
-/** Indicar si el tema vigente es oscuro; hoy la app solo tiene tema claro. */
+// Por ahora la app solo tiene tema claro, por lo que siempre vale false
 val LocalEsTemaOscuro = staticCompositionLocalOf { false }
 
 @Composable

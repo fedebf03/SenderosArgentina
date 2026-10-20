@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.sendero
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement

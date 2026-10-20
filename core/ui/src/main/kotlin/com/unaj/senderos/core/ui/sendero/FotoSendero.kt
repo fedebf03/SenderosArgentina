@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.sendero
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -9,6 +9,7 @@ import coil.compose.AsyncImage
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.esFotoLocal
 import java.io.File
+import com.unaj.senderos.core.ui.componentes.IlustracionMontanias
 
 @Composable
 fun FotoSendero(

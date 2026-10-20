@@ -30,10 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unaj.senderos.core.ui.componentes.BotoneraInferior
 import com.unaj.senderos.core.ui.componentes.CabeceraPrincipal
-import com.unaj.senderos.core.ui.componentes.CargandoCentrado
-import com.unaj.senderos.core.ui.componentes.MensajeCentrado
+import com.unaj.senderos.core.ui.sendero.CargandoCentrado
+import com.unaj.senderos.core.ui.sendero.MensajeCentrado
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
-import com.unaj.senderos.core.ui.componentes.TarjetaSendero
+import com.unaj.senderos.core.ui.sendero.TarjetaSendero
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
 import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.core.ui.componentes.mapa.MapaDeSenderos
@@ -63,7 +63,7 @@ fun MapaSenderosPantalla(
         pedirPermiso.launch(PERMISOS_UBICACION)
     }
 
-    // Se pregunta una sola vez por sesión al entrar; después el botón de ubicación permite volver a pedirlo
+    // Se pregunta una sola vez por sesión al entrar. Después el botón de ubicación permite volver a pedirlo
     LaunchedEffect(Unit) {
         if (!tienePermisoUbicacion && !estadoVisual.seSolicitoUbicacion) solicitarUbicacion()
     }

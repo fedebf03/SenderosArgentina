@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.componentes.perfilelevacion
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -75,13 +75,11 @@ private const val PROPORCION_ALTURA_COMPACTA = 0.28f
 private const val PASOS_DE_LA_GUIA_ACCESIBLE = 20
 private const val TEXTO_ESTAS_ACA = "Estás acá"
 
-// Marca de un punto de interés ubicada en su kilómetro del perfil
 data class MarcaDelPerfil(
     val kilometros: Double,
     val icono: ImageVector
 )
 
-// Área rectangular del gráfico en píxeles y conversión de datos a posiciones
 private class AreaDelGrafico(
     val izquierda: Float,
     val derecha: Float,
@@ -89,14 +87,12 @@ private class AreaDelGrafico(
     val abajo: Float,
     val escala: EscalaPerfil
 ) {
-    // Convertir un kilómetro en su posición horizontal
     fun posicionX(kilometros: Double): Float {
         if (escala.kilometrosTotales <= 0.0) return izquierda
         val fraccion = (kilometros / escala.kilometrosTotales).coerceIn(0.0, 1.0)
         return izquierda + (derecha - izquierda) * fraccion.toFloat()
     }
 
-    // Convertir una altitud en su posición vertical
     fun posicionY(altitudMetros: Double): Float {
         val rango = escala.altitudMaximaEjeMetros - escala.altitudMinimaEjeMetros
         if (rango <= 0.0) return abajo
@@ -105,7 +101,7 @@ private class AreaDelGrafico(
     }
 }
 
-// Colores y textos ya resueltos para dibujar sin leer el tema dentro del lienzo
+// Los colores se resuelven fuera del lienzo porque dentro de él no se puede leer el tema
 private class PaletaDelGrafico(
     val linea: Color,
     val cuadricula: Color,
@@ -115,9 +111,8 @@ private class PaletaDelGrafico(
     val posicionActual: Color
 )
 
-// Dibujar el perfil de elevación: área con degradé del color del bioma, ejes en km y m, puntos de interés,
-// guía vertical al tocar o arrastrar y, si se indica, la marca "Estás acá". Con alturaFija el gráfico ocupa esa altura (franja del recorrido)
-// y, si no se muestra la posición en el texto, debajo solo aparece la lectura del punto tocado
+// Con alturaFija el gráfico ocupa esa altura (en la franja del recorrido). Si la posición no va en el texto,
+// debajo solo aparece la lectura del punto tocado
 @Composable
 fun GraficoPerfilElevacion(
     perfil: PerfilElevacion,
@@ -171,7 +166,6 @@ fun GraficoPerfilElevacion(
     val alturaEtiquetaX = medidasKilometros.maxOfOrNull { medida -> medida.size.height } ?: 0
     val margenInferiorPixeles = with(densidad) { alturaEtiquetaX + SEPARACION_ETIQUETA_X.toPx() + MARGEN_INFERIOR_EXTRA.toPx() }
 
-    // Seleccionar el punto más cercano a una posición horizontal y avisar a quien escucha cuando se pide
     val seleccionarEnPosicion: (Float, Float, Boolean) -> Unit = { posicionX, anchoTotal, debeAvisar ->
         val kilometros = convertirPosicionAKilometros(
             posicionX = posicionX,
@@ -184,7 +178,7 @@ fun GraficoPerfilElevacion(
         if (debeAvisar && indice != null) alSeleccionarKilometro?.invoke(puntos[indice].distanciaKilometros)
     }
     val seleccionarActual by rememberUpdatedState(seleccionarEnPosicion)
-    // Mover la guía una cantidad de puntos para quien no puede arrastrar (lector de pantalla)
+    // Quien usa lector de pantalla no puede arrastrar, por eso la guía se mueve de a varios puntos
     val moverGuia: (Int) -> Boolean = { desplazamiento ->
         val paso = max(1, puntos.size / PASOS_DE_LA_GUIA_ACCESIBLE)
         val actual = indiceVigente ?: if (desplazamiento > 0) -paso else puntos.size
@@ -269,7 +263,6 @@ fun GraficoPerfilElevacion(
     }
 }
 
-// Elegir el texto bajo el gráfico: el punto tocado, la posición actual o la ayuda de uso
 private fun describirLectura(
     perfil: PerfilElevacion,
     indiceSeleccionado: Int?,
@@ -286,7 +279,6 @@ private fun describirLectura(
     return null
 }
 
-// Dibujar la cuadrícula con las etiquetas de altura a la izquierda y de kilómetros abajo
 private fun DrawScope.dibujarEjes(
     area: AreaDelGrafico,
     paleta: PaletaDelGrafico,
@@ -313,10 +305,9 @@ private fun DrawScope.dibujarEjes(
     drawLine(paleta.texto.copy(alpha = 0.6f), Offset(area.izquierda, area.abajo), Offset(area.derecha, area.abajo), strokeWidth = grosor)
 }
 
-// Trazados del perfil ya armados: la línea superior y el área rellena bajo ella
 private class TrazadosDelPerfil(val linea: Path, val relleno: Path)
 
-// Armar los trazados del perfil una sola vez por perfil y tamaño, para no rearmarlos al dibujar ni al arrastrar
+// Los trazados se arman una vez por perfil y tamaño, para no rearmarlos en cada dibujo ni al arrastrar
 private fun crearTrazadosDelPerfil(area: AreaDelGrafico, perfil: PerfilElevacion): TrazadosDelPerfil {
     val puntos = perfil.puntos
     val linea = Path()
@@ -335,7 +326,6 @@ private fun crearTrazadosDelPerfil(area: AreaDelGrafico, perfil: PerfilElevacion
     return TrazadosDelPerfil(linea, relleno)
 }
 
-// Dibujar el área con degradé y la línea superior del perfil
 private fun DrawScope.dibujarPerfil(area: AreaDelGrafico, trazados: TrazadosDelPerfil, paleta: PaletaDelGrafico) {
     drawPath(
         path = trazados.relleno,
@@ -352,7 +342,6 @@ private fun DrawScope.dibujarPerfil(area: AreaDelGrafico, trazados: TrazadosDelP
     )
 }
 
-// Dibujar el ícono de cada punto de interés sobre la curva, en su kilómetro
 private fun DrawScope.dibujarMarcasDeInteres(
     area: AreaDelGrafico,
     perfil: PerfilElevacion,
@@ -376,7 +365,6 @@ private fun DrawScope.dibujarMarcasDeInteres(
     }
 }
 
-// Dibujar la marca "Estás acá": guía punteada, punto sobre la curva y rótulo arriba
 private fun DrawScope.dibujarPosicionActual(
     area: AreaDelGrafico,
     perfil: PerfilElevacion,
@@ -399,7 +387,6 @@ private fun DrawScope.dibujarPosicionActual(
     drawText(medidaRotulo, color = paleta.posicionActual, topLeft = Offset(izquierdaRotulo, 2.dp.toPx()))
 }
 
-// Dibujar la guía vertical y el punto del perfil seleccionado
 private fun DrawScope.dibujarGuia(area: AreaDelGrafico, perfil: PerfilElevacion, indice: Int, paleta: PaletaDelGrafico) {
     val punto = perfil.puntos[indice]
     val x = area.posicionX(punto.distanciaKilometros)
@@ -408,7 +395,6 @@ private fun DrawScope.dibujarGuia(area: AreaDelGrafico, perfil: PerfilElevacion,
     dibujarPuntoConAnillo(Offset(x, y), RADIO_PUNTO.toPx(), paleta.linea, paleta.fondoMarca)
 }
 
-// Dibujar un círculo relleno con un anillo de otro color para que se distinga sobre el área
 private fun DrawScope.dibujarPuntoConAnillo(centro: Offset, radio: Float, relleno: Color, anillo: Color) {
     drawCircle(anillo, radius = radio + 2.dp.toPx(), center = centro)
     drawCircle(relleno, radius = radio, center = centro)

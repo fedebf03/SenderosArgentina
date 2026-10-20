@@ -1,4 +1,4 @@
-package com.unaj.senderos.navegacion
+package com.unaj.senderos.app.navegacion
 
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY

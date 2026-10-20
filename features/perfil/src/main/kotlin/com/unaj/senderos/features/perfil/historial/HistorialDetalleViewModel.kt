@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.historial
+package com.unaj.senderos.features.perfil.historial
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -75,7 +75,6 @@ class HistorialDetalleViewModel @AssistedInject constructor(
         }
     }
 
-    // Eliminar el recorrido con el caso de uso y volver al perfil; un toque repetido mientras se elimina se ignora y un fallo deja la pantalla con el error
     private fun eliminar() {
         if (_estadoVisual.value.estaEliminando) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaEliminando = true, esDialogoEliminarVisible = false, errorAlEliminar = null) }
@@ -102,7 +101,6 @@ class HistorialDetalleViewModel @AssistedInject constructor(
         }
     }
 
-    // Pedir abrir el formulario de un sendero nuevo con esta caminata; solo si es una caminata libre con la distancia mínima
     private fun convertirEnSendero() {
         val estado = _estadoVisual.value
         val recorrido = estado.recorrido ?: return
@@ -110,6 +108,7 @@ class HistorialDetalleViewModel @AssistedInject constructor(
         viewModelScope.launch { canalEfectos.send(HistorialDetalleEfecto.NavegarAFormularioDesdeCaminata(recorrido.idSendero)) }
     }
 
+    // RF5 - Historial: observamos el recorrido realizado y, si salió de un sendero, también su trazado
     private fun observarRecorrido() {
         observarRecorridoUseCase(idRecorrido).fold(
             onSuccess = { flujoRecorrido ->
@@ -138,7 +137,7 @@ class HistorialDetalleViewModel @AssistedInject constructor(
         }
     }
 
-    // Observar el sendero planificado; si ya no existe queda nulo y se muestra solo el trazado caminado
+    // Si el sendero planificado ya no existe queda nulo y se muestra solo el trazado caminado
     private fun observarSendero(idSendero: String) {
         observarDetalleSenderoUseCase(idSendero).fold(
             onSuccess = { flujoSendero ->

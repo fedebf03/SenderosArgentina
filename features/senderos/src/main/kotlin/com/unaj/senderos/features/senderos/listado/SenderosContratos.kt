@@ -30,15 +30,13 @@ data class SenderosEstadoVisual(
     val hayErrorEnPublicos: Boolean = false,
     val seSolicitoPermisoNotificaciones: Boolean = false,
     val estaSinConexion: Boolean = false,
-    // Recorrido que quedó a medias porque Android cerró la app; se ofrece recuperarlo al volver a abrir Explorar
+    // Recorrido que quedó a medias porque Android cerró la app. Se ofrece recuperarlo al volver a abrir Explorar
     val recorridoInterrumpido: RecorridoRealizado? = null,
     val estadoTrabajoSincronizacion: EstadoTrabajoSincronizacion = EstadoTrabajoSincronizacion.INACTIVO
 ) {
-    // Senderos propios que todavía no se subieron o que fallaron al subir, para decirle al usuario qué falta sincronizar
     val cantidadSinSubir: Int = senderos.count { sendero -> sendero.estadoSincronizacion == EstadoSincronizacion.PENDIENTE }
     val cantidadConErrorDeSubida: Int = senderos.count { sendero -> sendero.estadoSincronizacion == EstadoSincronizacion.CON_ERROR }
 
-    // Devuelve null sin recorrido o sin ubicación
     fun distanciaKilometrosA(sendero: Sendero): Double? {
         val ubicacion = ubicacionActual ?: return null
         val primerPunto = sendero.recorrido.firstOrNull() ?: return null
@@ -60,7 +58,7 @@ data class SenderosEstadoVisual(
 
     private val senderosVisibles: List<Sendero> = elegirSegunModo()
 
-    // Se calcula una sola vez por estado
+    // Se calcula una sola vez por estado y no en cada recomposición
     val senderosFiltrados: List<Sendero> = calcularSenderosFiltrados()
 
     private fun elegirSegunModo(): List<Sendero> {
@@ -74,6 +72,7 @@ data class SenderosEstadoVisual(
         }
     }
 
+    // RF5 - Cercanía: los senderos sin recorrido o sin ubicación conocida quedan al final de la lista
     private fun calcularSenderosFiltrados(): List<Sendero> {
         val filtrados = filtrarSenderosPorDificultad(
             filtrarSenderosPorTexto(senderosVisibles, textoBusqueda),
@@ -97,7 +96,7 @@ sealed interface SenderosEvento {
     data object AlSolicitarPermisoNotificaciones : SenderosEvento
     data object AlTocarSincronizar : SenderosEvento
     data object AlTocarCrearSendero : SenderosEvento
-    // Explorar: el botón pide primero el permiso de ubicación; con él (o al concederse) se inicia la caminata
+    // El botón de Explorar pide primero el permiso de ubicación. Con el permiso concedido llega AlCaminarAhora
     data object AlTocarCaminarAhora : SenderosEvento
     data object AlCaminarAhora : SenderosEvento
     data object AlDenegarPermisoParaCaminar : SenderosEvento

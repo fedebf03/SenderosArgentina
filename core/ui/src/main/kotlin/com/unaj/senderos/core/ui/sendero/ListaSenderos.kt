@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.ui.componentes
+package com.unaj.senderos.core.ui.sendero
 
 import com.unaj.senderos.core.ui.comun.formatearDistanciaAlUsuario
 import com.unaj.senderos.core.ui.comun.formatearDistanciaSendero
@@ -53,7 +53,7 @@ import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
 
-// Ancho mínimo de una tarjeta: en pantallas angostas hay una columna y en tablets se reparten en varias
+// Con este ancho mínimo una pantalla angosta muestra una columna y una tablet reparte las tarjetas en varias
 private val ANCHO_MINIMO_TARJETA = 360.dp
 
 @Composable
@@ -171,7 +171,6 @@ fun TarjetaSendero(
     }
 }
 
-/** Dibujar la franja vertical con el color del bioma en el borde izquierdo de la tarjeta; es decorativa. */
 @Composable
 private fun FranjaBioma(bioma: Bioma) {
     Box(
@@ -182,7 +181,6 @@ private fun FranjaBioma(bioma: Bioma) {
     )
 }
 
-/** Renderizar la foto y los datos de un sendero dentro de su tarjeta. */
 @Composable
 private fun ContenidoTarjetaSendero(
     sendero: Sendero,

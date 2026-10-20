@@ -161,7 +161,6 @@ fun EditarPerfilContenido(
     }
 }
 
-// Mostrar la foto actual con los botones para cambiarla o quitarla
 @Composable
 private fun SeccionFoto(
     estadoVisual: EditarPerfilEstadoVisual,
@@ -195,7 +194,6 @@ private fun SeccionFoto(
     )
 }
 
-// Campos de texto del perfil: nombre y de dónde sos
 @Composable
 private fun SeccionDatos(estadoVisual: EditarPerfilEstadoVisual, alProcesarEvento: (EditarPerfilEvento) -> Unit) {
     CampoDePerfil("Nombre", estadoVisual.nombre, CampoPerfil.NOMBRE in estadoVisual.camposConError, "Ingresá tu nombre") { texto ->
@@ -231,7 +229,6 @@ private fun CampoDePerfil(
     )
 }
 
-// Cambiar la contraseña con la actual como confirmación; las cuentas de Google no tienen contraseña propia
 @Composable
 private fun SeccionContrasena(estadoVisual: EditarPerfilEstadoVisual, alProcesarEvento: (EditarPerfilEvento) -> Unit) {
     Text(

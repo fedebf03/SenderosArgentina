@@ -25,7 +25,6 @@ import com.unaj.senderos.core.ui.comun.formatearVelocidad
 private const val TITULO_ESTADISTICAS = "Mis estadísticas"
 private const val TEXTO_SIN_RECORRIDOS = "Todavía no hay recorridos reales para mostrar estadísticas. Los recorridos de menos de 50 m y los simulados no cuentan."
 
-// Mostrar los totales del usuario a partir de su historial: cantidad, distancia, tiempo, velocidad, el recorrido más largo y los pasos
 @Composable
 internal fun SeccionEstadisticas(estadoVisual: PerfilEstadoVisual, modifier: Modifier = Modifier) {
     val estadisticas = estadoVisual.estadisticas

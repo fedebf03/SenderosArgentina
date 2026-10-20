@@ -1,4 +1,4 @@
-package com.unaj.senderos.features.explorar
+package com.unaj.senderos.features.senderos.detallepublico
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -62,6 +62,7 @@ class DetallePublicoViewModel @AssistedInject constructor(
         }
     }
 
+    // RF2 - Explorar: observamos el sendero publicado y se marca si el autor es el mismo usuario
     private fun observarSendero(casoDeUso: ObservarSenderoPublicoUseCase) {
         casoDeUso(idSendero).fold(
             onSuccess = { flujo ->
@@ -102,6 +103,7 @@ class DetallePublicoViewModel @AssistedInject constructor(
         )
     }
 
+    // RF2 - Explorar: se guarda una copia del sendero público en Mis senderos. Uno propio o ya copiado no se copia
     private fun guardarEnMisSenderos() {
         val estado = _estadoVisual.value
         val publico = estado.senderoPublico ?: return
