@@ -93,6 +93,16 @@ class SenderosPublicosUseCasesTest {
     }
 
     @Test
+    fun `no se puede publicar un sendero guardado de otra persona`() = runTest {
+        val copia = crearSenderoDePrueba(idUsuario = "usuario-1").copy(idOrigen = "publico-1")
+
+        val resultado = PublicarSenderoUseCase(repositorio, autenticacion)(copia)
+
+        assertEquals("Solo podés publicar tus propios senderos", resultado.exceptionOrNull()?.message)
+        assertTrue(repositorio.llamadasPublicar.isEmpty())
+    }
+
+    @Test
     fun `no se publica un sendero con cambios pendientes`() = runTest {
         val pendiente = crearSenderoDePrueba(idUsuario = "usuario-1", estadoSincronizacion = EstadoSincronizacion.PENDIENTE)
 
