@@ -28,7 +28,7 @@ private const val UNA_HORA_EN_MILISEGUNDOS = 3_600_000L
 
 class AccionesDeFoto(val sacarFoto: () -> Unit, val elegirDeGaleria: () -> Unit)
 
-// La cámara usa un archivo temporal compartido por el proveedor de archivos propio
+// RF6 - Cámara: la foto se toma sobre un archivo temporal que compartimos con nuestro FileProvider
 @Composable
 fun recordarAccionesDeFoto(
     alSeleccionarFoto: (String) -> Unit,
@@ -92,7 +92,7 @@ fun recordarAccionesDeFoto(
     }
 }
 
-// Debe llamarse fuera del hilo principal
+// Se llama fuera del hilo principal porque crea el archivo en disco
 private fun crearArchivoTemporalDeFoto(contexto: Context): File {
     val carpeta = File(contexto.cacheDir, "fotos_camara")
     carpeta.mkdirs()

@@ -46,8 +46,7 @@ import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
 private const val LONGITUD_MAXIMA_NOMBRE_PUNTO = 60
 private val ALTURA_FOTO_PUNTO = 160.dp
 
-// Mostrar el menú para describir un punto de interés tocado en el mapa del editor: grilla de tipos, nombre y foto opcionales,
-// Cancelar y Agregar. Tocar afuera o deslizar hacia abajo lo cierra solo si no se cargó un nombre ni una foto
+// Tocar afuera o deslizar hacia abajo cierra el menú solo si no se cargó un nombre ni una foto, para no perderlos
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HojaPuntoDeInteres(
@@ -116,7 +115,6 @@ internal fun HojaPuntoDeInteres(
     }
 }
 
-// Mostrar la foto elegida con el botón para quitarla, o el indicador mientras se copia, y los botones de cámara y galería
 @Composable
 private fun SeccionFotoDelPuntoDeInteres(
     punto: PuntoDeInteresNuevo,

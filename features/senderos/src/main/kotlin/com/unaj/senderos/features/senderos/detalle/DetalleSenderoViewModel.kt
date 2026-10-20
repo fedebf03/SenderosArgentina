@@ -30,7 +30,7 @@ import com.unaj.senderos.core.domain.usecase.ObservarPuntosCapturadosConDistanci
 import com.unaj.senderos.core.domain.usecase.EliminarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarMapaSinConexionUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.core.ui.componentes.obtenerTextoDificultad
+import com.unaj.senderos.core.ui.sendero.obtenerTextoDificultad
 import com.unaj.senderos.core.ui.comun.describirErrorParaElUsuario
 import com.unaj.senderos.core.ui.revisionpuntos.ControladorRevisionPuntos
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
@@ -299,6 +299,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         canalEfectos.send(DetalleSenderoEfecto.MostrarAviso(describirErrorParaElUsuario(error, MENSAJE_ERROR_POR_DEFECTO)))
     }
 
+    // RF3 - Puntos de interés: la revisión de los puntos capturados caminando la resuelve ControladorRevisionPuntos
     private fun observarRevisionDePuntos() {
         viewModelScope.launch {
             controladorRevision.estado.collect { revision ->
@@ -307,6 +308,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
+    // RF3 - Detalle: seguimos al sendero guardado, así el detalle se actualiza solo al editarlo o sincronizarlo
     private fun observarSendero() {
         observarDetalleSenderoUseCase(idSendero).fold(
             onSuccess = { flujoSendero ->
@@ -320,7 +322,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         )
     }
 
-    // Si el sendero no existe se informa, salvo que se esté eliminando
+    // Al eliminar el sendero el flujo emite null. En ese caso no se muestra el error porque la pantalla ya se cierra
     private fun reflejarSendero(senderoEmitido: Sendero?) {
         if (senderoEmitido != null) {
             _estadoVisual.update { estadoActual ->
@@ -340,7 +342,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Pedir el clima del primer punto del recorrido la primera vez que se conoce o cuando cambia de lugar; sin recorrido no hay lugar y no se pide nada
+    // RF3 - Detalle: el clima se pide para el primer punto válido del recorrido y se vuelve a pedir solo si cambia
     private fun pedirClimaDelPuntoDeInicio(sendero: Sendero) {
         val lugar = sendero.recorrido
             .map { punto -> Coordenada(punto.latitud, punto.longitud) }
@@ -350,7 +352,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         cargarClima(lugar, forzar = false)
     }
 
-    // Cargar el clima con el caso de uso, que decide entre la copia guardada y la red; un toque repetido mientras carga se ignora
+    // El caso de uso decide entre la copia guardada y la red. Un toque repetido mientras carga se ignora
     private fun cargarClima(lugar: Coordenada, forzar: Boolean) {
         if (_estadoVisual.value.estaCargandoClima) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaCargandoClima = true, errorClima = null) }
@@ -389,6 +391,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
+    // RF2 - Favoritos: se ignora un toque repetido mientras el cambio anterior se sigue guardando
     private fun alternarFavorito() {
         if (trabajoAlternarFavorito?.isActive == true) return
         trabajoAlternarFavorito = viewModelScope.launch {
@@ -401,6 +404,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
+    // RF3 - Eliminar: un sendero publicado se despublica primero, por eso en ese caso hace falta conexión
     private fun eliminar() {
         if (estaEliminando) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoEliminarVisible = false) }
@@ -432,6 +436,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
+    // RF3 - Compartir: armamos un texto con los datos técnicos y la pantalla lo comparte con el selector de Android
     private fun compartir() {
         val sendero = _estadoVisual.value.sendero ?: return
         val desnivel = sendero.perfilElevacion?.let { perfil -> "Desnivel: ${perfil.desnivelPositivoMetros} m · " }.orEmpty()
@@ -453,7 +458,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // El contador se incrementa para poder repetir el enfoque sobre el mismo punto
+    // El contador aumenta en cada toque para que el mapa vuelva a enfocar aunque sea el mismo punto
     private fun enfocarPuntoDeInteres(indice: Int) {
         val coordenada = _estadoVisual.value.coordenadaDelPunto(indice) ?: return
         Log.d(TAG, "Enfocando el punto de interés $indice del sendero $idSendero")
@@ -467,7 +472,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Enfocar en el mapa la muestra del trazado más cercana al kilómetro tocado en el perfil, sin mover la lista para no perder el gráfico
+    // Se enfoca la muestra del trazado más cercana al kilómetro tocado. La lista no se mueve para no perder el gráfico
     private fun enfocarKilometroDelPerfil(kilometros: Double) {
         val sendero = _estadoVisual.value.sendero ?: return
         val muestra = CalculadoraPerfil.muestrearTrazado(sendero.recorrido, sendero.tipoRecorrido)
@@ -482,9 +487,9 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Cerrar el diálogo de formatos y pedir a la pantalla que abra el selector para guardar, con el nombre del sendero como archivo
+    // RF4 - Exportar: la pantalla abre el selector para guardar con el nombre del sendero como nombre del archivo
     private fun pedirDestinoExportacion(formato: FormatoExportacion) {
-        // Un doble toque abriría dos selectores: solo vale el primero, mientras el diálogo sigue abierto
+        // Un doble toque abriría dos selectores. Por lo tanto solo vale el primero, mientras el diálogo sigue abierto
         if (!_estadoVisual.value.esDialogoExportarVisible) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoExportarVisible = false) }
         val nombre = _estadoVisual.value.sendero?.nombre?.takeIf { texto -> texto.isNotBlank() } ?: NOMBRE_ARCHIVO_POR_DEFECTO
@@ -492,7 +497,6 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         emitirEfecto(DetalleSenderoEfecto.ElegirDestinoExportacion(formato, "$nombreSeguro.${formato.extension}"))
     }
 
-    // Escribir el sendero en el archivo elegido y avisar el resultado
     private fun exportar(formato: FormatoExportacion, uri: String) {
         viewModelScope.launch {
             val mensaje = exportarSenderoUseCase(idSendero, formato, uri).fold(
@@ -509,7 +513,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Calcular el perfil con el caso de uso; el resultado llega por el flujo del sendero y el fallo se avisa con el mensaje del dominio
+    // El perfil calculado llega por el flujo del sendero, por eso solo se avisa el fallo
     private fun calcularPerfil() {
         if (_estadoVisual.value.estaCalculandoPerfil) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaCalculandoPerfil = true) }
@@ -593,6 +597,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         return cantidadPuntos >= CANTIDAD_MINIMA_PUNTOS_RECORRIDO
     }
 
+    // RF4 - Mapas sin conexión: se vuelve a observar solo si cambia el recorrido, porque la zona descargada depende de él
     private fun observarMapaSinConexion(sendero: Sendero) {
         if (sendero.recorrido == recorridoObservadoDelMapa) return
         recorridoObservadoDelMapa = sendero.recorrido
@@ -617,7 +622,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         )
     }
 
-    // El avance llega por el flujo de estado
+    // RF4 - Mapas sin conexión: el avance de la descarga llega por el flujo de estado del mapa
     private fun descargarMapa() {
         val sendero = _estadoVisual.value.sendero ?: return
         val estadoMapa = _estadoVisual.value.estadoMapaSinConexion

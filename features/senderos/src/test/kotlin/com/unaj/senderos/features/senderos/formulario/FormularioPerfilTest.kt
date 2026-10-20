@@ -13,12 +13,10 @@ import com.unaj.senderos.core.domain.usecase.ImportarTrazadoUseCase
 import com.unaj.senderos.core.testing.FalsoLectorArchivos
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
-import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.testing.FalsoAlmacenFotos
 import com.unaj.senderos.core.testing.FalsoAutenticacionRepositorio
 import com.unaj.senderos.core.testing.FalsoFuenteElevacion
 import com.unaj.senderos.core.testing.FalsoSenderoRepositorio
-import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

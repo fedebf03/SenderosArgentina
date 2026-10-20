@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,7 +28,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.semantics.contentDescription
@@ -48,14 +46,14 @@ import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.Dificultad
 import com.unaj.senderos.core.domain.model.Etapa
 import com.unaj.senderos.core.domain.model.TipoRecorrido
-import com.unaj.senderos.core.ui.componentes.FotoSendero
+import com.unaj.senderos.core.ui.sendero.FotoSendero
 import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
 import com.unaj.senderos.core.ui.tema.obtenerColorLineaBioma
-import com.unaj.senderos.core.ui.componentes.IndicadorDificultad
-import com.unaj.senderos.core.ui.componentes.PuntoBioma
-import com.unaj.senderos.core.ui.componentes.obtenerTextoBioma
-import com.unaj.senderos.core.ui.componentes.obtenerTextoDificultad
-import com.unaj.senderos.core.ui.componentes.obtenerTextoTipoRecorrido
+import com.unaj.senderos.core.ui.sendero.IndicadorDificultad
+import com.unaj.senderos.core.ui.sendero.PuntoBioma
+import com.unaj.senderos.core.ui.sendero.obtenerTextoBioma
+import com.unaj.senderos.core.ui.sendero.obtenerTextoDificultad
+import com.unaj.senderos.core.ui.sendero.obtenerTextoTipoRecorrido
 import com.unaj.senderos.core.ui.componentes.mapa.MapaRecorrido
 
 @Composable
@@ -226,7 +224,7 @@ internal fun SeccionRecorrido(
                 .clip(MaterialTheme.shapes.medium)
                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
         ) {
-            // Con el editor abierto se evita tener dos mapas a la vez
+            // Con el editor abierto no se dibuja este mapa, para no tener dos mapas de MapLibre a la vez
             if (!estadoVisual.esEditorMapaVisible) {
                 MapaRecorrido(
                     puntos = estadoVisual.recorrido,
@@ -279,7 +277,7 @@ internal fun SeccionPlanificacion(
             alCambiar = { texto -> alProcesarEvento(FormularioSenderoEvento.AlCambiarTexto(CampoFormulario.DURACION, texto)) },
             modifier = Modifier.weight(1f)
         )
-        // Estimar con la distancia y el desnivel del perfil de elevación (regla de Naismith); el resultado se puede corregir a mano
+        // La duración se estima con la regla de Naismith (distancia y desnivel del perfil). Se puede corregir a mano
         TextButton(
             onClick = { alProcesarEvento(FormularioSenderoEvento.AlCalcularDuracion) },
             modifier = Modifier.semantics { contentDescription = "Calcular la duración estimada" }
@@ -371,7 +369,7 @@ internal fun SeccionEtapas(
     TituloDeSeccion("Etapas")
     estadoVisual.etapas.forEachIndexed { indice, etapa ->
         FilaElementoQuitable(
-            texto = "Etapa ${etapa.numero}: ${etapa.nombre} — ${formatearKilometros(etapa.distanciaKilometros)} km",
+            texto = "Etapa ${etapa.numero}: ${etapa.nombre} · ${formatearKilometros(etapa.distanciaKilometros)} km",
             descripcionQuitar = "Quitar etapa",
             alQuitar = { alProcesarEvento(FormularioSenderoEvento.AlQuitarEtapa(indice)) }
         )

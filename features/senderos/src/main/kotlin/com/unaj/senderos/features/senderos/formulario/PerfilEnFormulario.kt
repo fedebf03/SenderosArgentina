@@ -15,11 +15,8 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
-import com.unaj.senderos.core.ui.comun.formatearKilometros
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.GraficoPerfilElevacion
 
-// Mostrar el perfil de elevación del trazado que se está dibujando: el gráfico si está al día, el indicador mientras se calcula,
-// o el motivo por el que falta con el botón para calcularlo. Con menos de dos puntos no muestra nada
 @Composable
 internal fun PerfilEnFormulario(estadoVisual: FormularioSenderoEstadoVisual, alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
     if (estadoVisual.recorrido.size < 2) return
@@ -57,7 +54,6 @@ internal fun PerfilEnFormulario(estadoVisual: FormularioSenderoEstadoVisual, alP
     }
 }
 
-// Mostrar un texto breve con un botón de texto para resolverlo
 @Composable
 private fun MensajeConAccion(texto: String, textoAccion: String, alTocar: () -> Unit) {
     Text(

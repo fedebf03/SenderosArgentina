@@ -67,6 +67,7 @@ class LoginViewModel @Inject constructor(
         _estadoVisual.update { it.copy(esClaveVisible = !it.esClaveVisible) }
     }
 
+    // RF1 - Login: iniciamos sesión con correo y contraseña y, si sale bien, se navega al inicio
     private fun ejecutarInicioSesion() {
         val estadoActual = _estadoVisual.value
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
@@ -93,6 +94,7 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    // RF1 - Google: con el token que devolvió Credential Manager se entra a la cuenta de Firebase
     private fun ejecutarInicioSesionConGoogle(idToken: String) {
         _estadoVisual.update { it.copy(estaCargando = true, mensajeError = null) }
 
@@ -128,14 +130,14 @@ class LoginViewModel @Inject constructor(
         ocultarDialogoRecuperacion()
     }
 
-    // Ocultar el diálogo de recuperación sin cancelar el trabajo que lo invoca
+    // Se oculta el diálogo sin cancelar el envío, porque también se llama desde adentro de ese trabajo
     private fun ocultarDialogoRecuperacion() {
         _estadoVisual.update { estado ->
             estado.copy(esDialogoRecuperacionVisible = false, estaEnviandoRecuperacion = false, mensajeErrorRecuperacion = null)
         }
     }
 
-    // Si sale bien se avisa sin revelar si el correo existe
+    // RF1 - Recuperación: enviamos el enlace por correo. Si sale bien se avisa sin revelar si el correo existe
     private fun enviarEnlaceRecuperacion() {
         val estadoActual = _estadoVisual.value
         if (estadoActual.estaEnviandoRecuperacion) return
@@ -143,7 +145,7 @@ class LoginViewModel @Inject constructor(
 
         trabajoEnvioRecuperacion = viewModelScope.launch {
             val resultado = enviarCorreoRecuperacionUseCase(estadoActual.emailRecuperacion)
-            // Descartar el resultado si el diálogo se cerró durante el envío
+            // Si el diálogo se cerró durante el envío, el resultado se descarta
             ensureActive()
             resultado.fold(
                 onSuccess = {

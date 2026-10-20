@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,22 +24,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,7 +46,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,7 +58,7 @@ import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "FORMULARIO_SENDERO"
 
-// Ancho máximo del contenido del formulario para que no se estire en tablets
+// Evita que el formulario se estire en tablets
 private val ANCHO_MAXIMO_FORMULARIO = 480.dp
 
 
@@ -86,12 +77,13 @@ fun FormularioSenderoPantalla(
 
     var mostrarDialogoOrigenFoto by rememberSaveable { mutableStateOf(false) }
     val contexto = LocalContext.current
+    // RF6 - Cámara: la foto sale de la cámara o de la galería y llega al ViewModel como AlSeleccionarFoto
     val accionesDeFoto = recordarAccionesDeFoto(
         alSeleccionarFoto = { uri -> viewModel.procesarEvento(FormularioSenderoEvento.AlSeleccionarFoto(uri)) },
         alMostrarAviso = { mensaje -> estadoAvisos.showSnackbar(mensaje) }
     )
 
-    // Limpiar fuera del hilo principal los temporales viejos de la cámara al entrar al formulario
+    // Los temporales viejos de la cámara se limpian al entrar al formulario, fuera del hilo principal
     LaunchedEffect(Unit) {
         Log.d(TAG, "Pantalla inicializada / rotación completada")
         limpiarFotosTemporalesViejas(contexto)

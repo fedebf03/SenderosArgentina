@@ -155,7 +155,7 @@ class RecorridoPuntosViewModelTest {
 
         assertFalse(viewModel.estadoVisual.value.esHojaPuntoVisible)
         assertEquals(
-            listOf<RecorridoEfecto>(RecorridoEfecto.MostrarAviso("Todavía no hay una posición válida del GPS; esperá a tener señal")),
+            listOf<RecorridoEfecto>(RecorridoEfecto.MostrarAviso("Todavía no hay señal de GPS. Esperá unos segundos")),
             efectosRecibidos
         )
     }

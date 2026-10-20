@@ -32,7 +32,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
-// Mostrar un campo de texto libre con un desplegable de opciones frecuentes que se filtra con lo escrito: se puede elegir una o escribir otra.
 // El desplegable se cierra al salir del campo, para no tapar el campo siguiente
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +96,6 @@ internal fun CampoConSugerencias(
     }
 }
 
-// Mostrar como chips las sugerencias que todavía no se agregaron; tocar una la agrega. Si ya están todas, no muestra nada
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ChipsDeSugerencias(

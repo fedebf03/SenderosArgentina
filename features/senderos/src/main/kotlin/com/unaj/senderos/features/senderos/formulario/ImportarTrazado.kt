@@ -12,11 +12,10 @@ import com.unaj.senderos.core.ui.componentes.BotonSecundario
 import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
 import com.unaj.senderos.core.ui.componentes.IconoDeBoton
 
-// Los GPX suelen llegar sin un tipo claro (o como octet-stream), así que se aceptan todos y se reconocen por el contenido
+// Los GPX suelen llegar sin un tipo claro (o como octet-stream). Por lo tanto se aceptan todos y se reconocen por el contenido
 private val TIPOS_DE_ARCHIVO_ACEPTADOS = arrayOf("*/*")
 
-// Mostrar el botón para importar un trazado de otra aplicación (GPX o CSV) con el selector de archivos del sistema,
-// y la confirmación cuando el trazado importado reemplazaría el recorrido ya marcado
+// RF4 - Importar GPX: el archivo sale del selector del sistema y se confirma si reemplaza el recorrido marcado
 @Composable
 internal fun ImportarTrazado(estadoVisual: FormularioSenderoEstadoVisual, alProcesarEvento: (FormularioSenderoEvento) -> Unit) {
     val selectorArchivo = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -43,7 +42,6 @@ internal fun ImportarTrazado(estadoVisual: FormularioSenderoEstadoVisual, alProc
     }
 }
 
-// Nombrar el tipo de recorrido detectado para el diálogo
 private fun describirTipo(tipo: TipoRecorrido): String = when (tipo) {
     TipoRecorrido.LINEAL -> "lineal"
     TipoRecorrido.CIRCULAR -> "circular"

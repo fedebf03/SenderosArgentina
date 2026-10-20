@@ -18,8 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.usecase.FormatoExportacion
 import com.unaj.senderos.core.ui.componentes.accionable
 
-// Preparar un selector "Guardar como" por formato (el tipo de archivo se fija al registrarlo) y devolver la función que abre el
-// del formato pedido con el nombre sugerido; el archivo elegido vuelve al ViewModel como AlExportarSendero
+// El tipo de archivo de CreateDocument se fija al registrar el selector, por eso se registra uno por formato
 @Composable
 internal fun recordarSelectoresExportacion(alProcesarEvento: (DetalleSenderoEvento) -> Unit): (FormatoExportacion, String) -> Unit {
     val procesarActual by rememberUpdatedState(alProcesarEvento)
@@ -31,12 +30,11 @@ internal fun recordarSelectoresExportacion(alProcesarEvento: (DetalleSenderoEven
     return { formato, nombreArchivo -> selectores.getValue(formato).launch(nombreArchivo) }
 }
 
-// Mostrar los formatos de exportación con una explicación breve de para qué sirve cada uno
 @Composable
 internal fun DialogoFormatoExportacion(alProcesarEvento: (DetalleSenderoEvento) -> Unit) {
     val opciones = listOf(
         FormatoExportacion.GPX to ("GPX" to "Para Wikiloc, Strava, Garmin y la mayoría de las apps y relojes"),
-        FormatoExportacion.CSV to ("CSV" to "Latitud, longitud y altura; se abre con Excel"),
+        FormatoExportacion.CSV to ("CSV" to "Latitud, longitud y altura. Se abre con Excel"),
         FormatoExportacion.JSON to ("JSON" to "Copia completa del sendero para volver a importarla en Senderos")
     )
     AlertDialog(

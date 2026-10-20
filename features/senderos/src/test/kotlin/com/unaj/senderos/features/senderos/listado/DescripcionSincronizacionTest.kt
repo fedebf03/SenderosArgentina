@@ -29,7 +29,7 @@ class DescripcionSincronizacionTest {
     fun `tras un intento fallido avisa que se reintenta`() {
         val estado = SenderosEstadoVisual(estadoTrabajoSincronizacion = EstadoTrabajoSincronizacion.EN_REINTENTO)
 
-        assertEquals("Falló el último intento; se reintenta solo en unos instantes", describirSincronizacion(estado))
+        assertEquals("Falló el último intento. Se vuelve a intentar en un rato", describirSincronizacion(estado))
     }
 
     @Test

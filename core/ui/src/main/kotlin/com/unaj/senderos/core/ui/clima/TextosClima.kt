@@ -7,13 +7,11 @@ private const val MILISEGUNDOS_POR_MINUTO = 60_000L
 private const val MINUTOS_POR_HORA = 60L
 private const val HORAS_POR_DIA = 24L
 private const val VIENTO_CALMO_KILOMETROS_POR_HORA = 1.0
-// Los nombres van fijos y no del idioma del equipo para que la pantalla se vea igual en cualquier teléfono
+// Los nombres van fijos (no según el idioma del equipo) para que se vean igual en cualquier teléfono
 private val NOMBRES_DIAS = listOf("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
 
-// Formatear la temperatura en grados enteros con la unidad
 fun formatearTemperaturaClima(celsius: Double): String = "${celsius.roundToInt()} °C"
 
-// Describir el viento y, si superan al viento sostenido, sus ráfagas; por debajo de 1 km/h es calma
 fun describirVientoClima(kilometrosPorHora: Double, rafagasKilometrosPorHora: Double?): String {
     if (kilometrosPorHora < VIENTO_CALMO_KILOMETROS_POR_HORA) return "Calma"
     val viento = kilometrosPorHora.roundToInt()
@@ -21,7 +19,6 @@ fun describirVientoClima(kilometrosPorHora: Double, rafagasKilometrosPorHora: Do
     return if (rafagas != null && rafagas > viento) "Viento $viento km/h, ráfagas $rafagas km/h" else "Viento $viento km/h"
 }
 
-// Expresar qué tan viejo es el pronóstico en minutos, horas o días, redondeando hacia abajo
 fun describirAntiguedadClima(milisegundos: Long): String {
     val minutos = milisegundos / MILISEGUNDOS_POR_MINUTO
     return when {
@@ -35,7 +32,6 @@ fun describirAntiguedadClima(milisegundos: Long): String {
     }
 }
 
-// Nombrar un día del pronóstico: Hoy, Mañana o su día de la semana con el número; una fecha ilegible se muestra tal cual
 fun describirDiaClima(fecha: String, hoy: String): String {
     val dia = runCatching { LocalDate.parse(fecha) }.getOrNull() ?: return fecha
     val fechaHoy = runCatching { LocalDate.parse(hoy) }.getOrNull()
@@ -46,10 +42,8 @@ fun describirDiaClima(fecha: String, hoy: String): String {
     }
 }
 
-// Mostrar la probabilidad de lluvia como porcentaje; vacía si el servicio no la informó
 fun describirProbabilidadLluvia(porcentaje: Int?): String = if (porcentaje == null) "" else "$porcentaje %"
 
-// Avisar que el pronóstico mostrado es una copia vieja porque no hubo conexión para renovarlo
 fun describirAvisoPronosticoViejo(antiguedadMilisegundos: Long): String {
     if (antiguedadMilisegundos < MILISEGUNDOS_POR_MINUTO) return "Sin conexión: mostrando el último pronóstico guardado"
     return "Sin conexión: pronóstico guardado ${describirAntiguedadClima(antiguedadMilisegundos)}"

@@ -33,6 +33,7 @@ class MapaSenderosViewModel @Inject constructor(
     private val canalEfectos = Channel<MapaSenderosEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
+    // RF2 - Mapa: en el mapa se juntan los senderos propios con los públicos y se avisa cuando no hay conexión
     init {
         observarConexion(monitorConectividad)
         observarPublicos(observarSenderosPublicosUseCase)
@@ -79,6 +80,7 @@ class MapaSenderosViewModel @Inject constructor(
             is MapaSenderosEvento.AlSolicitarUbicacion -> {
                 _estadoVisual.update { estado -> estado.copy(seSolicitoUbicacion = true) }
             }
+            // RF2 - Mapa: un sendero público de otro usuario abre el detalle público y uno propio abre su detalle
             is MapaSenderosEvento.AlAbrirDetalle -> {
                 val efecto = if (_estadoVisual.value.esPublicoDeOtro(evento.idSendero)) {
                     MapaSenderosEfecto.NavegarADetallePublico(evento.idSendero)

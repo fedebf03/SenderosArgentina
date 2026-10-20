@@ -11,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
-import com.unaj.senderos.core.ui.componentes.TEXTO_SUBIDA_RESTANTE
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.GraficoPerfilElevacion
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.TEXTO_SUBIDA_RESTANTE
 import com.unaj.senderos.core.ui.componentes.descripcionSiSinDato
 import com.unaj.senderos.core.ui.comun.TEXTO_SIN_DATO
 import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
@@ -20,8 +20,8 @@ import kotlin.math.roundToInt
 
 private val ALTURA_GRAFICO_FRANJA = 96.dp
 
-// Mostrar el perfil de elevación fijo arriba del panel, siempre visible mientras se camina: la altura actual y la subida que falta
-// en una línea, y debajo el gráfico angosto con la marca "Estás acá". No aparece si el sendero no tiene perfil o si el perfil quedó viejo
+// El perfil queda fijo arriba del panel para verlo mientras se camina.
+// No aparece si el sendero no tiene perfil o si el perfil quedó viejo
 @Composable
 internal fun FranjaPerfilRecorrido(estadoVisual: RecorridoEstadoVisual, modifier: Modifier = Modifier) {
     val perfil = estadoVisual.sendero?.perfilElevacion ?: return
@@ -52,7 +52,6 @@ internal fun FranjaPerfilRecorrido(estadoVisual: RecorridoEstadoVisual, modifier
     }
 }
 
-// Mostrar un dato de la franja con el título y el valor en el mismo renglón, para que ocupe poco alto
 @Composable
 private fun DatoDeLaFranja(titulo: String, valor: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

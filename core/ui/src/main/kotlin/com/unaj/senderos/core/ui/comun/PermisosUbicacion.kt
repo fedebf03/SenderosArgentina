@@ -16,7 +16,7 @@ fun tienePermisoDeUbicacion(contexto: Context): Boolean {
     }
 }
 
-// Es el permiso que exige el seguimiento del recorrido
+// RF5 - Seguimiento: el seguimiento del recorrido exige la ubicación precisa (la aproximada no alcanza)
 fun tienePermisoDeUbicacionPrecisa(contexto: Context): Boolean {
     return ContextCompat.checkSelfPermission(contexto, Manifest.permission.ACCESS_FINE_LOCATION) ==
         PackageManager.PERMISSION_GRANTED

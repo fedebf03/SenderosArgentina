@@ -28,14 +28,14 @@ import com.unaj.senderos.core.domain.model.TipoPunto
 import com.unaj.senderos.core.ui.sendero.obtenerIconoTipoPunto
 import com.unaj.senderos.core.ui.sendero.obtenerTextoTipoPunto
 
-// En el orden de la grilla, de a tres por fila: lo más urgente (agua y peligro) primero y "Otro" al final
+// Lo más urgente (agua y peligro) va primero en la grilla y "Otro" queda al final
 private val TIPOS_DE_PUNTO_CAPTURABLES: List<TipoPunto> = listOf(
     TipoPunto.AGUA, TipoPunto.PELIGRO, TipoPunto.MIRADOR,
     TipoPunto.REFUGIO, TipoPunto.CAMPING, TipoPunto.OTRO
 )
 private const val COLUMNAS_GRILLA_TIPOS = 3
 
-// Mostrar los tipos como baldosas grandes, fáciles de tocar caminando o con guantes; la elegida queda resaltada
+// Las baldosas son grandes para poder tocarlas caminando o con guantes
 @Composable
 fun GrillaTiposDePunto(tipoElegido: TipoPunto, alElegir: (TipoPunto) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {
@@ -54,7 +54,6 @@ fun GrillaTiposDePunto(tipoElegido: TipoPunto, alElegir: (TipoPunto) -> Unit) {
     }
 }
 
-// Dibujar una baldosa con el ícono y el nombre del tipo; se anuncia como opción seleccionable para el lector de pantalla
 @Composable
 private fun BaldosaTipoDePunto(tipo: TipoPunto, estaElegido: Boolean, alTocar: () -> Unit, modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme

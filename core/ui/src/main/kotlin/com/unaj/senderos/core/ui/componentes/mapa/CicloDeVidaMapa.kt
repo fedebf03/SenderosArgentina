@@ -50,10 +50,10 @@ internal fun VincularCicloDeVidaMapa(vistaMapa: MapView, alIniciar: () -> Unit, 
             }
         }
         val llamadasDeMemoria = object : ComponentCallbacks2 {
-            // Ignorar los recortes de memoria graduales; solo se atiende la memoria baja
+            // Los recortes de memoria graduales se ignoran. Solo se atiende el aviso de memoria baja
             override fun onTrimMemory(nivel: Int) = Unit
 
-            // Ignorar los cambios de configuración, que el MapView resuelve solo
+            // Los cambios de configuración los resuelve el propio MapView
             override fun onConfigurationChanged(configuracion: Configuration) = Unit
 
             override fun onLowMemory() {

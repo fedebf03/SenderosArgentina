@@ -42,27 +42,26 @@ data class DetalleSenderoEstadoVisual(
     val estaCalculandoPerfil: Boolean = false,
     val perfilEstaDesactualizado: Boolean = false,
     val debeDesplazarAlMapa: Boolean = true,
-    // Clima en el punto de inicio del sendero: el último pronóstico (de la red o guardado), si se está pidiendo y el error si no se pudo
+    // Clima del punto de inicio del sendero. El pronóstico puede venir de la red o de la copia guardada (sin conexión)
     val clima: ResultadoPronostico? = null,
     val estaCargandoClima: Boolean = false,
     val errorClima: String? = null
 ) {
-    // Avisos del clima de ahora (viento fuerte, tormenta) y de los próximos días, agrupados por fecha
     val alertasClimaAhora: Set<AlertaClima>
         get() = clima?.let { resultado -> EvaluadorAlertasClima.evaluarActual(resultado.pronostico.actual) }.orEmpty()
 
     val alertasClimaPorDia: Map<String, Set<AlertaClima>>
         get() = clima?.let { resultado -> EvaluadorAlertasClima.evaluarDias(resultado.pronostico) }.orEmpty()
 
-    // Un sendero guardado desde Explorar es una copia del de otra persona y no se edita
+    // Un sendero guardado desde Explorar es una copia del de otra persona, por eso no se edita
     val puedeEditar: Boolean
         get() = sendero?.idOrigen.isNullOrEmpty()
 
-    // Una copia no se publica; si ya había quedado publicada, se deja la opción de hacerla privada
+    // Una copia no se publica. Si ya había quedado publicada, se deja la opción de hacerla privada
     val puedePublicar: Boolean
         get() = puedeEditar || estaPublicado
 
-    // Indicar si se ofrece revisar los puntos capturados; durante un recorrido en curso se espera a que termine
+    // Durante un recorrido en curso de este sendero la revisión espera a que termine
     val hayPuntosPorRevisar: Boolean
         get() = revision.hayPuntosPorRevisar && !hayRecorridoEnCursoEnEsteSendero
 }
@@ -119,6 +118,5 @@ sealed interface DetalleSenderoEfecto {
     data class NavegarAEdicion(val idSendero: String) : DetalleSenderoEfecto
     data object SolicitarPermisoUbicacion : DetalleSenderoEfecto
     data class NavegarARecorrido(val idSendero: String) : DetalleSenderoEfecto
-    // Abrir el selector del sistema para elegir dónde guardar el archivo exportado
     data class ElegirDestinoExportacion(val formato: FormatoExportacion, val nombreArchivo: String) : DetalleSenderoEfecto
 }

@@ -40,10 +40,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.Sendero
-import com.unaj.senderos.core.ui.componentes.EtiquetaBioma
+import com.unaj.senderos.core.ui.sendero.EtiquetaBioma
 import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
-import com.unaj.senderos.core.ui.componentes.FotoSendero
-
+import com.unaj.senderos.core.ui.sendero.FotoSendero
 @Composable
 internal fun CabeceraDetalle(
     estadoVisual: DetalleSenderoEstadoVisual,

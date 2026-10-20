@@ -69,7 +69,6 @@ private val ANCHO_MAXIMO_PANEL = 420.dp
 private val TAMANO_BOTON_AGREGAR_PUNTO = 72.dp
 private val TAMANO_ICONO_AGREGAR_PUNTO = 32.dp
 
-// Conectar la pantalla del recorrido con su ViewModel: efectos, fotos de los puntos, reloj y pedido de cancelación desde la notificación
 @Composable
 fun RecorridoPantalla(
     viewModel: RecorridoViewModel,
@@ -88,7 +87,7 @@ fun RecorridoPantalla(
         alMostrarAviso = { mensaje -> viewModel.procesarEvento(RecorridoEvento.AlFallarFotoPunto(mensaje)) }
     )
 
-    // Actualizar el reloj cada segundo para que el tiempo avance aunque el GPS no emita
+    // El reloj se actualiza cada segundo para que el tiempo avance aunque el GPS no emita
     val ahoraMilisegundos = produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
             delay(INTERVALO_RELOJ_MILISEGUNDOS)
@@ -96,7 +95,7 @@ fun RecorridoPantalla(
         }
     }
 
-    // Nunca cancela sin que el usuario confirme
+    // Cancelar desde la notificación solo abre el diálogo. Nunca se cancela sin que el usuario confirme
     LaunchedEffect(solicitarCancelacion) {
         if (solicitarCancelacion) {
             viewModel.procesarEvento(RecorridoEvento.AlTocarCancelarRecorrido)
@@ -130,7 +129,6 @@ fun RecorridoPantalla(
     )
 }
 
-// Dibujar el recorrido en curso: mapa con el botón "+" para marcar puntos, panel de datos, diálogos y hoja del punto
 @Composable
 fun RecorridoContenido(
     estadoVisual: RecorridoEstadoVisual,
@@ -223,7 +221,7 @@ fun RecorridoContenido(
                                 )
                             }
                             if (estadoVisual.puedeAgregarPunto) {
-                                // Grande y siempre a mano para marcar lo que se ve sin frenar, como en Waze: abre la grilla de tipos; la foto es opcional
+                                // Es grande y está siempre a mano para marcar lo que se ve sin frenar (como en Waze). La foto es opcional
                                 FloatingActionButton(
                                     onClick = { alProcesarEvento(RecorridoEvento.AlTocarAgregarPunto) },
                                     containerColor = MaterialTheme.colorScheme.primary,

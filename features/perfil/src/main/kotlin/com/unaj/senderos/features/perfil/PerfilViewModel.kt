@@ -57,7 +57,7 @@ class PerfilViewModel @Inject constructor(
         observarRecorridoEnCurso()
     }
 
-    // Reintentar subir un perfil que se editó sin conexión; si falla queda pendiente y no molesta al usuario
+    // Si el perfil se editó sin conexión se reintenta la subida. Un fallo lo deja pendiente sin molestar
     private fun sincronizarPerfilPendiente() {
         viewModelScope.launch {
             try {
@@ -72,6 +72,7 @@ class PerfilViewModel @Inject constructor(
 
     fun procesarEvento(evento: PerfilEvento) {
         when (evento) {
+            // RF5 - Simulación: con el modo demostración activo los recorridos se simulan sobre el trazado sin caminar
             is PerfilEvento.AlCambiarModoDemostracion -> {
                 Log.d(TAG, "Modo demostración: ${evento.activo}")
                 preferenciasAplicacion.cambiarModoDemostracion(evento.activo)
@@ -99,7 +100,7 @@ class PerfilViewModel @Inject constructor(
         }
     }
 
-    // Guardar todos los senderos en el archivo elegido y avisar cuántos se guardaron
+    // RF4 - Exportar: guardamos todos los senderos del usuario en el archivo que eligió como copia de seguridad
     private fun exportarCopia(uri: String) {
         if (_estadoVisual.value.estaProcesandoCopia) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = true) }
@@ -116,7 +117,7 @@ class PerfilViewModel @Inject constructor(
         }
     }
 
-    // Leer la copia elegida y preguntar siempre antes de escribir (restaurar puede traer de vuelta senderos borrados)
+    // RF4 - Exportar: se lee la copia y se pregunta antes de escribir (puede traer senderos ya borrados)
     private fun analizarCopia(uri: String) {
         if (_estadoVisual.value.estaProcesandoCopia) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = true) }
@@ -135,7 +136,6 @@ class PerfilViewModel @Inject constructor(
         }
     }
 
-    // Guardar los senderos de la copia según el modo elegido y avisar cuántos se restauraron de los que había para guardar
     private fun restaurar(analisis: AnalisisCopiaSeguridad, modo: ModoRestauracion) {
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = true, copiaPendiente = null) }
         viewModelScope.launch {
@@ -157,6 +157,7 @@ class PerfilViewModel @Inject constructor(
         }
     }
 
+    // RF5 - Historial: observamos los recorridos realizados para listarlos en el perfil junto con las estadísticas
     private fun observarRecorridos() {
         observarRecorridosUseCase().fold(
             onSuccess = { flujoRecorridos ->
@@ -190,6 +191,7 @@ class PerfilViewModel @Inject constructor(
         }
     }
 
+    // RF1 - Sesión: al confirmar se cierra la sesión y se vuelve a la pantalla de inicio de sesión
     private fun cerrarSesion() {
         Log.d(TAG, "Cerrando la sesión")
         _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoCerrarSesionVisible = false) }

@@ -21,10 +21,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.port.EstadoTrabajoSincronizacion
 
-// Describir en una frase qué falta sincronizar: lo que se está haciendo ahora y, si no, cuántos senderos esperan subir o fallaron
 internal fun describirSincronizacion(estadoVisual: SenderosEstadoVisual): String = when {
     estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_CURSO -> "Sincronizando…"
-    estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_REINTENTO -> "Falló el último intento; se reintenta solo en unos instantes"
+    estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_REINTENTO -> "Falló el último intento. Se vuelve a intentar en un rato"
     estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.EN_COLA ->
         if (estadoVisual.estaSinConexion) "Esperando conexión para sincronizar" else "Sincronización en cola…"
     estadoVisual.cantidadConErrorDeSubida > 0 -> "${estadoVisual.cantidadConErrorDeSubida} con error al subir"
@@ -37,12 +36,11 @@ internal fun hayAlgoPorSincronizar(estadoVisual: SenderosEstadoVisual): Boolean 
         estadoVisual.cantidadConErrorDeSubida > 0 ||
         estadoVisual.cantidadSinSubir > 0
 
-// Con la sincronización en marcha o en cola se encarga sola; el botón es para cuando quedó parada con algo sin subir
+// Con la sincronización en marcha o en cola el worker se encarga solo. El botón sirve cuando quedó parada
 internal fun sePuedeReintentarSincronizacion(estadoVisual: SenderosEstadoVisual): Boolean =
     estadoVisual.estadoTrabajoSincronizacion == EstadoTrabajoSincronizacion.INACTIVO &&
         (estadoVisual.cantidadConErrorDeSubida > 0 || estadoVisual.cantidadSinSubir > 0)
 
-// Mostrar sobre la lista de Mis senderos cuántos faltan subir y, si quedó parada, el botón para reintentar
 @Composable
 internal fun ResumenSincronizacion(estadoVisual: SenderosEstadoVisual, alProcesarEvento: (SenderosEvento) -> Unit) {
     if (!hayAlgoPorSincronizar(estadoVisual)) return

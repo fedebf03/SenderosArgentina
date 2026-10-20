@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -20,10 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -45,7 +41,6 @@ import com.unaj.senderos.core.ui.componentes.AvatarUsuario
 import com.unaj.senderos.core.ui.componentes.BotoneraInferior
 import com.unaj.senderos.core.ui.componentes.CabeceraPrincipal
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
-import com.unaj.senderos.features.perfil.HistorialDeRecorridos
 import com.unaj.senderos.core.ui.tema.TemaSenderos
 
 private const val TAG = "PERFIL"

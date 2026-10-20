@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unaj.senderos.core.domain.clima.CondicionClima
 
-// Elegir el icono de cada condición; de noche el cielo despejado se muestra como luna
 fun elegirIconoClima(condicion: CondicionClima, esDeDia: Boolean): ImageVector = when (condicion) {
     CondicionClima.DESPEJADO, CondicionClima.POCO_NUBLADO -> if (esDeDia) Icons.Filled.WbSunny else Icons.Filled.NightsStay
     CondicionClima.PARCIALMENTE_NUBLADO -> Icons.Filled.WbCloudy

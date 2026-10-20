@@ -2,10 +2,8 @@ package com.unaj.senderos.core.ui.componentes.mapa
 
 import com.unaj.senderos.core.ui.componentes.BannerAviso
 import androidx.compose.animation.AnimatedVisibility
-import android.annotation.SuppressLint
 import android.graphics.RectF
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -26,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.doOnLayout
@@ -74,6 +70,7 @@ private const val MARGEN_CONTROLES_DP = 40
 private const val ALTO_TARJETA_DP = 120
 private const val ZOOM_MI_UBICACION = 12.0
 
+// RF2 - Mapa: dibujamos todos los senderos con el color de su bioma y al tocar uno se selecciona
 @Composable
 fun MapaDeSenderos(
     senderos: List<Sendero>,
@@ -161,14 +158,13 @@ private fun ControlesDeMapa(
     }
 }
 
-// Colores ya convertidos a enteros ARGB, que es lo que esperan las capas de MapLibre
+// Los colores se guardan como enteros ARGB porque es lo que esperan las capas de MapLibre
 private data class ColoresMapaDeSenderos(
     val linea: Int,
     val lineaPorBioma: Map<Bioma, Int>,
     val borde: Int,
     val texto: Int
 ) {
-    /** Obtener el color de línea de un bioma como texto hexadecimal para las expresiones del mapa. */
     fun obtenerColorHexadecimal(bioma: Bioma): String {
         return String.format(Locale.ROOT, "#%06X", (lineaPorBioma[bioma] ?: linea) and 0xFFFFFF)
     }
@@ -217,7 +213,7 @@ private class ControladorMapaDeSenderos(
         }
     }
 
-    // Quitar los detectores para no retener el controlador desde la vista
+    // Se quitan los detectores para que la vista no siga reteniendo el controlador
     fun liberar() {
         vistaMapa.removeOnDidFailLoadingMapListener(escuchaFalloDeCarga)
         mapa?.removeOnMapClickListener(escuchaClicEnMapa)
@@ -273,14 +269,14 @@ private class ControladorMapaDeSenderos(
 
     private fun refrescar() {
         val estiloActual = estilo ?: return
-        // El seleccionado va último para que su línea se dibuje por encima de las demás
+        // El seleccionado va último para que su línea quede por encima de las demás
         val ordenados = senderos.sortedBy { sendero -> sendero.id == idSeleccionado }
         estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_LINEAS)?.setGeoJson(crearLineas(ordenados))
         estiloActual.getSourceAs<GeoJsonSource>(ID_FUENTE_INICIOS)?.setGeoJson(crearInicios(ordenados))
 
         val idsActuales = senderos.map { sendero -> sendero.id }.toSet()
         if (idsActuales != idsEncuadrados) {
-            // Al volver del detalle con un sendero elegido se retoma su encuadre en vez de mostrar todos
+            // Al volver del detalle con un sendero elegido se retoma su encuadre en lugar de mostrar todos
             if (idSeleccionado != null) centrarEnSeleccionado(animar = false) else encuadrar()
             idsEncuadrados = idsActuales
         }
@@ -324,7 +320,7 @@ private class ControladorMapaDeSenderos(
         activarUbicacionSiCorresponde()
     }
 
-    // Solo se llama con el permiso ya otorgado: la pantalla decide cuándo pedirlo
+    // Solo se llama con el permiso ya otorgado. La pantalla es la que decide cuándo pedirlo
     private fun activarUbicacionSiCorresponde() {
         val componente = mapa?.locationComponent ?: return
         val estiloActual = estilo ?: return
@@ -356,7 +352,7 @@ private class ControladorMapaDeSenderos(
     }
 
     private fun encuadrar() {
-        // Encuadrar antes de que la vista tenga su tamaño final calcula la cámara para un lienzo vacío
+        // Si se encuadra antes de que la vista tenga su tamaño final, la cámara se calcula para un lienzo vacío
         vistaMapa.doOnLayout { moverCamaraParaVerTodos() }
     }
 
@@ -378,7 +374,7 @@ private class ControladorMapaDeSenderos(
             else -> {
                 val limites = LatLngBounds.Builder().includes(coordenadas).build()
                 val margen = (ConfiguracionMapa.MARGEN_ENCUADRE_DP * densidad).toInt()
-                // Margen extra a la derecha para que los botones de zoom no tapen los recorridos
+                // Se suma margen a la derecha para que los botones de zoom no tapen los recorridos
                 val margenConControles = margen + (MARGEN_CONTROLES_DP * densidad).toInt()
                 mapaActual.moveCamera(
                     CameraUpdateFactory.newLatLngBounds(limites, margen, margen, margenConControles, margen)

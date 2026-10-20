@@ -58,10 +58,8 @@ android {
 dependencies {
     implementation(project(":features:auth"))
     implementation(project(":features:senderos"))
-    implementation(project(":features:explorar"))
     implementation(project(":features:mapa"))
     implementation(project(":features:recorrido"))
-    implementation(project(":features:historial"))
     implementation(project(":features:perfil"))
     implementation(project(":core:ui"))
     implementation(project(":core:domain"))

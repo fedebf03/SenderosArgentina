@@ -51,13 +51,9 @@ import com.unaj.senderos.core.ui.comun.formatearRitmo
 import com.unaj.senderos.core.ui.comun.formatearVelocidad
 import com.unaj.senderos.core.ui.comun.formatearVelocidadDesdeMetrosPorSegundo
 import com.unaj.senderos.core.ui.revisionpuntos.describirCantidadPuntosCapturados
-import com.unaj.senderos.core.domain.model.Bioma
-import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
-import com.unaj.senderos.core.ui.componentes.TEXTO_SUBIDA_RESTANTE
-import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 
 
-// Los avisos van primero porque son lo urgente; las acciones quedan fijas abajo
+// Los avisos van primero porque son lo más urgente. En cambio las acciones quedan fijas abajo
 @Composable
 internal fun PanelRecorrido(
     estadoVisual: RecorridoEstadoVisual,
@@ -97,10 +93,9 @@ internal fun PanelRecorrido(
     }
 }
 
-// Mostrar las acciones fijas del panel: finalizar y cancelar el recorrido
 @Composable
 private fun AccionesDelPanel(estadoVisual: RecorridoEstadoVisual, alProcesarEvento: (RecorridoEvento) -> Unit) {
-    // Marcar puntos se hace con el botón flotante del mapa; al llegar al final, Finalizar suma una bandera para marcar que es el paso siguiente
+    // Al llegar al final, Finalizar suma una bandera para indicar que es el paso siguiente
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         BotonPrincipal(
             texto = "Finalizar",
@@ -138,7 +133,7 @@ private fun AvisoDeDesvio() {
     }
 }
 
-// Mostrar recorrido, restante, tiempo y velocidad en una tarjeta translúcida sobre el mapa, para que se vean aunque el panel de abajo no entre
+// Estos datos van sobre el mapa en una tarjeta translúcida para que se vean aunque el panel de abajo no entre
 @Composable
 internal fun DatosFlotantesRecorrido(
     estadoVisual: RecorridoEstadoVisual,
@@ -188,8 +183,7 @@ internal fun DatosFlotantesRecorrido(
     }
 }
 
-// Mostrar debajo de los datos el icono del clima con la temperatura de donde está el usuario y, si hay, el primer aviso; tocarlo abre el detalle.
-// Sin clima (sin conexión y sin copia guardada) no se dibuja nada
+// Sin clima (sin conexión y sin copia guardada) y sin barómetro no se dibuja nada
 @Composable
 private fun ClimaDelRecorrido(estadoVisual: RecorridoEstadoVisual, alTocar: () -> Unit) {
     val resultado = estadoVisual.clima
@@ -243,7 +237,7 @@ private fun ClimaDelRecorrido(estadoVisual: RecorridoEstadoVisual, alTocar: () -
     }
 }
 
-// Es la única celda que lee el reloj, así que solo ella se recompone cada segundo
+// Es la única celda que lee el reloj. Por lo tanto solo ella se recompone cada segundo
 @Composable
 private fun CeldaTiempo(instanteInicioMilisegundos: Long, leerAhoraMilisegundos: () -> Long, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
@@ -260,6 +254,7 @@ private fun CeldaTiempo(instanteInicioMilisegundos: Long, leerAhoraMilisegundos:
     }
 }
 
+// RF6 - Pasos: los pasos y el ritmo salen del acelerómetro. Sin ese sensor se muestran como no disponibles
 @Composable
 private fun SeccionMiRitmo(estadoVisual: RecorridoEstadoVisual) {
     val sinAcelerometro = estadoVisual.faltaAcelerometro
@@ -296,6 +291,7 @@ private fun SeccionMiRitmo(estadoVisual: RecorridoEstadoVisual) {
 
 private class DatoDeGrilla(val titulo: String, val valor: String, val esNoDisponible: Boolean = false, val rumboGrados: Float? = null)
 
+// RF6 - Brújula: el rumbo se dibuja con una flecha girada. Sin brújula ni rumbo queda como no disponible
 private fun armarDatoRumbo(estadoVisual: RecorridoEstadoVisual): DatoDeGrilla {
     val rumbo = estadoVisual.rumboGrados
     val sinBrujulaNiRumbo = rumbo == null && !estadoVisual.tieneBrujula
@@ -315,6 +311,7 @@ private fun FilaDeDatos(izquierdo: DatoDeGrilla, derecho: DatoDeGrilla) {
     }
 }
 
+// RF5 - Señal GPS: mientras la señal no es buena se avisa al usuario y las distancias se muestran sin dato
 @Composable
 private fun CartelDeSenal(calidadSenal: CalidadSenal) {
     AnimatedVisibility(visible = calidadSenal != CalidadSenal.BUENA) {
@@ -399,6 +396,7 @@ private fun CeldaDelPanel(dato: DatoDeGrilla, modifier: Modifier = Modifier) {
     }
 }
 
+// RF5 - Simulación: en el modo demostración se elige la velocidad de la caminata y se puede forzar un desvío
 @Composable
 private fun ControlesSimulacion(multiplicador: Int, alProcesarEvento: (RecorridoEvento) -> Unit) {
     Surface(

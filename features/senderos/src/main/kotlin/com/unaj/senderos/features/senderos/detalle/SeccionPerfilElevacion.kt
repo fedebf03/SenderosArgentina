@@ -37,11 +37,11 @@ import com.unaj.senderos.core.domain.model.PuntoPerfil
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.ui.componentes.BotonSecundario
 import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
-import com.unaj.senderos.core.ui.componentes.GraficoPerfilElevacion
-import com.unaj.senderos.core.ui.componentes.MarcaDelPerfil
-import com.unaj.senderos.core.ui.componentes.TEXTO_PERFIL_DESACTUALIZADO
-import com.unaj.senderos.core.ui.componentes.TEXTO_PERFIL_SIN_CALCULAR
-import com.unaj.senderos.core.ui.componentes.TITULO_SECCION_PERFIL
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.GraficoPerfilElevacion
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.MarcaDelPerfil
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.TEXTO_PERFIL_DESACTUALIZADO
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.TEXTO_PERFIL_SIN_CALCULAR
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.TITULO_SECCION_PERFIL
 import com.unaj.senderos.core.ui.comun.formatearAlturaMetros
 import com.unaj.senderos.core.ui.comun.formatearPorcentaje
 import com.unaj.senderos.core.ui.tema.TemaSenderos
@@ -49,7 +49,6 @@ import com.unaj.senderos.core.ui.tema.TemaSenderos
 private const val TEXTO_CALCULANDO_PERFIL = "Calculando el perfil…"
 private const val COLUMNAS_DATOS_PERFIL = 3
 
-// Mostrar la sección del perfil de elevación del sendero: el gráfico con sus cinco datos, o la invitación a calcularlo
 @Composable
 internal fun SeccionPerfilElevacion(
     estadoVisual: DetalleSenderoEstadoVisual,
@@ -94,7 +93,6 @@ internal fun SeccionPerfilElevacion(
     }
 }
 
-// Mostrar el mensaje y el botón para calcular el perfil, o el progreso mientras se calcula
 @Composable
 private fun InvitacionACalcularPerfil(
     mensaje: String,
@@ -150,7 +148,6 @@ private fun DatosDelPerfil(perfil: PerfilElevacion) {
     }
 }
 
-// Previsualizar la sección con un perfil de ejemplo
 @Preview(showBackground = true)
 @Composable
 private fun SeccionPerfilElevacionPreview() {

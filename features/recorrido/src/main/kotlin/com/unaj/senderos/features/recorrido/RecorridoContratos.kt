@@ -9,12 +9,11 @@ import com.unaj.senderos.core.domain.recorrido.ConversorCaminata
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.TipoPunto
-import com.unaj.senderos.core.ui.componentes.interpolarAltitud
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.interpolarAltitud
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEstadoVisual
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
-import com.unaj.senderos.core.ui.componentes.calcularKilometroEnTrazado
-
+import com.unaj.senderos.core.ui.componentes.perfilelevacion.calcularKilometroEnTrazado
 val TIPO_PUNTO_INICIAL: TipoPunto = TipoPunto.MIRADOR
 
 val MULTIPLICADORES_SIMULACION: List<Int> = listOf(1, 5, 20)
@@ -30,7 +29,7 @@ data class RecorridoEstadoVisual(
     val fase: FaseRecorrido = FaseRecorrido.INICIANDO,
     val sendero: Sendero? = null,
     val posicionUsuario: Coordenada? = null,
-    // Posiciones caminadas hasta ahora, para dibujar la línea naranja en vivo
+    // Posiciones caminadas hasta ahora, que se dibujan en vivo como la línea naranja
     val trazadoCaminado: List<Coordenada> = emptyList(),
     val rumboGrados: Float? = null,
     val estaSiguiendo: Boolean = true,
@@ -66,14 +65,14 @@ data class RecorridoEstadoVisual(
     val revision: RevisionPuntosEstadoVisual = RevisionPuntosEstadoVisual(),
     val largoTrazadoKilometros: Double = 0.0,
     val perfilEstaDesactualizado: Boolean = false,
-    // Caminata sin sendero previo: no hay trazado planificado, restante ni perfil; al finalizar se ofrece convertirla en un sendero nuevo
+    // Una caminata libre no tiene trazado planificado, restante ni perfil.
+    // Al finalizar se ofrece convertirla en un sendero nuevo
     val esCaminataLibre: Boolean = false,
-    // Clima del lugar donde está el usuario, con el último pronóstico obtenido o guardado; nulo hasta tenerlo
     val clima: ResultadoPronostico? = null,
-    // Presión atmosférica del barómetro del equipo en hectopascales; nula si no tiene barómetro o todavía no midió
+    // Es nula si el equipo no tiene barómetro o todavía no midió
     val presionHectopascales: Int? = null
 ) {
-    // Avisos del clima de ahora y del día de hoy (el primero del pronóstico), que cambian cómo conviene seguir caminando
+    // Se juntan los avisos del clima de ahora con los de hoy (el primer día del pronóstico)
     val alertasClima: Set<AlertaClima>
         get() = clima?.pronostico?.let { pronostico ->
             EvaluadorAlertasClima.evaluarActual(pronostico.actual) + pronostico.dias.firstOrNull()?.let { dia -> EvaluadorAlertasClima.evaluarDia(dia) }.orEmpty()
@@ -82,11 +81,11 @@ data class RecorridoEstadoVisual(
     val puedeAgregarPunto: Boolean
         get() = fase == FaseRecorrido.EN_CURSO
 
-    // Solo una caminata libre terminada con al menos 50 m ofrece convertirse en un sendero nuevo
+    // Solo una caminata libre terminada con al menos 50 m se puede convertir en un sendero nuevo
     val sePuedeConvertirEnSendero: Boolean
         get() = esCaminataLibre && resumen != null && ConversorCaminata.esConvertible(resumen.distanciaRecorridaKilometros)
 
-    // Puntos que el usuario marcó y todavía no entraron a un sendero, para dibujarlos en el mapa con el icono de su tipo
+    // Son los puntos marcados que todavía no se incorporaron a un sendero
     val puntosMarcados: List<PuntoRecorrido>
         get() = revision.puntosPendientes.map { conDistancia ->
             PuntoRecorrido(
@@ -104,7 +103,7 @@ data class RecorridoEstadoVisual(
     val sonConfiablesLosDatosDeDistancia: Boolean
         get() = calidadSenal == CalidadSenal.BUENA
 
-    // Indicar el kilómetro recorrido a lo largo del trazado planificado; nulo sin perfil vigente, sin señal confiable o antes de que el recorrido esté en curso
+    // Es nulo sin perfil vigente, sin señal confiable o antes de que el recorrido esté en curso
     val kilometroEnTrazado: Double?
         get() = if (
             fase == FaseRecorrido.EN_CURSO && sendero?.perfilElevacion != null &&
@@ -115,7 +114,6 @@ data class RecorridoEstadoVisual(
             null
         }
 
-    // Sumar las subidas que faltan desde la posición actual hasta el final; nulo cuando no se conoce la posición en el perfil
     val subidaRestanteMetros: Int?
         get() {
             val perfil = sendero?.perfilElevacion ?: return null
@@ -123,7 +121,6 @@ data class RecorridoEstadoVisual(
             return CalculadoraPerfil.calcularSubidaRestanteMetros(perfil, kilometro)
         }
 
-    // Obtener la altura del perfil en el kilómetro actual; nula cuando no se conoce la posición en el perfil
     val altitudActualMetros: Double?
         get() {
             val perfil = sendero?.perfilElevacion ?: return null

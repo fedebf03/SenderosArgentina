@@ -13,6 +13,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
 private const val TAG = "AUTH"
 
+// RF1 - Google: pedimos la cuenta con Credential Manager y obtenemos el token que después usa Firebase
 suspend fun pedirTokenDeGoogle(
     contexto: Context,
     idClienteWeb: String,
@@ -40,7 +41,7 @@ suspend fun pedirTokenDeGoogle(
             alMostrarMensaje("No se pudo iniciar con Google")
         }
     } catch (_: GetCredentialCancellationException) {
-        // El usuario cerró el selector de cuentas, no hay nada que avisar
+        // El usuario cerró el selector de cuentas y no hay nada que avisar
     } catch (e: NoCredentialException) {
         // Puede faltar la cuenta en el dispositivo o la huella SHA-1 en Firebase
         Log.e(TAG, "Sin cuentas de Google disponibles", e)
