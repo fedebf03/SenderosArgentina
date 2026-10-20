@@ -10,8 +10,8 @@ import com.unaj.senderos.core.domain.port.ErrorPronosticoException
 import com.unaj.senderos.core.domain.port.FuentePronostico
 import com.unaj.senderos.core.domain.port.Reloj
 import com.unaj.senderos.core.domain.port.SinConexionPronosticoException
-import com.unaj.senderos.core.network.ApiPronosticoOpenMeteo
-import com.unaj.senderos.core.network.RespuestaPronosticoOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.ApiPronosticoOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.RespuestaPronosticoOpenMeteo
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 import java.io.IOException
@@ -23,13 +23,11 @@ private const val CODIGO_DEMASIADOS_PEDIDOS = 429
 private const val CODIGO_ERROR_SERVIDOR_MINIMO = 500
 private const val MENSAJE_DATOS_INCOMPLETOS = "El servicio del clima devolvió datos incompletos"
 
-// Fuente del pronóstico que consulta Open-Meteo y traduce sus fallos a mensajes en español
 class FuentePronosticoOpenMeteo @Inject constructor(
     private val api: ApiPronosticoOpenMeteo,
     private val reloj: Reloj
 ) : FuentePronostico {
 
-    // Pedir el pronóstico del lugar y convertirlo al dominio; un fallo de red, de servicio o de datos vuelve como failure con un mensaje claro
     override suspend fun obtener(lugar: Coordenada): Result<PronosticoClima> {
         return try {
             Log.d(TAG, "Pidiendo el clima a Open-Meteo")
@@ -55,7 +53,6 @@ class FuentePronosticoOpenMeteo @Inject constructor(
         }
     }
 
-    // Traducir la respuesta validando que traiga el clima de ahora y una posición por día en cada lista
     private fun traducir(lugar: Coordenada, respuesta: RespuestaPronosticoOpenMeteo): PronosticoClima {
         val actualRed = respuesta.actual ?: throw ErrorPronosticoException(MENSAJE_DATOS_INCOMPLETOS)
         val diario = respuesta.diario ?: throw ErrorPronosticoException(MENSAJE_DATOS_INCOMPLETOS)
@@ -93,7 +90,6 @@ class FuentePronosticoOpenMeteo @Inject constructor(
         )
     }
 
-    // Describir en español un código de estado HTTP de error
     private fun describirCodigoHttp(codigo: Int): String {
         return when {
             codigo == CODIGO_DEMASIADOS_PEDIDOS -> "El servicio del clima recibió demasiados pedidos, probá más tarde"

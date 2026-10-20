@@ -1,6 +1,6 @@
 package com.unaj.senderos.core.data.repository
 
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
 import com.unaj.senderos.core.data.mapeo.aEntidad
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.PuntoRecorrido

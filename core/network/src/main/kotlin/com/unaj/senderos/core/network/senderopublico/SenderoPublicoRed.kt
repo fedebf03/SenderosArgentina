@@ -1,4 +1,6 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.senderopublico
+
+import com.unaj.senderos.core.network.sendero.SenderoRed
 
 data class SenderoPublicoRed(
     val idAutor: String = "",

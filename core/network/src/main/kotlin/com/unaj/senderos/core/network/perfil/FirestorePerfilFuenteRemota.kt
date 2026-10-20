@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.perfil
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -9,7 +9,7 @@ import kotlinx.coroutines.tasks.await
 private const val COLECCION_USUARIOS = "usuarios"
 private const val CAMPO_PERFIL = "perfil"
 
-// El perfil vive en el campo "perfil" del documento del usuario, con merge para no pisar el resto del documento
+// RF2 - Perfil: se guarda con merge en el campo "perfil" del usuario para no pisar el resto del documento
 class FirestorePerfilFuenteRemota @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : PerfilFuenteRemota {

@@ -16,6 +16,7 @@ class GuardarSenderoUseCase @Inject constructor(
     private val autenticacionRepositorio: AutenticacionRepositorio,
     private val generarIdentificador: GeneradorIdentificador = GeneradorIdentificador { UUID.randomUUID().toString() }
 ) {
+    // RF4 - Formulario: normalizamos y validamos el sendero antes de pasarlo al repositorio
     suspend operator fun invoke(sendero: Sendero): Result<Sendero> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException("No hay una sesión activa"))

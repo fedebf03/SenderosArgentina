@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.auth
 
 interface FuenteAutenticacion {
     suspend fun iniciarSesion(email: String, clave: String): Result<UsuarioRed>

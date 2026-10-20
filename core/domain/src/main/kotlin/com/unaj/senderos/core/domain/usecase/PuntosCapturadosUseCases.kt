@@ -31,7 +31,7 @@ class ObservarPuntosCapturadosConDistanciaUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Observar los puntos capturados de un sendero junto con su distancia al trazado, para que la UI advierta y desmarque los de más de 100 m
+    // Con la distancia al trazado, la pantalla advierte y desmarca los puntos que están a más de 100 m
     operator fun invoke(idSendero: String): Result<Flow<List<PuntoCapturadoConDistancia>>> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
@@ -68,7 +68,7 @@ class IncorporarPuntosCapturadosUseCase @Inject constructor(
     private val puntosCapturadosRepositorio: PuntosCapturadosRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio
 ) {
-    // Atómica; el sendero queda pendiente de sincronizar
+    // RF3 - Puntos de interés: los puntos elegidos pasan al sendero en una sola transacción y quedan pendientes de subir
     suspend operator fun invoke(idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual()
             ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))

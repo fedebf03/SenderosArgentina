@@ -1,8 +1,7 @@
 package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.core.network.RecorridoFuenteRemota
-import com.unaj.senderos.core.network.RecorridoRed
-
+import com.unaj.senderos.core.network.recorrido.RecorridoFuenteRemota
+import com.unaj.senderos.core.network.recorrido.RecorridoRed
 class FalsoRecorridoFuenteRemota : RecorridoFuenteRemota {
 
     // Documentos remotos en memoria: usuario -> (id de recorrido -> documento)

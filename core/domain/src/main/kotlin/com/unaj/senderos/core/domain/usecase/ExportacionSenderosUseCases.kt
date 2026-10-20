@@ -20,7 +20,6 @@ private const val MENSAJE_SIN_SESION = "No hay una sesión activa"
 private const val MENSAJE_SENDERO_NO_ENCONTRADO = "No se encontró el sendero"
 private const val SUFIJO_COPIA = " (copia)"
 
-// Formatos para exportar un sendero, con la extensión y el tipo de archivo que espera el selector del sistema
 enum class FormatoExportacion(val extension: String, val tipoMime: String) {
     GPX("gpx", "application/gpx+xml"),
     CSV("csv", "text/csv"),
@@ -30,15 +29,14 @@ enum class FormatoExportacion(val extension: String, val tipoMime: String) {
 // Qué hacer con los senderos de la copia que ya existen en la cuenta
 enum class ModoRestauracion { REEMPLAZAR_EXISTENTES, AGREGAR_COMO_COPIAS, SOLO_NUEVOS }
 
-// Senderos de una copia de seguridad, separados en los que no están en la cuenta y los que ya están (mismo id), con cuántos de
-// estos últimos tienen cambios en el teléfono que todavía no se subieron (reemplazarlos los perdería)
+// Se cuentan los existentes con cambios sin subir porque reemplazarlos haría perder esos cambios
 data class AnalisisCopiaSeguridad(
     val nuevos: List<Sendero>,
     val existentes: List<Sendero>,
     val existentesConCambiosSinSubir: Int = 0
 )
 
-// Exporta un sendero del usuario en GPX o CSV (para otras aplicaciones) o en JSON (copia completa de un solo sendero)
+// GPX y CSV son para otras aplicaciones. En cambio el JSON es la copia completa de un solo sendero
 class ExportarSenderoUseCase(
     private val senderoRepositorio: SenderoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio,
@@ -47,7 +45,6 @@ class ExportarSenderoUseCase(
     private val reloj: () -> Long = System::currentTimeMillis,
     private val despachadorCalculo: CoroutineDispatcher = Dispatchers.Default
 ) {
-    // Construir el caso de uso para Hilt con el reloj y el despachador por defecto
     @Inject
     constructor(
         senderoRepositorio: SenderoRepositorio,
@@ -58,7 +55,7 @@ class ExportarSenderoUseCase(
         senderoRepositorio, autenticacionRepositorio, escritorArchivos, formatoCopiaSeguridad, System::currentTimeMillis, Dispatchers.Default
     )
 
-    // Leer el sendero, armar el texto en el formato pedido (fuera del hilo principal) y escribirlo en el archivo elegido
+    // RF4 - Exportar: armamos el texto fuera del hilo principal y lo escribimos en el archivo que eligió el usuario
     suspend operator fun invoke(idSendero: String, formato: FormatoExportacion, uri: String): Result<Unit> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual() ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
         val sendero = leerPrimero { senderoRepositorio.observarSendero(usuario.id, idSendero).first() }
@@ -75,7 +72,6 @@ class ExportarSenderoUseCase(
     }
 }
 
-// Exporta todos los senderos del usuario en una sola copia de seguridad JSON y devuelve cuántos se guardaron
 class ExportarCopiaSeguridadUseCase(
     private val senderoRepositorio: SenderoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio,
@@ -84,7 +80,6 @@ class ExportarCopiaSeguridadUseCase(
     private val reloj: () -> Long = System::currentTimeMillis,
     private val despachadorCalculo: CoroutineDispatcher = Dispatchers.Default
 ) {
-    // Construir el caso de uso para Hilt con el reloj y el despachador por defecto
     @Inject
     constructor(
         senderoRepositorio: SenderoRepositorio,
@@ -95,7 +90,6 @@ class ExportarCopiaSeguridadUseCase(
         senderoRepositorio, autenticacionRepositorio, escritorArchivos, formatoCopiaSeguridad, System::currentTimeMillis, Dispatchers.Default
     )
 
-    // Leer los senderos del usuario y escribir la copia (armada fuera del hilo principal) en el archivo elegido
     suspend operator fun invoke(uri: String): Result<Int> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual() ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
         val senderos = leerPrimero { senderoRepositorio.observarSenderosDelUsuario(usuario.id).first() }
@@ -105,7 +99,7 @@ class ExportarCopiaSeguridadUseCase(
     }
 }
 
-// Restaura una copia de seguridad: primero la analiza para preguntar qué hacer con los repetidos y después la aplica
+// Primero se analiza la copia para preguntar qué hacer con los repetidos y después se aplica
 class ImportarCopiaSeguridadUseCase(
     private val senderoRepositorio: SenderoRepositorio,
     private val autenticacionRepositorio: AutenticacionRepositorio,
@@ -114,7 +108,6 @@ class ImportarCopiaSeguridadUseCase(
     private val guardarSenderoUseCase: GuardarSenderoUseCase,
     private val despachadorCalculo: CoroutineDispatcher = Dispatchers.Default
 ) {
-    // Construir el caso de uso para Hilt con el despachador por defecto
     @Inject
     constructor(
         senderoRepositorio: SenderoRepositorio,
@@ -126,7 +119,6 @@ class ImportarCopiaSeguridadUseCase(
         senderoRepositorio, autenticacionRepositorio, lectorArchivos, formatoCopiaSeguridad, guardarSenderoUseCase, Dispatchers.Default
     )
 
-    // Leer la copia elegida y separar sus senderos en nuevos y ya existentes en la cuenta
     suspend fun analizar(uri: String): Result<AnalisisCopiaSeguridad> {
         val usuario = autenticacionRepositorio.obtenerUsuarioActual() ?: return Result.failure(IllegalStateException(MENSAJE_SIN_SESION))
         val archivo = lectorArchivos.leerTexto(uri).getOrElse { fallo -> return Result.failure(fallo) }
@@ -135,16 +127,15 @@ class ImportarCopiaSeguridadUseCase(
         val locales = leerPrimero { senderoRepositorio.observarSenderosDelUsuario(usuario.id).first() }
             .getOrElse { fallo -> return Result.failure(fallo) }
             .associateBy { sendero -> sendero.id }
-        // Un id repetido dentro de la misma copia se guardaría dos veces sobre el mismo sendero: queda el primero
+        // Un id repetido dentro de la misma copia se guardaría dos veces sobre el mismo sendero. Por eso queda el primero
         val unicos = senderosCopia.distinctBy { sendero -> sendero.id.ifBlank { sendero.hashCode().toString() } }
         val (existentes, nuevos) = unicos.partition { sendero -> sendero.id in locales }
         val conCambios = existentes.count { sendero -> locales[sendero.id]?.estadoSincronizacion != EstadoSincronizacion.SINCRONIZADO }
         return Result.success(AnalisisCopiaSeguridad(nuevos = nuevos, existentes = existentes, existentesConCambiosSinSubir = conCambios))
     }
 
-    // Guardar los senderos de la copia según el modo elegido y devolver cuántos se guardaron; los que no pasan la validación se
-    // omiten y se informan con alRechazar. Al reemplazar, se conservan del sendero local los datos que la copia no lleva (el perfil,
-    // si sigue correspondiendo al trazado, y la marca de guardado desde Explorar). Como copias, los repetidos van con un id nuevo y "(copia)"
+    // Al reemplazar se conservan del sendero local los datos que la copia no lleva (el perfil, si sigue correspondiendo
+    // al trazado, y la marca de guardado desde Explorar)
     suspend fun aplicar(
         analisis: AnalisisCopiaSeguridad,
         modo: ModoRestauracion,
@@ -166,7 +157,6 @@ class ImportarCopiaSeguridadUseCase(
         }
     }
 
-    // Completar el sendero de la copia con lo que solo tiene el local: el perfil si corresponde al trazado de la copia y el origen
     private fun conservarDatosLocales(deLaCopia: Sendero, local: Sendero): Sendero {
         val firmaDeLaCopia = CalculadoraPerfil.firmaTrazado(deLaCopia.recorrido, deLaCopia.tipoRecorrido)
         return deLaCopia.copy(
@@ -176,7 +166,7 @@ class ImportarCopiaSeguridadUseCase(
     }
 }
 
-// Ejecutar una lectura del repositorio y convertir sus fallos en un resultado, sin atrapar la cancelación
+// Los fallos se convierten en un resultado, pero la cancelación se vuelve a lanzar
 private suspend fun <T> leerPrimero(lectura: suspend () -> T): Result<T> {
     return try {
         Result.success(lectura())

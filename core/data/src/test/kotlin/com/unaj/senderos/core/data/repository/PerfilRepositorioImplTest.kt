@@ -1,11 +1,11 @@
-package com.unaj.senderos.core.data.perfil
+package com.unaj.senderos.core.data.repository
 
 import com.unaj.senderos.core.domain.model.PerfilUsuario
-import com.unaj.senderos.core.network.FuenteAutenticacion
-import com.unaj.senderos.core.network.PerfilFuenteRemota
-import com.unaj.senderos.core.network.PerfilRed
-import com.unaj.senderos.core.network.SubidorFotos
-import com.unaj.senderos.core.network.UsuarioRed
+import com.unaj.senderos.core.network.auth.FuenteAutenticacion
+import com.unaj.senderos.core.network.perfil.PerfilFuenteRemota
+import com.unaj.senderos.core.network.perfil.PerfilRed
+import com.unaj.senderos.core.network.fotos.SubidorFotos
+import com.unaj.senderos.core.network.auth.UsuarioRed
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,6 +15,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import com.unaj.senderos.core.data.perfil.AlmacenPerfilLocal
+import com.unaj.senderos.core.data.perfil.PerfilGuardado
 
 private const val ID_USUARIO = "usuario-1"
 

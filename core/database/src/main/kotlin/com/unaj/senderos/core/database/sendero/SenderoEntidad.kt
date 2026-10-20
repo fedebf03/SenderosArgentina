@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.sendero
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -34,6 +34,5 @@ data class SenderoEntidad(
     val bioma: String = "SIN_DEFINIR",
     @ColumnInfo(defaultValue = "")
     val idOrigen: String = "",
-    // JSON del perfil de elevación; null si todavía no se calculó
     val perfilElevacion: PerfilElevacionEntidad? = null
 )

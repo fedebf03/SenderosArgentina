@@ -1,6 +1,6 @@
 package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.core.network.SenderoPublicoRed
+import com.unaj.senderos.core.network.senderopublico.SenderoPublicoRed
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.SenderoPublico
 

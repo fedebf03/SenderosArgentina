@@ -1,17 +1,16 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.openmeteo
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// Respuesta de la API de elevación de Open-Meteo: una altura en metros por coordenada pedida
 @Serializable
 data class RespuestaElevacionOpenMeteo(
     @SerialName("elevation") val elevacion: List<Double> = emptyList()
 )
 
-// API REST de Open-Meteo (Copernicus DEM GLO-90); acepta hasta 100 coordenadas por pedido, en listas separadas por coma
+// RF3 - Detalle: las alturas del perfil salen del modelo Copernicus GLO-90, con hasta 100 coordenadas por pedido
 interface ApiElevacionOpenMeteo {
 
     @GET("v1/elevation")

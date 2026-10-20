@@ -1,14 +1,13 @@
 package com.unaj.senderos.core.data.falsos
 
-import com.unaj.senderos.core.database.CoordenadaEntidad
-import com.unaj.senderos.core.database.EtapaEntidad
-import com.unaj.senderos.core.database.RecorridoEntidad
-import com.unaj.senderos.core.database.SenderoEntidad
-import com.unaj.senderos.core.network.CoordenadaRed
-import com.unaj.senderos.core.network.RecorridoRed
-import com.unaj.senderos.core.database.PerfilElevacionEntidad
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
-
+import com.unaj.senderos.core.database.recorrido.CoordenadaEntidad
+import com.unaj.senderos.core.database.sendero.EtapaEntidad
+import com.unaj.senderos.core.database.recorrido.RecorridoEntidad
+import com.unaj.senderos.core.database.sendero.SenderoEntidad
+import com.unaj.senderos.core.network.recorrido.CoordenadaRed
+import com.unaj.senderos.core.network.recorrido.RecorridoRed
+import com.unaj.senderos.core.database.sendero.PerfilElevacionEntidad
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
 fun crearEntidadDePrueba(
     id: String = "sendero-1",
     idUsuario: String = "usuario-1",

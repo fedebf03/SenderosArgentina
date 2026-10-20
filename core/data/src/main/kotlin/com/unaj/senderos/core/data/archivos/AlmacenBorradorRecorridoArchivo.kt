@@ -40,8 +40,8 @@ private data class BorradorRecorridoJson(
     val esSimulado: Boolean = false
 )
 
-// Guardar el borrador en un único archivo de la carpeta privada de la app: se escribe en un temporal y se renombra para que un corte a mitad
-// de la escritura nunca deje un archivo a medias
+// El borrador se escribe primero en un temporal y después se renombra. Por lo tanto un corte a mitad de la escritura
+// nunca deja el archivo a medias
 class AlmacenBorradorRecorridoArchivo(private val archivo: File) : AlmacenBorradorRecorrido {
 
     @Inject

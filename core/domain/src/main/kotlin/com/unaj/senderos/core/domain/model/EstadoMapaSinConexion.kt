@@ -5,7 +5,7 @@ sealed interface EstadoMapaSinConexion {
 
     data class Descargando(val porcentaje: Int, val bytesCompletados: Long) : EstadoMapaSinConexion
 
-    // La descarga sigue activa pero se perdió la conexión o el servidor no responde; se reanuda sola
+    // La descarga sigue activa aunque se perdió la conexión o el servidor no responde. Se reanuda sola
     data class EsperandoConexion(val porcentaje: Int, val bytesCompletados: Long) : EstadoMapaSinConexion
 
     data class Disponible(val bytes: Long) : EstadoMapaSinConexion

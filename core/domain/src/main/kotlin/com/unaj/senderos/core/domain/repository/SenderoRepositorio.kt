@@ -16,8 +16,7 @@ interface SenderoRepositorio {
 
     suspend fun guardarSendero(idUsuario: String, sendero: Sendero): Result<Unit>
 
-    // Guardar el perfil calculado (dato derivado: no renueva la fecha de modificación) y completar desnivel y alturas vacías;
-    // falla si el trazado cambió desde el cálculo
+    // El perfil es un dato derivado, por eso no renueva la fecha de modificación. Falla si el trazado cambió
     suspend fun guardarPerfilElevacion(idUsuario: String, idSendero: String, perfil: PerfilElevacion): Result<Unit>
 
     fun detenerSincronizacion(idUsuario: String)

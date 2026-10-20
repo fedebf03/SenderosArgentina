@@ -1,6 +1,6 @@
 package com.unaj.senderos.core.data.repository
 
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
 import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.model.PuntoPerfil
 import com.unaj.senderos.core.domain.model.PuntoRecorrido

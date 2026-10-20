@@ -49,6 +49,5 @@ data class Sendero(
     val foto: String = "",
     val bioma: Bioma = Bioma.SIN_DEFINIR,
     val idOrigen: String = "",
-    // Perfil de elevación del trazado planificado; null si todavía no se calculó
     val perfilElevacion: PerfilElevacion? = null
 )

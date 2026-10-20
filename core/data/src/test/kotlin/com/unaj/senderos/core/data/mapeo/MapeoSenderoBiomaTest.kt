@@ -1,6 +1,6 @@
 package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.network.sendero.SenderoRed
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.data.falsos.crearEntidadDePrueba

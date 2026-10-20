@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.sendero
 
 import kotlinx.serialization.Serializable
 
@@ -8,7 +8,7 @@ data class PuntoPerfilEntidad(
     val altitudMetros: Double
 )
 
-// Perfil de elevación guardado como JSON en la columna perfilElevacion de senderos
+// Se guarda como JSON en la columna perfilElevacion de senderos
 @Serializable
 data class PerfilElevacionEntidad(
     val puntos: List<PuntoPerfilEntidad>,

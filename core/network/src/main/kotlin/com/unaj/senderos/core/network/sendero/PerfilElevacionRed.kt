@@ -1,12 +1,11 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.sendero
 
-// Punto del perfil como se guarda en Firestore (valores por defecto requeridos por el deserializador)
+// Los valores por defecto los necesita el deserializador de Firestore
 data class PuntoPerfilRed(
     val distanciaKilometros: Double = 0.0,
     val altitudMetros: Double = 0.0
 )
 
-// Perfil de elevación como se guarda en Firestore dentro del documento del sendero
 data class PerfilElevacionRed(
     val puntos: List<PuntoPerfilRed> = emptyList(),
     val desnivelPositivoMetros: Int = 0,

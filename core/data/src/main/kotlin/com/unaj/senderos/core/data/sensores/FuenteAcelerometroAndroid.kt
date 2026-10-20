@@ -25,13 +25,8 @@ private const val CAPACIDAD_MUESTRAS = 1024
 private const val LATENCIA_LOTE_MICROSEGUNDOS = 2_000_000
 private const val SIN_LOTE_MICROSEGUNDOS = 0
 
-// Entregar las muestras de TYPE_ACCELEROMETER; se eligió el acelerómetro (y no TYPE_STEP_COUNTER) porque el algoritmo de pasos es propio y
-// porque el contador de pasos del sistema exige el permiso de reconocimiento de actividad y no existe en todos los equipos.
-// Frecuencia SENSOR_DELAY_GAME (unos 50 Hz): a 2-3 pasos por segundo la detección de picos necesita al menos 8 muestras por paso;
-// con SENSOR_DELAY_UI (unos 16 Hz) un trote quedaría con 5 muestras por paso. El acelerómetro es de bajo consumo.
-// Si el sensor tiene FIFO (fifoMaxEventCount > 0) se piden lotes de hasta 2 s para despertar menos la CPU; las muestras conservan su instante real.
-// Las muestras llegan en un hilo propio (HandlerThread) para no perderlas si el hilo principal está ocupado.
-// El instante se expresa en reloj de pared: instante del evento del sensor (monotónico) más el desfase actual entre ambos relojes
+// RF6 - Pasos: usamos el acelerómetro y no TYPE_STEP_COUNTER porque el algoritmo de pasos es propio. Además el contador
+// del sistema pide el permiso de actividad física y no existe en todos los equipos
 class FuenteAcelerometroAndroid @Inject constructor(@param:ApplicationContext private val contexto: Context) : FuenteAcelerometro {
 
     override fun observarMuestras(): Flow<MuestraAcelerometro> = callbackFlow {
@@ -42,11 +37,13 @@ class FuenteAcelerometroAndroid @Inject constructor(@param:ApplicationContext pr
             awaitClose { }
             return@callbackFlow
         }
+        // Las muestras llegan en un hilo propio para no perderlas si el hilo principal está ocupado
         val hilo = HandlerThread("senderos-acelerometro").also { nuevoHilo -> nuevoHilo.start() }
         val descartadas = AtomicInteger(0)
         val escucha = object : SensorEventListener {
 
             override fun onSensorChanged(evento: SensorEvent) {
+                // El instante del sensor es monotónico. Se pasa a reloj de pared sumando el desfase actual entre ambos relojes
                 val desfaseMilisegundos = System.currentTimeMillis() - SystemClock.elapsedRealtime()
                 val instante = evento.timestamp / NANOSEGUNDOS_POR_MILISEGUNDO + desfaseMilisegundos
                 val valores = evento.values
@@ -58,6 +55,8 @@ class FuenteAcelerometroAndroid @Inject constructor(@param:ApplicationContext pr
 
             override fun onAccuracyChanged(sensor: Sensor?, precision: Int) = Unit
         }
+        // SENSOR_DELAY_GAME (unos 50 Hz) da al menos 8 muestras por paso. En cambio UI (unos 16 Hz) dejaría 5 al trotar.
+        // Si el sensor tiene FIFO se piden lotes de hasta 2 s para despertar menos la CPU
         val latencia = if (sensor.fifoMaxEventCount > 0) LATENCIA_LOTE_MICROSEGUNDOS else SIN_LOTE_MICROSEGUNDOS
         val estaRegistrado = gestor.registerListener(escucha, sensor, SensorManager.SENSOR_DELAY_GAME, latencia, Handler(hilo.looper))
         Log.d(TAG, "Acelerómetro registrado: $estaRegistrado (latencia de lote: $latencia us)")

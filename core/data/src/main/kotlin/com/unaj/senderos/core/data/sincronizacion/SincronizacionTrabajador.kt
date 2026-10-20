@@ -8,8 +8,8 @@ import com.unaj.senderos.core.domain.model.ResumenSincronizacion
 import com.unaj.senderos.core.domain.notificaciones.DecisorNotificacionSincronizacion
 import com.unaj.senderos.core.domain.notificaciones.MensajeNotificacion
 import androidx.hilt.work.HiltWorker
-import com.unaj.senderos.core.database.RecorridoDao
-import com.unaj.senderos.core.database.SenderoDao
+import com.unaj.senderos.core.database.recorrido.RecorridoDao
+import com.unaj.senderos.core.database.sendero.SenderoDao
 import com.unaj.senderos.core.domain.port.Notificador
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -25,7 +25,7 @@ private val ERRORES_REINTENTABLES = setOf(
     TipoErrorRemoto.DESCONOCIDO
 )
 
-// Los errores permanentes del servidor no merecen reintento
+// Los errores permanentes del servidor no se reintentan porque volverían a fallar de la misma forma
 fun esErrorReintentable(error: Throwable?): Boolean {
     return error.tipoErrorRemoto() in ERRORES_REINTENTABLES
 }
@@ -41,6 +41,7 @@ class SincronizacionTrabajador @AssistedInject constructor(
     private val recorridoDao: RecorridoDao
 ) : CoroutineWorker(contexto, parametros) {
 
+    // RF7 - Sincronización: el worker sube y baja senderos y recorridos, y decide si reintentar o avisar del error
     override suspend fun doWork(): Result {
         val idUsuario = inputData.getString(CLAVE_ID_USUARIO).orEmpty()
         if (idUsuario.isBlank()) {
@@ -88,7 +89,6 @@ class SincronizacionTrabajador @AssistedInject constructor(
         notificador.notificar(mensaje)
     }
 
-    // Solo cuando la sincronización falló por completo y no se reintentará
     private suspend fun notificarPendientesSinSincronizar(idUsuario: String) {
         val cantidadPendientes = senderoDao.obtenerPendientes(idUsuario).size +
             recorridoDao.obtenerPendientes(idUsuario).size

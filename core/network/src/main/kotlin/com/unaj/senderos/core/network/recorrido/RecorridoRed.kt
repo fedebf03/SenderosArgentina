@@ -1,12 +1,12 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.recorrido
 
-// Posición del trazado caminado como se guarda en Firestore (valores por defecto requeridos por el deserializador)
+// Los valores por defecto los necesita el deserializador de Firestore
 data class CoordenadaRed(
     val latitud: Double = 0.0,
     val longitud: Double = 0.0
 )
 
-// Documento de recorrido en /usuarios/{idUsuario}/recorridos/{id}; el idUsuario va en la ruta
+// El idUsuario no se guarda porque ya va en la ruta /usuarios/{idUsuario}/recorridos/{id}
 data class RecorridoRed(
     val id: String = "",
     val idSendero: String = "",

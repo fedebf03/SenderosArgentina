@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.recorrido
 
 import androidx.room.Dao
 import androidx.room.Query
@@ -23,11 +23,11 @@ interface RecorridoDao {
     @Upsert
     suspend fun guardar(entidad: RecorridoEntidad)
 
-    // Quitar la fila de un recorrido eliminado solo si su fecha de modificación sigue igual a la leída; devolver filas afectadas
+    // Solo se quita la fila si la fecha de modificación sigue igual a la leída, por si hubo un cambio durante la subida
     @Query("DELETE FROM recorridos WHERE idUsuario = :idUsuario AND id = :idRecorrido AND estaEliminado = 1 AND fechaModificacion = :fechaLeida")
     suspend fun borrarEliminadoSiNoCambio(idUsuario: String, idRecorrido: String, fechaLeida: Long): Int
 
-    // Actualizar el estado solo si la fecha de modificación sigue igual a la leída; devolver filas afectadas
+    // Si el recorrido cambió durante la subida, la fecha ya no coincide y el estado no se toca
     @Query("UPDATE recorridos SET estadoSincronizacion = :estado WHERE idUsuario = :idUsuario AND id = :idRecorrido AND fechaModificacion = :fechaLeida")
     suspend fun actualizarEstadoSiNoCambio(idUsuario: String, idRecorrido: String, fechaLeida: Long, estado: String): Int
 }

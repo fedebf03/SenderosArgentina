@@ -36,7 +36,6 @@ private const val ESPERA_PRIMERA_LECTURA_MILISEGUNDOS = 30_000L
 private const val VELOCIDAD_PLAUSIBLE_METROS_POR_SEGUNDO = 3.0
 private const val DISTANCIA_MAXIMA_PRIMER_TRAMO_CIRCULAR_METROS = 30.0
 
-// Proyección de una posición sobre un tramo: distancia perpendicular y fracción recorrida del tramo (0 a 1)
 internal data class Proyeccion(val distanciaMetros: Double, val fraccion: Double)
 
 object CalculadoraSeguimiento {
@@ -55,7 +54,6 @@ object CalculadoraSeguimiento {
         )
     }
 
-    // Iniciar el seguimiento de una caminata libre: sin trazado, solo con el identificador y el nombre de la caminata
     fun iniciarCaminataLibre(idCaminata: String, nombre: String, ahora: Long): EstadoSeguimiento = EstadoSeguimiento(
         idSendero = idCaminata,
         nombreSendero = nombre,
@@ -64,6 +62,7 @@ object CalculadoraSeguimiento {
         esCaminataLibre = true
     )
 
+    // RF5 - Seguimiento: con cada lectura del GPS calculamos lo recorrido, lo que falta y los avisos del recorrido
     fun actualizar(
         estado: EstadoSeguimiento,
         lectura: LecturaUbicacion,
@@ -74,7 +73,8 @@ object CalculadoraSeguimiento {
         val tiempoTranscurrido = ahora - estado.instanteInicioMilisegundos
         val trazado = estado.trazado
         if ((lectura.precisionMetros ?: 0f) > precisionMaximaMetros) {
-            // Lectura imprecisa: no mueve la posición ni suma distancia (sí puede sumarse al trazado caminado); hace correr el tiempo, toma la velocidad del GPS (sigue siendo útil) y reevalúa la señal
+            // Una lectura imprecisa no mueve la posición ni suma distancia, aunque puede entrar al trazado caminado.
+            // En cambio hace correr el tiempo y su velocidad sigue siendo útil
             val sinMover = estado.copy(
                 tiempoTranscurridoMilisegundos = tiempoTranscurrido,
                 velocidadMetrosPorSegundo = lectura.velocidadMetrosPorSegundo
@@ -194,8 +194,8 @@ object CalculadoraSeguimiento {
         return ResultadoSeguimiento(estado = conTrazado, avisos = avisos)
     }
 
-    // Registrar una lectura válida de una caminata libre: suma la distancia desde la última posición aceptada (5 m o más), guarda velocidad,
-    // rumbo y trazado caminado; no calcula tramo, restante, desvío ni llegada porque no hay trazado
+    // Sin trazado no se calcula tramo, restante, desvío ni llegada. Solo se suma lo caminado desde la última
+    // posición aceptada
     private fun actualizarCaminataLibre(
         estado: EstadoSeguimiento,
         lectura: LecturaUbicacion,
@@ -222,9 +222,8 @@ object CalculadoraSeguimiento {
         return extenderTrazadoCaminado(nuevoEstado, lectura, esValida = true, precisionMaximaMetros = precisionMaximaMetros)
     }
 
-    // Extender el trazado caminado con la lectura si su precisión no supera el límite del trazado: siempre la primera; después, una válida
-    // separada 5 m o más del último punto, o una imprecisa separada al menos su propia precisión (para no dibujar el error del GPS con el
-    // usuario quieto). La lectura que no entra queda como pendiente para cerrar el trazado; no toca distancia, tramo ni avisos
+    // Una lectura imprecisa entra solo si está separada al menos su precisión, para no dibujar el error del GPS
+    // con el usuario quieto. La que no entra queda pendiente para cerrar el trazado al final
     private fun extenderTrazadoCaminado(
         estado: EstadoSeguimiento,
         lectura: LecturaUbicacion,
@@ -251,18 +250,18 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Calcular el límite de precisión del trazado: el doble del umbral del equipo con tope de 50 m, sin bajar nunca del propio umbral
+    // El doble del umbral del equipo con tope de 50 m, sin bajar nunca del propio umbral
     private fun limitePrecisionTrazadoMetros(precisionMaximaMetros: Float): Float =
         maxOf(precisionMaximaMetros, minOf(FACTOR_PRECISION_TRAZADO_CAMINADO * precisionMaximaMetros, TOPE_PRECISION_TRAZADO_METROS))
 
-    // Cerrar el trazado caminado con la última lectura que no había entrado, para que termine donde terminó el usuario
+    // Se agrega la última lectura que no había entrado, para que el trazado termine donde terminó el usuario
     fun cerrarTrazadoCaminado(estado: EstadoSeguimiento): List<Coordenada> {
         val pendiente = estado.ultimaPosicionConocida ?: return estado.trazadoCaminado
         return if (pendiente == estado.trazadoCaminado.lastOrNull()) estado.trazadoCaminado else estado.trazadoCaminado + pendiente
     }
 
-    // Evaluar la calidad de la señal con el reloj: en simulación siempre BUENA; BUENA si la última lectura válida tiene 15 s o menos;
-    // DEBIL si pasó más; sin ninguna lectura válida, BUSCANDO hasta los 30 s del inicio y DEBIL después
+    // RF5 - Señal GPS: la calidad depende de cuánto pasó desde la última lectura válida (15 s como máximo)
+    // Sin ninguna lectura válida se espera 30 s desde el inicio antes de pasar a DEBIL
     fun evaluarCalidad(estado: EstadoSeguimiento, ahora: Long): CalidadSenal {
         if (estado.esSimulado) return CalidadSenal.BUENA
         val ultimaValida = estado.instanteUltimaLecturaValidaMilisegundos
@@ -275,7 +274,7 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // Si pasa a DEBIL, deja la velocidad desconocida porque ya no es confiable
+    // Si pasa a DEBIL, la velocidad queda desconocida porque ya no es confiable
     fun reevaluarSenal(estado: EstadoSeguimiento, ahora: Long): EstadoSeguimiento {
         val calidad = evaluarCalidad(estado, ahora)
         return estado.copy(
@@ -295,7 +294,8 @@ object CalculadoraSeguimiento {
         return minOf(metros, UMBRAL_LLEGADA_MAXIMO_METROS) / METROS_POR_KILOMETRO
     }
 
-    // Determinar el rumbo: el del GPS si la velocidad es suficiente o desconocida, el geodésico si el desplazamiento supera el ruido, o el último conocido
+    // Se prefiere el rumbo del GPS con velocidad suficiente. Si no lo informa, se calcula con el desplazamiento cuando
+    // supera el ruido de la lectura
     private fun determinarRumbo(
         rumboAnterior: Float?,
         lectura: LecturaUbicacion,
@@ -350,7 +350,8 @@ object CalculadoraSeguimiento {
         return distanciaEnMetros(desde, PuntoRecorrido(hasta.latitud, hasta.longitud))
     }
 
-    // Buscar el tramo más cercano entre el actual y los que empiezan antes del límite de progreso; el más temprano gana los empates
+    // Solo se miran los tramos que empiezan antes del límite de progreso, así un trazado que pasa dos veces por el mismo
+    // lugar no salta hacia adelante. En los empates gana el tramo más temprano
     private fun buscarTramoMasCercano(
         trazado: List<PuntoRecorrido>,
         posicion: Coordenada,
@@ -373,7 +374,7 @@ object CalculadoraSeguimiento {
         return mejorIndice to mejorProyeccion
     }
 
-    // Usa una aproximación equirectangular local
+    // Usamos una aproximación equirectangular local, que alcanza para tramos cortos
     internal fun proyectarSobreTramo(posicion: Coordenada, origen: PuntoRecorrido, destino: PuntoRecorrido): Proyeccion {
         val factorLongitud = cos(Math.toRadians(origen.latitud))
         val destinoX = (destino.longitud - origen.longitud) * factorLongitud

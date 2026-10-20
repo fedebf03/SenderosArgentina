@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.sendero
 
 import androidx.room.Dao
 import androidx.room.Query
@@ -14,11 +14,10 @@ interface SenderoDao {
     @Query("SELECT * FROM senderos WHERE idUsuario = :idUsuario AND id = :idSendero AND estaEliminado = 0")
     fun observarPorId(idUsuario: String, idSendero: String): Flow<SenderoEntidad?>
 
-    // Obtener una vez un sendero del usuario, incluidos los eliminados, o null si no existe
+    // A diferencia de observarPorId, incluye los senderos eliminados
     @Query("SELECT * FROM senderos WHERE idUsuario = :idUsuario AND id = :idSendero")
     suspend fun obtenerPorId(idUsuario: String, idSendero: String): SenderoEntidad?
 
-    // Obtener una vez los senderos del usuario que no están marcados como eliminados
     @Query("SELECT * FROM senderos WHERE idUsuario = :idUsuario AND estaEliminado = 0")
     suspend fun obtenerActivos(idUsuario: String): List<SenderoEntidad>
 
@@ -31,7 +30,7 @@ interface SenderoDao {
     @Query("DELETE FROM senderos WHERE idUsuario = :idUsuario AND id = :idSendero")
     suspend fun borrarDefinitivamente(idUsuario: String, idSendero: String)
 
-    // Actualizar el estado solo si la fecha de modificación sigue igual a la leída; devolver filas afectadas
+    // Si el sendero cambió durante la subida, la fecha ya no coincide y el estado no se toca
     @Query("UPDATE senderos SET estadoSincronizacion = :estado WHERE idUsuario = :idUsuario AND id = :idSendero AND fechaModificacion = :fechaLeida")
     suspend fun actualizarEstadoSiNoCambio(idUsuario: String, idSendero: String, fechaLeida: Long, estado: String): Int
 

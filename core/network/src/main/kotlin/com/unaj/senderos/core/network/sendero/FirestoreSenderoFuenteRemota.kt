@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.sendero
 
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,6 +22,7 @@ class FirestoreSenderoFuenteRemota @Inject constructor(
         return instantanea.documents.mapNotNull { documento -> documento.toObject(SenderoRed::class.java) }
     }
 
+    // RF7 - Sincronización: cada sendero se sube completo como un documento dentro del usuario
     override suspend fun guardarSendero(idUsuario: String, sendero: SenderoRed) {
         documentoUsuario(idUsuario).collection(COLECCION_SENDEROS).document(sendero.id).set(sendero).await()
     }

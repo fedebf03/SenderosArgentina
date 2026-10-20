@@ -1,9 +1,7 @@
-package com.unaj.senderos.core.data.mapeo
+package com.unaj.senderos.core.data.elevacion
 
-import com.unaj.senderos.core.network.ApiElevacionOpenMeteo
-import com.unaj.senderos.core.data.elevacion.FuenteElevacionOpenMeteo
-import com.unaj.senderos.core.network.RespuestaElevacionOpenMeteo
-
+import com.unaj.senderos.core.network.openmeteo.ApiElevacionOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.RespuestaElevacionOpenMeteo
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.port.ErrorElevacionException
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException

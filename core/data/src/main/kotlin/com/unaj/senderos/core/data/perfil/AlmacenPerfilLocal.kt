@@ -15,7 +15,7 @@ private const val TAG = "PERFIL_LOCAL"
 private const val CARPETA_PERFILES = "perfiles"
 private const val SUFIJO_TEMPORAL = ".tmp"
 
-// Perfil tal como queda en el dispositivo: la foto local y la remota se guardan por separado para saber si falta subirla
+// La foto local y la remota se guardan por separado para saber si todavía falta subirla
 @Serializable
 data class PerfilGuardado(
     val nombre: String = "",
@@ -26,15 +26,15 @@ data class PerfilGuardado(
     val fotoRemota: String = "",
     val pendiente: Boolean = false
 ) {
-    // La foto que se muestra es la del dispositivo si hay, que se ve sin conexión, y si no la de la nube
+    // Se muestra la foto del dispositivo si hay, porque se ve sin conexión. Si no, se muestra la de la nube
     val fotoEfectiva: String
         get() = fotoLocal.ifBlank { fotoRemota }
 
     fun aPerfil() = PerfilUsuario(nombre, pais, provincia, localidad, fotoEfectiva)
 }
 
-// Guardar el perfil de cada usuario en un archivo propio de la carpeta privada de la app, con una copia en memoria: el perfil se lee
-// seguido (cada vez que se pide el usuario actual) y el archivo es chico. Se escribe en un temporal y se renombra para no dejar un archivo a medias
+// Tenemos una copia en memoria porque el perfil se lee cada vez que se pide el usuario actual y el archivo es chico.
+// Por otro lado se escribe en un temporal y se renombra para no dejar un archivo a medias
 @Singleton
 class AlmacenPerfilLocal(private val carpeta: File) {
 
@@ -44,7 +44,6 @@ class AlmacenPerfilLocal(private val carpeta: File) {
     private val json = Json { ignoreUnknownKeys = true }
     private val enMemoria = mutableMapOf<String, PerfilGuardado?>()
 
-    // Leer el perfil del usuario, de memoria o del archivo; nulo si nunca se guardó uno
     @Synchronized
     fun leer(idUsuario: String): PerfilGuardado? {
         if (enMemoria.containsKey(idUsuario)) return enMemoria[idUsuario]
@@ -61,7 +60,7 @@ class AlmacenPerfilLocal(private val carpeta: File) {
         return leido
     }
 
-    // Guardar el perfil; devuelve falso si no se pudo escribir, y en ese caso la copia en memoria no cambia
+    // Si no se pudo escribir el archivo devuelve falso y la copia en memoria queda como estaba
     @Synchronized
     fun guardar(idUsuario: String, perfil: PerfilGuardado): Boolean {
         return try {

@@ -1,6 +1,6 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.sendero
 
-// Fuente de datos remota de senderos; sus funciones lanzan excepción ante un fallo
+// Las funciones lanzan una excepción ante un fallo
 interface SenderoFuenteRemota {
     suspend fun obtenerSenderos(idUsuario: String): List<SenderoRed>
 

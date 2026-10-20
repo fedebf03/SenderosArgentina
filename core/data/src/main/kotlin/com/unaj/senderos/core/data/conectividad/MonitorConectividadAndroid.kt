@@ -21,11 +21,8 @@ import com.unaj.senderos.core.data.di.AlcanceEscrituras
 private const val TAG = "CONECTIVIDAD"
 private const val ESPERA_SIN_SUSCRIPTORES_MILISEGUNDOS = 5_000L
 
-/**
- * Monitor de red de Android. Recibe un alcance de proceso (inyectado por Hilt, que vive
- * tanto como la aplicación) para compartir una sola escucha de red entre todos los suscriptores: con
- * `WhileSubscribed` la escucha se registra al primer suscriptor y se libera 5 segundos después del último.
- */
+// Todos los suscriptores comparten una sola escucha de red en un alcance que vive tanto como la aplicación.
+// Con WhileSubscribed la escucha se registra con el primero y se libera 5 segundos después del último
 class MonitorConectividadAndroid @Inject constructor(
     @ApplicationContext contexto: Context,
     @AlcanceEscrituras alcance: CoroutineScope

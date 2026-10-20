@@ -5,7 +5,7 @@ import com.unaj.senderos.core.domain.model.RecorridoRealizado
 private const val DISTANCIA_MINIMA_KILOMETROS = 0.05
 private const val MILISEGUNDOS_POR_HORA = 3_600_000.0
 
-// Totales del usuario; pasosTotales es nulo si ningún recorrido contado midió pasos, y cantidadSimuladosIgnorados cuenta los de demostración que no entraron
+// pasosTotales queda nulo si ningún recorrido contado midió pasos
 data class EstadisticasUsuario(
     val cantidadRecorridos: Int,
     val distanciaTotalKilometros: Double,
@@ -18,7 +18,7 @@ data class EstadisticasUsuario(
 
 object CalculadoraEstadisticas {
 
-    // Calcular las estadísticas del historial: cuentan solo los recorridos reales (no simulados) de al menos 50 m; los de menos son pruebas sin distancia
+    // Solo cuentan los recorridos reales de al menos 50 m. Los más cortos suelen ser pruebas sin distancia
     fun calcular(recorridos: List<RecorridoRealizado>): EstadisticasUsuario {
         val reales = recorridos.filter { recorrido -> !recorrido.esSimulado && recorrido.distanciaKilometros >= DISTANCIA_MINIMA_KILOMETROS }
         val distanciaTotal = reales.sumOf { recorrido -> recorrido.distanciaKilometros }

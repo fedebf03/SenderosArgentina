@@ -82,7 +82,7 @@ class ControlSeguimientoCapturaTest {
         val resultado = control.capturarPunto(TipoPunto.MIRADOR, "nota", null)
 
         assertTrue(resultado.isFailure)
-        assertTrue(resultado.exceptionOrNull()?.message.orEmpty().contains("posición"))
+        assertTrue(resultado.exceptionOrNull()?.message.orEmpty().contains("señal de GPS"))
         assertTrue(puntosCapturados.llamadasGuardar.isEmpty())
     }
 

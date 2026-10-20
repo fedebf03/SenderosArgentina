@@ -5,7 +5,6 @@ import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.model.PuntoPerfil
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.TipoRecorrido
-import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
 import com.unaj.senderos.core.testing.crearSenderoDePrueba
 import kotlin.math.abs
 import org.junit.Assert.assertEquals

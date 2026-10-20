@@ -5,6 +5,10 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import com.unaj.senderos.core.database.recorrido.CoordenadaEntidad
+import com.unaj.senderos.core.database.sendero.EtapaEntidad
+import com.unaj.senderos.core.database.sendero.PerfilElevacionEntidad
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
 
 class ConvertidoresSendero {
 
@@ -40,13 +44,12 @@ class ConvertidoresSendero {
         return json.decodeFromString(ListSerializer(PuntoRecorridoEntidad.serializer()), texto)
     }
 
-    // Convertir el perfil de elevación a JSON, o a null si no se calculó
     @TypeConverter
     fun perfilATexto(perfil: PerfilElevacionEntidad?): String? {
         return perfil?.let { valor -> json.encodeToString(PerfilElevacionEntidad.serializer(), valor) }
     }
 
-    // Convertir el JSON guardado al perfil de elevación; un texto ilegible se trata como perfil sin calcular
+    // Un texto ilegible se trata como un perfil sin calcular
     @TypeConverter
     fun textoAPerfil(texto: String?): PerfilElevacionEntidad? {
         if (texto == null) return null

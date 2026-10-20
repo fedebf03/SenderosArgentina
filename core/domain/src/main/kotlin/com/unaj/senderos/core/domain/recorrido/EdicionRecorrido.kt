@@ -29,7 +29,7 @@ data class EdicionRecorrido(val puntos: List<PuntoRecorrido>, val seleccion: Int
         return EdicionRecorrido(puntos.filterIndexed { posicion, _ -> posicion != indice }, nuevaSeleccion)
     }
 
-    // Insertar el punto medio del tramo que termina en el índice dado, para afinar un tramo largo; antes del primero no hace nada
+    // Se agrega el punto medio del tramo que termina en el índice, para afinar un tramo largo
     fun insertarAntes(indice: Int): EdicionRecorrido {
         val anterior = puntos.getOrNull(indice - 1) ?: return this
         val siguiente = puntos.getOrNull(indice) ?: return this
@@ -41,8 +41,8 @@ data class EdicionRecorrido(val puntos: List<PuntoRecorrido>, val seleccion: Int
         return EdicionRecorrido(puntos.take(indice) + puntoMedio + puntos.drop(indice), nuevaSeleccion)
     }
 
-    // Insertar un punto de interés en el tramo más cercano, sin cambiar el inicio ni el final, igual que los puntos capturados caminando.
-    // La selección se suelta porque el punto elegido puede correrse de lugar
+    // Igual que con los puntos capturados caminando, no cambia el inicio ni el final. La selección se suelta porque
+    // el punto elegido puede correrse de lugar
     fun insertarPuntoDeInteres(punto: PuntoRecorrido, tipoRecorrido: TipoRecorrido): EdicionRecorrido {
         return EdicionRecorrido(CalculadoraInsercionPuntos.insertar(puntos, tipoRecorrido, listOf(punto)), seleccion = null)
     }

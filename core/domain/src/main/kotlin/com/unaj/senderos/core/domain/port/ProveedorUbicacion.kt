@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface ProveedorUbicacion {
 
-    // Obtener la ubicación actual; el éxito con null indica sin permiso o sin ubicación disponible
+    // Un éxito con nulo indica que no hay permiso o que no hay ubicación disponible
     suspend fun obtenerUbicacionActual(): Result<Coordenada?>
 
     fun observarUbicaciones(): Flow<LecturaUbicacion>

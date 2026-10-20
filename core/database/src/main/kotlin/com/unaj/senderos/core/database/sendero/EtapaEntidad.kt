@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.sendero
 
 import kotlinx.serialization.Serializable
 

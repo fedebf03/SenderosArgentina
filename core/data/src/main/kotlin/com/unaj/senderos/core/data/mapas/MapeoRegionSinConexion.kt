@@ -30,7 +30,6 @@ fun MetadatosRegion.aBytes(): ByteArray {
     return formatoJson.encodeToString(MetadatosRegion.serializer(), this).toByteArray(Charsets.UTF_8)
 }
 
-// Leer los metadatos de una región; devolver nulo si faltan o no son legibles
 fun leerMetadatosRegion(bytes: ByteArray?): MetadatosRegion? {
     if (bytes == null) return null
     return try {
@@ -112,7 +111,8 @@ data class CandidataRegion(val id: Long, val estaCompleta: Boolean)
 
 data class PlanRegiones(val principal: Long, val anterior: Long?, val sobrantes: List<Long>)
 
-// Planificar qué regiones de un mismo sendero conservar: la de mayor id es la vigente y, si está incompleta, la completa más reciente queda como anterior
+// De las regiones de un mismo sendero la vigente es la de mayor id. Si está incompleta, se conserva como anterior
+// la última región completa para seguir teniendo mapa mientras termina la descarga
 fun planificarRegiones(candidatas: List<CandidataRegion>): PlanRegiones? {
     val ordenadas = candidatas.sortedByDescending { candidata -> candidata.id }
     val principal = ordenadas.firstOrNull() ?: return null

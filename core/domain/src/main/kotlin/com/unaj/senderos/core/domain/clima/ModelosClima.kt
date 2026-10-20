@@ -2,7 +2,7 @@ package com.unaj.senderos.core.domain.clima
 
 import com.unaj.senderos.core.domain.model.Coordenada
 
-// Condición del cielo que se muestra al usuario, a partir de los códigos WMO que informa Open-Meteo
+// Se arma a partir de los códigos WMO que informa Open-Meteo
 enum class CondicionClima(val descripcion: String) {
     DESPEJADO("Despejado"),
     POCO_NUBLADO("Poco nublado"),
@@ -19,7 +19,6 @@ enum class CondicionClima(val descripcion: String) {
     VARIABLE("Variable");
 
     companion object {
-        // Interpretar un código WMO; uno desconocido se muestra como variable en lugar de fallar
         fun desdeCodigo(codigo: Int): CondicionClima = when (codigo) {
             0 -> DESPEJADO
             1 -> POCO_NUBLADO
@@ -38,7 +37,6 @@ enum class CondicionClima(val descripcion: String) {
     }
 }
 
-// Clima de ahora en el lugar consultado
 data class ClimaActual(
     val temperaturaCelsius: Double,
     val sensacionTermicaCelsius: Double?,
@@ -48,7 +46,7 @@ data class ClimaActual(
     val esDeDia: Boolean
 )
 
-// Pronóstico de un día; la fecha va como texto ISO (aaaa-mm-dd) en la zona horaria del lugar
+// La fecha va como texto ISO (aaaa-mm-dd) en la zona horaria del lugar
 data class PronosticoDia(
     val fecha: String,
     val temperaturaMaximaCelsius: Double,
@@ -60,7 +58,6 @@ data class PronosticoDia(
     val condicion: CondicionClima
 )
 
-// Clima de ahora y de los próximos días en un lugar, con el instante en que se obtuvo para saber qué tan viejo es
 data class PronosticoClima(
     val lugar: Coordenada,
     val obtenidoMilisegundos: Long,

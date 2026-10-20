@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.puntocapturado
 
 import androidx.room.Entity
 

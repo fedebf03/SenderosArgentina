@@ -1,14 +1,13 @@
-package com.unaj.senderos.core.data.mapeo
+package com.unaj.senderos.core.data.clima
 
-import com.unaj.senderos.core.data.clima.FuentePronosticoOpenMeteo
 import com.unaj.senderos.core.domain.clima.CondicionClima
 import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.port.ErrorPronosticoException
 import com.unaj.senderos.core.domain.port.SinConexionPronosticoException
-import com.unaj.senderos.core.network.ApiPronosticoOpenMeteo
-import com.unaj.senderos.core.network.ClimaActualOpenMeteo
-import com.unaj.senderos.core.network.ClimaDiarioOpenMeteo
-import com.unaj.senderos.core.network.RespuestaPronosticoOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.ApiPronosticoOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.ClimaActualOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.ClimaDiarioOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.RespuestaPronosticoOpenMeteo
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerializationException
 import okhttp3.ResponseBody.Companion.toResponseBody

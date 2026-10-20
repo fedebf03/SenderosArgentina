@@ -1,8 +1,8 @@
 package com.unaj.senderos.core.domain.configuracion
 
-// Constantes puras del mapa base; viven en dominio porque tanto presentation como data pueden depender de él
+// Están en dominio porque las usan tanto la presentación como la capa de datos
 object ConfiguracionEstiloMapa {
-    // Estilo vectorial gratuito de OpenFreeMap (sin clave); MapLibre agrega la atribución automáticamente
+    // Estilo vectorial gratuito de OpenFreeMap (sin clave). MapLibre agrega la atribución por su cuenta
     const val URL_ESTILO = "https://tiles.openfreemap.org/styles/liberty"
 
     const val ZOOM_MINIMO_DESCARGA = 10.0

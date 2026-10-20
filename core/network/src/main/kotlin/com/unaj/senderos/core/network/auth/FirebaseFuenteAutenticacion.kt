@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.auth
 
 import android.util.Log
 import com.google.android.gms.tasks.Task
@@ -26,20 +26,23 @@ class FirebaseFuenteAutenticacion @Inject constructor(
     private val firebaseAuth: FirebaseAuth
 ) : FuenteAutenticacion {
 
+    // RF1 - Login: Firebase Auth valida el correo y la clave, y el error se traduce a un mensaje en español
     override suspend fun iniciarSesion(email: String, clave: String): Result<UsuarioRed> {
         return esperarResultado { firebaseAuth.signInWithEmailAndPassword(email, clave) }
     }
 
+    // RF1 - Registro: Firebase crea la cuenta con correo y clave y deja la sesión iniciada
     override suspend fun registrar(email: String, clave: String): Result<UsuarioRed> {
         return esperarResultado { firebaseAuth.createUserWithEmailAndPassword(email, clave) }
     }
 
+    // RF1 - Google: el idToken que entrega Credential Manager se cambia por una credencial de Firebase
     override suspend fun iniciarSesionConGoogle(idToken: String): Result<UsuarioRed> {
         val credencialGoogle = GoogleAuthProvider.getCredential(idToken, null)
         return esperarResultado { firebaseAuth.signInWithCredential(credencialGoogle) }
     }
 
-    // Enviar el correo de recuperación sin revelar si el correo pertenece a una cuenta existente
+    // RF1 - Recuperación: el correo se envía sin revelar si pertenece a una cuenta existente
     override suspend fun enviarCorreoRecuperacion(email: String): Result<Unit> {
         return try {
             firebaseAuth.sendPasswordResetEmail(email).await()
@@ -60,7 +63,7 @@ class FirebaseFuenteAutenticacion @Inject constructor(
         }
     }
 
-    // Cambiar el nombre que Firebase guarda en la cuenta, el mismo que ven los demás en los senderos públicos
+    // Es el mismo nombre que ven los demás en los senderos públicos
     override suspend fun actualizarNombre(nombre: String): Result<Unit> {
         val usuario = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
         return try {
@@ -74,7 +77,7 @@ class FirebaseFuenteAutenticacion @Inject constructor(
         }
     }
 
-    // Confirmar la identidad con la clave actual y recién entonces cambiarla; Firebase lo exige para una operación sensible
+    // Firebase exige confirmar la identidad con la clave actual antes de una operación sensible como esta
     override suspend fun cambiarContrasena(claveActual: String, claveNueva: String): Result<Unit> {
         val usuario = firebaseAuth.currentUser ?: return Result.failure(IllegalStateException("No hay una sesión activa"))
         val correo = usuario.email ?: return Result.failure(IllegalStateException("La cuenta no tiene un correo"))

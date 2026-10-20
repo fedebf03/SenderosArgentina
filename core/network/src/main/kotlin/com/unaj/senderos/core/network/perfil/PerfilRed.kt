@@ -1,6 +1,5 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.perfil
 
-// Perfil del usuario como se guarda en Firestore, dentro del campo "perfil" del documento del usuario
 data class PerfilRed(
     val nombre: String = "",
     val pais: String = "",

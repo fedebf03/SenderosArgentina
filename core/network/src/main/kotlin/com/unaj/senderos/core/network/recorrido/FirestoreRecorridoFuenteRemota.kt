@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.recorrido
 
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,6 +22,7 @@ class FirestoreRecorridoFuenteRemota @Inject constructor(
         return instantanea.documents.mapNotNull { documento -> documento.toObject(RecorridoRed::class.java) }
     }
 
+    // RF5 - Historial: cada recorrido realizado se guarda como un documento dentro del usuario
     override suspend fun guardarRecorrido(idUsuario: String, recorrido: RecorridoRed) {
         documentoUsuario(idUsuario).collection(COLECCION_RECORRIDOS).document(recorrido.id).set(recorrido).await()
     }

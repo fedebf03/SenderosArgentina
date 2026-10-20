@@ -1,11 +1,11 @@
 package com.unaj.senderos.core.data.mapeo
 
-import com.unaj.senderos.core.database.EtapaEntidad
-import com.unaj.senderos.core.database.PuntoRecorridoEntidad
-import com.unaj.senderos.core.database.SenderoEntidad
-import com.unaj.senderos.core.network.EtapaRed
-import com.unaj.senderos.core.network.PuntoRecorridoRed
-import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.database.sendero.EtapaEntidad
+import com.unaj.senderos.core.database.sendero.PuntoRecorridoEntidad
+import com.unaj.senderos.core.database.sendero.SenderoEntidad
+import com.unaj.senderos.core.network.sendero.EtapaRed
+import com.unaj.senderos.core.network.sendero.PuntoRecorridoRed
+import com.unaj.senderos.core.network.sendero.SenderoRed
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.domain.model.Dificultad
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
@@ -23,7 +23,6 @@ private fun resolverTipoRecorrido(nombre: String): TipoRecorrido {
     return TipoRecorrido.entries.firstOrNull { valor -> valor.name == nombre } ?: TipoRecorrido.LINEAL
 }
 
-// Resolver el nombre guardado a un bioma, usando SIN_DEFINIR si es desconocido
 private fun resolverBioma(nombre: String): Bioma {
     return Bioma.entries.firstOrNull { valor -> valor.name == nombre } ?: Bioma.SIN_DEFINIR
 }

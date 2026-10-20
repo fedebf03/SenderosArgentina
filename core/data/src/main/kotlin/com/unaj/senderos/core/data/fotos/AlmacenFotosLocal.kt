@@ -29,6 +29,7 @@ class AlmacenFotosLocal @Inject constructor(@ApplicationContext contexto: Contex
     private val contexto = contexto.applicationContext
     private val carpetaFotos = File(this.contexto.filesDir, "fotos_senderos")
 
+    // RF6 - Fotos: guardamos una copia achicada de la foto de cámara o galería en la carpeta privada de la app
     override suspend fun guardarCopia(uriOrigen: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             val imagen = decodificarAchicada(Uri.parse(uriOrigen))
@@ -44,7 +45,7 @@ class AlmacenFotosLocal @Inject constructor(@ApplicationContext contexto: Contex
         }
     }
 
-    // Borrar la copia solo si está dentro de la carpeta privada de fotos; es idempotente y registra sin lanzar cualquier fallo
+    // Solo se borran archivos de la carpeta privada de fotos, nunca una ruta de afuera. Si falla, se registra y se sigue
     override suspend fun borrar(ruta: String) = withContext(Dispatchers.IO) {
         try {
             val archivo = File(ruta).canonicalFile
@@ -59,7 +60,7 @@ class AlmacenFotosLocal @Inject constructor(@ApplicationContext contexto: Contex
 
     // Se limita el lado mayor para no guardar ni subir archivos de varios megas
     private fun decodificarAchicada(uri: Uri): Bitmap {
-        // ImageDecoder respeta la orientación EXIF de las fotos de cámara; BitmapFactory no
+        // Por una parte ImageDecoder ya gira la foto según el EXIF. En cambio BitmapFactory (Android 8 y 8.1) no lo hace
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val fuente = ImageDecoder.createSource(contexto.contentResolver, uri)
             return ImageDecoder.decodeBitmap(fuente) { decodificador, informacion, _ ->

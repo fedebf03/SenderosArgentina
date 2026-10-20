@@ -1,6 +1,5 @@
 package com.unaj.senderos.core.domain.clima
 
-// Avisos que se le muestran al usuario antes de salir a caminar
 enum class AlertaClima(val titulo: String, val detalle: String) {
     VIENTO_FUERTE("Viento fuerte", "Hay viento sostenido de 40 km/h o ráfagas de 60 km/h o más: evitá las crestas y los tramos expuestos"),
     TORMENTA("Tormenta", "Se esperan tormentas: no salgas a zonas altas ni abiertas y buscá refugio ante los primeros truenos"),
@@ -17,7 +16,6 @@ private const val CALOR_EXTREMO_CELSIUS = 35.0
 
 object EvaluadorAlertasClima {
 
-    // Evaluar los avisos de un día del pronóstico con los umbrales de viento, tormenta, lluvia y temperatura
     fun evaluarDia(dia: PronosticoDia): Set<AlertaClima> = buildSet {
         if (esVientoFuerte(dia.vientoMaximoKilometrosPorHora, dia.rafagasMaximasKilometrosPorHora)) add(AlertaClima.VIENTO_FUERTE)
         if (esTormenta(dia.condicion)) add(AlertaClima.TORMENTA)
@@ -26,13 +24,12 @@ object EvaluadorAlertasClima {
         if (dia.temperaturaMaximaCelsius >= CALOR_EXTREMO_CELSIUS) add(AlertaClima.CALOR_EXTREMO)
     }
 
-    // Evaluar los avisos del clima de ahora: viento y tormenta, que son los que cambian la decisión de salir en este momento
+    // Para el clima de ahora solo cuentan el viento y la tormenta, que cambian la decisión de salir en este momento
     fun evaluarActual(actual: ClimaActual): Set<AlertaClima> = buildSet {
         if (esVientoFuerte(actual.vientoKilometrosPorHora, actual.rafagasKilometrosPorHora)) add(AlertaClima.VIENTO_FUERTE)
         if (esTormenta(actual.condicion)) add(AlertaClima.TORMENTA)
     }
 
-    // Agrupar por fecha los avisos de cada día del pronóstico; los días tranquilos no aparecen
     fun evaluarDias(pronostico: PronosticoClima): Map<String, Set<AlertaClima>> =
         pronostico.dias
             .associate { dia -> dia.fecha to evaluarDia(dia) }

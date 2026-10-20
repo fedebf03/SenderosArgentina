@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.openmeteo
 
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,7 +12,7 @@ private const val SEGUNDOS_CONEXION = 10L
 private const val SEGUNDOS_LECTURA = 15L
 private const val SEGUNDOS_TOTAL = 30L
 
-// Crear el cliente Retrofit de Open-Meteo con tiempos de espera acotados para no colgar la sincronización ni la pantalla
+// Los tiempos de espera son acotados para no colgar la sincronización ni la pantalla
 internal fun crearRetrofitOpenMeteo(): Retrofit {
     val cliente = OkHttpClient.Builder()
         .connectTimeout(SEGUNDOS_CONEXION, TimeUnit.SECONDS)
@@ -28,8 +28,6 @@ internal fun crearRetrofitOpenMeteo(): Retrofit {
         .build()
 }
 
-// Crear la API de elevación de Open-Meteo
 fun crearApiElevacionOpenMeteo(): ApiElevacionOpenMeteo = crearRetrofitOpenMeteo().create(ApiElevacionOpenMeteo::class.java)
 
-// Crear la API del pronóstico de Open-Meteo
 fun crearApiPronosticoOpenMeteo(): ApiPronosticoOpenMeteo = crearRetrofitOpenMeteo().create(ApiPronosticoOpenMeteo::class.java)

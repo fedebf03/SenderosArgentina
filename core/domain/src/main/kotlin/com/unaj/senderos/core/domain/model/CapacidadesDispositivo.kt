@@ -1,6 +1,6 @@
 package com.unaj.senderos.core.domain.model
 
-// La brújula equivale al sensor de vector de rotación, que es el que usa la app
+// La brújula corresponde al sensor de vector de rotación, que es el que usa la app
 data class CapacidadesDispositivo(
     val tieneGps: Boolean,
     val tieneAcelerometro: Boolean,

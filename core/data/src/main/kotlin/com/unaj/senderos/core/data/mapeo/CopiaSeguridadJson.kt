@@ -16,12 +16,12 @@ import javax.inject.Inject
 private const val NOMBRE_APLICACION = "SenderosArgentina"
 private const val VERSION_FORMATO = 1
 private const val MENSAJE_NO_ES_COPIA = "El archivo no es una copia de seguridad de Senderos"
-// Solo se aceptan las fotos subidas por la app; una copia armada a mano no puede meter rutas del teléfono ni sitios de terceros
+// Solo se aceptan fotos subidas por la app. Así una copia armada a mano no puede meter rutas del teléfono ni sitios de terceros
 private const val PREFIJO_FOTOS_EN_LA_NUBE = "https://res.cloudinary.com/"
 private const val LARGO_MAXIMO_ID = 128
 private val FORMATO_ID_VALIDO = Regex("[A-Za-z0-9_-]+")
 
-// Archivo de copia de seguridad: identifica la aplicación y la versión para poder leer copias de versiones futuras
+// La aplicación y la versión quedan en el archivo para poder reconocer copias de versiones futuras
 @Serializable
 private data class CopiaSeguridadArchivo(
     val aplicacion: String,
@@ -30,7 +30,7 @@ private data class CopiaSeguridadArchivo(
     val senderos: List<SenderoCopia>
 )
 
-// Datos que el usuario carga en un sendero. No viajan el usuario, el estado de sincronización ni el perfil (se recalcula)
+// No viajan el usuario ni el estado de sincronización. Tampoco el perfil de elevación, que se recalcula
 @Serializable
 private data class SenderoCopia(
     val id: String,
@@ -75,7 +75,7 @@ class CopiaSeguridadJson @Inject constructor() : FormatoCopiaSeguridad {
         encodeDefaults = true
     }
 
-    // Convertir los senderos al JSON de la copia, legible por una persona
+    // RF4 - Exportar: la copia de seguridad es un JSON con los senderos del usuario que una persona puede leer
     override fun escribir(senderos: List<Sendero>, instanteMilisegundos: Long): String {
         val archivo = CopiaSeguridadArchivo(
             aplicacion = NOMBRE_APLICACION,
@@ -86,7 +86,6 @@ class CopiaSeguridadJson @Inject constructor() : FormatoCopiaSeguridad {
         return json.encodeToString(CopiaSeguridadArchivo.serializer(), archivo)
     }
 
-    // Leer los senderos de la copia; un JSON de otra aplicación, uno roto o uno sin los campos obligatorios falla con un mensaje claro
     override fun leer(texto: String): Result<List<Sendero>> {
         val archivo = try {
             json.decodeFromString(CopiaSeguridadArchivo.serializer(), texto)
@@ -99,7 +98,6 @@ class CopiaSeguridadJson @Inject constructor() : FormatoCopiaSeguridad {
         return Result.success(archivo.senderos.map(::aDominio))
     }
 
-    // Pasar un sendero al formato de la copia, dejando afuera las fotos que solo existen en este teléfono
     private fun aCopia(sendero: Sendero): SenderoCopia = SenderoCopia(
         id = sendero.id,
         nombre = sendero.nombre,
@@ -125,9 +123,9 @@ class CopiaSeguridadJson @Inject constructor() : FormatoCopiaSeguridad {
         bioma = sendero.bioma.name
     )
 
-    // Pasar un sendero de la copia al dominio; los valores desconocidos (de una versión más nueva) toman el valor por defecto
+    // Un valor desconocido (de una versión más nueva de la app) toma el valor por defecto
     private fun aDominio(copia: SenderoCopia): Sendero = Sendero(
-        // Un id con un formato inesperado (por ejemplo con "/") rompería la ruta en la nube: se guarda como sendero nuevo
+        // Un id con un formato inesperado (por ejemplo con "/") rompería la ruta en la nube, por eso se guarda como sendero nuevo
         id = copia.id.takeIf { id -> id.length <= LARGO_MAXIMO_ID && FORMATO_ID_VALIDO.matches(id) }.orEmpty(),
         idUsuario = "",
         nombre = copia.nombre,
@@ -153,10 +151,9 @@ class CopiaSeguridadJson @Inject constructor() : FormatoCopiaSeguridad {
         bioma = enumeradoODefecto(copia.bioma, Bioma.SIN_DEFINIR)
     )
 
-    // Conservar la foto solo si está subida a la nube de la app; una ruta local no sirve en otro teléfono
+    // Una ruta local no sirve en otro teléfono, por eso solo se conserva la foto subida a la nube de la app
     private fun soloFotoEnLaNube(foto: String): String = if (foto.startsWith(PREFIJO_FOTOS_EN_LA_NUBE)) foto else ""
 }
 
-// Convertir el nombre al valor del enumerado o devolver el valor por defecto si no existe
 private inline fun <reified T : Enum<T>> enumeradoODefecto(nombre: String, porDefecto: T): T =
     enumValues<T>().firstOrNull { valor -> valor.name == nombre } ?: porDefecto

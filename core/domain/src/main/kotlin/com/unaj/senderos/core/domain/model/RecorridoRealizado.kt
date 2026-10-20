@@ -1,8 +1,7 @@
 package com.unaj.senderos.core.domain.model
 
-// Recorrido terminado por el usuario sobre un sendero; los pasos y el ritmo son nulos si el equipo no los mide.
-// Limitaciones: el trazado caminado no tiene tope y todo el recorrido se sube como un único documento de Firestore (máximo 1 MiB).
-// El id sale del instante de inicio: si se reemplaza un recorrido activo puede guardarse dos veces con el mismo id (guardado idempotente) y solo cambia finMilisegundos
+// El id sale del instante de inicio. Si se reemplaza un recorrido activo puede guardarse dos veces con el mismo id
+// y solo cambia finMilisegundos (el guardado es idempotente)
 data class RecorridoRealizado(
     val id: String,
     val idUsuario: String,

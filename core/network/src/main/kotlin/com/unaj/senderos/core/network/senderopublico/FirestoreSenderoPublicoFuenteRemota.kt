@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.senderopublico
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,6 +15,7 @@ class FirestoreSenderoPublicoFuenteRemota @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : SenderoPublicoFuenteRemota {
 
+    // RF2 - Explorar: escuchamos en vivo los senderos públicos, del más reciente al más viejo
     override fun observarTodos(): Flow<List<SenderoPublicoRed>> = callbackFlow {
         val registro = firestore.collection(COLECCION_PUBLICOS)
             .orderBy("fechaPublicacion", Query.Direction.DESCENDING)

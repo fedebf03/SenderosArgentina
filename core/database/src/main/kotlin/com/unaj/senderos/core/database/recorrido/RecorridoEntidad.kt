@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.database
+package com.unaj.senderos.core.database.recorrido
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -28,7 +28,7 @@ data class RecorridoEntidad(
     val esSimulado: Boolean,
     val estadoSincronizacion: String,
     val fechaModificacion: Long,
-    // Borrado lógico: el recorrido queda oculto hasta que se borra de la nube y recién entonces se quita la fila
+    // Borrado lógico. El recorrido queda oculto hasta que se borra de la nube y recién entonces se quita la fila
     @ColumnInfo(defaultValue = "0")
     val estaEliminado: Boolean = false
 )

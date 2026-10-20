@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.senderopublico
 
 import kotlinx.coroutines.flow.Flow
 

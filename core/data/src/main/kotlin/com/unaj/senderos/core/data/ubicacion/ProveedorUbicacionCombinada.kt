@@ -31,7 +31,6 @@ private const val INTERVALO_UBICACION_MILISEGUNDOS = 5_000L
 
 class ProveedorUbicacionCombinada @Inject constructor(@param:ApplicationContext private val contexto: Context) : ProveedorUbicacion {
 
-    // Obtener la ubicación actual; éxito con null si falta el permiso o no hay ubicación disponible
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun obtenerUbicacionActual(): Result<Coordenada?> {
         if (!tienePermisoDeUbicacion()) {
@@ -68,7 +67,7 @@ class ProveedorUbicacionCombinada @Inject constructor(@param:ApplicationContext 
         val cliente = LocationServices.getFusedLocationProviderClient(contexto)
         val peticion = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, INTERVALO_UBICACION_MILISEGUNDOS).build()
         val escucha = object : LocationCallback() {
-            // Emitir la última posición recibida con su precisión; el dominio decide si es válida (así puede medir la calidad de la señal)
+            // Se emite cada posición con su precisión aunque sea mala. El dominio decide si sirve y así mide la calidad de la señal
             override fun onLocationResult(resultado: LocationResult) {
                 resultado.lastLocation?.let { posicion -> trySend(convertirALectura(posicion)) }
             }

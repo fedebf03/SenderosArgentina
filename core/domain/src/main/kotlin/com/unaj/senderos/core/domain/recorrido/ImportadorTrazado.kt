@@ -7,7 +7,6 @@ import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.model.TipoPunto
 import com.unaj.senderos.core.domain.model.TipoRecorrido
 
-// Trazado listo para el formulario: nombre sugerido, puntos simplificados (con los puntos de interés), tipo detectado y perfil si el archivo trae alturas
 data class TrazadoImportado(
     val nombre: String,
     val recorrido: List<PuntoRecorrido>,
@@ -27,9 +26,8 @@ private const val MAXIMO_PUNTOS_DE_INTERES_IMPORTADOS = 50
 
 object ImportadorTrazado {
 
-    // Convertir lo leído de un archivo en un recorrido editable: detecta si es de ida y vuelta (y deja solo la ida) o circular,
-    // lo simplifica para que se pueda editar a mano, agrega los waypoints como puntos de interés y arma el perfil con las alturas
-    // del archivo. Falla si no hay al menos dos puntos distintos
+    // RF4 - Importar GPX: detectamos el tipo de recorrido, simplificamos el trazado y armamos el perfil del archivo
+    // De un ida y vuelta se queda solo la ida, porque la vuelta la arma la aplicación
     fun importar(leido: TrazadoLeido, nombreArchivo: String): Result<TrazadoImportado> {
         val puntos = leido.puntos.filterIndexed { indice, punto ->
             indice == 0 || punto.latitud != leido.puntos[indice - 1].latitud || punto.longitud != leido.puntos[indice - 1].longitud
@@ -53,8 +51,8 @@ object ImportadorTrazado {
         )
     }
 
-    // Convertir los waypoints en puntos de interés de tipo Otro: solo los que están a 100 m o menos del camino (un GPX puede traer
-    // marcas de toda una zona) y a lo sumo 50, para no inflar el trazado ni el documento del sendero
+    // Solo entran los waypoints a 100 m o menos del camino (un GPX puede traer marcas de toda una zona) y a lo sumo 50,
+    // para no inflar el trazado ni el documento del sendero
     private fun elegirPuntosDeInteres(
         marcados: List<PuntoDeInteresLeido>,
         recorrido: List<PuntoRecorrido>,
@@ -70,9 +68,8 @@ object ImportadorTrazado {
         }.take(MAXIMO_PUNTOS_DE_INTERES_IMPORTADOS)
     }
 
-    // Decidir el tipo de recorrido y los puntos que lo describen. Ida y vuelta: el regreso va por el mismo camino (el 90 % de los
-    // puntos de vuelta a 25 m o menos de la ida) y termina cerca del inicio; se queda solo la ida, hasta el punto más lejano del
-    // inicio. Circular: termina a 100 m o menos del inicio por otro camino. Lineal en cualquier otro caso
+    // Es ida y vuelta si termina cerca del inicio y el 90 % de la vuelta pasa a 25 m o menos de la ida. Es circular
+    // si termina a 100 m o menos del inicio por otro camino, y lineal en cualquier otro caso
     private fun detectarTipo(puntos: List<PuntoLeido>): Pair<TipoRecorrido, List<PuntoLeido>> {
         val indicesMuestra = submuestrear(puntos.size)
         val muestra = indicesMuestra.map { indice -> puntos[indice] }
@@ -92,7 +89,7 @@ object ImportadorTrazado {
                 }
             }
             if (sobreElCamino >= FRACCION_MINIMA_SOBRE_EL_CAMINO * vuelta.size) {
-                // Por índice y no por valor: un trazado puede pasar dos veces por el mismo punto
+                // Se usa el índice y no el valor porque un trazado puede pasar dos veces por el mismo punto
                 val giroOriginal = indicesMuestra[indiceGiro]
                 return TipoRecorrido.IDA_Y_VUELTA to puntos.subList(0, giroOriginal + 1)
             }
@@ -100,14 +97,14 @@ object ImportadorTrazado {
         return TipoRecorrido.CIRCULAR to puntos
     }
 
-    // Elegir los índices de a lo sumo 3000 puntos repartidos, con el último incluido, para que la detección no sea lenta con trazados muy largos
+    // Con 3000 puntos repartidos como máximo la detección no se vuelve lenta en trazados muy largos
     private fun submuestrear(cantidad: Int): List<Int> {
         if (cantidad <= MAXIMO_PUNTOS_PARA_DETECTAR) return List(cantidad) { indice -> indice }
         val paso = cantidad.toDouble() / MAXIMO_PUNTOS_PARA_DETECTAR
         return (List(MAXIMO_PUNTOS_PARA_DETECTAR) { indice -> (indice * paso).toInt() } + (cantidad - 1)).distinct()
     }
 
-    // Simplificar con 5 m de tolerancia y, si quedan más de 300 puntos, duplicarla hasta que entren
+    // Se empieza con 5 m de tolerancia y se duplica hasta que queden 300 puntos o menos
     private fun simplificar(puntos: List<PuntoLeido>): List<PuntoLeido> {
         val coordenadas = puntos.map { punto -> Coordenada(punto.latitud, punto.longitud) }
         var tolerancia = TOLERANCIA_INICIAL_METROS
@@ -119,8 +116,8 @@ object ImportadorTrazado {
         return conservados.map { indice -> puntos[indice] }
     }
 
-    // Armar el perfil con las alturas del archivo si al menos el 80 % de los puntos las trae: cada muestra del trazado toma la altura
-    // del punto del archivo que está a la misma fracción del camino (en ida y vuelta, la vuelta repite la ida al revés)
+    // Solo se arma si al menos el 80 % de los puntos trae altura. Cada muestra toma la altura del punto del archivo
+    // que está a la misma fracción del camino (en ida y vuelta, la vuelta repite la ida al revés)
     private fun armarPerfil(referencia: List<PuntoLeido>, recorrido: List<PuntoRecorrido>, tipoRecorrido: TipoRecorrido): PerfilElevacion? {
         val conAltura = referencia.filter { punto -> punto.altitudMetros != null }
         if (conAltura.size < 2 || conAltura.size < FRACCION_MINIMA_CON_ALTURA * referencia.size) return null
@@ -138,14 +135,12 @@ object ImportadorTrazado {
         return CalculadoraPerfil.calcular(muestras, altitudes, CalculadoraPerfil.firmaTrazado(recorrido, tipoRecorrido))
     }
 
-    // Calcular la distancia acumulada en metros desde el primer punto
     private fun distanciasAcumuladasMetros(puntos: List<PuntoLeido>): List<Double> {
         val acumuladas = MutableList(puntos.size) { 0.0 }
         for (indice in 1 until puntos.size) acumuladas[indice] = acumuladas[indice - 1] + metrosEntre(puntos[indice - 1], puntos[indice])
         return acumuladas
     }
 
-    // Interpolar la altura a una distancia del camino del archivo
     private fun interpolarAltura(puntos: List<PuntoLeido>, acumuladas: List<Double>, distancia: Double): Double {
         val indiceSiguiente = acumuladas.indexOfFirst { acumulada -> acumulada >= distancia }.let { indice -> if (indice < 0) puntos.lastIndex else indice }
         val alturaSiguiente = puntos[indiceSiguiente].altitudMetros ?: 0.0
@@ -157,12 +152,10 @@ object ImportadorTrazado {
         return alturaAnterior + (alturaSiguiente - alturaAnterior) * fraccion
     }
 
-    // Medir en metros la distancia entre dos puntos leídos
     private fun metrosEntre(desde: PuntoLeido, hasta: PuntoLeido): Double =
         CalculadoraRecorrido.distanciaEntre(Coordenada(desde.latitud, desde.longitud), PuntoRecorrido(hasta.latitud, hasta.longitud)) *
             METROS_POR_KILOMETRO
 
-    // Armar un nombre legible a partir del nombre del archivo: sin extensión y con espacios en lugar de guiones
     private fun nombreDesdeArchivo(nombreArchivo: String): String =
         nombreArchivo.substringBeforeLast('.').replace('_', ' ').replace('-', ' ').replace(Regex("\\s+"), " ").trim()
 }

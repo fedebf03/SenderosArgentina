@@ -9,10 +9,8 @@ private const val UMBRAL_PICO_METROS_POR_SEGUNDO_CUADRADO = 1.2
 private const val SEPARACION_MINIMA_MILISEGUNDOS = 250L
 private const val MILISEGUNDOS_POR_SEGUNDO = 1000.0
 
-// Contar pasos con la magnitud del acelerómetro: un filtro paso bajo estima y resta la gravedad (así no importa la orientación),
-// otro suaviza el ruido, y se cuenta un paso en cada pico por encima del umbral separado al menos 250 ms del paso anterior.
-// Histéresis: tras un paso el detector se rearma solo cuando la señal suavizada baja de la mitad del umbral (evita doble conteo de un paso con dos picos).
-// Un pico se confirma una muestra después (cuando la señal empieza a bajar). Es Kotlin puro y mantiene estado entre muestras
+// RF6 - Pasos: restamos la gravedad a la magnitud del acelerómetro (así no importa la orientación) y contamos los picos
+// Tras un paso se rearma recién cuando la señal baja de la mitad del umbral, así un paso con dos picos no cuenta doble
 class DetectorPasos(
     private val umbral: Double = UMBRAL_PICO_METROS_POR_SEGUNDO_CUADRADO,
     private val separacionMinimaMilisegundos: Long = SEPARACION_MINIMA_MILISEGUNDOS

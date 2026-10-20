@@ -1,7 +1,7 @@
 package com.unaj.senderos.core.data.repository
 
 import android.util.Log
-import com.unaj.senderos.core.database.RecorridoDao
+import com.unaj.senderos.core.database.recorrido.RecorridoDao
 import com.unaj.senderos.core.data.mapeo.aDominio
 import com.unaj.senderos.core.data.mapeo.aEntidad
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
@@ -23,7 +23,6 @@ class RecorridoRepositorioOfflineFirst(
     private val reloj: () -> Long = System::currentTimeMillis
 ) : RecorridoRepositorio {
 
-    // Pide la sincronización al empezar a recolectar
     override fun observarRecorridos(idUsuario: String): Flow<List<RecorridoRealizado>> {
         return recorridoDao.observarPorUsuario(idUsuario)
             .map { entidades -> entidades.map { entidad -> entidad.aDominio() } }
@@ -35,8 +34,8 @@ class RecorridoRepositorioOfflineFirst(
             .map { entidad -> entidad?.aDominio() }
     }
 
-    // Marcar el recorrido como eliminado y pendiente con la fecha actual y pedir la sincronización, que borra el documento de Firestore y recién
-    // entonces la fila local. Sin la sesión del dueño queda marcado y se limpia en su próximo ingreso
+    // Se marca como eliminado y pendiente. La fila local se borra recién cuando el worker borra el documento en Firestore.
+    // Sin la sesión del dueño queda marcado y se limpia en su próximo ingreso
     override suspend fun eliminar(idUsuario: String, idRecorrido: String): Result<Unit> {
         return try {
             val existente = recorridoDao.obtenerPorId(idUsuario, idRecorrido)
@@ -61,7 +60,7 @@ class RecorridoRepositorioOfflineFirst(
         }
     }
 
-    // Guardar en Room como pendiente con la fecha del reloj y pedir la sincronización solo si la escritura salió bien y el dueño tiene la sesión activa
+    // RF5 - Historial: el recorrido realizado se guarda en Room como pendiente y la subida a Firestore queda para el worker
     override suspend fun guardar(recorrido: RecorridoRealizado): Result<Unit> {
         return try {
             recorridoDao.guardar(

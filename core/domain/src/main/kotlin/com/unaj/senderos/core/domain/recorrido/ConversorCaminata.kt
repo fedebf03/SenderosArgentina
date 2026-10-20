@@ -11,12 +11,10 @@ private const val DISTANCIA_MINIMA_PARA_CONVERTIR_KILOMETROS = 0.05
 
 object ConversorCaminata {
 
-    // Indicar si una caminata tiene la distancia mínima (50 m) para ofrecer convertirla en un sendero
     fun esConvertible(distanciaKilometros: Double): Boolean = distanciaKilometros >= DISTANCIA_MINIMA_PARA_CONVERTIR_KILOMETROS
 
-    // Convertir una caminata libre en el borrador de un sendero para el formulario: el trazado caminado se simplifica y se detecta su tipo
-    // igual que al importar un archivo, y los puntos capturados entran en el tramo más cercano con su tipo, su nota como nombre y su foto.
-    // El perfil queda nulo porque la caminata no mide alturas; el formulario lo calcula al crear. Falla si no hay dos posiciones distintas
+    // El trazado caminado se simplifica igual que al importar un archivo. El perfil queda nulo porque la caminata no mide
+    // alturas y el formulario lo calcula al crear el sendero
     fun aTrazado(
         trazadoCaminado: List<Coordenada>,
         puntosCapturados: List<PuntoCapturado>,

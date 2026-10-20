@@ -1,13 +1,13 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.sendero
 
-// Tramo de un sendero como se guarda en Firestore (valores por defecto requeridos por el deserializador)
+// Los valores por defecto los necesita el deserializador de Firestore
 data class EtapaRed(
     val numero: Int = 0,
     val nombre: String = "",
     val distanciaKilometros: Double = 0.0
 )
 
-// Documento de sendero en /usuarios/{idUsuario}/senderos/{id}; el idUsuario va en la ruta
+// El idUsuario no se guarda porque ya va en la ruta /usuarios/{idUsuario}/senderos/{id}
 data class SenderoRed(
     val id: String = "",
     val nombre: String = "",
@@ -32,11 +32,10 @@ data class SenderoRed(
     val foto: String = "",
     val bioma: String = "SIN_DEFINIR",
     val idOrigen: String = "",
-    // Un documento anterior al perfil no trae el campo y se lee como null (sin calcular)
+    // Un documento anterior al perfil no trae el campo y se lee como nulo (sin calcular)
     val perfilElevacion: PerfilElevacionRed? = null
 )
 
-// Punto del recorrido como se guarda en Firestore (valores por defecto requeridos por el deserializador)
 data class PuntoRecorridoRed(
     val latitud: Double = 0.0,
     val longitud: Double = 0.0,

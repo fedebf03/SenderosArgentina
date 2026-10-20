@@ -2,29 +2,28 @@ package com.unaj.senderos.core.network.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.unaj.senderos.core.network.FirestorePerfilFuenteRemota
-import com.unaj.senderos.core.network.PerfilFuenteRemota
-import com.unaj.senderos.core.network.FirestoreRecorridoFuenteRemota
-import com.unaj.senderos.core.network.FirestoreSenderoFuenteRemota
-import com.unaj.senderos.core.network.FirestoreSenderoPublicoFuenteRemota
-import com.unaj.senderos.core.network.RecorridoFuenteRemota
-import com.unaj.senderos.core.network.SenderoFuenteRemota
-import com.unaj.senderos.core.network.SenderoPublicoFuenteRemota
-import com.unaj.senderos.core.network.SubidorFotos
-import com.unaj.senderos.core.network.SubidorFotosCloudinary
+import com.unaj.senderos.core.network.perfil.FirestorePerfilFuenteRemota
+import com.unaj.senderos.core.network.perfil.PerfilFuenteRemota
+import com.unaj.senderos.core.network.recorrido.FirestoreRecorridoFuenteRemota
+import com.unaj.senderos.core.network.sendero.FirestoreSenderoFuenteRemota
+import com.unaj.senderos.core.network.senderopublico.FirestoreSenderoPublicoFuenteRemota
+import com.unaj.senderos.core.network.recorrido.RecorridoFuenteRemota
+import com.unaj.senderos.core.network.sendero.SenderoFuenteRemota
+import com.unaj.senderos.core.network.senderopublico.SenderoPublicoFuenteRemota
+import com.unaj.senderos.core.network.fotos.SubidorFotos
+import com.unaj.senderos.core.network.fotos.SubidorFotosCloudinary
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import com.unaj.senderos.core.network.FirebaseFuenteAutenticacion
-import com.unaj.senderos.core.network.FuenteAutenticacion
-import com.unaj.senderos.core.network.ApiElevacionOpenMeteo
-import com.unaj.senderos.core.network.ApiPronosticoOpenMeteo
-import com.unaj.senderos.core.network.crearApiElevacionOpenMeteo
-import com.unaj.senderos.core.network.crearApiPronosticoOpenMeteo
-
+import com.unaj.senderos.core.network.auth.FirebaseFuenteAutenticacion
+import com.unaj.senderos.core.network.auth.FuenteAutenticacion
+import com.unaj.senderos.core.network.openmeteo.ApiElevacionOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.ApiPronosticoOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.crearApiElevacionOpenMeteo
+import com.unaj.senderos.core.network.openmeteo.crearApiPronosticoOpenMeteo
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class NetworkModule {

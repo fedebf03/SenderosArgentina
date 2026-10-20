@@ -53,8 +53,8 @@ private data class PronosticoClimaJson(
     val dias: List<PronosticoDiaJson>
 )
 
-// Guardar el último pronóstico de cada lugar en un archivo propio dentro de una carpeta de la app; se escribe en un temporal y se renombra
-// para no dejar nunca un archivo a medias, y la clave solo admite letras, números, guion y guion bajo para no salir de la carpeta
+// Cada pronóstico se escribe en un temporal y después se renombra para no dejar nunca un archivo a medias.
+// Por otro lado la clave solo admite letras, números y guiones, así el nombre del archivo no sale de la carpeta
 class AlmacenPronosticosArchivo(private val carpeta: File) : AlmacenPronosticos {
 
     @Inject

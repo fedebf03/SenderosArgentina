@@ -1,4 +1,4 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.auth
 
 data class UsuarioRed(
     val id: String,

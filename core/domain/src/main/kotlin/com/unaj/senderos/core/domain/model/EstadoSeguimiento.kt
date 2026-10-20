@@ -15,13 +15,12 @@ data class EstadoSeguimiento(
     val indiceProximoPunto: Int = 0,
     val rumboGrados: Float? = null,
     val velocidadMetrosPorSegundo: Float? = null,
-    // Trazado dibujado y guardado en el historial: la primera lectura recibida y, en orden de llegada, cada lectura válida a 5 m o más del último
-    // punto o imprecisa (hasta el doble del umbral, con tope de 50 m) separada al menos su propia precisión. Las imprecisas no mueven distancia ni avisos.
-    // Limitación: no tiene tope; cada lectura aceptada copia la lista (O(n)) y el recorrido guardado viaja en un único documento de Firestore de hasta 1 MiB
+    // Entra la primera lectura y luego cada lectura válida a 5 m o más del último punto. Las imprecisas (hasta 50 m)
+    // entran si están separadas al menos su precisión, pero no mueven la distancia ni los avisos
     val trazadoCaminado: List<Coordenada> = emptyList(),
-    // Última lectura con precisión suficiente para el trazado que no llegó a entrar; se agrega al cerrar el recorrido. null si la última entró
+    // Última lectura con precisión suficiente que no llegó a entrar al trazado. Se agrega al cerrar el recorrido
     val ultimaPosicionConocida: Coordenada? = null,
-    // Mayor velocidad reportada por las lecturas tal cual llegan (en simulación con multiplicador mayor a 1 refleja la velocidad simulada); 0 si ninguna la informó
+    // Sale de las lecturas tal cual llegan (en simulación refleja la velocidad ya multiplicada)
     val velocidadMaximaMetrosPorSegundo: Float = 0f,
     val esSimulado: Boolean = false,
     val multiplicadorSimulacion: Int = 1,
@@ -30,27 +29,26 @@ data class EstadoSeguimiento(
     val indicesPuntosAvisados: Set<Int> = emptySet(),
     val instanteInicioMilisegundos: Long = 0L,
     val tiempoTranscurridoMilisegundos: Long = 0L,
-    // Instante de la lectura anterior, para acotar el desplazamiento plausible entre lecturas; nulo antes de la primera
+    // Sirve para acotar el desplazamiento plausible entre dos lecturas
     val instanteUltimaLecturaMilisegundos: Long? = null,
     val esCircular: Boolean = false,
-    // Pasos contados desde el inicio; null si el equipo no tiene acelerómetro (en simulación se estiman a 1 cada 0,75 m)
+    // Nulo si el equipo no tiene acelerómetro. En simulación se estima un paso cada 0,75 m
     val pasos: Int? = null,
-    // Pasos por minuto en los últimos 10 s; null si el equipo no mide pasos
+    // Pasos por minuto en los últimos 10 s
     val ritmoPasosPorMinuto: Double? = null,
-    // Verdadero si la velocidad es menor a 0,5 m/s (o desconocida) y no hubo pasos en 10 s
+    // Se considera detenido con menos de 0,5 m/s (o sin velocidad informada) y sin pasos en los últimos 10 s
     val estaDetenido: Boolean = false,
-    // Rumbo magnético de la brújula (vector de rotación); null si el equipo no la tiene o en simulación
+    // Rumbo magnético del vector de rotación. Queda nulo sin brújula o en simulación
     val rumboBrujulaGrados: Float? = null,
-    // BUSCANDO hasta la primera lectura válida; BUENA si la última válida tiene 15 s o menos; DEBIL si no (siempre BUENA en simulación)
+    // BUENA si la última lectura válida tiene 15 s o menos y DEBIL si no. En simulación siempre es BUENA
     val calidadSenal: CalidadSenal = CalidadSenal.BUSCANDO,
-    // Instante de la última lectura válida (precisión de 30 m o mejor, o sin precisión informada); null si todavía no hubo ninguna
+    // Una lectura es válida con precisión de 30 m o mejor (o sin precisión informada)
     val instanteUltimaLecturaValidaMilisegundos: Long? = null,
-    // Caminata sin sendero previo: no hay trazado que seguir, así que no hay restante, desvío ni llegada; solo se registra lo caminado
+    // En una caminata libre no hay trazado que seguir. Por lo tanto no hay restante, desvío ni llegada
     val esCaminataLibre: Boolean = false
 ) {
 
-    // Rumbo a mostrar: el de la brújula si el usuario está detenido y hay brújula (el GPS no da rumbo fiable sin movimiento);
-    // en movimiento, o sin brújula, el último del GPS
+    // Sin movimiento el GPS no da un rumbo fiable, por eso se usa la brújula si la hay. En movimiento se usa el del GPS
     val rumboEfectivoGrados: Float?
         get() = if (estaDetenido && rumboBrujulaGrados != null) rumboBrujulaGrados else rumboGrados
 

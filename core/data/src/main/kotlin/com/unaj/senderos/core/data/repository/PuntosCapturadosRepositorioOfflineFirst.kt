@@ -2,8 +2,8 @@ package com.unaj.senderos.core.data.repository
 
 import android.util.Log
 import com.unaj.senderos.core.database.EjecutorTransacciones
-import com.unaj.senderos.core.database.PuntoCapturadoDao
-import com.unaj.senderos.core.database.SenderoDao
+import com.unaj.senderos.core.database.puntocapturado.PuntoCapturadoDao
+import com.unaj.senderos.core.database.sendero.SenderoDao
 import com.unaj.senderos.core.data.mapeo.aDominio
 import com.unaj.senderos.core.data.mapeo.aEntidad
 import com.unaj.senderos.core.data.sincronizacion.PlanificadorSincronizacion
@@ -28,9 +28,8 @@ private const val TAG = "PUNTOS_CAPTURADOS"
 private const val FACTOR_UN_DECIMAL = 10.0
 private const val TOLERANCIA_DISTANCIA = 1e-9
 
-// Repositorio offline-first de puntos capturados: todo en Room. Los puntos no se sincronizan solos; pasan a la nube al incorporarse
-// al sendero, que queda PENDIENTE. Al cerrar sesión se conservan para el mismo usuario (aislados por idUsuario).
-// Incorporar corre en un alcance de proceso (no se cancela con la pantalla) y en una única transacción de Room
+// RF5 - Captura de puntos: los puntos marcados caminando quedan en Room y pasan a la nube al incorporarse al sendero.
+// Al cerrar sesión se conservan para el mismo usuario (aislados por idUsuario)
 class PuntosCapturadosRepositorioOfflineFirst(
     private val puntoCapturadoDao: PuntoCapturadoDao,
     private val senderoDao: SenderoDao,
@@ -41,7 +40,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
     private val reloj: () -> Long = System::currentTimeMillis
 ) : PuntosCapturadosRepositorio {
 
-    // Guardar el punto en Room al instante para que no se pierda si muere el proceso
+    // El punto se guarda en Room al instante para que no se pierda si el sistema cierra el proceso
     override suspend fun guardar(punto: PuntoCapturado): Result<Unit> {
         return try {
             puntoCapturadoDao.guardar(punto.aEntidad())
@@ -55,7 +54,6 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // Observar los puntos pendientes del sendero; un error de lectura se registra y el flujo emite una lista vacía
     override fun observarPendientes(idUsuario: String, idSendero: String): Flow<List<PuntoCapturado>> {
         return puntoCapturadoDao.observarPendientes(idUsuario, idSendero)
             .map { entidades -> entidades.map { entidad -> entidad.aDominio() } }
@@ -65,7 +63,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
             }
     }
 
-    // Borrar los puntos de Room y, solo si salió bien, los archivos de sus fotos
+    // Las fotos se borran recién después de borrar los puntos de Room. Si falla Room, las fotos quedan en su lugar
     override suspend fun descartar(idUsuario: String, ids: Collection<String>): Result<Unit> {
         return try {
             val listaIds = ids.toList()
@@ -82,7 +80,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // Borrar solo las filas de los puntos: sus fotos ya pertenecen al sendero nuevo y no se deben tocar
+    // Solo se borran las filas, porque sus fotos ya pertenecen al sendero nuevo y no se deben tocar
     override suspend fun retirarIncorporados(idUsuario: String, ids: Collection<String>): Result<Unit> {
         return try {
             if (ids.isNotEmpty()) puntoCapturadoDao.borrar(idUsuario, ids.toList())
@@ -96,7 +94,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // Incorporar los puntos elegidos en un alcance de proceso: si la pantalla se cancela, la operación termina igual
+    // Corre en un alcance de proceso. Si la pantalla se cierra, la incorporación termina igual
     override suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         return try {
             val incorporacion = alcanceDeProceso.async { incorporarEnTransaccion(idUsuario, idSendero, idsElegidos) }.await()
@@ -111,8 +109,8 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // Leer, insertar y escribir el sendero y borrar los capturados en una sola transacción; devuelve null si el sendero no existe
-    // y, si no, el sendero con un indicador de si hubo cambios. Leer dentro de la transacción evita pisar una fusión de la sincronización
+    // El sendero se lee dentro de la misma transacción para no pisar una fusión que haga la sincronización en el medio.
+    // Devuelve null si el sendero no existe y, si no, el sendero con un indicador de si hubo cambios
     private suspend fun incorporarEnTransaccion(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Pair<Sendero, Boolean>? {
         return ejecutorTransacciones.ejecutar {
             val entidad = senderoDao.obtenerPorId(idUsuario, idSendero)
@@ -143,7 +141,6 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // El nombre es la nota completa recortada de espacios
     private fun convertirEnPuntoDelRecorrido(punto: PuntoCapturado): PuntoRecorrido {
         return PuntoRecorrido(
             latitud = punto.latitud,
@@ -154,7 +151,8 @@ class PuntosCapturadosRepositorioOfflineFirst(
         )
     }
 
-    // Recalcular la distancia solo si el sendero la tenía igual a la calculada del mapa (redondeada a un decimal); si fue escrita a mano se conserva
+    // La distancia se recalcula solo si coincidía con la del mapa (redondeada a un decimal).
+    // Si el usuario la escribió a mano, se conserva
     private fun recalcularDistanciaSiCorresponde(sendero: Sendero, recorridoNuevo: List<PuntoRecorrido>): Double {
         if (sendero.recorrido.size < 2) return sendero.distanciaKilometros
         val calculadaAntes = redondearAUnDecimal(CalculadoraRecorrido.distanciaKilometros(sendero.recorrido, sendero.tipoRecorrido))
@@ -162,7 +160,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
         return redondearAUnDecimal(CalculadoraRecorrido.distanciaKilometros(recorridoNuevo, sendero.tipoRecorrido))
     }
 
-    // Redondear una distancia en kilómetros a un decimal, como lo hace el formulario al copiar la distancia del mapa
+    // Se redondea igual que el formulario al copiar la distancia del mapa, para que la comparación coincida
     private fun redondearAUnDecimal(kilometros: Double): Double {
         return (kilometros * FACTOR_UN_DECIMAL).roundToLong() / FACTOR_UN_DECIMAL
     }

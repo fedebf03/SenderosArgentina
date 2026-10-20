@@ -1,19 +1,17 @@
 package com.unaj.senderos.core.domain.recorrido
 
-// Punto leído de un archivo de otra aplicación; la altura es null si el archivo no la trae
 data class PuntoLeido(val latitud: Double, val longitud: Double, val altitudMetros: Double?)
 
-// Punto marcado en el archivo (waypoint de un GPX), con su nombre
+// Corresponde a un waypoint del GPX
 data class PuntoDeInteresLeido(val latitud: Double, val longitud: Double, val nombre: String)
 
-// Contenido de un archivo de trazado: nombre si lo trae, puntos en orden y puntos marcados
 data class TrazadoLeido(val nombre: String?, val puntos: List<PuntoLeido>, val puntosDeInteres: List<PuntoDeInteresLeido>)
 
 private val NOMBRES_LATITUD = setOf("lat", "latitude", "latitud")
 private val NOMBRES_LONGITUD = setOf("lon", "lng", "long", "longitude", "longitud")
 private val NOMBRES_ALTURA = setOf("ele", "elevation", "altitude", "altitud", "altura", "alt")
 
-// Solo la etiqueta de apertura: [^>]* no puede retroceder más allá del próximo ">", así que el costo es lineal
+// Solo la etiqueta de apertura. Como [^>]* no puede retroceder más allá del próximo ">", el costo es lineal
 private val PATRON_APERTURA_PUNTO_GPX = Regex("<(trkpt|rtept|wpt)\\b([^>]*)>")
 private val PATRON_APERTURA_TRAZA_GPX = Regex("<(?:trk|rte|metadata)\\b[^>]*>")
 private val PATRON_ATRIBUTO_LATITUD = Regex("\\blat\\s*=\\s*[\"']([^\"']+)[\"']")
@@ -21,7 +19,7 @@ private val PATRON_ATRIBUTO_LONGITUD = Regex("\\blon\\s*=\\s*[\"']([^\"']+)[\"']
 private val PATRON_ALTURA_GPX = Regex("<ele>\\s*([^<]+?)\\s*</ele>")
 private val PATRON_NOMBRE_GPX = Regex("<name>\\s*([^<]*?)\\s*</name>")
 
-// Un trazado de sendero, aun de varios días con un punto por segundo, queda muy por debajo; más es un archivo equivocado
+// Un trazado de varios días con un punto por segundo queda muy por debajo. Más que eso es un archivo equivocado
 const val MAXIMO_PUNTOS_LEIDOS = 100_000
 private const val MAXIMO_COLUMNAS_CSV = 64
 private const val LARGO_MAXIMO_CONTENIDO_PUNTO = 4_096
@@ -32,9 +30,8 @@ private const val MENSAJE_DEMASIADOS_PUNTOS = "El archivo tiene demasiados punto
 
 object LectorTrazados {
 
-    // Leer un trazado GPX o CSV: se reconoce por el contenido (un GPX empieza con una etiqueta XML), no por la extensión,
-    // porque las aplicaciones de archivos suelen entregar los GPX sin un tipo claro. Falla si no hay ningún punto válido
-    // o si hay más de 100.000
+    // El formato se reconoce por el contenido y no por la extensión, porque las aplicaciones de archivos suelen entregar
+    // los GPX sin un tipo claro
     fun leer(texto: String, nombreArchivo: String): Result<TrazadoLeido> {
         val limpio = texto.removePrefix("\uFEFF").trim()
         val leido = (if (limpio.startsWith("<")) leerGpx(limpio) else leerCsv(limpio))
@@ -43,9 +40,8 @@ object LectorTrazados {
         return Result.success(leido)
     }
 
-    // Leer un GPX sin un analizador XML (así no se resuelven entidades externas): busca cada etiqueta de punto y toma su
-    // contenido hasta el cierre, sin pasar de la próxima etiqueta de punto. Usa los puntos de la traza o, si no hay, los de la
-    // ruta; los waypoints pasan a ser puntos de interés. Devuelve null si hay demasiados puntos
+    // No usamos un analizador XML para no resolver entidades externas. Se toman los puntos de la traza o, si no hay,
+    // los de la ruta, y los waypoints pasan a ser puntos de interés
     private fun leerGpx(texto: String): TrazadoLeido? {
         val trazas = mutableListOf<PuntoLeido>()
         val ruta = mutableListOf<PuntoLeido>()
@@ -63,15 +59,17 @@ object LectorTrazados {
         return TrazadoLeido(leerNombreDelGpx(texto), trazas.ifEmpty { ruta }, puntosDeInteres)
     }
 
-    // Tomar el texto entre la apertura y su cierre, sin pasar de la próxima apertura ni de 4 KB; vacío si no se cierra
+    // Se corta en la próxima apertura o a los 4 KB, por si la etiqueta nunca se cierra. El cierre se busca solo en ese
+    // tramo, porque buscarlo en todo el texto vuelve muy lenta la lectura de un archivo con miles de etiquetas abiertas
     private fun contenidoHastaElCierre(texto: String, apertura: MatchResult, siguiente: MatchResult?, etiqueta: String): String {
         val desde = apertura.range.last + 1
         val limite = minOf(siguiente?.range?.first ?: texto.length, desde + LARGO_MAXIMO_CONTENIDO_PUNTO, texto.length)
-        val cierre = texto.indexOf("</$etiqueta", desde)
-        return if (cierre in desde until limite) texto.substring(desde, cierre) else ""
+        val marcaCierre = "</$etiqueta"
+        val tramo = texto.substring(desde, minOf(texto.length, limite + marcaCierre.length - 1))
+        val cierre = tramo.indexOf(marcaCierre)
+        return if (cierre in 0 until limite - desde) tramo.substring(0, cierre) else ""
     }
 
-    // Interpretar las coordenadas y la altura o el nombre de un punto del GPX y sumarlo a la lista que le corresponde
     private fun agregarPunto(
         etiqueta: String,
         atributos: String,
@@ -94,7 +92,7 @@ object LectorTrazados {
         }
     }
 
-    // Buscar el nombre de la primera traza, ruta o de los metadatos, mirando solo el principio de esa sección
+    // Se mira solo el principio de la sección, antes de los puntos, para no tomar el nombre de alguno de ellos
     private fun leerNombreDelGpx(texto: String): String? {
         val seccion = PATRON_APERTURA_TRAZA_GPX.find(texto) ?: return null
         val desde = seccion.range.last + 1
@@ -103,10 +101,8 @@ object LectorTrazados {
         return PATRON_NOMBRE_GPX.find(antesDeLosPuntos)?.groupValues?.get(1)?.let(::decodificarEntidades)?.takeIf { valor -> valor.isNotBlank() }
     }
 
-    // Leer un CSV con coma o punto y coma como separador. Si la primera línea es un encabezado, ubica las columnas por nombre
-    // (en inglés o castellano); si no, toma latitud, longitud y altura en ese orden. Saltea las líneas que no son un punto válido.
-    // Recorre las líneas de a una y parte cada una solo hasta la última columna que necesita, para no llenar la memoria.
-    // Devuelve null si hay demasiados puntos
+    // Si la primera línea es un encabezado, las columnas se ubican por nombre (en inglés o castellano). Cada línea
+    // se parte solo hasta la última columna que hace falta, para no llenar la memoria
     private fun leerCsv(texto: String): TrazadoLeido? {
         val lineas = texto.lineSequence().map { linea -> linea.trim() }.filter { linea -> linea.isNotEmpty() }.iterator()
         if (!lineas.hasNext()) return TrazadoLeido(null, emptyList(), emptyList())
@@ -133,17 +129,15 @@ object LectorTrazados {
         return TrazadoLeido(null, puntos, emptyList())
     }
 
-    // Interpretar un número; con punto y coma como separador, la coma puede ser la coma decimal
+    // Con punto y coma como separador, la coma puede ser la coma decimal
     private fun interpretarNumero(celda: String, separador: Char): Double? {
         val normalizado = if (separador == ';') celda.replace(',', '.') else celda
         return normalizado.toDoubleOrNull()?.takeIf { valor -> valor.isFinite() }
     }
 
-    // Indicar si las coordenadas están dentro del rango geográfico
     private fun sonCoordenadasValidas(latitud: Double, longitud: Double): Boolean =
         latitud in -90.0..90.0 && longitud in -180.0..180.0
 
-    // Reemplazar las entidades XML más comunes de los nombres
     private fun decodificarEntidades(texto: String): String = texto
         .replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&")
 }

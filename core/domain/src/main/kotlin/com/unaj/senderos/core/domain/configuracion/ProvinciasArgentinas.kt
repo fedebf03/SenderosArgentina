@@ -1,6 +1,5 @@
 package com.unaj.senderos.core.domain.configuracion
 
-// Las 23 provincias y la Ciudad Autónoma de Buenos Aires, en orden alfabético, para elegir la región de un sendero o la del perfil
 object ProvinciasArgentinas {
     val NOMBRES: List<String> = listOf(
         "Buenos Aires",

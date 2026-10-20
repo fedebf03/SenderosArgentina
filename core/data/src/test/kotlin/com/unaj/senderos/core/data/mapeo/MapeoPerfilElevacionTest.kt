@@ -1,7 +1,7 @@
 package com.unaj.senderos.core.data.mapeo
 
 import com.unaj.senderos.core.database.ConvertidoresSendero
-import com.unaj.senderos.core.network.SenderoRed
+import com.unaj.senderos.core.network.sendero.SenderoRed
 import com.unaj.senderos.core.domain.model.EstadoSincronizacion
 import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.model.PuntoPerfil

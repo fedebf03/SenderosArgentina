@@ -1,11 +1,11 @@
-package com.unaj.senderos.core.network
+package com.unaj.senderos.core.network.openmeteo
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// Clima de ahora que informa Open-Meteo; esDeDia es 1 de día y 0 de noche
+// esDeDia vale 1 de día y 0 de noche
 @Serializable
 data class ClimaActualOpenMeteo(
     @SerialName("temperature_2m") val temperatura: Double,
@@ -16,7 +16,7 @@ data class ClimaActualOpenMeteo(
     @SerialName("is_day") val esDeDia: Int = 1
 )
 
-// Pronóstico diario: una lista por dato, con una posición por día; cualquier valor puede venir nulo
+// Cada dato llega como una lista con una posición por día, y cualquier valor puede venir nulo
 @Serializable
 data class ClimaDiarioOpenMeteo(
     @SerialName("time") val fechas: List<String> = emptyList(),
@@ -35,7 +35,6 @@ data class RespuestaPronosticoOpenMeteo(
     @SerialName("daily") val diario: ClimaDiarioOpenMeteo? = null
 )
 
-// API REST de pronóstico de Open-Meteo: clima de ahora y cinco días, con el viento en km/h y la zona horaria del lugar
 interface ApiPronosticoOpenMeteo {
 
     @GET(
