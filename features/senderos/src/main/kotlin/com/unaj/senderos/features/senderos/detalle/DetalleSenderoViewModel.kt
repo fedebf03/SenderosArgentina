@@ -251,6 +251,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
 
     private fun pedirConfirmacionDePublicacion(esPublicar: Boolean) {
         _estadoVisual.update { estadoActual -> estadoActual.copy(esMenuOpcionesVisible = false) }
+        if (esPublicar && !_estadoVisual.value.puedeEditar) return
         if (!monitorConectividad.hayConexion()) {
             emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_SIN_CONEXION_PARA_PUBLICAR))
             return
