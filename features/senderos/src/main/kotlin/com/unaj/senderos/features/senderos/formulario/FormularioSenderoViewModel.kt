@@ -5,12 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unaj.senderos.core.domain.recorrido.EdicionRecorrido
 import com.unaj.senderos.core.domain.model.CampoSendero
-import com.unaj.senderos.core.domain.model.Etapa
 import com.unaj.senderos.core.domain.model.PuntoRecorrido
 import com.unaj.senderos.core.domain.recorrido.CalculadoraDuracion
 import com.unaj.senderos.core.domain.recorrido.CalculadoraPerfil
-import com.unaj.senderos.core.domain.recorrido.CalculadoraRecorrido
-import com.unaj.senderos.core.domain.model.PerfilElevacion
 import com.unaj.senderos.core.domain.port.ErrorElevacionException
 import com.unaj.senderos.core.domain.port.SinConexionElevacionException
 import com.unaj.senderos.core.domain.usecase.CalcularPerfilDeTrazadoUseCase
@@ -19,12 +16,10 @@ import com.unaj.senderos.core.domain.usecase.ImportarTrazadoUseCase
 import com.unaj.senderos.core.domain.usecase.RetirarPuntosIncorporadosUseCase
 import com.unaj.senderos.core.domain.recorrido.TrazadoImportado
 import kotlinx.coroutines.Job
-import kotlin.math.roundToInt
 import com.unaj.senderos.core.domain.model.Sendero
 import com.unaj.senderos.core.domain.model.SenderoInvalidoException
 import com.unaj.senderos.core.domain.port.AlmacenFotos
 import com.unaj.senderos.core.domain.usecase.GuardarSenderoUseCase
-import com.unaj.senderos.core.ui.comun.formatearDecimalEditable
 import com.unaj.senderos.core.domain.usecase.ObservarDetalleSenderoUseCase
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -80,7 +75,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         FormularioSenderoEstadoVisual(
             esEdicion = idSendero != null,
             estaCargando = idSendero != null,
-            // Un sendero nuevo arranca con las recomendaciones básicas; no cuentan como cambio para no pedir confirmación al salir
+            // Un sendero nuevo arranca con las recomendaciones básicas. No cuentan como cambio, así no se pide confirmar al salir
             recomendaciones = if (idSendero == null) RECOMENDACIONES_POR_DEFECTO else emptyList()
         )
     )
@@ -89,14 +84,13 @@ class FormularioSenderoViewModel @AssistedInject constructor(
     private val canalEfectos = Channel<FormularioSenderoEfecto>(Channel.BUFFERED)
     val efectoVisual = canalEfectos.receiveAsFlow()
 
-    // Sendero original en edición, para conservar sus datos no editables al guardar
+    // Se conserva el sendero original para no perder sus datos no editables al guardar
     private var senderoOriginal: Sendero? = null
-    // Cambia cada vez que se abre el menú de un punto de interés: una copia de foto que termina tarde no se pega a otro punto
+    // Aumenta cada vez que se abre el menú de un punto nuevo. Si una foto termina de copiarse tarde, no queda en otro punto
     private var generacionPuntoNuevo = 0
-    // Cálculo del perfil en curso; uno nuevo cancela al anterior
     private var trabajoPerfil: Job? = null
 
-    // Puntos capturados de la caminata de origen que ya van dentro del recorrido; se retiran de los pendientes cuando el sendero se guarda
+    // Puntos capturados de la caminata que ya van dentro del recorrido. Se retiran de los pendientes recién al guardar
     private var idsPuntosDeCaminata: Set<String> = emptySet()
 
     init {
@@ -104,88 +98,62 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         if (idSendero == null && idCaminata != null) cargarCaminata(idCaminata)
     }
 
-    // Procesar cada evento de la pantalla y traducirlo en cambios del estado del formulario
     fun procesarEvento(evento: FormularioSenderoEvento) {
         when (evento) {
-            is FormularioSenderoEvento.AlCambiarTexto -> cambiarTexto(evento.campo, evento.texto)
+            is FormularioSenderoEvento.AlCambiarTexto -> _estadoVisual.update { estado -> estado.conTexto(evento.campo, evento.texto) }
             is FormularioSenderoEvento.AlSeleccionarDificultad -> {
-                _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(dificultad = evento.dificultad, hayCambiosSinGuardar = true)
-                }
+                _estadoVisual.update { estado -> estado.copy(dificultad = evento.dificultad, hayCambiosSinGuardar = true) }
             }
             is FormularioSenderoEvento.AlSeleccionarBioma -> {
-                _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(bioma = evento.bioma, hayCambiosSinGuardar = true)
-                }
+                _estadoVisual.update { estado -> estado.copy(bioma = evento.bioma, hayCambiosSinGuardar = true) }
             }
             is FormularioSenderoEvento.AlSeleccionarTipoRecorrido -> {
-                _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true)
-                }
-                // El tipo cambia el trazado del perfil (cierre o vuelta); con el mapa abierto se recalcula al cerrarlo
+                _estadoVisual.update { estado -> estado.copy(tipoRecorrido = evento.tipoRecorrido, hayCambiosSinGuardar = true) }
+                // El tipo de recorrido cambia el trazado del perfil (cierre o vuelta). Con el mapa abierto se recalcula al cerrarlo
                 if (!_estadoVisual.value.esEditorMapaVisible) calcularPerfil(forzar = false)
             }
-            is FormularioSenderoEvento.AlAgregarRecomendacion -> agregarRecomendacion()
+            is FormularioSenderoEvento.AlAgregarRecomendacion -> _estadoVisual.update { estado -> estado.conRecomendacionNueva() }
             is FormularioSenderoEvento.AlAgregarRecomendacionSugerida -> {
-                _estadoVisual.update { estadoActual ->
-                    agregarSiFalta(estadoActual.recomendaciones, evento.texto)
-                        ?.let { lista -> estadoActual.copy(recomendaciones = lista, hayCambiosSinGuardar = true) } ?: estadoActual
-                }
+                _estadoVisual.update { estado -> estado.conRecomendacionSugerida(evento.texto) }
             }
+            is FormularioSenderoEvento.AlQuitarRecomendacion -> _estadoVisual.update { estado -> estado.sinRecomendacion(evento.indice) }
+            is FormularioSenderoEvento.AlAgregarServicio -> _estadoVisual.update { estado -> estado.conServicioNuevo() }
             is FormularioSenderoEvento.AlAgregarServicioSugerido -> {
-                _estadoVisual.update { estadoActual ->
-                    agregarSiFalta(estadoActual.servicios, evento.texto)
-                        ?.let { lista -> estadoActual.copy(servicios = lista, hayCambiosSinGuardar = true) } ?: estadoActual
-                }
+                _estadoVisual.update { estado -> estado.conServicioSugerido(evento.texto) }
             }
+            is FormularioSenderoEvento.AlQuitarServicio -> _estadoVisual.update { estado -> estado.sinServicio(evento.indice) }
+            is FormularioSenderoEvento.AlAgregarEtapa -> agregarEtapa()
+            is FormularioSenderoEvento.AlQuitarEtapa -> _estadoVisual.update { estado -> estado.sinEtapa(evento.indice) }
             is FormularioSenderoEvento.AlCalcularDuracion -> calcularDuracion()
             is FormularioSenderoEvento.AlCalcularPerfil -> calcularPerfil(forzar = true)
             is FormularioSenderoEvento.AlImportarTrazado -> importarTrazado(evento.uri)
             is FormularioSenderoEvento.AlConfirmarReemplazoTrazado -> {
                 _estadoVisual.value.trazadoImportadoPendiente?.let { trazado -> aplicarTrazadoImportado(trazado) }
             }
+            is FormularioSenderoEvento.AlCancelarReemplazoTrazado -> {
+                _estadoVisual.update { estado -> estado.copy(trazadoImportadoPendiente = null) }
+            }
             is FormularioSenderoEvento.AlReemplazarSenderoDeCaminata -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(nombreSenderoYaConvertido = null) }
+                _estadoVisual.update { estado -> estado.copy(nombreSenderoYaConvertido = null) }
             }
             is FormularioSenderoEvento.AlEditarSenderoDeCaminata -> {
                 idCaminata?.let { id -> emitirEfecto(FormularioSenderoEfecto.EditarSenderoExistente(IdentificadorCaminataLibre.idSenderoDesde(id))) }
             }
-            is FormularioSenderoEvento.AlCancelarReemplazoTrazado -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(trazadoImportadoPendiente = null) }
-            }
-            is FormularioSenderoEvento.AlQuitarRecomendacion -> {
-                _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(
-                        recomendaciones = estadoActual.recomendaciones.filterIndexed { indice, _ -> indice != evento.indice },
-                        hayCambiosSinGuardar = true
-                    )
-                }
-            }
-            is FormularioSenderoEvento.AlAgregarServicio -> agregarServicio()
-            is FormularioSenderoEvento.AlQuitarServicio -> {
-                _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(
-                        servicios = estadoActual.servicios.filterIndexed { indice, _ -> indice != evento.indice },
-                        hayCambiosSinGuardar = true
-                    )
-                }
-            }
-            is FormularioSenderoEvento.AlAgregarEtapa -> agregarEtapa()
-            is FormularioSenderoEvento.AlQuitarEtapa -> quitarEtapa(evento.indice)
             is FormularioSenderoEvento.AlGuardar -> guardar()
             is FormularioSenderoEvento.AlVolver -> volver()
             is FormularioSenderoEvento.AlConfirmarDescartar -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoDescartarVisible = false) }
+                _estadoVisual.update { estado -> estado.copy(esDialogoDescartarVisible = false) }
                 emitirEfecto(FormularioSenderoEfecto.VolverAtras)
             }
+            is FormularioSenderoEvento.AlCancelarDescartar -> {
+                _estadoVisual.update { estado -> estado.copy(esDialogoDescartarVisible = false) }
+            }
             is FormularioSenderoEvento.AlAbrirEditorMapa -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(esEditorMapaVisible = true) }
+                _estadoVisual.update { estado -> estado.copy(esEditorMapaVisible = true) }
             }
             is FormularioSenderoEvento.AlCerrarEditorMapa -> {
                 cancelarPuntoNuevo()
-                _estadoVisual.update { estadoActual ->
-                    estadoActual.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null)
-                }
+                _estadoVisual.update { estado -> estado.copy(esEditorMapaVisible = false, indicePuntoSeleccionado = null) }
                 calcularPerfil(forzar = false)
             }
             is FormularioSenderoEvento.AlAgregarPunto -> tocarMapa(evento.latitud, evento.longitud)
@@ -203,7 +171,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             is FormularioSenderoEvento.AlInvertirSentido -> editarRecorrido { it.invertir() }
             is FormularioSenderoEvento.AlInsertarPuntoAntes -> editarRecorrido { edicion -> edicion.insertarAntes(evento.indice) }
             is FormularioSenderoEvento.AlCambiarModoEditor -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(modoEditor = evento.modo, indicePuntoSeleccionado = null) }
+                _estadoVisual.update { estado -> estado.copy(modoEditor = evento.modo, indicePuntoSeleccionado = null) }
             }
             is FormularioSenderoEvento.AlElegirTipoPuntoNuevo -> editarPuntoNuevo { punto -> punto.copy(tipo = evento.tipo) }
             is FormularioSenderoEvento.AlCambiarNombrePuntoNuevo -> editarPuntoNuevo { punto -> punto.copy(nombre = evento.nombre) }
@@ -211,23 +179,19 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             is FormularioSenderoEvento.AlQuitarFotoPuntoNuevo -> quitarFotoPuntoNuevo()
             is FormularioSenderoEvento.AlFallarFotoPuntoNuevo -> editarPuntoNuevo { punto -> punto.copy(mensajeError = evento.mensaje) }
             is FormularioSenderoEvento.AlCancelarPuntoNuevo -> cancelarPuntoNuevo()
+            is FormularioSenderoEvento.AlGuardarPuntoNuevo -> guardarPuntoNuevo()
             is FormularioSenderoEvento.AlSeleccionarFotoDePunto -> seleccionarFotoDePunto(evento.indice, evento.uri)
             is FormularioSenderoEvento.AlQuitarFotoDePunto -> {
                 editarRecorrido { edicion -> edicion.reemplazar(evento.indice) { punto -> punto.copy(foto = "") } }
             }
             is FormularioSenderoEvento.AlFallarFotoDePunto -> emitirEfecto(FormularioSenderoEfecto.MostrarAviso(evento.mensaje))
-            is FormularioSenderoEvento.AlGuardarPuntoNuevo -> guardarPuntoNuevo()
             is FormularioSenderoEvento.AlSeleccionarFoto -> seleccionarFoto(evento.uri)
             is FormularioSenderoEvento.AlQuitarFoto -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(foto = "", hayCambiosSinGuardar = true) }
-            }
-            is FormularioSenderoEvento.AlCancelarDescartar -> {
-                _estadoVisual.update { estadoActual -> estadoActual.copy(esDialogoDescartarVisible = false) }
+                _estadoVisual.update { estado -> estado.copy(foto = "", hayCambiosSinGuardar = true) }
             }
         }
     }
 
-    // Cargar el sendero a editar en el formulario, con su perfil y si la distancia sigue o no a la del mapa
     private fun cargarSendero(idSenderoEditado: String) {
         viewModelScope.launch {
             val resultado = observarDetalleSenderoUseCase(idSenderoEditado)
@@ -252,28 +216,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 return@launch
             }
             senderoOriginal = senderoEncontrado
-            _estadoVisual.update { estadoActual ->
-                estadoActual.copy(
-                    estaCargando = false,
-                    mensajeError = null,
-                    nombre = senderoEncontrado.nombre,
-                    region = senderoEncontrado.region,
-                    descripcion = senderoEncontrado.descripcion,
-                    duracionEstimada = senderoEncontrado.duracionEstimada,
-                    puntoInicio = senderoEncontrado.puntoInicio,
-                    mejorEpoca = senderoEncontrado.mejorEpoca,
-                    dificultad = senderoEncontrado.dificultad,
-                    tipoRecorrido = senderoEncontrado.tipoRecorrido,
-                    bioma = senderoEncontrado.bioma,
-                    recomendaciones = senderoEncontrado.recomendaciones,
-                    servicios = senderoEncontrado.servicios,
-                    etapas = senderoEncontrado.etapas,
-                    recorrido = senderoEncontrado.recorrido,
-                    perfilElevacion = senderoEncontrado.perfilElevacion,
-                    foto = senderoEncontrado.foto,
-                    hayCambiosSinGuardar = false
-                )
-            }
+            _estadoVisual.update { estado -> estado.conSenderoCargado(senderoEncontrado) }
         }
     }
 
@@ -282,25 +225,11 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaCargando = false, mensajeError = mensaje) }
     }
 
-    // Editar el recorrido con la operación dada; una operación que no cambia nada (índice fuera de rango, invertir un solo punto) no cuenta como cambio
     private fun editarRecorrido(operacion: (EdicionRecorrido) -> EdicionRecorrido) {
-        _estadoVisual.update { estado ->
-            val actual = EdicionRecorrido(estado.recorrido, estado.indicePuntoSeleccionado)
-            val editado = operacion(actual)
-            if (editado == actual) {
-                estado
-            } else {
-                estado.copy(
-                    recorrido = editado.puntos,
-                    indicePuntoSeleccionado = editado.seleccion,
-                    camposConError = estado.camposConError - CampoSendero.RECORRIDO,
-                    hayCambiosSinGuardar = true
-                )
-            }
-        }
+        _estadoVisual.update { estado -> estado.conRecorridoEditado(operacion) }
     }
 
-    // Según el modo, agregar un punto al final del camino o abrir el menú para describir un punto de interés en ese lugar
+    // RF4 - Editor de recorrido: según el modo, un toque agrega un punto al camino o abre el menú de un punto de interés
     private fun tocarMapa(latitud: Double, longitud: Double) {
         val estadoActual = _estadoVisual.value
         if (estadoActual.modoEditor == ModoEditorRecorrido.TRAZAR_CAMINO) {
@@ -314,14 +243,13 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Cambiar un dato del punto de interés del menú; no hace nada si el menú está cerrado
     private fun editarPuntoNuevo(cambio: (PuntoDeInteresNuevo) -> PuntoDeInteresNuevo) {
         _estadoVisual.update { estadoActual ->
             estadoActual.puntoDeInteresNuevo?.let { punto -> estadoActual.copy(puntoDeInteresNuevo = cambio(punto)) } ?: estadoActual
         }
     }
 
-    // Copiar la foto del punto de interés a la carpeta de la app; si había otra, la reemplaza y la borra
+    // RF6 - Fotos: la foto del punto de interés se copia a la carpeta de la app y la anterior se borra
     private fun seleccionarFotoPuntoNuevo(uri: String) {
         val fotoAnterior = _estadoVisual.value.puntoDeInteresNuevo?.foto ?: return
         val generacion = generacionPuntoNuevo
@@ -330,7 +258,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
             almacenFotos.guardarCopia(uri).fold(
                 onSuccess = { rutaLocal ->
                     if (_estadoVisual.value.puntoDeInteresNuevo == null || generacion != generacionPuntoNuevo) {
-                        // El menú se cerró (o ya es otro punto) mientras se copiaba: la copia ya no tiene dueño
+                        // El menú se cerró (o ya es otro punto) mientras se copiaba. Por lo tanto la copia ya no tiene dueño
                         almacenFotos.borrar(rutaLocal)
                         return@fold
                     }
@@ -346,7 +274,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Copiar la foto de un punto ya trazado y asignársela; si mientras tanto el punto se borró o cambió de lugar en la lista, la copia se descarta
+    // Si mientras se copiaba el punto se borró o cambió de lugar en la lista, la copia se descarta
     private fun seleccionarFotoDePunto(indice: Int, uri: String) {
         val estadoActual = _estadoVisual.value
         val punto = estadoActual.recorrido.getOrNull(indice) ?: return
@@ -374,21 +302,23 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Quitar la foto del punto de interés y borrar su copia
     private fun quitarFotoPuntoNuevo() {
         val foto = _estadoVisual.value.puntoDeInteresNuevo?.foto.orEmpty()
         editarPuntoNuevo { punto -> punto.copy(foto = "") }
-        if (foto.isNotEmpty()) viewModelScope.launch { almacenFotos.borrar(foto) }
+        borrarFoto(foto)
     }
 
-    // Cerrar el menú sin agregar el punto y borrar la foto que se había copiado para él
     private fun cancelarPuntoNuevo() {
         val foto = _estadoVisual.value.puntoDeInteresNuevo?.foto.orEmpty()
         _estadoVisual.update { estadoActual -> estadoActual.copy(puntoDeInteresNuevo = null) }
-        if (foto.isNotEmpty()) viewModelScope.launch { almacenFotos.borrar(foto) }
+        borrarFoto(foto)
     }
 
-    // Insertar el punto de interés en el tramo más cercano del trazado y cerrar el menú; con la foto todavía copiándose espera
+    private fun borrarFoto(ruta: String) {
+        if (ruta.isNotEmpty()) viewModelScope.launch { almacenFotos.borrar(ruta) }
+    }
+
+    // Con la foto todavía copiándose no se inserta el punto, porque quedaría sin su foto
     private fun guardarPuntoNuevo() {
         val punto = _estadoVisual.value.puntoDeInteresNuevo ?: return
         if (punto.estaProcesandoFoto) return
@@ -409,7 +339,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         _estadoVisual.update { estado -> estado.copy(indicePuntoSeleccionado = indice) }
     }
 
-    // Pedir las alturas del trazado y armar el perfil; sin forzar, no hace nada si el perfil ya corresponde al trazado.
+    // RF4 - Formulario: el perfil de elevación se pide solo si cambió la firma del trazado (o si se fuerza).
     // Si el trazado cambia mientras se consulta, el resultado se descarta
     private fun calcularPerfil(forzar: Boolean) {
         val estadoActual = _estadoVisual.value
@@ -422,29 +352,23 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         val tipoRecorrido = estadoActual.tipoRecorrido
         trabajoPerfil = viewModelScope.launch {
             val resultado = calcularPerfilDeTrazadoUseCase(recorrido, tipoRecorrido)
+            resultado.getOrNull()?.let { perfil -> Log.d(TAG, "Perfil de elevación calculado: ${perfil.desnivelPositivoMetros} m de subida") }
             _estadoVisual.update { estado ->
                 val sigueElMismoTrazado = CalculadoraPerfil.firmaTrazado(estado.recorrido, estado.tipoRecorrido) == firma
                 when {
                     !sigueElMismoTrazado -> estado.copy(estaCalculandoPerfil = false)
-                    resultado.isSuccess -> aplicarPerfil(estado, resultado.getOrThrow())
+                    resultado.isSuccess -> estado.conPerfil(resultado.getOrThrow())
                     else -> estado.copy(estaCalculandoPerfil = false, avisoPerfil = describirFalloDelPerfil(resultado.exceptionOrNull()))
                 }
             }
         }
     }
 
-    // Convertir la caminata libre de origen en el recorrido del sendero nuevo; si no se puede, el formulario queda vacío y se avisa el motivo
+    // RF4 - Formulario: la caminata libre se convierte en el recorrido del sendero nuevo. Si falla, se avisa el motivo
     private fun cargarCaminata(idCaminataOrigen: String) {
         viewModelScope.launch {
             avisarSiLaCaminataYaSeConvirtio(idCaminataOrigen)
-            val resultado = try {
-                convertirCaminataEnBorradorUseCase(idCaminataOrigen)
-            } catch (excepcion: CancellationException) {
-                throw excepcion
-            } catch (error: Exception) {
-                Result.failure(error)
-            }
-            resultado.fold(
+            capturarFallos { convertirCaminataEnBorradorUseCase(idCaminataOrigen) }.fold(
                 onSuccess = { borrador ->
                     Log.d(TAG, "Caminata $idCaminataOrigen cargada: ${borrador.trazado.recorrido.size} puntos")
                     idsPuntosDeCaminata = borrador.idsPuntosCapturados
@@ -452,14 +376,13 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 },
                 onFailure = { error ->
                     Log.e(TAG, "No se pudo cargar la caminata $idCaminataOrigen", error)
-                    val mensaje = if (error is IllegalArgumentException || error is IllegalStateException) error.message else null
-                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensaje?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_CAMINATA_ERROR))
+                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensajeParaUsuario(error, MENSAJE_CAMINATA_ERROR)))
                 }
             )
         }
     }
 
-    // Si ya existe el sendero creado desde esta caminata, guardar su nombre para preguntar si se edita o se reemplaza antes de pisarlo
+    // Si esta caminata ya se convirtió en sendero, se pregunta si se edita o se reemplaza antes de pisarlo
     private suspend fun avisarSiLaCaminataYaSeConvirtio(idCaminataOrigen: String) {
         val existente = try {
             observarDetalleSenderoUseCase(IdentificadorCaminataLibre.idSenderoDesde(idCaminataOrigen)).getOrNull()?.first()
@@ -475,18 +398,12 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Leer el archivo elegido e importar su trazado; si ya hay un recorrido marcado, pide confirmar antes de reemplazarlo
+    // RF4 - Importar GPX: si ya hay un recorrido marcado, se pide confirmar antes de reemplazarlo
     private fun importarTrazado(uri: String) {
         if (_estadoVisual.value.estaImportandoTrazado) return
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaImportandoTrazado = true) }
         viewModelScope.launch {
-            val resultado = try {
-                importarTrazadoUseCase(uri)
-            } catch (excepcion: CancellationException) {
-                throw excepcion
-            } catch (error: Exception) {
-                Result.failure(error)
-            }
+            val resultado = capturarFallos { importarTrazadoUseCase(uri) }
             _estadoVisual.update { estadoActual -> estadoActual.copy(estaImportandoTrazado = false) }
             resultado.fold(
                 onSuccess = { trazado ->
@@ -499,46 +416,26 @@ class FormularioSenderoViewModel @AssistedInject constructor(
                 },
                 onFailure = { error ->
                     Log.e(TAG, "No se pudo importar el trazado", error)
-                    // Solo los fallos propios traen un mensaje pensado para el usuario; los técnicos muestran el genérico
-                    val mensaje = if (error is IllegalArgumentException || error is IllegalStateException) error.message else null
-                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensaje?.takeIf { texto -> texto.isNotBlank() } ?: MENSAJE_IMPORTACION_ERROR))
+                    canalEfectos.send(FormularioSenderoEfecto.MostrarAviso(mensajeParaUsuario(error, MENSAJE_IMPORTACION_ERROR)))
                 }
             )
         }
     }
 
-    // Cargar el trazado importado: recorrido, tipo y nombre si estaba vacío; con alturas en el archivo usa ese
-    // perfil y, si no, lo pide a la red como al cerrar el editor
+    // Sin alturas en el archivo, el perfil se pide a la red como al cerrar el editor
     private fun aplicarTrazadoImportado(trazado: TrazadoImportado, origen: String = "Recorrido importado") {
-        _estadoVisual.update { estadoActual ->
-            val conTrazado = estadoActual.copy(
-                recorrido = trazado.recorrido,
-                tipoRecorrido = trazado.tipoRecorrido,
-                nombre = estadoActual.nombre.ifBlank { trazado.nombre },
-                indicePuntoSeleccionado = null,
-                trazadoImportadoPendiente = null,
-                camposConError = estadoActual.camposConError - CampoSendero.RECORRIDO - CampoSendero.NOMBRE,
-                hayCambiosSinGuardar = true
-            )
-            trazado.perfil?.let { perfil -> aplicarPerfil(conTrazado, perfil) } ?: conTrazado
+        _estadoVisual.update { estado -> estado.conTrazadoImportado(trazado) }
+        val perfil = trazado.perfil
+        if (perfil != null) {
+            Log.d(TAG, "Perfil de elevación calculado: ${perfil.desnivelPositivoMetros} m de subida")
+            // Un cálculo que siga en curso era del trazado anterior
+            trabajoPerfil?.cancel()
+        } else {
+            calcularPerfil(forzar = false)
         }
-        // Un cálculo anterior ya no corresponde a este trazado
-        if (trazado.perfil != null) trabajoPerfil?.cancel()
-        if (trazado.perfil == null) calcularPerfil(forzar = false)
         emitirEfecto(FormularioSenderoEfecto.MostrarAviso("$origen: ${trazado.recorrido.size} puntos"))
     }
 
-    private fun aplicarPerfil(estado: FormularioSenderoEstadoVisual, perfil: PerfilElevacion): FormularioSenderoEstadoVisual {
-        Log.d(TAG, "Perfil de elevación calculado: ${perfil.desnivelPositivoMetros} m de subida")
-        return estado.copy(
-            perfilElevacion = perfil,
-            estaCalculandoPerfil = false,
-            avisoPerfil = null,
-            hayCambiosSinGuardar = true
-        )
-    }
-
-    // Traducir el fallo del perfil en un aviso para el usuario
     private fun describirFalloDelPerfil(error: Throwable?): String {
         if (error != null) Log.e(TAG, "No se pudo calcular el perfil de elevación", error)
         return when (error) {
@@ -548,55 +445,6 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Cambiar el texto de un campo, limpiar su error y marcar el cambio si modifica datos del sendero
-    private fun cambiarTexto(campo: CampoFormulario, texto: String) {
-        _estadoVisual.update { estadoActual ->
-            val estadoConTexto = when (campo) {
-                CampoFormulario.NOMBRE -> estadoActual.copy(nombre = texto)
-                CampoFormulario.REGION -> estadoActual.copy(region = texto)
-                CampoFormulario.DESCRIPCION -> estadoActual.copy(descripcion = texto)
-                CampoFormulario.DURACION -> estadoActual.copy(duracionEstimada = texto)
-                CampoFormulario.PUNTO_INICIO -> estadoActual.copy(puntoInicio = texto)
-                CampoFormulario.MEJOR_EPOCA -> estadoActual.copy(mejorEpoca = texto)
-                CampoFormulario.NUEVA_RECOMENDACION -> estadoActual.copy(textoNuevaRecomendacion = texto)
-                CampoFormulario.NUEVO_SERVICIO -> estadoActual.copy(textoNuevoServicio = texto)
-                CampoFormulario.NOMBRE_NUEVA_ETAPA -> estadoActual.copy(nombreNuevaEtapa = texto)
-                CampoFormulario.DISTANCIA_NUEVA_ETAPA -> estadoActual.copy(distanciaNuevaEtapa = texto)
-            }
-            val campoDelSendero = obtenerCampoDelSendero(campo)
-            val camposRestantes = if (campoDelSendero != null) {
-                estadoConTexto.camposConError - campoDelSendero
-            } else {
-                estadoConTexto.camposConError
-            }
-            val modificaDatos = campo != CampoFormulario.NUEVA_RECOMENDACION &&
-                campo != CampoFormulario.NUEVO_SERVICIO &&
-                campo != CampoFormulario.NOMBRE_NUEVA_ETAPA &&
-                campo != CampoFormulario.DISTANCIA_NUEVA_ETAPA
-            estadoConTexto.copy(
-                camposConError = camposRestantes,
-                hayCambiosSinGuardar = estadoConTexto.hayCambiosSinGuardar || modificaDatos
-            )
-        }
-    }
-
-    private fun obtenerCampoDelSendero(campo: CampoFormulario): CampoSendero? {
-        return when (campo) {
-            CampoFormulario.NOMBRE -> CampoSendero.NOMBRE
-            CampoFormulario.REGION -> CampoSendero.REGION
-            CampoFormulario.DESCRIPCION -> CampoSendero.DESCRIPCION
-            else -> null
-        }
-    }
-
-    // Devolver la lista con el texto agregado al final, o null si ya estaba (sin distinguir mayúsculas)
-    private fun agregarSiFalta(lista: List<String>, texto: String): List<String>? {
-        val limpio = texto.trim()
-        if (limpio.isEmpty() || lista.any { elemento -> elemento.equals(limpio, ignoreCase = true) }) return null
-        return lista + limpio
-    }
-
-    // Estimar la duración con la distancia del recorrido marcado y el desnivel, y escribirla en el campo
     private fun calcularDuracion() {
         val estadoActual = _estadoVisual.value
         val distancia = estadoActual.distanciaCalculadaKilometros
@@ -612,113 +460,26 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    private fun agregarRecomendacion() {
-        val texto = _estadoVisual.value.textoNuevaRecomendacion.trim()
-        if (texto.isEmpty()) return
-        _estadoVisual.update { estadoActual ->
-            estadoActual.copy(
-                recomendaciones = estadoActual.recomendaciones + texto,
-                textoNuevaRecomendacion = "",
-                hayCambiosSinGuardar = true
-            )
-        }
-    }
-
-    private fun agregarServicio() {
-        val texto = _estadoVisual.value.textoNuevoServicio.trim()
-        if (texto.isEmpty()) return
-        _estadoVisual.update { estadoActual ->
-            estadoActual.copy(
-                servicios = estadoActual.servicios + texto,
-                textoNuevoServicio = "",
-                hayCambiosSinGuardar = true
-            )
-        }
-    }
-
     private fun agregarEtapa() {
-        val estadoActual = _estadoVisual.value
-        val nombre = estadoActual.nombreNuevaEtapa.trim()
-        val distancia = interpretarDecimal(estadoActual.distanciaNuevaEtapa)
-        if (nombre.isEmpty() || distancia == null || distancia <= 0.0) {
+        if (_estadoVisual.value.conEtapaNueva() == null) {
             emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_ETAPA_INVALIDA))
             return
         }
-        _estadoVisual.update { estadoPrevio ->
-            estadoPrevio.copy(
-                etapas = estadoPrevio.etapas + Etapa(
-                    numero = estadoPrevio.etapas.size + 1,
-                    nombre = nombre,
-                    distanciaKilometros = distancia
-                ),
-                nombreNuevaEtapa = "",
-                distanciaNuevaEtapa = "",
-                hayCambiosSinGuardar = true
-            )
-        }
+        _estadoVisual.update { estado -> estado.conEtapaNueva() ?: estado }
     }
 
-    private fun quitarEtapa(indice: Int) {
-        _estadoVisual.update { estadoActual ->
-            val etapasRestantes = estadoActual.etapas
-                .filterIndexed { posicion, _ -> posicion != indice }
-                .mapIndexed { posicion, etapa -> etapa.copy(numero = posicion + 1) }
-            estadoActual.copy(etapas = etapasRestantes, hayCambiosSinGuardar = true)
-        }
-    }
-
-    private fun interpretarDecimal(texto: String): Double? {
-        val valor = texto.trim().replace(',', '.').toDoubleOrNull() ?: return null
-        return valor.takeIf { numero -> numero.isFinite() }
-    }
-
-    // Validar los números, armar el sendero con el perfil y guardarlo; un perfil que todavía se calcula se abandona
+    // RF4 - Formulario: guardamos el sendero armado con su perfil. Un perfil que todavía se calcula se abandona
     private fun guardar() {
         val estadoActual = _estadoVisual.value
         if (estadoActual.estaGuardando || estadoActual.estaCargando || estadoActual.mensajeError != null) return
         if (estadoActual.estaProcesandoFoto) return
 
-        // La distancia sale siempre del recorrido; un sendero viejo sin trazado conserva la que ya tenía
-        val distancia = if (estadoActual.recorrido.size >= 2) {
-            Math.round(estadoActual.distanciaCalculadaKilometros * 10) / 10.0
-        } else {
-            senderoOriginal?.distanciaKilometros?.takeIf { valor -> valor > 0.0 }
-        }
-        if (distancia == null) {
+        val senderoArmado = estadoActual.armarSendero(senderoOriginal, idCaminata)
+        if (senderoArmado == null) {
             _estadoVisual.update { estadoPrevio -> estadoPrevio.copy(camposConError = setOf(CampoSendero.RECORRIDO)) }
             emitirEfecto(FormularioSenderoEfecto.MostrarAviso(MENSAJE_FALTA_RECORRIDO))
             return
         }
-
-        val senderoBase = senderoOriginal ?: Sendero(
-            id = idCaminata?.let { id -> IdentificadorCaminataLibre.idSenderoDesde(id) }.orEmpty(),
-            idUsuario = "",
-            nombre = "",
-            region = "",
-            distanciaKilometros = 0.0,
-            dificultad = estadoActual.dificultad
-        )
-        val senderoSinPerfil = senderoBase.copy(
-            nombre = estadoActual.nombre,
-            region = estadoActual.region,
-            descripcion = estadoActual.descripcion,
-            distanciaKilometros = distancia,
-            duracionEstimada = estadoActual.duracionEstimada,
-            puntoInicio = estadoActual.puntoInicio,
-            mejorEpoca = estadoActual.mejorEpoca,
-            dificultad = estadoActual.dificultad,
-            tipoRecorrido = estadoActual.tipoRecorrido,
-            bioma = estadoActual.bioma,
-            recomendaciones = estadoActual.recomendaciones,
-            servicios = estadoActual.servicios,
-            etapas = estadoActual.etapas,
-            recorrido = estadoActual.recorrido,
-            foto = estadoActual.foto
-        )
-        // Viaja aunque sea de otro trazado: su firma distinta hace que la sincronización lo recalcule
-        val senderoArmado = estadoActual.perfilElevacion
-            ?.let { perfil -> CalculadoraPerfil.aplicarAlSendero(senderoSinPerfil, perfil) }
-            ?: senderoSinPerfil
 
         trabajoPerfil?.cancel()
         _estadoVisual.update { estadoPrevio ->
@@ -738,8 +499,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Retirar de los pendientes los puntos de la caminata de origen, que ya quedaron dentro del sendero guardado; si falla solo se registra,
-    // porque el sendero ya está guardado y los puntos pendientes se pueden volver a ver desde el historial
+    // Si falla solo se registra, porque el sendero ya está guardado y los puntos se pueden volver a ver desde el historial
     private suspend fun retirarPuntosDeLaCaminata() {
         if (idsPuntosDeCaminata.isEmpty()) return
         retirarPuntosIncorporadosUseCase(idsPuntosDeCaminata).onFailure { error ->
@@ -763,7 +523,7 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // Copiar la foto elegida al almacenamiento de la app para que siga disponible aunque el usuario la borre de la galería
+    // RF6 - Fotos: la foto se copia a la app para que siga disponible aunque el usuario la borre de la galería
     private fun seleccionarFoto(uri: String) {
         _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoFoto = true) }
         viewModelScope.launch {
@@ -794,5 +554,20 @@ class FormularioSenderoViewModel @AssistedInject constructor(
         viewModelScope.launch {
             canalEfectos.send(efecto)
         }
+    }
+
+    // Los fallos inesperados se convierten en un Result fallido. En cambio, la cancelación sigue su curso
+    private suspend fun <T> capturarFallos(operacion: suspend () -> Result<T>): Result<T> = try {
+        operacion()
+    } catch (excepcion: CancellationException) {
+        throw excepcion
+    } catch (error: Exception) {
+        Result.failure(error)
+    }
+
+    // Solo los fallos propios traen un mensaje pensado para el usuario. Los técnicos muestran el genérico
+    private fun mensajeParaUsuario(error: Throwable, porDefecto: String): String {
+        val mensaje = if (error is IllegalArgumentException || error is IllegalStateException) error.message else null
+        return mensaje?.takeIf { texto -> texto.isNotBlank() } ?: porDefecto
     }
 }
