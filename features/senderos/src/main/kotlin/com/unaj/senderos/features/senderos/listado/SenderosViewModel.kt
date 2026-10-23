@@ -162,6 +162,9 @@ class SenderosViewModel @AssistedInject constructor(
             is SenderosEvento.AlRecuperarRecorrido -> recuperarRecorrido()
             is SenderosEvento.AlDescartarRecorridoInterrumpido -> descartarRecorridoInterrumpido()
             is SenderosEvento.AlDenegarPermisoParaCaminar -> emitir(SenderosEfecto.MostrarAviso(MENSAJE_SIN_PERMISO_PARA_CAMINAR))
+            is SenderosEvento.AlDenegarPermisoParaCaminarParaSiempre -> {
+                emitir(SenderosEfecto.MostrarAviso(MENSAJE_SIN_PERMISO_PARA_CAMINAR, ofrecerAjustes = true))
+            }
             is SenderosEvento.AlSeleccionarSendero -> {
                 val esPublicoDeOtro = _estadoVisual.value.esPublicoDeOtro(evento.idSendero)
                 emitir(

@@ -5,8 +5,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -35,6 +33,8 @@ import com.unaj.senderos.core.ui.sendero.MensajeCentrado
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
 import com.unaj.senderos.core.ui.sendero.TarjetaSendero
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.mostrarAvisoDePermiso
+import com.unaj.senderos.core.ui.comun.recordarPedidoDePermisos
 import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacion
 import com.unaj.senderos.core.ui.componentes.mapa.MapaDeSenderos
 
@@ -52,15 +52,20 @@ fun MapaSenderosPantalla(
     val estadoAvisos = remember { SnackbarHostState() }
     val alcance = rememberCoroutineScope()
     var tienePermisoUbicacion by remember { mutableStateOf(tienePermisoDeUbicacion(contexto)) }
-    val pedirPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
+    val pedirPermiso = recordarPedidoDePermisos(
+        permisos = PERMISOS_UBICACION,
+        explicacion = "Usamos tu ubicación para mostrarte en el mapa junto a los senderos cercanos"
+    ) { respuesta, negadoParaSiempre ->
         tienePermisoUbicacion = respuesta.values.any { otorgado -> otorgado }
         if (!tienePermisoUbicacion) {
-            alcance.launch { estadoAvisos.showSnackbar("Sin permiso de ubicación no podemos mostrar dónde estás") }
+            alcance.launch {
+                estadoAvisos.mostrarAvisoDePermiso("Sin permiso de ubicación no podemos mostrar dónde estás", negadoParaSiempre, contexto)
+            }
         }
     }
     val solicitarUbicacion = {
         viewModel.procesarEvento(MapaSenderosEvento.AlSolicitarUbicacion)
-        pedirPermiso.launch(PERMISOS_UBICACION)
+        pedirPermiso()
     }
 
     // Se pregunta una sola vez por sesión al entrar. Después el botón de ubicación permite volver a pedirlo

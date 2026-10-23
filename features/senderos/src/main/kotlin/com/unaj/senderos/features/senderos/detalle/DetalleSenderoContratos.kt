@@ -91,6 +91,8 @@ sealed interface DetalleSenderoEvento {
     data object AlCancelarSinGps : DetalleSenderoEvento
     data object AlConcederPermisoUbicacion : DetalleSenderoEvento
     data object AlDenegarPermisoUbicacion : DetalleSenderoEvento
+    // Android ya no vuelve a preguntar y el permiso solo se puede dar desde la configuración de la app
+    data object AlDenegarPermisoUbicacionParaSiempre : DetalleSenderoEvento
     data object AlConcederSoloUbicacionAproximada : DetalleSenderoEvento
     data object AlConfirmarReemplazarRecorrido : DetalleSenderoEvento
     data object AlCancelarReemplazarRecorrido : DetalleSenderoEvento
@@ -113,7 +115,7 @@ sealed interface DetalleSenderoEvento {
 
 sealed interface DetalleSenderoEfecto {
     data object VolverAlListado : DetalleSenderoEfecto
-    data class MostrarAviso(val mensaje: String) : DetalleSenderoEfecto
+    data class MostrarAviso(val mensaje: String, val ofrecerAjustes: Boolean = false) : DetalleSenderoEfecto
     data class CompartirSendero(val texto: String) : DetalleSenderoEfecto
     data class NavegarAEdicion(val idSendero: String) : DetalleSenderoEfecto
     data object SolicitarPermisoUbicacion : DetalleSenderoEfecto
