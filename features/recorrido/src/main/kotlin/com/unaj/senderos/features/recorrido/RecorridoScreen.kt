@@ -42,6 +42,7 @@ import com.unaj.senderos.core.ui.revisionpuntos.DialogoFotoAmpliada
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,8 +142,9 @@ fun RecorridoContenido(
 ) {
     BackHandler { alProcesarEvento(RecorridoEvento.AlVolver) }
 
-    var fotoAmpliada by remember { mutableStateOf<String?>(null) }
-    var esClimaVisible by remember { mutableStateOf(false) }
+    // La foto ampliada y el panel del clima siguen abiertos al girar la pantalla
+    var fotoAmpliada by rememberSaveable { mutableStateOf<String?>(null) }
+    var esClimaVisible by rememberSaveable { mutableStateOf(false) }
     val sigueActivo = estadoVisual.fase == FaseRecorrido.EN_CURSO
     Scaffold(
         modifier = modifier,

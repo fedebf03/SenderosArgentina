@@ -8,8 +8,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,7 +56,10 @@ import com.unaj.senderos.core.ui.sendero.ListaSenderos
 import com.unaj.senderos.core.ui.sendero.MensajeCentrado
 import com.unaj.senderos.core.ui.sendero.MensajeVacio
 import com.unaj.senderos.core.ui.componentes.SeccionPrincipal
+import com.unaj.senderos.core.ui.comun.PERMISOS_NOTIFICACIONES
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.mostrarAvisoDePermiso
+import com.unaj.senderos.core.ui.comun.recordarPedidoDePermisos
 import com.unaj.senderos.core.ui.comun.formatearDistanciaCorta
 import com.unaj.senderos.core.ui.comun.formatearFechaHora
 import com.unaj.senderos.core.ui.componentes.DialogoConfirmacion
@@ -89,30 +90,43 @@ fun SenderosPantalla(
     val estadoAvisos = remember { SnackbarHostState() }
     val alcance = rememberCoroutineScope()
 
-    val pedirPermisoUbicacion = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
+    val pedirPermisoUbicacion = recordarPedidoDePermisos(
+        permisos = PERMISOS_UBICACION,
+        explicacion = "Usamos tu ubicación para ordenar los senderos según lo cerca que estén de vos"
+    ) { respuesta, negadoParaSiempre ->
         tienePermisoUbicacion = respuesta.values.any { otorgado -> otorgado }
         if (tienePermisoUbicacion) {
             viewModel.procesarEvento(SenderosEvento.AlObtenerUbicacion)
         } else {
             Log.d(TAG, "Permiso de ubicación denegado")
             viewModel.procesarEvento(SenderosEvento.AlCambiarOrdenCercania(activado = false))
-            alcance.launch { estadoAvisos.showSnackbar("Sin permiso de ubicación no podemos ordenar por cercanía") }
+            alcance.launch {
+                estadoAvisos.mostrarAvisoDePermiso("Sin permiso de ubicación no podemos ordenar por cercanía", negadoParaSiempre, contexto)
+            }
         }
     }
     // Una caminata libre necesita la ubicación precisa, porque con la aproximada no se puede registrar el trazado
-    val pedirPermisoParaCaminar = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { respuesta ->
+    val pedirPermisoParaCaminar = recordarPedidoDePermisos(
+        permisos = PERMISOS_UBICACION,
+        explicacion = "Para registrar el trazado de la caminata necesitamos tu ubicación precisa"
+    ) { respuesta, negadoParaSiempre ->
         if (respuesta[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
             viewModel.procesarEvento(SenderosEvento.AlCaminarAhora)
         } else {
             Log.d(TAG, "Permiso de ubicación precisa denegado para la caminata")
-            viewModel.procesarEvento(SenderosEvento.AlDenegarPermisoParaCaminar)
+            viewModel.procesarEvento(
+                if (negadoParaSiempre) SenderosEvento.AlDenegarPermisoParaCaminarParaSiempre else SenderosEvento.AlDenegarPermisoParaCaminar
+            )
         }
     }
-    val pedirPermisoNotificaciones = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { otorgado ->
-        Log.d(TAG, "Permiso de notificaciones otorgado: $otorgado")
+    val pedirPermisoNotificaciones = recordarPedidoDePermisos(
+        permisos = PERMISOS_NOTIFICACIONES,
+        explicacion = "Las notificaciones te muestran el recorrido en curso y te avisan cuando se sincronizan tus senderos"
+    ) { respuesta, _ ->
+        Log.d(TAG, "Permiso de notificaciones otorgado: ${respuesta.values.any { otorgado -> otorgado }}")
     }
 
-    // Con permiso se obtiene la ubicación al entrar. Sin permiso se pide recién al activar «Más cercanos»
+    // Con permiso se obtiene la ubicación al entrar. Sin permiso se pide recién al activar "Más cercanos"
     LaunchedEffect(Unit) {
         if (tienePermisoUbicacion && estadoVisual.ubicacionActual == null) viewModel.procesarEvento(SenderosEvento.AlObtenerUbicacion)
     }
@@ -123,7 +137,7 @@ fun SenderosPantalla(
             ContextCompat.checkSelfPermission(contexto, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         if (hayQuePedirNotificaciones && !estadoVisual.seSolicitoPermisoNotificaciones) {
             viewModel.procesarEvento(SenderosEvento.AlSolicitarPermisoNotificaciones)
-            pedirPermisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
+            pedirPermisoNotificaciones()
         }
     }
 
@@ -139,10 +153,10 @@ fun SenderosPantalla(
                     if (tienePermisoDeUbicacionPrecisa(contexto)) {
                         viewModel.procesarEvento(SenderosEvento.AlCaminarAhora)
                     } else {
-                        pedirPermisoParaCaminar.launch(PERMISOS_UBICACION)
+                        pedirPermisoParaCaminar()
                     }
                 }
-                is SenderosEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
+                is SenderosEfecto.MostrarAviso -> estadoAvisos.mostrarAvisoDePermiso(efecto.mensaje, efecto.ofrecerAjustes, contexto)
             }
         }
     }
@@ -155,7 +169,7 @@ fun SenderosPantalla(
                 if (tienePermisoUbicacion) {
                     viewModel.procesarEvento(SenderosEvento.AlObtenerUbicacion)
                 } else {
-                    pedirPermisoUbicacion.launch(PERMISOS_UBICACION)
+                    pedirPermisoUbicacion()
                 }
             }
         },
@@ -167,7 +181,7 @@ fun SenderosPantalla(
     estadoVisual.recorridoInterrumpido?.let { interrumpido ->
         DialogoConfirmacion(
             titulo = "Recorrido interrumpido",
-            texto = "La app se cerró durante «${interrumpido.nombreSendero}» (${formatearFechaHora(interrumpido.inicioMilisegundos)}, " +
+            texto = "La app se cerró durante \"${interrumpido.nombreSendero}\" (${formatearFechaHora(interrumpido.inicioMilisegundos)}, " +
                 "${formatearDistanciaCorta(interrumpido.distanciaKilometros)} recorridos). ¿Querés recuperarlo? Se guarda en tu historial.",
             textoConfirmar = "Recuperar",
             alConfirmar = { viewModel.procesarEvento(SenderosEvento.AlRecuperarRecorrido) },
@@ -257,7 +271,7 @@ fun SenderosContenido(
                     MensajeVacio(
                         icono = Icons.Outlined.Hiking,
                         titulo = "Todavía no agregaste senderos",
-                        detalle = "Tocá «Nuevo sendero» para cargar el primero.",
+                        detalle = "Tocá \"Nuevo sendero\" para cargar el primero.",
                         modifier = modificadorCuerpo
                     )
                 }

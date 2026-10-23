@@ -100,6 +100,8 @@ sealed interface SenderosEvento {
     data object AlTocarCaminarAhora : SenderosEvento
     data object AlCaminarAhora : SenderosEvento
     data object AlDenegarPermisoParaCaminar : SenderosEvento
+    // Android ya no vuelve a preguntar y el permiso solo se puede dar desde la configuración de la app
+    data object AlDenegarPermisoParaCaminarParaSiempre : SenderosEvento
     data object AlRecuperarRecorrido : SenderosEvento
     data object AlDescartarRecorridoInterrumpido : SenderosEvento
     data class AlSeleccionarSendero(val idSendero: String) : SenderosEvento
@@ -112,5 +114,5 @@ sealed interface SenderosEfecto {
     data object SolicitarPermisoUbicacionParaCaminar : SenderosEfecto
     data class NavegarACaminata(val idCaminata: String) : SenderosEfecto
     data class NavegarAHistorialDetalle(val idRecorrido: String) : SenderosEfecto
-    data class MostrarAviso(val mensaje: String) : SenderosEfecto
+    data class MostrarAviso(val mensaje: String, val ofrecerAjustes: Boolean = false) : SenderosEfecto
 }

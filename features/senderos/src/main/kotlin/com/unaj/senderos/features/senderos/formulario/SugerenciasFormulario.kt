@@ -61,7 +61,7 @@ fun filtrarSugerencias(opciones: List<String>, texto: String): List<String> {
     return opciones.filter { opcion -> normalizarParaBuscar(opcion).contains(buscado) }
 }
 
-// Se quitan las tildes para que «rio» coincida con «Río»
+// Se quitan las tildes para que "rio" coincida con "Río"
 private fun normalizarParaBuscar(texto: String): String {
     val descompuesto = Normalizer.normalize(texto.lowercase(), Normalizer.Form.NFD)
     return descompuesto.replace(MARCAS_DE_TILDE, "")

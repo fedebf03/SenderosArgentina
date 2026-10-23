@@ -16,8 +16,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,7 +63,10 @@ import com.unaj.senderos.core.domain.model.TipoRecorrido
 import com.unaj.senderos.core.ui.componentes.TituloDeSeccion
 import com.unaj.senderos.core.ui.revisionpuntos.DialogoFotoAmpliada
 import com.unaj.senderos.core.ui.revisionpuntos.DialogoRevisionPuntos
+import com.unaj.senderos.core.ui.comun.PERMISOS_NOTIFICACIONES
 import com.unaj.senderos.core.ui.comun.PERMISOS_UBICACION
+import com.unaj.senderos.core.ui.comun.mostrarAvisoDePermiso
+import com.unaj.senderos.core.ui.comun.recordarPedidoDePermisos
 import com.unaj.senderos.core.ui.revisionpuntos.RevisionPuntosEvento
 import com.unaj.senderos.core.ui.comun.tienePermisoDeUbicacionPrecisa
 import com.unaj.senderos.core.ui.tema.TemaSenderos
@@ -92,14 +93,17 @@ fun DetalleSenderoPantalla(
     val navegarARecorridoActual by rememberUpdatedState(alNavegarARecorrido)
     val contextoActual by rememberUpdatedState(LocalContext.current)
     // El recorrido sigue aunque se niegue el permiso de notificaciones. Solo se avisa lo que se pierde
-    val pedirPermisoNotificaciones = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { concedido ->
-        if (!concedido) {
+    val pedirPermisoNotificaciones = recordarPedidoDePermisos(
+        permisos = PERMISOS_NOTIFICACIONES,
+        explicacion = "Con las notificaciones ves el recorrido en curso y sus avisos aunque la pantalla esté apagada"
+    ) { respuesta, negadoParaSiempre ->
+        if (respuesta.values.none { concedido -> concedido }) {
             Log.d(TAG, "Permiso de notificaciones denegado")
             alcance.launch {
-                estadoAvisos.showSnackbar(
-                    "Sin el permiso de notificaciones no verás los avisos del recorrido con la pantalla apagada"
+                estadoAvisos.mostrarAvisoDePermiso(
+                    "Sin el permiso de notificaciones no verás los avisos del recorrido con la pantalla apagada",
+                    negadoParaSiempre,
+                    contextoActual
                 )
             }
         }
@@ -110,19 +114,21 @@ fun DetalleSenderoPantalla(
             ContextCompat.checkSelfPermission(contextoActual, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         if (faltaPermisoNotificaciones) {
-            pedirPermisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
+            pedirPermisoNotificaciones()
         } else {
             viewModel.procesarEvento(DetalleSenderoEvento.AlConcederPermisoUbicacion)
         }
     }
-    val pedirPermisoUbicacion = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { resultados ->
+    val pedirPermisoUbicacion = recordarPedidoDePermisos(
+        permisos = PERMISOS_UBICACION,
+        explicacion = "Para seguirte durante el recorrido necesitamos tu ubicación precisa"
+    ) { resultados, negadoParaSiempre ->
         val esPrecisa = resultados[Manifest.permission.ACCESS_FINE_LOCATION] == true
         when {
             esPrecisa -> continuarTrasUbicacionPrecisa()
             resultados.values.any { concedido -> concedido } ->
                 viewModel.procesarEvento(DetalleSenderoEvento.AlConcederSoloUbicacionAproximada)
+            negadoParaSiempre -> viewModel.procesarEvento(DetalleSenderoEvento.AlDenegarPermisoUbicacionParaSiempre)
             else -> viewModel.procesarEvento(DetalleSenderoEvento.AlDenegarPermisoUbicacion)
         }
     }
@@ -140,10 +146,12 @@ fun DetalleSenderoPantalla(
                     if (tienePermisoDeUbicacionPrecisa(contextoActual)) {
                         continuarTrasUbicacionPrecisa()
                     } else {
-                        pedirPermisoUbicacion.launch(PERMISOS_UBICACION)
+                        pedirPermisoUbicacion()
                     }
                 }
-                is DetalleSenderoEfecto.MostrarAviso -> estadoAvisos.showSnackbar(efecto.mensaje)
+                is DetalleSenderoEfecto.MostrarAviso -> {
+                    estadoAvisos.mostrarAvisoDePermiso(efecto.mensaje, efecto.ofrecerAjustes, contextoActual)
+                }
                 is DetalleSenderoEfecto.ElegirDestinoExportacion -> abrirSelectorExportacionActual(efecto.formato, efecto.nombreArchivo)
                 is DetalleSenderoEfecto.CompartirSendero -> {
                     val intencionCompartir = Intent(Intent.ACTION_SEND).apply {

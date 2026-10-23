@@ -111,7 +111,7 @@ fun FormularioSenderoPantalla(
     estadoVisual.nombreSenderoYaConvertido?.let { nombre ->
         DialogoConfirmacion(
             titulo = "Esta caminata ya es un sendero",
-            texto = "Ya la convertiste en «$nombre». Si la reemplazás se vuelve a crear desde el trazado y se pierden los cambios " +
+            texto = "Ya la convertiste en \"$nombre\". Si la reemplazás se vuelve a crear desde el trazado y se pierden los cambios " +
                 "que le hiciste y los puntos de interés que ya tenía. Si preferís, abrí ese sendero para editarlo.",
             textoConfirmar = "Reemplazar",
             alConfirmar = { viewModel.procesarEvento(FormularioSenderoEvento.AlReemplazarSenderoDeCaminata) },

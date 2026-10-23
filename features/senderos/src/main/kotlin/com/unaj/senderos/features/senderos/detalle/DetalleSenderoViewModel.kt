@@ -163,6 +163,10 @@ class DetalleSenderoViewModel @AssistedInject constructor(
                 Log.d(TAG, "Permiso de ubicación denegado para iniciar el recorrido")
                 emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_PERMISO_DENEGADO))
             }
+            is DetalleSenderoEvento.AlDenegarPermisoUbicacionParaSiempre -> {
+                Log.d(TAG, "Permiso de ubicación negado para siempre para iniciar el recorrido")
+                emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_PERMISO_DENEGADO, ofrecerAjustes = true))
+            }
             is DetalleSenderoEvento.AlConcederSoloUbicacionAproximada -> {
                 Log.d(TAG, "Solo se concedió la ubicación aproximada; no alcanza para el recorrido")
                 emitirEfecto(DetalleSenderoEfecto.MostrarAviso(MENSAJE_UBICACION_PRECISA))
