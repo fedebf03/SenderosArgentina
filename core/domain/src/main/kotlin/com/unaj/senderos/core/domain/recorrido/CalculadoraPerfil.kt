@@ -38,7 +38,6 @@ object CalculadoraPerfil {
         return perfil.firmaTrazado != firmaTrazado(sendero.recorrido, sendero.tipoRecorrido)
     }
 
-    // Si hiciera falta superar maximoPuntos, el paso crece
     fun muestrearTrazado(
         recorrido: List<PuntoRecorrido>,
         tipoRecorrido: TipoRecorrido,
@@ -63,7 +62,7 @@ object CalculadoraPerfil {
         }
     }
 
-    // El modelo de 90 m oscila de a metros entre muestras vecinas y sumarlas directo inflaría el desnivel. Por lo tanto
+    // El modelo de 90 m varía algunos metros entre muestras vecinas y sumarlas directo inflaría el desnivel. Por lo tanto
     // el desnivel y la pendiente salen de un promedio móvil de 5 muestras, y las alturas máxima y mínima sin suavizar
     fun calcular(muestras: List<MuestraTrazado>, altitudes: List<Double>, firmaTrazado: String): PerfilElevacion {
         require(muestras.isNotEmpty()) { "Hacen falta muestras para calcular el perfil" }
@@ -144,7 +143,7 @@ object CalculadoraPerfil {
         )
     }
 
-    // La ventana se achica en los extremos para no mover la altura del inicio ni la del fin
+    // En los extremos el promedio usa menos muestras, para no mover la altura del inicio ni la del fin
     fun suavizarAltitudes(altitudes: List<Double>): List<Double> {
         return altitudes.indices.map { indice ->
             val radio = min(RADIO_SUAVIZADO, min(indice, altitudes.lastIndex - indice))

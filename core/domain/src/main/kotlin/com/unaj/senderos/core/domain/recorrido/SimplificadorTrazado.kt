@@ -18,7 +18,7 @@ object SimplificadorTrazado {
         val conservados = BooleanArray(puntos.size)
         conservados[0] = true
         conservados[puntos.lastIndex] = true
-        // Se usa una pila en lugar de recursión para no desbordarla con trazados de decenas de miles de puntos
+        // Se usa una pila propia en lugar de recursión, porque con decenas de miles de puntos la recursión desbordaría la memoria
         val pendientes = ArrayDeque<Pair<Int, Int>>()
         pendientes.addLast(0 to puntos.lastIndex)
         while (pendientes.isNotEmpty()) {

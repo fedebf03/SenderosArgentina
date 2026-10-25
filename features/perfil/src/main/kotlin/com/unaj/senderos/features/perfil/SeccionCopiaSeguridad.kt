@@ -45,7 +45,7 @@ internal fun SeccionCopiaSeguridad(estadoVisual: PerfilEstadoVisual, alProcesarE
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "Guardá una copia de todos tus senderos en el teléfono o en Drive, por si perdés la cuenta o cambiás de teléfono",
+            text = "Guardá una copia de todos tus senderos en un archivo, por si perdés la cuenta o cambiás de teléfono",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

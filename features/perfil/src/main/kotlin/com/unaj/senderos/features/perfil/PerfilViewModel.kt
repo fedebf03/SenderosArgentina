@@ -57,7 +57,7 @@ class PerfilViewModel @Inject constructor(
         observarRecorridoEnCurso()
     }
 
-    // Si el perfil se editó sin conexión se reintenta la subida. Un fallo lo deja pendiente sin molestar
+    // Si el perfil se editó sin conexión se reintenta la subida. Si falla, queda pendiente y no se avisa al usuario
     private fun sincronizarPerfilPendiente() {
         viewModelScope.launch {
             try {

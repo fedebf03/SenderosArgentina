@@ -42,7 +42,6 @@ import javax.inject.Inject
 
 private const val TAG = "MAPAS_SIN_CONEXION"
 
-// La firma es nula si no hay región
 private data class InstantaneaRegion(
     val firma: String?,
     val progreso: ProgresoRegion?,
@@ -142,7 +141,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         Log.d(TAG, "Descarga reactivada: $clave")
     }
 
-    // Según la acción, la región vieja se conserva hasta que termine la nueva o se descarta en el momento
+    // Según la acción, la región vieja se conserva hasta que termine la nueva o se borra enseguida
     private suspend fun crearRegionNueva(
         clave: String,
         idUsuario: String,
@@ -178,8 +177,8 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         regionADescartar?.let { region -> borrarMejorEsfuerzo(region) }
     }
 
-    // Las descargas y los borrados se serializan con un Mutex y corren como NonCancellable. Así cancelar a quien
-    // los pide no deja regiones huérfanas ni registros viejos
+    // Las descargas y los borrados se ejecutan de a uno con un Mutex y como NonCancellable. Por lo tanto, si se cancela
+    // la corrutina que los pidió, no quedan regiones huérfanas ni registros viejos
     private suspend fun ejecutarProtegido(descripcion: String, bloque: suspend () -> Unit): Result<Unit> {
         return exclusionOperaciones.withLock {
             withContext(Dispatchers.Main + NonCancellable) {
@@ -211,7 +210,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
         flujo.value = transformar(flujo.value)
     }
 
-    // Las regiones guardadas se cargan una sola vez. El resultado se publica solo si toda la carga terminó bien
+    // Las regiones guardadas se cargan una sola vez, y solo se dan por cargadas si toda la lectura terminó bien
     private suspend fun asegurarRegionesCargadas() {
         exclusionCarga.withLock {
             if (regionesCargadas) return
@@ -292,7 +291,7 @@ class GestorMapasSinConexionMapLibre @Inject constructor(@ApplicationContext con
                 }
             }
 
-            // El límite de teselas solo aplica al servidor de Mapbox. Con OpenFreeMap el tamaño se acota con el corredor y el zoom
+            // El límite de cantidad de tiles solo aplica al servidor de Mapbox. Con OpenFreeMap el tamaño se acota con el corredor y el zoom
             override fun mapboxTileCountLimitExceeded(limit: Long) {
                 Log.d(TAG, "Límite de teselas de Mapbox excedido ($limit); no aplica a OpenFreeMap")
             }

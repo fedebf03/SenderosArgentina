@@ -15,12 +15,12 @@ data class EstadoSeguimiento(
     val indiceProximoPunto: Int = 0,
     val rumboGrados: Float? = null,
     val velocidadMetrosPorSegundo: Float? = null,
-    // Entra la primera lectura y luego cada lectura válida a 5 m o más del último punto. Las imprecisas (hasta 50 m)
-    // entran si están separadas al menos su precisión, pero no mueven la distancia ni los avisos
+    // Se agrega la primera lectura y luego cada lectura válida a 5 m o más del último punto. Las imprecisas (hasta 50 m)
+    // se agregan si están separadas al menos su precisión, pero no suman distancia ni disparan avisos
     val trazadoCaminado: List<Coordenada> = emptyList(),
-    // Última lectura con precisión suficiente que no llegó a entrar al trazado. Se agrega al cerrar el recorrido
+    // Última lectura con precisión suficiente que no llegó a agregarse al trazado caminado. Se agrega al cerrar el recorrido
     val ultimaPosicionConocida: Coordenada? = null,
-    // Sale de las lecturas tal cual llegan (en simulación refleja la velocidad ya multiplicada)
+    // Es la velocidad que informa el GPS, sin corregir (en simulación ya viene multiplicada)
     val velocidadMaximaMetrosPorSegundo: Float = 0f,
     val esSimulado: Boolean = false,
     val multiplicadorSimulacion: Int = 1,
@@ -29,7 +29,7 @@ data class EstadoSeguimiento(
     val indicesPuntosAvisados: Set<Int> = emptySet(),
     val instanteInicioMilisegundos: Long = 0L,
     val tiempoTranscurridoMilisegundos: Long = 0L,
-    // Sirve para acotar el desplazamiento plausible entre dos lecturas
+    // Sirve para calcular cuánto pudo moverse el usuario, como máximo, entre dos lecturas
     val instanteUltimaLecturaMilisegundos: Long? = null,
     val esCircular: Boolean = false,
     // Nulo si el equipo no tiene acelerómetro. En simulación se estima un paso cada 0,75 m

@@ -250,7 +250,7 @@ object CalculadoraSeguimiento {
         }
     }
 
-    // El doble del umbral del equipo con tope de 50 m, sin bajar nunca del propio umbral
+    // Una lectura entra al trazado caminado con hasta el doble de la precisión máxima, con un tope de 50 m
     private fun limitePrecisionTrazadoMetros(precisionMaximaMetros: Float): Float =
         maxOf(precisionMaximaMetros, minOf(FACTOR_PRECISION_TRAZADO_CAMINADO * precisionMaximaMetros, TOPE_PRECISION_TRAZADO_METROS))
 
@@ -350,8 +350,8 @@ object CalculadoraSeguimiento {
         return distanciaEnMetros(desde, PuntoRecorrido(hasta.latitud, hasta.longitud))
     }
 
-    // Solo se miran los tramos que empiezan antes del límite de progreso, así un trazado que pasa dos veces por el mismo
-    // lugar no salta hacia adelante. En los empates gana el tramo más temprano
+    // Solo se buscan tramos cerca del avance actual. Así, si el trazado pasa dos veces por el mismo lugar, la posición no
+    // salta a la segunda pasada. En los empates gana el tramo más temprano
     private fun buscarTramoMasCercano(
         trazado: List<PuntoRecorrido>,
         posicion: Coordenada,

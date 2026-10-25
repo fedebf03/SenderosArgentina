@@ -94,7 +94,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // Corre en un alcance de proceso. Si la pantalla se cierra, la incorporación termina igual
+    // Corre en una corrutina que vive mientras viva la app. Si la pantalla se cierra, la incorporación termina igual
     override suspend fun incorporarAlSendero(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Result<Sendero> {
         return try {
             val incorporacion = alcanceDeProceso.async { incorporarEnTransaccion(idUsuario, idSendero, idsElegidos) }.await()
@@ -109,7 +109,7 @@ class PuntosCapturadosRepositorioOfflineFirst(
         }
     }
 
-    // El sendero se lee dentro de la misma transacción para no pisar una fusión que haga la sincronización en el medio.
+    // El sendero se lee dentro de la misma transacción. Así no se pierden los cambios si la sincronización lo actualiza a la vez.
     // Devuelve null si el sendero no existe y, si no, el sendero con un indicador de si hubo cambios
     private suspend fun incorporarEnTransaccion(idUsuario: String, idSendero: String, idsElegidos: Set<String>): Pair<Sendero, Boolean>? {
         return ejecutorTransacciones.ejecutar {

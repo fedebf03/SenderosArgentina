@@ -22,7 +22,7 @@ class SolicitudSincronizacionWorkManager @Inject constructor(
     private val workManager: WorkManager
 ) : SolicitudSincronizacion {
 
-    // Se reemplaza el trabajo pendiente. Si estaba esperando un reintento por un fallo, se vuelve a intentar en el momento
+    // Se reemplaza el trabajo pendiente. Si estaba esperando un reintento por un fallo, se intenta de nuevo enseguida
     override fun sincronizarAhora(idUsuario: String) {
         val restricciones = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
         val pedido = OneTimeWorkRequestBuilder<SincronizacionTrabajador>()

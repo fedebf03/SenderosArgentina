@@ -23,7 +23,7 @@ class FuenteElevacionOpenMeteo @Inject constructor(
     private val api: ApiElevacionOpenMeteo
 ) : FuenteElevacion {
 
-    // La API acepta hasta 100 coordenadas por pedido, por eso se trocean en lotes que conservan el orden
+    // La API acepta hasta 100 coordenadas por pedido, por eso se mandan en grupos de 100 sin cambiar el orden
     override suspend fun obtenerAltitudes(coordenadas: List<Coordenada>): Result<List<Double>> {
         return try {
             val altitudes = coordenadas.chunked(MAXIMO_COORDENADAS_POR_PEDIDO).flatMap { lote -> pedirLote(lote) }

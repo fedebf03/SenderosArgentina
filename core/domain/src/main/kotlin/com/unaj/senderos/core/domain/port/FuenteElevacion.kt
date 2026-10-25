@@ -6,8 +6,8 @@ interface FuenteElevacion {
     suspend fun obtenerAltitudes(coordenadas: List<Coordenada>): Result<List<Double>>
 }
 
-// esLimitacionDelServicio marca un límite o una caída (429, 5xx) donde insistir no sirve. En cambio esRechazoDefinitivo
-// marca un rechazo del pedido (otro 4xx) que daría el mismo error al repetirlo
+// Si el servicio está saturado o caído (429 o 5xx), esLimitacionDelServicio frena los pedidos hasta la próxima
+// sincronización. Si rechaza el pedido (otro 4xx), esRechazoDefinitivo evita repetirlo porque fallaría igual
 open class ErrorElevacionException(
     mensaje: String,
     causa: Throwable? = null,

@@ -54,7 +54,7 @@ private data class PronosticoClimaJson(
 )
 
 // Cada pronóstico se escribe en un temporal y después se renombra para no dejar nunca un archivo a medias.
-// Por otro lado la clave solo admite letras, números y guiones, así el nombre del archivo no sale de la carpeta
+// Por otro lado la clave solo admite letras, números y guiones. Así el nombre no puede apuntar fuera de la carpeta (con "../")
 class AlmacenPronosticosArchivo(private val carpeta: File) : AlmacenPronosticos {
 
     @Inject

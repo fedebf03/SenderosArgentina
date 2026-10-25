@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
     private val loginViewModel: LoginViewModel by viewModels()
     private val registroViewModel: RegistroViewModel by viewModels()
 
-    // Lo deja la notificación del recorrido en curso y la composición lo consume y lo limpia
+    // Lo carga la notificación del recorrido en curso. Después la composición navega al recorrido y lo vuelve a null
     private var idSenderoRecorridoPendiente by mutableStateOf<String?>(null)
 
     private var solicitudCancelacionPendiente by mutableStateOf(false)

@@ -15,7 +15,8 @@ class FirestoreSenderoPublicoFuenteRemota @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : SenderoPublicoFuenteRemota {
 
-    // RF2 - Explorar: escuchamos en vivo los senderos públicos, del más reciente al más viejo
+    // RF2 - Explorar: observamos los senderos públicos de Firestore, ordenados del más reciente al más viejo
+    // Cuando alguien publica o quita uno, Firestore avisa y la lista se actualiza sin recargar
     override fun observarTodos(): Flow<List<SenderoPublicoRed>> = callbackFlow {
         val registro = firestore.collection(COLECCION_PUBLICOS)
             .orderBy("fechaPublicacion", Query.Direction.DESCENDING)

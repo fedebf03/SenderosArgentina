@@ -29,7 +29,7 @@ data class RecorridoEstadoVisual(
     val fase: FaseRecorrido = FaseRecorrido.INICIANDO,
     val sendero: Sendero? = null,
     val posicionUsuario: Coordenada? = null,
-    // Posiciones caminadas hasta ahora, que se dibujan en vivo como la línea naranja
+    // Posiciones caminadas hasta ahora, que se dibujan como la línea naranja a medida que avanza el recorrido
     val trazadoCaminado: List<Coordenada> = emptyList(),
     val rumboGrados: Float? = null,
     val estaSiguiendo: Boolean = true,

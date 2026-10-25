@@ -213,7 +213,7 @@ private class ControladorMapaDeSenderos(
         }
     }
 
-    // Se quitan los detectores para que la vista no siga reteniendo el controlador
+    // Se quitan los listeners del mapa para que la vista no mantenga en memoria al controlador
     fun liberar() {
         vistaMapa.removeOnDidFailLoadingMapListener(escuchaFalloDeCarga)
         mapa?.removeOnMapClickListener(escuchaClicEnMapa)
@@ -352,7 +352,7 @@ private class ControladorMapaDeSenderos(
     }
 
     private fun encuadrar() {
-        // Si se encuadra antes de que la vista tenga su tamaño final, la cámara se calcula para un lienzo vacío
+        // Si se encuadra antes de que la vista tenga su tamaño final, la cámara se calcula para un mapa de tamaño cero
         vistaMapa.doOnLayout { moverCamaraParaVerTodos() }
     }
 

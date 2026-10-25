@@ -88,8 +88,8 @@ fun MapaRecorrido(
     val esquemaDeColores = MaterialTheme.colorScheme
     val propietarioDelCiclo = LocalLifecycleOwner.current
 
-    // MapLibre se inicializa recién cuando se muestra un mapa (la llamada es idempotente). La vista se recrea
-    // si cambia el propietario del ciclo, para no reutilizar un MapView ya destruido
+    // MapLibre se inicializa recién cuando se muestra un mapa (llamarlo de nuevo no tiene efecto). La vista se recrea
+    // si cambia el dueño del ciclo de vida (LifecycleOwner), para no reutilizar un MapView ya destruido
     val vistaMapa = remember(propietarioDelCiclo, usarModoTextura) {
         MapLibre.getInstance(contexto.applicationContext)
         MapView(contexto, MapLibreMapOptions.createFromAttributes(contexto).textureMode(usarModoTextura))
@@ -234,7 +234,7 @@ private class ControladorMapaRecorrido(
         vistaMapa.getMapAsync { mapaListo -> alEstarListoElMapa(mapaListo) }
     }
 
-    // Se quitan los detectores para que la vista no siga reteniendo el controlador
+    // Se quitan los listeners del mapa para que la vista no mantenga en memoria al controlador
     fun liberar() {
         vistaMapa.setOnTouchListener(null)
         vistaMapa.removeOnDidFailLoadingMapListener(escuchaFalloDeCarga)
@@ -258,14 +258,14 @@ private class ControladorMapaRecorrido(
             nuevosDatos.modoNavegacion?.estaSiguiendo != datos.modoNavegacion?.estaSiguiendo ||
             (nuevosDatos.modoNavegacion == null) != (datos.modoNavegacion == null)
         datos = nuevosDatos
-        // Si el seguimiento ya se apagó en el estado, la suspensión local por el gesto deja de hacer falta
+        // Si el estado ya dice que la cámara no sigue al usuario, se olvida la pausa que había puesto el gesto
         if (nuevosDatos.modoNavegacion?.estaSiguiendo != true) seSuspendioSeguimiento = false
         arrastre.olvidarSiNoArrastra()
         if (hayCambios && estilo != null) refrescar()
         aplicarEnfoque()
     }
 
-    // Se aplica una sola vez por cada clave nueva. De lo contrario cada recomposición movería la cámara
+    // Cada pedido de enfoque trae una clave y se aplica una sola vez. De lo contrario cada recomposición movería la cámara
     private fun aplicarEnfoque() {
         val coordenada = datos.puntoEnfocado ?: return
         val mapaActual = mapa ?: return
@@ -340,7 +340,7 @@ private class ControladorMapaRecorrido(
             ?.setGeoJson(ConstructorGeoJsonRecorrido.crearPosicion(datos.posicionUsuario, datos.modoNavegacion?.rumboGrados))
         if (!arrastre.estaArrastrando) aplicarGestos()
         val estaSiguiendoAlUsuario = seguirAlUsuario()
-        // En navegación el trazado caminado crece con cada lectura y reencuadrar pisaría lo que el usuario movió.
+        // En navegación el trazado caminado crece con cada lectura y volver a encuadrar desharía lo que el usuario movió.
         // Por lo tanto la lista a encuadrar solo se arma cuando puede usarse
         val puedeEncuadrar = !fueEncuadrado || (!datos.esEditable && datos.modoNavegacion == null)
         val puntosAEncuadrar = if (puedeEncuadrar) {
@@ -359,7 +359,7 @@ private class ControladorMapaRecorrido(
         aplicarEnfoque()
     }
 
-    // Cuando el estilo se carga de nuevo las fuentes empiezan vacías, por eso se olvida lo dibujado
+    // Cuando el estilo se carga de nuevo, las fuentes de datos del mapa empiezan vacías. Por eso se olvida lo dibujado
     private fun olvidarFuentesDibujadas() {
         puntosDibujados = null
         tipoRecorridoDibujado = null
@@ -433,7 +433,7 @@ private class ControladorMapaRecorrido(
 
     private fun manejarToque(evento: MotionEvent): Boolean {
         if (evento.actionMasked == MotionEvent.ACTION_DOWN && datos.sonGestosHabilitados) {
-            // Sin esto un contenedor con desplazamiento vertical se queda con los gestos del mapa
+            // Si no se pide, una lista con desplazamiento vertical se queda con los gestos del mapa
             vistaMapa.parent?.requestDisallowInterceptTouchEvent(true)
         }
         val mapaActual = mapa
