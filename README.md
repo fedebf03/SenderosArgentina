@@ -22,17 +22,7 @@
    ```
    Después abrirlo con Android Studio y esperar a que termine el Gradle Sync.
 
-2. **Configurar Firebase:**
-   Copiar el archivo `google-services.json` del proyecto de Firebase en la carpeta `app/`. El proyecto ya tiene habilitados Authentication (correo y clave, y Google) y Cloud Firestore, con las reglas de `firestore.rules` publicadas.
-
-3. **Configurar Cloudinary (fotos):**
-   Agregar al archivo `local.properties` (el que crea Android Studio) las dos líneas que están en `local.properties.example`:
-   ```properties
-   cloudinary.nombreNube=disbfh4at
-   cloudinary.presetSubida=senderosargentina
-   ```
-
-4. **Correr la app:** elegir el módulo `app` y tocar Run.
+2. **Correr la app:** elegir el módulo `app` y tocar Run.
 
 ---
 

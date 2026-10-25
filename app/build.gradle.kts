@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -9,11 +7,9 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-// Las credenciales de Cloudinary viven en local.properties, que no se sube a Git
-val propiedadesLocales = Properties().apply {
-    val archivo = rootProject.file("local.properties")
-    if (archivo.exists()) archivo.inputStream().use { entrada -> load(entrada) }
-}
+// El nombre de la nube y el preset de Cloudinary están en gradle.properties. El preset es sin firma, así que no son secretos
+val nombreNubeCloudinary = providers.gradleProperty("cloudinary.nombreNube").getOrElse("")
+val presetSubidaCloudinary = providers.gradleProperty("cloudinary.presetSubida").getOrElse("")
 
 android {
     namespace = "com.unaj.senderos"
@@ -30,8 +26,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "CLOUDINARY_NOMBRE_NUBE", "\"${propiedadesLocales.getProperty("cloudinary.nombreNube", "")}\"")
-        buildConfigField("String", "CLOUDINARY_PRESET_SUBIDA", "\"${propiedadesLocales.getProperty("cloudinary.presetSubida", "")}\"")
+        buildConfigField("String", "CLOUDINARY_NOMBRE_NUBE", "\"$nombreNubeCloudinary\"")
+        buildConfigField("String", "CLOUDINARY_PRESET_SUBIDA", "\"$presetSubidaCloudinary\"")
     }
 
     buildTypes {

@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1003396831484",
+    "project_id": "senderos-de-argentina",
+    "storage_bucket": "senderos-de-argentina.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1003396831484:android:34f760685dd6ea5103df79",
+        "android_client_info": {
+          "package_name": "com.example.senderosargentina"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1003396831484-pv47phi7b1olgk0j4k1gcb60pgsvn28j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.senderosargentina",
+            "certificate_hash": "860af243fd97ae995d0c0ddb8cade31ee42640dc"
+          }
+        },
+        {
+          "client_id": "1003396831484-taet3ncfmnbbki6mi705nh49ndg0qhpi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.senderosargentina",
+            "certificate_hash": "19152eee156fca44f8c8e291cc819d42c85bc982"
+          }
+        },
+        {
+          "client_id": "1003396831484-1lnae8ls2hri4ou235ir844h6en4r0re.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDu3MegcNfSPP193tGDeM7AacPF7sW2jNU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1003396831484-1lnae8ls2hri4ou235ir844h6en4r0re.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
