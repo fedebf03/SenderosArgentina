@@ -1,5 +1,9 @@
 # Senderos Argentina
 
+<p align="center">
+  <img src="docs/logo.png" alt="Logo de Senderos Argentina" width="160">
+</p>
+
 **Integrantes:** Federico Busum Fradera y Matías Galván
 
 ---
