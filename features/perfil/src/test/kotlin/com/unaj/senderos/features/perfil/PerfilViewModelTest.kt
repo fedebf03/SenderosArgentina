@@ -111,6 +111,39 @@ class PerfilViewModelTest {
     }
 
     @Test
+    fun `el modo oscuro arranca desactivado`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.estadoVisual.value.esModoOscuro)
+    }
+
+    @Test
+    fun `activar el modo oscuro lo guarda y lo refleja`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(PerfilEvento.AlCambiarModoOscuro(activo = true))
+        advanceUntilIdle()
+
+        assertTrue(preferencias.esModoOscuro.value)
+        assertTrue(viewModel.estadoVisual.value.esModoOscuro)
+    }
+
+    @Test
+    fun `desactivar el modo oscuro lo apaga`() = runTest(despachadorPrueba) {
+        val viewModel = crearViewModel()
+        viewModel.procesarEvento(PerfilEvento.AlCambiarModoOscuro(activo = true))
+        advanceUntilIdle()
+
+        viewModel.procesarEvento(PerfilEvento.AlCambiarModoOscuro(activo = false))
+        advanceUntilIdle()
+
+        assertFalse(preferencias.esModoOscuro.value)
+        assertFalse(viewModel.estadoVisual.value.esModoOscuro)
+    }
+
+    @Test
     fun `el historial refleja los recorridos del mas reciente al mas viejo`() = runTest(despachadorPrueba) {
         repositorioRecorridos.recorridos.value = listOf(
             crearRecorridoDePrueba(id = "viejo", inicioMilisegundos = 1_000L),

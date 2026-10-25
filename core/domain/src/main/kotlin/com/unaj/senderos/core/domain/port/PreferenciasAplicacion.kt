@@ -6,5 +6,9 @@ interface PreferenciasAplicacion {
 
     val esModoDemostracion: StateFlow<Boolean>
 
+    val esModoOscuro: StateFlow<Boolean>
+
     fun cambiarModoDemostracion(activo: Boolean)
+
+    fun cambiarModoOscuro(activo: Boolean)
 }

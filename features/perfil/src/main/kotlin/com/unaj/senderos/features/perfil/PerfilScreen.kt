@@ -167,28 +167,19 @@ private fun CuerpoPerfil(
             modifier = Modifier.padding(top = 16.dp)
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 32.dp)
-                .toggleable(
-                    value = estadoVisual.esModoDemostracion,
-                    role = Role.Switch,
-                    onValueChange = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoDemostracion(activo)) }
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Modo demostración", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "Simula un recorrido sobre el trazado para probar o presentar la app sin caminar",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Switch(checked = estadoVisual.esModoDemostracion, onCheckedChange = null)
-        }
+        FilaInterruptor(
+            titulo = "Modo oscuro",
+            activo = estadoVisual.esModoOscuro,
+            alCambiar = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoOscuro(activo)) },
+            modifier = Modifier.padding(top = 32.dp)
+        )
+
+        FilaInterruptor(
+            titulo = "Modo demostración",
+            activo = estadoVisual.esModoDemostracion,
+            alCambiar = { activo -> alProcesarEvento(PerfilEvento.AlCambiarModoDemostracion(activo)) },
+            modifier = Modifier.padding(top = 16.dp)
+        )
 
         SeccionEstadisticas(estadoVisual, modifier = Modifier.padding(top = 24.dp))
 
@@ -209,6 +200,25 @@ private fun CuerpoPerfil(
                 .fillMaxWidth()
                 .padding(top = 24.dp)
         )
+    }
+}
+
+@Composable
+private fun FilaInterruptor(
+    titulo: String,
+    activo: Boolean,
+    alCambiar: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .toggleable(value = activo, role = Role.Switch, onValueChange = alCambiar),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = titulo, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(16.dp))
+        Switch(checked = activo, onCheckedChange = null)
     }
 }
 

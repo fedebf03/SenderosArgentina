@@ -53,6 +53,7 @@ class PerfilViewModel @Inject constructor(
     init {
         sincronizarPerfilPendiente()
         observarModoDemostracion()
+        observarModoOscuro()
         observarRecorridos()
         observarRecorridoEnCurso()
     }
@@ -77,6 +78,7 @@ class PerfilViewModel @Inject constructor(
                 Log.d(TAG, "Modo demostración: ${evento.activo}")
                 preferenciasAplicacion.cambiarModoDemostracion(evento.activo)
             }
+            is PerfilEvento.AlCambiarModoOscuro -> preferenciasAplicacion.cambiarModoOscuro(evento.activo)
             is PerfilEvento.AlSeleccionarRecorrido -> {
                 Log.d(TAG, "Abriendo el recorrido ${evento.idRecorrido}")
                 viewModelScope.launch { canalEfectos.send(PerfilEfecto.NavegarAHistorialDetalle(evento.idRecorrido)) }
@@ -146,6 +148,15 @@ class PerfilViewModel @Inject constructor(
             Log.d(TAG, "Copia restaurada ($modo): $guardados de $total senderos")
             _estadoVisual.update { estadoActual -> estadoActual.copy(estaProcesandoCopia = false) }
             canalEfectos.send(PerfilEfecto.MostrarAviso("Se restauraron $guardados de $total senderos"))
+        }
+    }
+
+    // El tema elegido se guarda en SharedPreferences. Por lo tanto se mantiene al cerrar y volver a abrir la app
+    private fun observarModoOscuro() {
+        viewModelScope.launch {
+            preferenciasAplicacion.esModoOscuro.collect { activo ->
+                _estadoVisual.update { estadoActual -> estadoActual.copy(esModoOscuro = activo) }
+            }
         }
     }
 

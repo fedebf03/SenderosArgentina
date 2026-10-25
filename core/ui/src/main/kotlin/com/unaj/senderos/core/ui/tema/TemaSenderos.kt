@@ -1,6 +1,7 @@
 package com.unaj.senderos.core.ui.tema
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,13 +41,44 @@ private val esquemaClaro = lightColorScheme(
     onError = Color.White
 )
 
-// Por ahora la app solo tiene tema claro, por lo que siempre vale false
+private val esquemaOscuro = darkColorScheme(
+    primary = Color(0xFFA0CAFD),
+    onPrimary = Color(0xFF003258),
+    primaryContainer = Color(0xFF00497D),
+    onPrimaryContainer = Color(0xFFD1E4FF),
+    secondary = Color(0xFFB8C8DA),
+    onSecondary = Color(0xFF23323F),
+    secondaryContainer = Color(0xFF394857),
+    onSecondaryContainer = Color(0xFFD4E4F6),
+    tertiary = Color(0xFFFFB95C),
+    onTertiary = Color(0xFF472A00),
+    tertiaryContainer = Color(0xFF653E00),
+    onTertiaryContainer = Color(0xFFFFDDB8),
+    background = Color(0xFF101418),
+    onBackground = Color(0xFFE0E2E8),
+    surface = Color(0xFF101418),
+    onSurface = Color(0xFFE0E2E8),
+    surfaceVariant = Color(0xFF42474E),
+    onSurfaceVariant = Color(0xFFC2C7CF),
+    surfaceContainerLowest = Color(0xFF0B0E12),
+    surfaceContainerLow = Color(0xFF191C20),
+    surfaceContainer = Color(0xFF1D2024),
+    surfaceContainerHigh = Color(0xFF272A2F),
+    surfaceContainerHighest = Color(0xFF32353A),
+    outline = Color(0xFF8C9199),
+    outlineVariant = Color(0xFF42474E),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005)
+)
+
+// Los componentes que no usan el esquema de Material (como la paleta de biomas) consultan aquí si el tema es oscuro
 val LocalEsTemaOscuro = staticCompositionLocalOf { false }
 
 @Composable
-fun TemaSenderos(contenido: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalEsTemaOscuro provides false) {
-        MaterialTheme(colorScheme = esquemaClaro, content = contenido)
+fun TemaSenderos(esTemaOscuro: Boolean = false, contenido: @Composable () -> Unit) {
+    val esquema = if (esTemaOscuro) esquemaOscuro else esquemaClaro
+    CompositionLocalProvider(LocalEsTemaOscuro provides esTemaOscuro) {
+        MaterialTheme(colorScheme = esquema, content = contenido)
     }
 }
 

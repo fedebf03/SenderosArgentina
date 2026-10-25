@@ -10,6 +10,7 @@ import com.unaj.senderos.core.domain.usecase.ModoRestauracion
 data class PerfilEstadoVisual(
     val usuario: Usuario? = null,
     val esModoDemostracion: Boolean = false,
+    val esModoOscuro: Boolean = false,
     val recorridos: List<RecorridoRealizado> = emptyList(),
     val mensajeError: String? = null,
     val hayRecorridoEnCurso: Boolean = false,
@@ -29,6 +30,7 @@ sealed interface PerfilEvento {
     data object AlConfirmarCerrarSesion : PerfilEvento
     data object AlCancelarCerrarSesion : PerfilEvento
     data class AlCambiarModoDemostracion(val activo: Boolean) : PerfilEvento
+    data class AlCambiarModoOscuro(val activo: Boolean) : PerfilEvento
     data class AlSeleccionarRecorrido(val idRecorrido: String) : PerfilEvento
     data class AlExportarCopiaSeguridad(val uri: String) : PerfilEvento
     data class AlImportarCopiaSeguridad(val uri: String) : PerfilEvento
