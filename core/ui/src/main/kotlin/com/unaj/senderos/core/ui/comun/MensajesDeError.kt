@@ -1,0 +1,7 @@
+package com.unaj.senderos.core.ui.comun
+
+// Los errores de dominio ya traen su mensaje en español. Para un error técnico se muestra un mensaje genérico
+fun describirErrorParaElUsuario(error: Throwable, respaldo: String): String {
+    val esErrorDeDominio = error is IllegalStateException || error is IllegalArgumentException
+    return if (esErrorDeDominio) error.message?.takeIf { texto -> texto.isNotBlank() } ?: respaldo else respaldo
+}

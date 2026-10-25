@@ -2,4 +2,6 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Fondo del ícono adaptable del lanzador -->
+    <color name="fondo_icono_lanzador">#FFFFFFFF</color>
 </resources>
