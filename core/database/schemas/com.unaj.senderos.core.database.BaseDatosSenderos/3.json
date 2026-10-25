@@ -1,0 +1,166 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "f8a115aecd439a350187807c2801c999",
+    "entities": [
+      {
+        "tableName": "senderos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `idUsuario` TEXT NOT NULL, `nombre` TEXT NOT NULL, `region` TEXT NOT NULL, `distanciaKilometros` REAL NOT NULL, `dificultad` TEXT NOT NULL, `descripcion` TEXT NOT NULL, `desnivelMetros` INTEGER NOT NULL, `duracionEstimada` TEXT NOT NULL, `alturaMaximaMetros` INTEGER NOT NULL, `alturaMinimaMetros` INTEGER NOT NULL, `tipoRecorrido` TEXT NOT NULL, `puntoInicio` TEXT NOT NULL, `mejorEpoca` TEXT NOT NULL, `recomendaciones` TEXT NOT NULL, `servicios` TEXT NOT NULL, `etapas` TEXT NOT NULL, `esFavorito` INTEGER NOT NULL, `fechaModificacion` INTEGER NOT NULL, `estadoSincronizacion` TEXT NOT NULL, `estaEliminado` INTEGER NOT NULL, `recorrido` TEXT NOT NULL DEFAULT '[]', `foto` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`idUsuario`, `id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idUsuario",
+            "columnName": "idUsuario",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "region",
+            "columnName": "region",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "distanciaKilometros",
+            "columnName": "distanciaKilometros",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dificultad",
+            "columnName": "dificultad",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descripcion",
+            "columnName": "descripcion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "desnivelMetros",
+            "columnName": "desnivelMetros",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duracionEstimada",
+            "columnName": "duracionEstimada",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "alturaMaximaMetros",
+            "columnName": "alturaMaximaMetros",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "alturaMinimaMetros",
+            "columnName": "alturaMinimaMetros",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipoRecorrido",
+            "columnName": "tipoRecorrido",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "puntoInicio",
+            "columnName": "puntoInicio",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mejorEpoca",
+            "columnName": "mejorEpoca",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recomendaciones",
+            "columnName": "recomendaciones",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "servicios",
+            "columnName": "servicios",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "etapas",
+            "columnName": "etapas",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "esFavorito",
+            "columnName": "esFavorito",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaModificacion",
+            "columnName": "fechaModificacion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estadoSincronizacion",
+            "columnName": "estadoSincronizacion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estaEliminado",
+            "columnName": "estaEliminado",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recorrido",
+            "columnName": "recorrido",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          },
+          {
+            "fieldPath": "foto",
+            "columnName": "foto",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "idUsuario",
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f8a115aecd439a350187807c2801c999')"
+    ]
+  }
+}
