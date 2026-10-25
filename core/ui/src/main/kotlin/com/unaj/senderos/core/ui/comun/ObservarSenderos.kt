@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "SENDEROS"
 private const val MENSAJE_POR_DEFECTO = "No se pudieron cargar los senderos"
 
-// Inicio, Favoritos y Mapa muestran la misma lista y cada pantalla la presenta a su manera
+// Explorar, Mis senderos, el mapa y el detalle público usan la misma lista y cada pantalla la presenta a su manera
 fun ViewModel.observarSenderos(
     casoDeUso: ObservarSenderosDelUsuarioUseCase,
     alRecibir: (SenderosDelUsuario) -> Unit,

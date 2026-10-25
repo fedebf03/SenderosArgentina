@@ -67,7 +67,7 @@ class ProveedorUbicacionCombinada @Inject constructor(@param:ApplicationContext 
         val cliente = LocationServices.getFusedLocationProviderClient(contexto)
         val peticion = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, INTERVALO_UBICACION_MILISEGUNDOS).build()
         val escucha = object : LocationCallback() {
-            // Se emite cada posición con su precisión aunque sea mala. El dominio decide si sirve y así mide la calidad de la señal
+            // Se informa cada posición con su precisión aunque sea mala. El dominio decide si sirve y con eso mide la calidad de la señal
             override fun onLocationResult(resultado: LocationResult) {
                 resultado.lastLocation?.let { posicion -> trySend(convertirALectura(posicion)) }
             }

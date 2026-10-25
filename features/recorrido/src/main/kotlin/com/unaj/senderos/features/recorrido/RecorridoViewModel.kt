@@ -108,7 +108,6 @@ class RecorridoViewModel @AssistedInject constructor(
 
     init {
         Log.d(TAG, "ViewModel → creado (${hashCode()})")
-        // Una caminata libre no tiene un sendero guardado que observar
         if (!IdentificadorCaminataLibre.esDeCaminataLibre(idSendero)) observarSendero()
         observarSeguimiento()
         observarAvisos()
@@ -292,7 +291,7 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // RF5 - Seguimiento: cada estado que publica el servicio se refleja en pantalla (posición, distancia y restante)
+    // RF5 - Seguimiento: cada estado nuevo del servicio se muestra en pantalla (posición, distancia y restante)
     private fun reflejarSeguimiento(estado: EstadoSeguimiento?) {
         val estadoDelSendero = estado?.takeIf { estadoEmitido -> estadoEmitido.idSendero == idSendero }
         if (estadoDelSendero != null) {
@@ -420,7 +419,7 @@ class RecorridoViewModel @AssistedInject constructor(
         }
     }
 
-    // El servicio tarda en publicar el primer estado. Por lo tanto esperamos 5 segundos antes de darlo por inactivo
+    // El servicio tarda en mandar el primer estado. Por lo tanto esperamos 5 segundos antes de darlo por inactivo
     private fun esperarInicioDelServicio() {
         viewModelScope.launch {
             delay(PLAZO_INICIO_MILISEGUNDOS)

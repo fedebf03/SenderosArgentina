@@ -47,7 +47,6 @@ private const val MARGEN_GLIFO_PIXELES = 28
 
 const val EXTRA_ID_SENDERO_RECORRIDO = "idSenderoRecorrido"
 
-// Extra que pide abrir la pantalla del recorrido con el diálogo de confirmación de cancelación abierto
 const val EXTRA_SOLICITAR_CANCELACION = "solicitarCancelacion"
 
 class NotificadorRecorrido(private val contexto: Context) {
@@ -80,7 +79,7 @@ class NotificadorRecorrido(private val contexto: Context) {
             .addAction(0, "Cancelar", acciones.cancelar)
         val instanteInicio = contenido.instanteInicioMilisegundos
         if (instanteInicio != null) {
-            // El cronómetro del sistema muestra el tiempo sin que haya que republicar la notificación cada segundo
+            // El cronómetro del sistema muestra el tiempo sin que haya que actualizar la notificación cada segundo
             constructor.setUsesChronometer(true).setWhen(instanteInicio).setShowWhen(true)
         } else {
             constructor.setShowWhen(false)

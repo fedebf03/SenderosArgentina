@@ -63,7 +63,7 @@ class SenderoRepositorioOfflineFirst(
     }
 
     // El perfil se deriva del trazado y no es una edición del usuario, por eso conserva la fechaModificacion anterior.
-    // Así no gana la regla de la última escritura contra una edición más nueva hecha en otro dispositivo
+    // Si la renovara, al sincronizar podría pisar una edición más nueva hecha en otro dispositivo
     override suspend fun guardarPerfilElevacion(idUsuario: String, idSendero: String, perfil: PerfilElevacion): Result<Unit> {
         return ejecutarEscritura(idUsuario) {
             ejecutorTransacciones.ejecutar {

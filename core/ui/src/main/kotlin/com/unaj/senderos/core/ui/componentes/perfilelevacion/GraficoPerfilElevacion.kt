@@ -101,7 +101,7 @@ private class AreaDelGrafico(
     }
 }
 
-// Los colores se resuelven fuera del lienzo porque dentro de él no se puede leer el tema
+// Los colores se leen fuera del Canvas porque dentro de él no se puede acceder a MaterialTheme
 private class PaletaDelGrafico(
     val linea: Color,
     val cuadricula: Color,

@@ -106,8 +106,8 @@ class VigilanteAmbienteRecorrido(
         }
     }
 
-    // El aviso se vuelve a habilitar recién cuando la presión se recupera de verdad. Así no se repite cuando la caída
-    // oscila justo en el umbral
+    // El aviso se vuelve a habilitar recién cuando la presión supera el margen de recuperación. Así no se repite si la
+    // caída oscila justo en el umbral
     private fun evaluarPresion() {
         val muestras = registroPresion.muestras()
         val aviso = EvaluadorTendenciaPresion.evaluar(muestras)

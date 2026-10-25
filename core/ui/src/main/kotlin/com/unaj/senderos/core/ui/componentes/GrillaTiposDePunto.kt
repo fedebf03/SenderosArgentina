@@ -35,7 +35,7 @@ private val TIPOS_DE_PUNTO_CAPTURABLES: List<TipoPunto> = listOf(
 )
 private const val COLUMNAS_GRILLA_TIPOS = 3
 
-// Las baldosas son grandes para poder tocarlas caminando o con guantes
+// Los botones son grandes para poder tocarlos caminando o con guantes
 @Composable
 fun GrillaTiposDePunto(tipoElegido: TipoPunto, alElegir: (TipoPunto) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {

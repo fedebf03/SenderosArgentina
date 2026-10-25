@@ -126,7 +126,7 @@ fun NavegacionApp(
             )
         }
         composable<DestinoPantalla.EditarPerfil> {
-            // Se rearman las pantallas con el nombre o la foto, para que muestren el perfil nuevo. El mapa no los muestra
+            // Se vuelven a crear las pantallas que muestran el nombre o la foto, para que tomen el perfil nuevo. El mapa no los muestra
             val salirAlPerfil = {
                 navController.clearBackStack(DestinoPantalla.MisSenderos)
                 navController.reiniciarEn(DestinoPantalla.Explorar)
@@ -256,7 +256,8 @@ internal fun NavController.reiniciarEn(destino: DestinoPantalla) {
     }
 }
 
-// Las secciones que se dejaron con saveState no están en el back stack, así que reiniciarEn no las alcanza
+// Al cambiar de sección, Navigation guarda aparte la que se deja para restaurarla al volver. Como reiniciarEn
+// solo vacía el back stack, esas copias se borran por separado (por ejemplo al cerrar sesión)
 internal fun NavController.descartarSeccionesGuardadas() {
     listOf(DestinoPantalla.Mapa, DestinoPantalla.MisSenderos, DestinoPantalla.Perfil).forEach { seccion ->
         clearBackStack(seccion)

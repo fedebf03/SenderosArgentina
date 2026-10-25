@@ -130,7 +130,7 @@ class LoginViewModel @Inject constructor(
         ocultarDialogoRecuperacion()
     }
 
-    // Se oculta el diálogo sin cancelar el envío, porque también se llama desde adentro de ese trabajo
+    // Se oculta el diálogo sin cancelar el envío, porque también se llama desde la misma corrutina del envío
     private fun ocultarDialogoRecuperacion() {
         _estadoVisual.update { estado ->
             estado.copy(esDialogoRecuperacionVisible = false, estaEnviandoRecuperacion = false, mensajeErrorRecuperacion = null)

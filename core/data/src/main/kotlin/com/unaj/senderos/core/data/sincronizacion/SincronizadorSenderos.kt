@@ -80,8 +80,8 @@ class SincronizadorSenderos(
         }
     }
 
-    // La segunda subida solo suma los senderos que no se contaron antes y no toca el conteo de guardados sin conexión.
-    // Por otro lado un fallo en este paso nunca invalida lo que ya se subió
+    // Después de subir los pendientes se calculan los perfiles que faltan y esos senderos se suben otra vez. En el resumen
+    // solo se suman los que no se contaron en la primera subida, y un fallo en este paso no deshace lo ya subido
     private suspend fun completarPerfiles(
         idUsuario: String,
         resumen: ResumenSincronizacion,
@@ -226,8 +226,8 @@ class SincronizadorSenderos(
         return SubidaDeFotos(puntos.entidadRemota, principal.hayFotosSinSubir || puntos.hayFotosSinSubir)
     }
 
-    // Cada URL se guarda apenas se sube, con la transición condicional, para no repetir la subida si una posterior falla.
-    // La foto que no se pudo subir se omite del documento remoto y se conserva la local
+    // Cada URL se guarda en Room apenas se sube (solo si la fila no cambió mientras tanto), para no repetirla si después
+    // falla otra foto. La que no se pudo subir queda local y no va en el documento remoto
     private suspend fun subirFotosDePuntosSiSonLocales(idUsuario: String, entidad: SenderoEntidad): SubidaDeFotos {
         if (entidad.estaEliminado || entidad.recorrido.none { punto -> esFotoLocal(punto.foto) }) return SubidaDeFotos(entidad, false)
         val recorridoLocal = entidad.recorrido.toMutableList()

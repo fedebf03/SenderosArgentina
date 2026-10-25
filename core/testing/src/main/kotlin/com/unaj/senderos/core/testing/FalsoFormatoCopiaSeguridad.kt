@@ -8,19 +8,16 @@ class FalsoFormatoCopiaSeguridad : FormatoCopiaSeguridad {
 
     private val guardados = mutableMapOf<String, List<Sendero>>()
 
-    // Devolver un texto que identifica la lista recibida
     override fun escribir(senderos: List<Sendero>, instanteMilisegundos: Long): String {
         val texto = "copia-${guardados.size + 1}"
         guardados[texto] = senderos
         return texto
     }
 
-    // Devolver la lista asociada al texto o un fallo si no la conoce
     override fun leer(texto: String): Result<List<Sendero>> =
         guardados[texto]?.let { senderos -> Result.success(senderos) }
             ?: Result.failure(IllegalArgumentException("El archivo no es una copia de seguridad de Senderos"))
 
-    // Registrar una copia para que leer la encuentre
     fun registrar(texto: String, senderos: List<Sendero>) {
         guardados[texto] = senderos
     }

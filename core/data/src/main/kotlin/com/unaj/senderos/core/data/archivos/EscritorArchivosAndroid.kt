@@ -32,7 +32,6 @@ class EscritorArchivosAndroid @Inject constructor(@ApplicationContext contexto: 
             Log.e(TAG, "No se pudo escribir el archivo", error)
             Result.failure(IllegalStateException(MENSAJE_NO_SE_PUDO_ESCRIBIR, error))
         } catch (error: RuntimeException) {
-            // Incluye la falta de permiso y los errores de proveedores de documentos de terceros
             Log.e(TAG, "El proveedor del archivo falló", error)
             Result.failure(IllegalStateException(MENSAJE_NO_SE_PUDO_ESCRIBIR, error))
         }

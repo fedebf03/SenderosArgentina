@@ -6,7 +6,7 @@ import com.unaj.senderos.core.domain.model.TipoRecorrido
 
 private const val METROS_POR_KILOMETRO = 1000.0
 
-// El orden de la declaración es el orden dentro del mismo hueco
+// El orden de estos valores ordena los puntos que caen entre los mismos dos vértices, por eso no se debe cambiar
 private enum class Zona { ANTES_DEL_INICIO, DENTRO_DEL_TRAMO, DESPUES_DEL_FINAL }
 
 private data class Asignacion(val hueco: Int, val zona: Zona, val valorOrden: Double, val orden: Int, val punto: PuntoRecorrido)

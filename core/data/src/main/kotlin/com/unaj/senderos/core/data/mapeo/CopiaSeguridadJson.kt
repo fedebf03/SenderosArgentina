@@ -16,7 +16,7 @@ import javax.inject.Inject
 private const val NOMBRE_APLICACION = "SenderosArgentina"
 private const val VERSION_FORMATO = 1
 private const val MENSAJE_NO_ES_COPIA = "El archivo no es una copia de seguridad de Senderos"
-// Solo se aceptan fotos subidas por la app. Así una copia armada a mano no puede meter rutas del teléfono ni sitios de terceros
+// Solo se aceptan fotos subidas por la app. Así una copia armada a mano no puede incluir rutas del teléfono ni sitios de terceros
 private const val PREFIJO_FOTOS_EN_LA_NUBE = "https://res.cloudinary.com/"
 private const val LARGO_MAXIMO_ID = 128
 private val FORMATO_ID_VALIDO = Regex("[A-Za-z0-9_-]+")

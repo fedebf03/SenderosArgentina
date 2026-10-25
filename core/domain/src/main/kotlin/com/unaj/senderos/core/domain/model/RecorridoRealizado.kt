@@ -1,7 +1,7 @@
 package com.unaj.senderos.core.domain.model
 
 // El id sale del instante de inicio. Si se reemplaza un recorrido activo puede guardarse dos veces con el mismo id
-// y solo cambia finMilisegundos (el guardado es idempotente)
+// y solo cambia finMilisegundos (guardarlo dos veces deja el mismo resultado)
 data class RecorridoRealizado(
     val id: String,
     val idUsuario: String,

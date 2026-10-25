@@ -5,6 +5,6 @@ import kotlinx.coroutines.flow.Flow
 interface MonitorConectividad {
     fun hayConexion(): Boolean
 
-    // Emite el valor actual y después solo cuando cambia
+    // Avisa el estado actual y después solo cuando cambia
     fun observarConexion(): Flow<Boolean>
 }

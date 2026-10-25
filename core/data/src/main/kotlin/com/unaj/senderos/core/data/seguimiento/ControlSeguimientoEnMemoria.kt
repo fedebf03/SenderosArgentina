@@ -63,7 +63,7 @@ private const val METROS_POR_PASO_SIMULADO = 0.75
 private const val SEGUNDOS_POR_MINUTO = 60.0
 private const val MILISEGUNDOS_POR_MINUTO = 60_000.0
 
-// Solo usa android.util.Log y ningún servicio de Android, así se puede probar en la JVM. Los sensores se recolectan
+// Solo usa android.util.Log y ningún servicio de Android, así se puede probar en la JVM. Los sensores se escuchan
 // mientras hay seguimiento y si el equipo los tiene. Sin ellos, los pasos, el ritmo y el rumbo de brújula quedan en null
 class ControlSeguimientoEnMemoria(
     private val proveedorUbicacion: ProveedorUbicacion,
@@ -107,7 +107,7 @@ class ControlSeguimientoEnMemoria(
     override val motivoFin: StateFlow<MotivoFinSeguimiento?> = motivoFinInterno
     override val avisos: SharedFlow<AvisoRecorrido> = avisosInternos
 
-    // RF5 - Seguimiento: cerramos el recorrido anterior, cargamos el trazado y empezamos a recolectar el GPS y los sensores
+    // RF5 - Seguimiento: cerramos el recorrido anterior, cargamos el trazado y empezamos a escuchar el GPS y los sensores
     override suspend fun iniciar(idSendero: String, esSimulado: Boolean) {
         val miGeneracion = ++generacion
         cerrojoInicio.withLock {
@@ -267,12 +267,12 @@ class ControlSeguimientoEnMemoria(
         return estadoActual.instanteUltimaLecturaValidaMilisegundos?.let { instanteLectura -> (instante - instanteLectura).coerceAtLeast(0L) }
     }
 
-    // Así no queda huérfana la copia de una foto cuyo punto no se guardó
+    // Si el punto no llegó a guardarse, se borra la copia de su foto para que no quede un archivo huérfano
     private suspend fun borrarCopiaDeFoto(rutaFoto: String) {
         if (rutaFoto.isNotEmpty()) almacenFotos.borrar(rutaFoto)
     }
 
-    // Al aumentar la generación se descarta un inicio que todavía esté cargando el sendero
+    // La generación cuenta los inicios. Si un inicio anterior seguía cargando el sendero, al terminar ve otro número y se descarta
     private fun finalizarSeguimiento(guardar: Boolean) {
         generacion++
         if (guardar) {
@@ -372,7 +372,7 @@ class ControlSeguimientoEnMemoria(
         actualizarConSensores(reloj()) { estadoActual -> estadoActual }
     }
 
-    // Se usa el instante en que el sensor midió el paso, no el de llegada, que puede venir por lotes
+    // Se usa el instante en que el sensor midió el paso y no el de llegada, porque Android a veces entrega varias lecturas juntas
     private fun registrarPaso(instantePasoMilisegundos: Long) {
         ventanaRitmo.registrarPaso(instantePasoMilisegundos)
         instanteUltimoPaso = maxOf(instanteUltimoPaso ?: instantePasoMilisegundos, instantePasoMilisegundos)
@@ -398,7 +398,6 @@ class ControlSeguimientoEnMemoria(
         }
     }
 
-    // El efecto sobre el último paso simulado se resuelve fuera del estado publicado
     private fun actualizarConSensores(ahora: Long, transformar: (EstadoSeguimiento) -> EstadoSeguimiento) {
         val anterior = estadoInterno.value ?: return
         val transformado = transformar(anterior)
@@ -546,7 +545,7 @@ class ControlSeguimientoEnMemoria(
             velocidadPromedioKilometrosPorHora = velocidadPromedio,
             velocidadMaximaKilometrosPorHora = estadoFinal.velocidadMaximaMetrosPorSegundo * KILOMETROS_POR_HORA_POR_METRO_POR_SEGUNDO,
             pasos = estadoFinal.pasos,
-            // Es el ritmo medio de todo el recorrido y no el de la ventana de 10 s. En la simulación se guarda null
+            // Es el ritmo medio de todo el recorrido y no el de los últimos 10 s. En la simulación se guarda null
             // porque el ritmo quedaría multiplicado por la velocidad simulada
             ritmoPasosPorMinuto = estadoFinal.pasos?.takeUnless { estadoFinal.esSimulado }?.let { pasos ->
                 if (duracion == 0L) 0.0 else pasos / (duracion / MILISEGUNDOS_POR_MINUTO)

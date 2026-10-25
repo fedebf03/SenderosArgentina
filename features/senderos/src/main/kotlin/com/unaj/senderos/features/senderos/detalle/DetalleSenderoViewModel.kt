@@ -312,7 +312,7 @@ class DetalleSenderoViewModel @AssistedInject constructor(
         }
     }
 
-    // RF3 - Detalle: seguimos al sendero guardado, así el detalle se actualiza solo al editarlo o sincronizarlo
+    // RF3 - Detalle: observamos el sendero guardado en Room. Por lo tanto el detalle se actualiza solo al editarlo o sincronizarlo
     private fun observarSendero() {
         observarDetalleSenderoUseCase(idSendero).fold(
             onSuccess = { flujoSendero ->

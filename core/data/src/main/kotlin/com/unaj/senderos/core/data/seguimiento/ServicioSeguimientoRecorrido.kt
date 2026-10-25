@@ -43,7 +43,7 @@ private const val ETIQUETA_BLOQUEO = "senderos:seguimiento"
 private const val DURACION_MAXIMA_BLOQUEO_MILISEGUNDOS = 6L * 60L * 60L * 1000L
 private const val INTERVALO_NOTIFICACION_MILISEGUNDOS = 1_000L
 
-// Se reduce el estado a lo que muestra la notificación persistente para no republicarla por cambios que no se ven
+// Se toma solo lo que muestra la notificación persistente, para no actualizarla por cambios que no se ven
 private data class DatosNotificacion(
     val idSendero: String,
     val contenido: ContenidoNotificacionRecorrido
@@ -260,7 +260,7 @@ class ServicioSeguimientoRecorrido : Service() {
         stopSelf()
     }
 
-    // El WakeLock parcial (máximo 6 h) mantiene la CPU entregando muestras del acelerómetro con la pantalla apagada
+    // El WakeLock parcial (máximo 6 h) mantiene despierta la CPU para que el acelerómetro siga midiendo con la pantalla apagada
     private fun adquirirBloqueoParcial() {
         val bloqueo = bloqueoParcial ?: (getSystemService(PowerManager::class.java)
             ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, ETIQUETA_BLOQUEO)

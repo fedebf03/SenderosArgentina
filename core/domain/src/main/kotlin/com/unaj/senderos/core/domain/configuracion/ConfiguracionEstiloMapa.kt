@@ -2,7 +2,6 @@ package com.unaj.senderos.core.domain.configuracion
 
 // Están en dominio porque las usan tanto la presentación como la capa de datos
 object ConfiguracionEstiloMapa {
-    // Estilo vectorial gratuito de OpenFreeMap (sin clave). MapLibre agrega la atribución por su cuenta
     const val URL_ESTILO = "https://tiles.openfreemap.org/styles/liberty"
 
     const val ZOOM_MINIMO_DESCARGA = 10.0

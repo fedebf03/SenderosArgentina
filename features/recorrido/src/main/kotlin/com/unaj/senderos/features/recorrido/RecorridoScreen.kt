@@ -88,7 +88,7 @@ fun RecorridoPantalla(
         alMostrarAviso = { mensaje -> viewModel.procesarEvento(RecorridoEvento.AlFallarFotoPunto(mensaje)) }
     )
 
-    // El reloj se actualiza cada segundo para que el tiempo avance aunque el GPS no emita
+    // El reloj se actualiza cada segundo para que el tiempo avance aunque no lleguen lecturas del GPS
     val ahoraMilisegundos = produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
             delay(INTERVALO_RELOJ_MILISEGUNDOS)
@@ -223,7 +223,7 @@ fun RecorridoContenido(
                                 )
                             }
                             if (estadoVisual.puedeAgregarPunto) {
-                                // Es grande y está siempre a mano para marcar lo que se ve sin frenar (como en Waze). La foto es opcional
+                                // Es grande y está siempre a mano para marcar lo que se ve sin detenerse (como en Waze). La foto es opcional
                                 FloatingActionButton(
                                     onClick = { alProcesarEvento(RecorridoEvento.AlTocarAgregarPunto) },
                                     containerColor = MaterialTheme.colorScheme.primary,

@@ -14,7 +14,6 @@ class VentanaRitmoPasos {
         descartarViejos(instanteMilisegundos)
     }
 
-    // Hacen falta al menos dos pasos
     fun ritmoPasosPorMinuto(ahoraMilisegundos: Long): Double {
         val recientes = instantesDePasos.filter { instante -> ahoraMilisegundos - instante <= VENTANA_MILISEGUNDOS }
         val ultimo = recientes.lastOrNull() ?: return 0.0

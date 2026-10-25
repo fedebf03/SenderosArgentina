@@ -23,7 +23,6 @@ interface ControlSeguimiento {
     // Si había un recorrido en curso se finaliza antes de empezar el nuevo
     suspend fun iniciar(idSendero: String, esSimulado: Boolean = false)
 
-    // No hay sendero que seguir. Se registra el trazado caminado y se pueden marcar puntos
     suspend fun iniciarCaminataLibre(idCaminata: String, idUsuario: String, nombre: String)
     // Acepta 1, 5 o 20 y no hace nada si el recorrido no es simulado
     fun cambiarMultiplicadorSimulacion(valor: Int)

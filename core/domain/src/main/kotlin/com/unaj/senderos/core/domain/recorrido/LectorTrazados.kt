@@ -11,7 +11,6 @@ private val NOMBRES_LATITUD = setOf("lat", "latitude", "latitud")
 private val NOMBRES_LONGITUD = setOf("lon", "lng", "long", "longitude", "longitud")
 private val NOMBRES_ALTURA = setOf("ele", "elevation", "altitude", "altitud", "altura", "alt")
 
-// Solo la etiqueta de apertura. Como [^>]* no puede retroceder más allá del próximo ">", el costo es lineal
 private val PATRON_APERTURA_PUNTO_GPX = Regex("<(trkpt|rtept|wpt)\\b([^>]*)>")
 private val PATRON_APERTURA_TRAZA_GPX = Regex("<(?:trk|rte|metadata)\\b[^>]*>")
 private val PATRON_ATRIBUTO_LATITUD = Regex("\\blat\\s*=\\s*[\"']([^\"']+)[\"']")
@@ -40,8 +39,8 @@ object LectorTrazados {
         return Result.success(leido)
     }
 
-    // No usamos un analizador XML para no resolver entidades externas. Se toman los puntos de la traza o, si no hay,
-    // los de la ruta, y los waypoints pasan a ser puntos de interés
+    // No usamos un analizador XML porque podría cargar entidades externas declaradas en el archivo (ataque XXE). Se toman
+    // los puntos de la traza o, si no hay, los de la ruta, y los waypoints pasan a ser puntos de interés
     private fun leerGpx(texto: String): TrazadoLeido? {
         val trazas = mutableListOf<PuntoLeido>()
         val ruta = mutableListOf<PuntoLeido>()
@@ -59,8 +58,6 @@ object LectorTrazados {
         return TrazadoLeido(leerNombreDelGpx(texto), trazas.ifEmpty { ruta }, puntosDeInteres)
     }
 
-    // Se corta en la próxima apertura o a los 4 KB, por si la etiqueta nunca se cierra. El cierre se busca solo en ese
-    // tramo, porque buscarlo en todo el texto vuelve muy lenta la lectura de un archivo con miles de etiquetas abiertas
     private fun contenidoHastaElCierre(texto: String, apertura: MatchResult, siguiente: MatchResult?, etiqueta: String): String {
         val desde = apertura.range.last + 1
         val limite = minOf(siguiente?.range?.first ?: texto.length, desde + LARGO_MAXIMO_CONTENIDO_PUNTO, texto.length)

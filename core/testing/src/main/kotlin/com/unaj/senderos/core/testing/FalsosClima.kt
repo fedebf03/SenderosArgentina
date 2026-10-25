@@ -8,7 +8,6 @@ import com.unaj.senderos.core.domain.model.Coordenada
 import com.unaj.senderos.core.domain.port.AlmacenPronosticos
 import com.unaj.senderos.core.domain.port.FuentePronostico
 
-// Armar un pronóstico de prueba tranquilo, obtenido en el instante indicado
 fun crearPronosticoDePrueba(
     lugar: Coordenada = Coordenada(-41.13, -71.30),
     obtenidoMilisegundos: Long = 1_000L,

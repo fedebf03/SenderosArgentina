@@ -5,6 +5,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface FuenteAcelerometro {
 
-    // El sensor se libera al cancelar la recolección
+    // El sensor se libera cuando se deja de observar el flujo
     fun observarMuestras(): Flow<MuestraAcelerometro>
 }

@@ -111,8 +111,8 @@ data class CandidataRegion(val id: Long, val estaCompleta: Boolean)
 
 data class PlanRegiones(val principal: Long, val anterior: Long?, val sobrantes: List<Long>)
 
-// De las regiones de un mismo sendero la vigente es la de mayor id. Si está incompleta, se conserva como anterior
-// la última región completa para seguir teniendo mapa mientras termina la descarga
+// De las regiones de un mismo sendero la vigente es la de mayor id. Si todavía no terminó de descargarse, también
+// se conserva la última región completa para seguir teniendo mapa mientras tanto
 fun planificarRegiones(candidatas: List<CandidataRegion>): PlanRegiones? {
     val ordenadas = candidatas.sortedByDescending { candidata -> candidata.id }
     val principal = ordenadas.firstOrNull() ?: return null

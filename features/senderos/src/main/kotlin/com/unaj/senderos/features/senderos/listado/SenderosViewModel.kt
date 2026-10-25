@@ -90,7 +90,7 @@ class SenderosViewModel @AssistedInject constructor(
         )
     }
 
-    // Se observa una sola vez por usuario, porque cada lectura de los senderos vuelve a llamar a esta función
+    // Se llama cada vez que llegan los senderos. Por eso la sincronización se vuelve a observar solo si cambia el usuario
     private fun observarSincronizacion(idUsuario: String?) {
         if (idUsuario == null || idUsuario == idUsuarioObservado) return
         idUsuarioObservado = idUsuario

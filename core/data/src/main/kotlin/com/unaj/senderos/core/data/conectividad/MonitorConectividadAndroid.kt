@@ -21,8 +21,8 @@ import com.unaj.senderos.core.data.di.AlcanceEscrituras
 private const val TAG = "CONECTIVIDAD"
 private const val ESPERA_SIN_SUSCRIPTORES_MILISEGUNDOS = 5_000L
 
-// Todos los suscriptores comparten una sola escucha de red en un alcance que vive tanto como la aplicación.
-// Con WhileSubscribed la escucha se registra con el primero y se libera 5 segundos después del último
+// Todas las pantallas comparten una sola escucha de la red, que vive mientras viva la aplicación. Con WhileSubscribed
+// se registra cuando alguien empieza a observarla y se libera 5 segundos después de que deja de observarla el último
 class MonitorConectividadAndroid @Inject constructor(
     @ApplicationContext contexto: Context,
     @AlcanceEscrituras alcance: CoroutineScope
