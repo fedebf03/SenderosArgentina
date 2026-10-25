@@ -1,4 +1,4 @@
-# Senderos Argentina
+<h1 align="center">Senderos Argentina</h1>
 
 <p align="center">
   <img src="docs/logo.png" alt="Logo de Senderos Argentina" width="160">
