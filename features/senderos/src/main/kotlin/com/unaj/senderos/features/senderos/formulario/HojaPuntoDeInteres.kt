@@ -43,7 +43,7 @@ import com.unaj.senderos.core.ui.componentes.GrillaTiposDePunto
 import com.unaj.senderos.core.ui.componentes.IconoDeBoton
 import com.unaj.senderos.core.ui.revisionpuntos.FotoDePunto
 
-private const val LONGITUD_MAXIMA_NOMBRE_PUNTO = 60
+internal const val LONGITUD_MAXIMA_NOMBRE_PUNTO = 60
 private val ALTURA_FOTO_PUNTO = 160.dp
 
 // Tocar afuera o deslizar hacia abajo cierra el menú solo si no se cargó un nombre ni una foto, para no perderlos
