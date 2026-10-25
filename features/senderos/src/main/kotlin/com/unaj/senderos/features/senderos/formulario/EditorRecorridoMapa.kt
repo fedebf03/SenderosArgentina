@@ -57,7 +57,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.unaj.senderos.core.ui.comun.recordarAccionesDeFoto
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -230,7 +229,7 @@ private fun BarraInferiorEditor(
     }
 }
 
-// La foto se aplica al instante. En cambio, el nombre y el tipo se aplican recién al tocar Guardar
+// El nombre, el tipo y la foto se aplican al instante. Así no se pierden si el panel se cierra con la X o se sale del editor
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PanelPuntoSeleccionado(
@@ -242,8 +241,6 @@ private fun PanelPuntoSeleccionado(
     alElegirDeGaleria: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var nombre by remember(indice, punto.nombre) { mutableStateOf(punto.nombre) }
-    var tipo by remember(indice, punto.tipo) { mutableStateOf(punto.tipo) }
     Card(
         modifier = modifier.fillMaxWidth().heightIn(max = ALTURA_MAXIMA_PANEL_PUNTO),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -266,8 +263,10 @@ private fun PanelPuntoSeleccionado(
                     }
                 }
                 OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { texto -> nombre = texto },
+                    value = punto.nombre,
+                    onValueChange = { texto ->
+                        alProcesarEvento(FormularioSenderoEvento.AlCambiarNombrePunto(indice, texto.take(LONGITUD_MAXIMA_NOMBRE_PUNTO)))
+                    },
                     label = { Text("Nombre (opcional)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -275,8 +274,8 @@ private fun PanelPuntoSeleccionado(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TipoPunto.entries.forEach { tipoDisponible ->
                         FilterChip(
-                            selected = tipo == tipoDisponible,
-                            onClick = { tipo = tipoDisponible },
+                            selected = punto.tipo == tipoDisponible,
+                            onClick = { alProcesarEvento(FormularioSenderoEvento.AlCambiarTipoPunto(indice, tipoDisponible)) },
                             label = { Text(obtenerTextoTipoPunto(tipoDisponible)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -308,16 +307,8 @@ private fun PanelPuntoSeleccionado(
                     modifier = Modifier.weight(1f)
                 )
                 BotonPrincipal(
-                    texto = "Guardar",
-                    alTocar = {
-                        if (nombre != punto.nombre) {
-                            alProcesarEvento(FormularioSenderoEvento.AlCambiarNombrePunto(indice, nombre))
-                        }
-                        if (tipo != punto.tipo) {
-                            alProcesarEvento(FormularioSenderoEvento.AlCambiarTipoPunto(indice, tipo))
-                        }
-                        alProcesarEvento(FormularioSenderoEvento.AlSeleccionarPunto(null))
-                    },
+                    texto = "Listo",
+                    alTocar = { alProcesarEvento(FormularioSenderoEvento.AlSeleccionarPunto(null)) },
                     icono = { IconoDeBoton(Icons.Filled.Check) },
                     modifier = Modifier.weight(1f)
                 )
