@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.unaj.senderos.core.domain.model.Bioma
 import com.unaj.senderos.core.ui.tema.obtenerColoresDelBioma
 
-// Es decorativo y siempre va junto al nombre, por eso no tiene descripción para el lector de pantalla
 @Composable
 fun PuntoBioma(bioma: Bioma, modifier: Modifier = Modifier, tamano: Dp = 10.dp) {
     val colores = obtenerColoresDelBioma(bioma)

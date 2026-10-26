@@ -1,5 +1,8 @@
+@file:OptIn(InternalSerializationApi::class)
+
 package com.unaj.senderos.core.network.openmeteo
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET

@@ -12,7 +12,6 @@ appcompat = "1.6.1"
 material = "1.10.0"
 activityKtx = "1.8.0"
 activityCompose = "1.9.3"
-constraintlayout = "2.1.4"
 composeBom = "2025.12.00"
 composeIconsExtended = "1.7.6"
 lifecycle = "2.8.7"
@@ -42,7 +41,6 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }

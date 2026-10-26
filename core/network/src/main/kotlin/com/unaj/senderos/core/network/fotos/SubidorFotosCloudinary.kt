@@ -24,7 +24,7 @@ class SubidorFotosCloudinary @Inject constructor(
 
     override suspend fun subir(rutaLocal: String): String = withContext(Dispatchers.IO) {
         check(nombreNube.isNotBlank() && presetSubida.isNotBlank()) {
-            "Cloudinary no está configurado: completá cloudinary.nombreNube y cloudinary.presetSubida en local.properties"
+            "Falta configurar el nombre de la nube y el preset de subida de Cloudinary"
         }
         val archivo = File(rutaLocal)
         check(archivo.exists()) { "No existe la foto local $rutaLocal" }
